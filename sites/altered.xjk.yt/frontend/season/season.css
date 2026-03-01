@@ -1,0 +1,467 @@
+.season-shell {
+  position: relative;
+  z-index: 1;
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 2rem 1.5rem 3rem;
+}
+
+.back-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  margin-bottom: 1.5rem;
+  font-family: "Chakra Petch", "Trebuchet MS", sans-serif;
+  font-size: 0.82rem;
+  letter-spacing: 0.04em;
+  color: var(--ink-dim);
+  text-decoration: none;
+  transition: color 0.2s;
+}
+
+.back-link:hover {
+  color: var(--cyan);
+}
+.season-hero {
+  position: relative;
+  border-radius: 20px;
+  overflow: hidden;
+  height: 220px;
+  margin-bottom: 2rem;
+  border: 1px solid var(--border);
+}
+
+.season-hero-bg {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  opacity: 0.5;
+  transform: scale(1.05);
+  transition: opacity 0.4s;
+}
+
+.season-hero-overlay {
+  position: absolute;
+  inset: 0;
+  background:
+    linear-gradient(180deg, rgba(2, 4, 8, 0.3) 0%, rgba(2, 4, 8, 0.85) 100%),
+    linear-gradient(90deg, rgba(34, 204, 238, 0.08), transparent 50%);
+}
+
+.season-hero-content {
+  position: relative;
+  z-index: 1;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  padding: 1.5rem;
+}
+
+.season-badge {
+  display: inline-block;
+  width: fit-content;
+  padding: 0.25rem 0.65rem;
+  border: 1px solid rgba(34, 204, 238, 0.4);
+  border-radius: 999px;
+  font-family: "Chakra Petch", "Trebuchet MS", sans-serif;
+  font-size: 0.68rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--cyan);
+  background: rgba(34, 204, 238, 0.1);
+  margin-bottom: 0.5rem;
+}
+
+.season-title {
+  font-size: clamp(2rem, 6vw, 3.5rem);
+  font-weight: 700;
+  margin: 0;
+  background: linear-gradient(135deg, var(--ink) 20%, var(--cyan) 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  line-height: 1.1;
+}
+
+.season-sub {
+  margin: 0.4rem 0 0;
+  color: var(--ink-dim);
+  font-size: 0.92rem;
+  max-width: 480px;
+}
+.stats-row {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 0.75rem;
+  margin-bottom: 2rem;
+}
+
+.stat {
+  padding: 1rem;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: var(--surface);
+  backdrop-filter: blur(12px);
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.stat-value {
+  font-family: "Chakra Petch", "Trebuchet MS", sans-serif;
+  font-size: 1.8rem;
+  font-weight: 700;
+  color: var(--ink);
+  line-height: 1.1;
+}
+
+.stat-label {
+  font-size: 0.68rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--ink-muted);
+}
+.controls-bar {
+  display: flex;
+  gap: 0.75rem;
+  margin-bottom: 1.5rem;
+  flex-wrap: wrap;
+}
+
+.search-input {
+  flex: 1;
+  min-width: 200px;
+  padding: 0.6rem 0.9rem;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.03);
+  color: var(--ink);
+  font-family: "Manrope", "Segoe UI", sans-serif;
+  font-size: 0.88rem;
+  outline: none;
+  transition: border-color 0.2s;
+}
+
+.search-input:focus {
+  border-color: var(--border-hover);
+}
+
+.search-input::placeholder {
+  color: var(--ink-muted);
+}
+
+.sort-select {
+  padding: 0.6rem 0.9rem;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.03);
+  color: var(--ink);
+  font-family: "Chakra Petch", "Trebuchet MS", sans-serif;
+  font-size: 0.82rem;
+  letter-spacing: 0.03em;
+  outline: none;
+  cursor: pointer;
+  transition: border-color 0.2s;
+}
+
+.sort-select:focus {
+  border-color: var(--border-hover);
+}
+
+.sort-select option {
+  background: #0a1020;
+  color: var(--ink);
+}
+.campaign-section {
+  margin-bottom: 1.8rem;
+}
+
+.campaign-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.8rem;
+  flex-wrap: wrap;
+  padding: 0.9rem 1.1rem;
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  background: var(--surface);
+  backdrop-filter: blur(12px);
+  margin-bottom: 0.9rem;
+  cursor: pointer;
+  transition: border-color 0.2s, background 0.2s;
+}
+
+.campaign-header:hover {
+  border-color: var(--border-hover);
+  background: rgba(34, 204, 238, 0.03);
+}
+
+.campaign-header-left {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+}
+
+.campaign-toggle {
+  width: 20px;
+  height: 20px;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--ink-dim);
+  transition: transform 0.25s, color 0.2s;
+}
+
+.campaign-section.is-open .campaign-toggle {
+  transform: rotate(90deg);
+  color: var(--cyan);
+}
+
+.campaign-name {
+  font-family: "Chakra Petch", "Trebuchet MS", sans-serif;
+  font-size: 1.05rem;
+  font-weight: 600;
+}
+
+.campaign-map-count {
+  padding: 0.2rem 0.55rem;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  font-family: "Chakra Petch", "Trebuchet MS", sans-serif;
+  font-size: 0.68rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--ink-dim);
+}
+
+.campaign-maps {
+  display: none;
+}
+
+.campaign-section.is-open .campaign-maps {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 1rem;
+  padding: 0 0.2rem;
+}
+.map-card {
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  background: var(--surface);
+  backdrop-filter: blur(12px);
+  overflow: hidden;
+  transition: border-color 0.25s, transform 0.25s, box-shadow 0.25s;
+}
+
+.map-card:hover {
+  border-color: var(--border-hover);
+  transform: translateY(-3px);
+  box-shadow: 0 10px 32px rgba(0, 0, 0, 0.3);
+}
+
+.map-thumb {
+  position: relative;
+  aspect-ratio: 16 / 9;
+  overflow: hidden;
+  background: linear-gradient(135deg, rgba(34, 153, 238, 0.08), rgba(34, 204, 238, 0.04));
+}
+
+.map-thumb img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  opacity: 0.85;
+  transition: opacity 0.3s, transform 0.4s;
+}
+
+.map-card:hover .map-thumb img {
+  opacity: 1;
+  transform: scale(1.03);
+}
+
+.map-status {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  padding: 0.18rem 0.45rem;
+  border-radius: 6px;
+  font-family: "Chakra Petch", "Trebuchet MS", sans-serif;
+  font-size: 0.6rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+.map-status-active,
+.map-status-live {
+  background: rgba(34, 204, 100, 0.18);
+  color: #22cc66;
+  border: 1px solid rgba(34, 204, 100, 0.25);
+}
+
+.map-status-paused {
+  background: rgba(230, 184, 0, 0.18);
+  color: #e6b800;
+  border: 1px solid rgba(230, 184, 0, 0.25);
+}
+
+.map-status-idle,
+.map-status-archived {
+  background: rgba(120, 140, 160, 0.18);
+  color: #788ca0;
+  border: 1px solid rgba(120, 140, 160, 0.25);
+}
+
+.map-body {
+  padding: 0.85rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+}
+
+.map-name {
+  font-size: 0.92rem;
+  font-weight: 600;
+  margin: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.map-author {
+  font-size: 0.76rem;
+  color: var(--ink-dim);
+  margin: 0;
+}
+
+.map-wr {
+  display: flex;
+  align-items: baseline;
+  gap: 0.5rem;
+  margin-top: 0.35rem;
+}
+
+.wr-time {
+  font-family: "Chakra Petch", "Trebuchet MS", sans-serif;
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: var(--cyan);
+}
+
+.wr-holder {
+  font-size: 0.72rem;
+  color: var(--ink-dim);
+}
+
+.wr-empty {
+  font-size: 0.82rem;
+  color: var(--ink-muted);
+  font-style: italic;
+}
+
+.map-medals {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.2rem 0.6rem;
+  margin-top: 0.4rem;
+}
+
+.medal {
+  font-family: "Chakra Petch", "Trebuchet MS", sans-serif;
+  font-size: 0.66rem;
+  font-weight: 500;
+  letter-spacing: 0.02em;
+}
+
+.medal-at { color: #22cc66; }
+.medal-gold { color: #e6b800; }
+.medal-silver { color: #a8b4be; }
+.medal-bronze { color: #cd8c3c; }
+.state-msg {
+  text-align: center;
+  padding: 3rem 1rem;
+  color: var(--ink-muted);
+  font-size: 0.92rem;
+}
+
+.state-msg p {
+  margin: 0;
+}
+.foot {
+  margin-top: 2.5rem;
+  padding: 1.2rem 0;
+  border-top: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 0.8rem;
+}
+
+.foot-mark {
+  font-family: "Chakra Petch", "Trebuchet MS", sans-serif;
+  font-size: 0.82rem;
+  color: var(--ink-muted);
+  letter-spacing: 0.04em;
+}
+
+.foot nav {
+  display: flex;
+  gap: 0.4rem;
+  flex-wrap: wrap;
+}
+
+.foot nav a {
+  padding: 0.28rem 0.5rem;
+  border-radius: 8px;
+  border: 1px solid transparent;
+  font-family: "Chakra Petch", "Trebuchet MS", sans-serif;
+  font-size: 0.76rem;
+  text-decoration: none;
+  color: var(--ink-dim);
+  letter-spacing: 0.03em;
+  transition: border-color 0.2s, color 0.2s;
+}
+
+.foot nav a:hover {
+  border-color: var(--border-hover);
+  color: var(--ink);
+}
+@media (max-width: 720px) {
+  .season-shell {
+    padding: 1.5rem 1rem 2rem;
+  }
+
+  .season-hero {
+    height: 180px;
+  }
+
+  .stats-row {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .campaign-section.is-open .campaign-maps {
+    grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+  }
+}
+
+@media (max-width: 480px) {
+  .season-hero {
+    height: 150px;
+  }
+
+  .controls-bar {
+    flex-direction: column;
+  }
+
+  .search-input {
+    min-width: 0;
+  }
+}
+

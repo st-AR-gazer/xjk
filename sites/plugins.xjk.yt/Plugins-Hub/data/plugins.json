@@ -1,0 +1,178 @@
+[
+  {
+    "id": "autoenablepbghost",
+    "name": "Auto Enable PB Ghost",
+    "description": "A plugin that auto-loads your PB on the current map (since Nando broke it xD).",
+    "category": "Plugin",
+    "status": "live",
+    "target": "Trackmania + Openplanet",
+    "install": "Openplanet plugin manager",
+    "link": "https://openplanet.dev/plugin/autoenablepbghost",
+    "tone": "cool"
+  },
+  {
+    "id": "searchtoopensettingsmenu",
+    "name": "Search To Open Settings Menu",
+    "description": "A plugin that lets you more easily find the correct settings page for any plugin!",
+    "category": "Plugin",
+    "status": "live",
+    "target": "Trackmania + Openplanet",
+    "install": "Openplanet plugin manager",
+    "link": "https://openplanet.dev/plugin/searchtoopensettingsmenu",
+    "tone": "warm"
+  },
+  {
+    "id": "batchcomputeshadows",
+    "name": "Batch Compute Shadows",
+    "description": "A plugin that lets you compute the shadows of all the maps in a folder without having to manually move between them!",
+    "category": "Plugin",
+    "status": "live",
+    "target": "Trackmania + Openplanet",
+    "install": "Openplanet plugin manager",
+    "link": "https://openplanet.dev/plugin/batchcomputeshadows",
+    "tone": "cool"
+  },
+  {
+    "id": "patchwarner",
+    "name": "Patch Warner",
+    "description": "Trackmania2020s BEST (and only, but we don't talk about that xdd) Physics change Warner!",
+    "category": "Plugin",
+    "status": "live",
+    "target": "Trackmania + Openplanet",
+    "install": "Openplanet plugin manager",
+    "link": "https://openplanet.dev/plugin/patchwarner",
+    "tone": "warm"
+  },
+  {
+    "id": "disabledynamicshadows",
+    "name": "Disable Dynamic Shadows",
+    "description": "This plugin lets you disable some of the games dynamic shadows.",
+    "category": "Plugin",
+    "status": "live",
+    "target": "Trackmania + Openplanet",
+    "install": "Openplanet plugin manager",
+    "link": "https://openplanet.dev/plugin/disabledynamicshadows",
+    "tone": "cool"
+  },
+  {
+    "id": "datasender",
+    "name": "Data Sender",
+    "description": "A plugin that sends some data about the game/player state over a socket connection",
+    "category": "Plugin",
+    "status": "live",
+    "target": "Trackmania + Openplanet",
+    "install": "Openplanet plugin manager",
+    "link": "https://openplanet.dev/plugin/datasender",
+    "tone": "warm"
+  },
+  {
+    "id": "colorizer",
+    "name": "Colorizer",
+    "description": "The plugin takes an input-string and some color information and gradiant information and produces a gradiant based on the provided information.",
+    "category": "Plugin",
+    "status": "live",
+    "target": "Trackmania + Openplanet",
+    "install": "Openplanet plugin manager",
+    "link": "https://openplanet.dev/plugin/colorizer",
+    "tone": "cool"
+  },
+  {
+    "id": "setitemsettingstodefaultblocksettings",
+    "name": "Set Item Settings To Default Block Settings",
+    "description": "Adds a button that sets the item settings to the default block settings.",
+    "category": "Plugin",
+    "status": "live",
+    "target": "Trackmania + Openplanet",
+    "install": "Openplanet plugin manager",
+    "link": "https://openplanet.dev/plugin/setitemsettingstodefaultblocksettings",
+    "tone": "warm"
+  },
+  {
+    "id": "trackvotehotkeys",
+    "name": "TrackVote Hotkeys",
+    "description": "A plugin that lets you like/dislike a map with a hotkey from outside of the menu.",
+    "category": "Plugin",
+    "status": "live",
+    "target": "Trackmania + Openplanet",
+    "install": "Openplanet plugin manager",
+    "link": "https://openplanet.dev/plugin/trackvotehotkeys",
+    "tone": "cool"
+  },
+  {
+    "id": "startmeow",
+    "name": "startmeow",
+    "description": "A plugin that other plugins can use to start(a)meow",
+    "category": "Plugin",
+    "status": "live",
+    "target": "Trackmania + Openplanet",
+    "install": "Openplanet plugin manager",
+    "link": "https://openplanet.dev/plugin/startmeow",
+    "tone": "warm"
+  },
+  {
+    "id": "removefavoritemaps",
+    "name": "Remove Favorite Maps",
+    "description": "A plugin that removes all your favorite maps automatically at the press of a button.",
+    "category": "Plugin",
+    "status": "live",
+    "target": "Trackmania + Openplanet",
+    "install": "Openplanet plugin manager",
+    "link": "https://openplanet.dev/plugin/removefavoritemaps",
+    "tone": "cool"
+  },
+  {
+    "id": "alterednadeo_randommappicker",
+    "name": "Altered Nadeo - Random Map Picker",
+    "description": "Picks a random altered campaign map from a 'set' list of maps.",
+    "category": "Plugin",
+    "status": "live",
+    "target": "Trackmania + Openplanet",
+    "install": "Openplanet plugin manager",
+    "link": "https://openplanet.dev/plugin/alterednadeo_randommappicker",
+    "tone": "warm"
+  },
+  {
+    "id": "reactor-duration",
+    "name": "Reactor Duration",
+    "description": "Shows the duration of a reactor, it's not 100% acurate, but it's close enough in most cases...",
+    "category": "Plugin",
+    "status": "live",
+    "target": "Trackmania + Openplanet",
+    "install": "Openplanet plugin manager",
+    "link": "https://openplanet.dev/plugin/reactor-duration",
+    "tone": "cool"
+  },
+  {
+    "id": "autoenablespecificghosts",
+    "name": "Auto Enable Specific Ghosts",
+    "description": "This plugin automatically loads the specified ghost for the current map.",
+    "category": "Plugin",
+    "status": "live",
+    "target": "Trackmania + Openplanet",
+    "install": "Openplanet plugin manager",
+    "link": "https://openplanet.dev/plugin/autoenablespecificghosts",
+    "tone": "warm"
+  },
+  {
+    "id": "mapborderhighlighter",
+    "name": "Map Border Highlighter",
+    "description": "Highlights the border of the map when playing.",
+    "category": "Plugin",
+    "status": "live",
+    "target": "Trackmania + Openplanet",
+    "install": "Openplanet plugin manager",
+    "link": "https://openplanet.dev/plugin/mapborderhighlighter",
+    "tone": "cool"
+  },
+  {
+    "id": "csmscriptplayerviewer",
+    "name": "CSmScriptPlayer Viewer",
+    "description": "A plugin that displays values in CSmScriptPlayer, i.e yaw, roll and pitch, mm etc.",
+    "category": "Plugin",
+    "status": "live",
+    "target": "Trackmania + Openplanet",
+    "install": "Openplanet plugin manager",
+    "link": "https://openplanet.dev/plugin/csmscriptplayerviewer",
+    "tone": "warm"
+  }
+]

@@ -1,0 +1,182 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>xjk / altered / rankings</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@400;500;600;700&family=Manrope:wght@400;500;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="/altered-hub.css" />
+  <link rel="stylesheet" href="rankings.css" />
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+</head>
+<body>
+  <a class="corner-login" href="/admin-login/">Login</a>
+
+  <div class="backdrop" aria-hidden="true">
+    <div class="geo-mesh"></div>
+    <div class="orb orb-1"></div>
+    <div class="orb orb-2"></div>
+    <div class="orb orb-3"></div>
+  </div>
+
+  <div class="solids-layer" aria-hidden="true">
+    <img class="solid solid-1" src="/bannerbuilder/assets/solids/Dodecahedron.png" alt="" />
+    <img class="solid solid-2" src="/bannerbuilder/assets/solids/Icosahedron.png" alt="" />
+    <img class="solid solid-3" src="/bannerbuilder/assets/solids/Octahedron.png" alt="" />
+  </div>
+
+  <main class="rank-shell">
+    <a class="back-link" href="/">&larr; Back to Hub</a>
+
+    <header class="rank-header">
+      <h1 class="rank-title">Rankings</h1>
+      <p class="rank-sub">
+        Tracker-integrated leaderboards for players, maps, and medal clears.
+      </p>
+    </header>
+
+    <!-- Stats -->
+    <section class="stats-row" aria-label="Rankings overview">
+      <div class="stat">
+        <span class="stat-value" id="stat-players">&mdash;</span>
+        <span class="stat-label">WR Players</span>
+      </div>
+      <div class="stat">
+        <span class="stat-value" id="stat-total-wrs">&mdash;</span>
+        <span class="stat-label">Total WR Slots</span>
+      </div>
+      <div class="stat">
+        <span class="stat-value" id="stat-top-count">&mdash;</span>
+        <span class="stat-label">Most by One Player</span>
+      </div>
+      <div class="stat">
+        <span class="stat-value" id="stat-maps">&mdash;</span>
+        <span class="stat-label">Maps Tracked</span>
+      </div>
+    </section>
+
+    <!-- Controls -->
+    <div class="controls-bar">
+      <select id="player-scope" class="sort-select">
+        <option value="overall">Players: Overall WRs</option>
+        <option value="season">Players: By Season</option>
+        <option value="campaign">Players: By Campaign</option>
+        <option value="slot">Players: By Map Slot (01-25)</option>
+      </select>
+      <select id="bucket-select" class="sort-select" hidden></select>
+      <input type="search" id="player-search" class="search-input" placeholder="Search players&hellip;" />
+      <select id="rank-sort" class="sort-select">
+        <option value="count">Sort: Most WRs</option>
+        <option value="latest">Sort: Latest WR</option>
+        <option value="name">Sort: Name</option>
+      </select>
+    </div>
+
+    <!-- Rankings table -->
+    <h2 class="section-title" id="players-section-title">Player WR Leaderboard</h2>
+    <section class="rankings-table-wrap" id="rankings-table-wrap" hidden>
+      <table class="rankings-table" id="rankings-table">
+        <thead>
+          <tr>
+            <th class="col-rank">#</th>
+            <th class="col-player">Player</th>
+            <th class="col-count">WRs</th>
+            <th class="col-latest">Latest WR</th>
+          </tr>
+        </thead>
+        <tbody id="rankings-body"></tbody>
+      </table>
+    </section>
+
+    <section class="split-grid" aria-label="Map and medal leaderboards">
+      <article class="rank-card">
+        <div class="rank-card-head">
+          <h2 class="section-title">Most Played Maps</h2>
+        </div>
+        <div class="mini-table-wrap" id="most-played-wrap" hidden>
+          <table class="mini-table">
+            <thead>
+              <tr>
+                <th>#</th>
+                <th>Map</th>
+                <th>Campaign</th>
+                <th>Slot</th>
+                <th>Players</th>
+              </tr>
+            </thead>
+            <tbody id="most-played-body"></tbody>
+          </table>
+        </div>
+        <div class="state-msg mini-state" id="most-played-empty" hidden>
+          <p>No map popularity data yet.</p>
+        </div>
+      </article>
+
+      <article class="rank-card">
+        <div class="rank-card-head">
+          <h2 class="section-title">Medal Clear Leaderboards</h2>
+          <select id="medal-select" class="sort-select compact-select">
+            <option value="author">Author</option>
+            <option value="gold">Gold</option>
+            <option value="silver">Silver</option>
+            <option value="bronze">Bronze</option>
+          </select>
+        </div>
+        <p class="muted-note" id="medal-note"></p>
+        <div class="mini-table-wrap" id="medal-wrap" hidden>
+          <table class="mini-table">
+            <thead>
+              <tr>
+                <th>#</th>
+                <th>Map</th>
+                <th>Campaign</th>
+                <th>Slot</th>
+                <th id="medal-count-label">Players</th>
+              </tr>
+            </thead>
+            <tbody id="medal-body"></tbody>
+          </table>
+        </div>
+        <div class="state-msg mini-state" id="medal-empty" hidden>
+          <p>No medal-clear data yet for this medal tier.</p>
+        </div>
+      </article>
+    </section>
+
+    <!-- States -->
+    <div class="state-msg" id="loading-state">
+      <p>Loading rankings&hellip;</p>
+    </div>
+    <div class="state-msg" id="empty-state" hidden>
+      <p>No players match your search.</p>
+    </div>
+    <div class="state-msg" id="error-state" hidden>
+      <p>Could not reach the API &mdash; the backend may not be running yet.</p>
+    </div>
+
+    <!-- Expandable map list (shown inline below a row) -->
+    <template id="maps-detail-tpl">
+      <tr class="maps-detail-row">
+        <td colspan="4">
+          <div class="maps-detail"></div>
+        </td>
+      </tr>
+    </template>
+
+    <footer class="foot">
+      <span class="foot-mark">altered.xjk.yt</span>
+      <nav aria-label="Hub navigation">
+        <a href="/">Hub</a>
+        <a href="/alterations/">Maps</a>
+        <a href="/tools/">Tools</a>
+        <a data-link="tracker" href="https://trackers.xjk.yt/leaderboard/">Tracker</a>
+      </nav>
+    </footer>
+  </main>
+
+  <script src="/altered-hub.js"></script>
+  <script src="rankings.js"></script>
+</body>
+</html>

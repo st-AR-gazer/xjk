@@ -1,0 +1,94 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>xjk / trackers</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@400;500;600;700&family=Manrope:wght@400;500;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="styles.css?v=20260228-redesign" />
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+</head>
+<body>
+  <!-- Backdrop -->
+  <div class="backdrop" aria-hidden="true">
+    <div class="dot-grid"></div>
+    <div class="orb orb-1"></div>
+    <div class="orb orb-2"></div>
+  </div>
+
+  <main>
+    <!-- Header -->
+    <header class="header">
+      <div class="header-brand">
+        <span class="header-badge">Tracker Group</span>
+        <h1 class="header-title">trackers.</h1>
+        <p class="header-sub">
+          Unified tracker group host &mdash; each runtime monitors a specific aspect of the Trackmania ecosystem.
+        </p>
+        <div class="header-actions">
+          <a class="btn btn-gold" href="/wr/">WR Tracker</a>
+          <a class="btn btn-outline" href="/leaderboard/">Leaderboard Tracker</a>
+          <a class="btn btn-outline" data-link="aggregator" href="https://aggregator.xjk.yt/">Aggregator</a>
+        </div>
+      </div>
+    </header>
+
+    <!-- Tracker Cards -->
+    <div class="section-label reveal"><span>Runtimes</span></div>
+
+    <section class="tracker-grid reveal" aria-label="Tracker runtimes">
+      <a class="tracker-card leaderboard" href="/wr/">
+        <span class="tracker-card-icon">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+        </span>
+        <h2>WR</h2>
+        <p>World-record focused tracker with change feed, run history, and webhook forwarding.</p>
+        <span class="tracker-card-go">Open tracker &rarr;</span>
+      </a>
+
+      <a class="tracker-card leaderboard" href="/leaderboard/">
+        <span class="tracker-card-icon">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
+        </span>
+        <h2>Leaderboard</h2>
+        <p>Top-N leaderboard polling and snapshot updates per tracked map, with live check stream.</p>
+        <span class="tracker-card-go">Open tracker &rarr;</span>
+      </a>
+
+      <a class="tracker-card displayname" href="/displayname/">
+        <span class="tracker-card-icon">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+        </span>
+        <h2>Displayname</h2>
+        <p>Account ID to display-name sync scheduler with manual enqueue, queued runs, and aggregator push.</p>
+        <span class="tracker-card-go">Open tracker &rarr;</span>
+      </a>
+
+      <a class="tracker-card club" href="/club/">
+        <span class="tracker-card-icon">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+        </span>
+        <h2>Club Ingest</h2>
+        <p>Club, campaign, and upload snapshot ingest API for project-owned structure crawlers.</p>
+        <span class="tracker-card-go">Open tracker &rarr;</span>
+      </a>
+    </section>
+
+    <!-- Footer -->
+    <footer class="foot reveal">
+      <span class="foot-mark">trackers.xjk.yt</span>
+      <nav aria-label="Hub navigation">
+        <a data-link="main" href="https://xjk.yt/">Main</a>
+        <a data-link="altered" href="https://altered.xjk.yt/">Altered</a>
+        <a data-link="aggregator" href="https://aggregator.xjk.yt/">Aggregator</a>
+        <a data-link="tools" href="https://tools.xjk.yt/">Tools</a>
+        <a data-link="plugins" href="https://plugins.xjk.yt/">Plugins</a>
+      </nav>
+    </footer>
+  </main>
+
+  <script src="app.js?v=20260228-redesign"></script>
+</body>
+</html>

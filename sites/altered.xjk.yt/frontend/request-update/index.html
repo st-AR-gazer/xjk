@@ -1,0 +1,103 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>xjk / altered / request update</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@400;500;600;700&family=Manrope:wght@400;500;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="/altered-hub.css" />
+  <link rel="stylesheet" href="request-update.css" />
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+</head>
+<body>
+  <a class="corner-login" href="/admin-login/">Login</a>
+
+  <div class="backdrop" aria-hidden="true">
+    <div class="geo-mesh"></div>
+    <div class="orb orb-1"></div>
+    <div class="orb orb-2"></div>
+    <div class="orb orb-3"></div>
+  </div>
+
+  <div class="solids-layer" aria-hidden="true">
+    <img class="solid solid-1" src="/bannerbuilder/assets/solids/Dodecahedron.png" alt="" />
+    <img class="solid solid-2" src="/bannerbuilder/assets/solids/Icosahedron.png" alt="" />
+    <img class="solid solid-3" src="/bannerbuilder/assets/solids/Octahedron.png" alt="" />
+  </div>
+
+  <main class="page-shell">
+    <a class="back-link" href="/">&larr; Back to Hub</a>
+
+    <header class="ru-header">
+      <h1 class="ru-title">Request Record Update</h1>
+      <p class="ru-desc">
+        If a map's records weren't picked up by the automatic tracker or plugin,
+        you can request a manual refresh here. Search by name or use the filters below.
+      </p>
+    </header>
+
+    <!-- Search + Filters -->
+    <div class="ru-controls">
+      <div class="ru-search-row">
+        <label class="ru-label" for="map-input">Search</label>
+        <input
+          id="map-input"
+          class="ru-input"
+          type="text"
+          placeholder="Type a map name or UID..."
+          autocomplete="off"
+        />
+      </div>
+
+      <div class="ru-filters">
+        <div class="ru-filter">
+          <label class="ru-label" for="filter-season">Season</label>
+          <select id="filter-season" class="ru-select">
+            <option value="">All Seasons</option>
+          </select>
+        </div>
+        <div class="ru-filter">
+          <label class="ru-label" for="filter-year">Year</label>
+          <select id="filter-year" class="ru-select">
+            <option value="">All Years</option>
+          </select>
+        </div>
+        <div class="ru-filter">
+          <label class="ru-label" for="filter-alteration">Alteration</label>
+          <select id="filter-alteration" class="ru-select">
+            <option value="">All Alterations</option>
+          </select>
+        </div>
+        <div class="ru-filter">
+          <label class="ru-label" for="filter-map-num">Map #</label>
+          <select id="filter-map-num" class="ru-select">
+            <option value="">All</option>
+          </select>
+        </div>
+      </div>
+    </div>
+
+    <!-- Results count -->
+    <div id="results-info" class="ru-results-info" hidden></div>
+
+    <!-- Search results -->
+    <section id="search-results" class="ru-results" hidden>
+      <div id="results-list" class="ru-results-list"></div>
+    </section>
+
+    <!-- Status message -->
+    <div id="status-msg" class="ru-status" hidden></div>
+
+    <!-- Previous requests -->
+    <section id="requests-history" class="ru-history" hidden>
+      <h2 class="ru-section-heading">Your Recent Requests</h2>
+      <div id="history-list" class="ru-history-list"></div>
+    </section>
+  </main>
+
+  <script src="/altered-hub.js"></script>
+  <script src="request-update.js"></script>
+</body>
+</html>

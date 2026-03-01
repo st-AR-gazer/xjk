@@ -1,0 +1,397 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>xjk / altered / monitoring</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@500;600;700&family=Manrope:wght@400;500;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="/altered-hub.css" />
+  <link rel="stylesheet" href="/admin.css" />
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+</head>
+<body>
+  <a class="corner-login" href="/admin/">Admin</a>
+
+  <div class="backdrop" aria-hidden="true">
+    <div class="geo-mesh"></div>
+    <div class="orb orb-1"></div>
+    <div class="orb orb-2"></div>
+    <div class="orb orb-3"></div>
+  </div>
+
+  <div class="solids-layer" aria-hidden="true">
+    <img class="solid solid-1" src="/bannerbuilder/assets/solids/Dodecahedron.png" alt="" />
+    <img class="solid solid-2" src="/bannerbuilder/assets/solids/Icosahedron.png" alt="" />
+    <img class="solid solid-3" src="/bannerbuilder/assets/solids/Octahedron.png" alt="" />
+  </div>
+
+  <main class="shell">
+    <header class="hero panel">
+      <div class="hero-head">
+        <span class="tag">Monitor Control</span>
+        <p id="authState" class="sync-note">Checking admin session...</p>
+      </div>
+      <h1>Altered Monitoring Hub</h1>
+      <p class="hero-copy">
+        Unified monitoring for club structure, tracker leaderboards, and display names.
+        Configure each domain scheduler independently and watch live updates in one place.
+      </p>
+      <div class="section-head" style="margin-top: 0.8rem;">
+        <a class="chip" href="/admin/">Back To Admin Dashboard</a>
+        <div style="display: flex; gap: 0.45rem;">
+          <button id="refreshAllBtn" class="btn-lite" type="button">Refresh Data</button>
+          <button id="logoutBtn" class="btn-lite" type="button">Logout</button>
+        </div>
+      </div>
+
+      <section class="hero-stats" aria-label="Monitoring quick stats">
+        <article class="stat">
+          <p>Club Full Scan</p>
+          <strong id="statFullState">-</strong>
+        </article>
+        <article class="stat">
+          <p>Club Discovery</p>
+          <strong id="statDiscoveryState">-</strong>
+        </article>
+        <article class="stat">
+          <p>Next Full Run</p>
+          <strong id="statNextFull">-</strong>
+        </article>
+        <article class="stat">
+          <p>Next Discovery</p>
+          <strong id="statNextDiscovery">-</strong>
+        </article>
+      </section>
+    </header>
+
+    <section class="main-col" style="margin-top: 1rem;">
+      <section class="panel admin-tabs" aria-label="Monitoring tabs">
+        <div class="tab-list" role="tablist" aria-label="Monitoring sections">
+          <button class="tab-btn is-active" type="button" role="tab" aria-selected="true" data-monitor-tab="club">
+            Club
+          </button>
+          <button class="tab-btn" type="button" role="tab" aria-selected="false" data-monitor-tab="leaderboard">
+            Leaderboard
+          </button>
+          <button class="tab-btn" type="button" role="tab" aria-selected="false" data-monitor-tab="displayname">
+            Display Name
+          </button>
+        </div>
+      </section>
+
+      <section class="panel tab-panel is-active" data-monitor-panel="club">
+        <div class="section-head">
+          <div>
+            <h2>Club Monitoring</h2>
+            <p>Campaigns, maps, and map uploads tracked for the configured club.</p>
+          </div>
+          <button id="refreshClubDataBtn" class="btn-lite" type="button">Refresh Club Data</button>
+        </div>
+
+        <div class="admin-grid" style="margin-top: 0.8rem;">
+          <article class="admin-card live-monitor-form">
+            <h3>Scheduler</h3>
+            <form id="monitorConfigForm" class="live-monitor-grid">
+              <label class="field">
+                <span>Club ID</span>
+                <input id="clubIdInput" type="number" min="1" step="1" value="24231" />
+              </label>
+              <label class="field">
+                <span>Schedule Mode</span>
+                <select id="scheduleModeInput">
+                  <option value="daily">Daily Full Scan</option>
+                  <option value="interval">Fixed Interval</option>
+                </select>
+              </label>
+              <label class="field">
+                <span>Interval Seconds</span>
+                <input id="intervalSecondsInput" type="number" min="60" max="86400" value="21600" />
+              </label>
+              <label class="field">
+                <span>Daily Hour (UTC)</span>
+                <input id="dailyHourInput" type="number" min="0" max="23" value="3" />
+              </label>
+              <label class="field">
+                <span>Daily Minute (UTC)</span>
+                <input id="dailyMinuteInput" type="number" min="0" max="59" value="0" />
+              </label>
+              <label class="field">
+                <span>Activity Page Size</span>
+                <input id="activityPageSizeInput" type="number" min="1" max="250" value="250" />
+              </label>
+              <label class="field">
+                <span>Tracker Chunk Size</span>
+                <input id="trackerChunkSizeInput" type="number" min="25" max="1000" value="350" />
+              </label>
+              <label class="field check">
+                <span>Auto Monitor Enabled</span>
+                <input id="monitorEnabledInput" type="checkbox" />
+              </label>
+              <label class="field check">
+                <span>Active Campaigns Only</span>
+                <input id="activeOnlyInput" type="checkbox" />
+              </label>
+              <label class="field check">
+                <span>Fetch Map Metadata</span>
+                <input id="fetchMapDetailsInput" type="checkbox" checked />
+              </label>
+              <label class="field">
+                <span>Discovery Interval Seconds</span>
+                <input id="discoveryIntervalInput" type="number" min="300" max="86400" value="3600" />
+              </label>
+              <label class="field">
+                <span>Latest Campaigns To Inspect</span>
+                <input id="discoveryCampaignLimitInput" type="number" min="1" max="250" value="25" />
+              </label>
+              <label class="field">
+                <span>Discovery Activity Page Size</span>
+                <input id="discoveryActivityPageSizeInput" type="number" min="1" max="250" value="100" />
+              </label>
+              <label class="field check">
+                <span>Discovery Enabled</span>
+                <input id="discoveryEnabledInput" type="checkbox" checked />
+              </label>
+              <div class="live-monitor-actions">
+                <button class="btn-main" type="submit">Save Club Scheduler</button>
+                <button id="refreshStatusBtn" class="btn-lite" type="button">Refresh Status</button>
+              </div>
+              <p id="configStatus" class="lookup-result">Configuration not changed yet.</p>
+            </form>
+          </article>
+
+          <article class="admin-card live-progress-card">
+            <h3>Manual + Live Progress</h3>
+            <div class="live-monitor-actions">
+              <button id="runFullBtn" class="btn-main" type="button">Run Full Scan</button>
+              <button id="runDiscoveryBtn" class="btn-lite" type="button">Run Discovery Scan</button>
+              <button id="fetchSummaryBtn" class="btn-lite" type="button">Fetch Summary</button>
+            </div>
+            <p id="actionStatus" class="lookup-result">No action started yet.</p>
+            <div class="live-progress-bar-outer live-progress-inline">
+              <div id="actionProgressBar" class="live-progress-bar-inner"></div>
+            </div>
+            <p id="liveStatusLine" class="sync-note">Monitor status: loading...</p>
+            <p id="liveNextRunLine" class="sync-note">Next runs: -</p>
+            <p id="liveSummaryLine" class="sync-note">Last run: -</p>
+            <div class="live-progress-wrap">
+              <div class="live-progress-bar-outer">
+                <div id="liveProgressBar" class="live-progress-bar-inner"></div>
+              </div>
+              <p id="liveProgressText" class="sync-note">Progress: idle</p>
+              <p id="liveProgressMeta" class="hook-map-meta">No active run.</p>
+              <div id="liveCounterGrid" class="live-progress-stats">
+                <p class="hook-map-meta">No live counters yet.</p>
+              </div>
+            </div>
+          </article>
+        </div>
+
+        <div class="club-subtabs" role="tablist" aria-label="Club tracking tabs">
+          <button class="club-tab-btn is-active" type="button" role="tab" aria-selected="true" data-club-tab="maps">
+            Maps
+          </button>
+          <button class="club-tab-btn" type="button" role="tab" aria-selected="false" data-club-tab="campaigns">
+            Campaigns
+          </button>
+          <button class="club-tab-btn" type="button" role="tab" aria-selected="false" data-club-tab="uploads">
+            Map Uploads
+          </button>
+        </div>
+
+        <section class="club-tab-panel is-active" data-club-panel="maps">
+          <article class="admin-card">
+            <h3>Tracked Maps</h3>
+            <p id="clubMapsSummary" class="sync-note">Loading maps...</p>
+            <ul id="clubMapsList" class="hook-map-list"></ul>
+          </article>
+        </section>
+
+        <section class="club-tab-panel" data-club-panel="campaigns" hidden>
+          <article class="admin-card">
+            <h3>Tracked Campaigns</h3>
+            <p id="clubCampaignsSummary" class="sync-note">Loading campaigns...</p>
+            <ul id="clubCampaignsList" class="hook-map-list"></ul>
+          </article>
+        </section>
+
+        <section class="club-tab-panel" data-club-panel="uploads" hidden>
+          <article class="admin-card">
+            <h3>Tracked Map Uploads</h3>
+            <p id="clubUploadsSummary" class="sync-note">Loading upload maps...</p>
+            <ul id="clubUploadsList" class="hook-map-list"></ul>
+          </article>
+        </section>
+      </section>
+
+      <section class="panel tab-panel" data-monitor-panel="leaderboard" hidden>
+        <div class="section-head">
+          <div>
+            <h2>Leaderboard Monitoring</h2>
+            <p>Live tracker feed and record analytics, filtered to Altered maps only.</p>
+          </div>
+          <button id="refreshLeaderboardBtn" class="btn-lite" type="button">Refresh Leaderboard Data</button>
+        </div>
+
+        <div class="admin-grid" style="margin-top: 0.8rem;">
+          <article class="admin-card">
+            <h3>Scheduler</h3>
+            <form id="leaderboardSchedulerForm" class="live-monitor-grid">
+              <label class="field check">
+                <span>Auto Refresh Enabled</span>
+                <input id="leaderboardSchedulerEnabledInput" type="checkbox" checked />
+              </label>
+              <label class="field">
+                <span>Refresh Interval Seconds</span>
+                <input id="leaderboardSchedulerIntervalInput" type="number" min="5" max="120" value="15" />
+              </label>
+              <label class="field">
+                <span>Live Feed Limit</span>
+                <input id="leaderboardFeedLimitInput" type="number" min="10" max="200" value="80" />
+              </label>
+              <div class="live-monitor-actions">
+                <button id="saveLeaderboardSchedulerBtn" class="btn-main" type="submit">Save Leaderboard Scheduler</button>
+              </div>
+              <p id="leaderboardSchedulerStatus" class="lookup-result">Leaderboard scheduler not changed yet.</p>
+            </form>
+            <p id="leaderboardLastUpdatedLine" class="sync-note">Last update: -</p>
+          </article>
+
+          <article class="admin-card">
+            <h3>Overview</h3>
+            <p id="leaderboardStatusLine" class="sync-note">Loading leaderboard snapshot...</p>
+            <div id="leaderboardSummaryGrid" class="live-progress-stats">
+              <p class="hook-map-meta">Loading leaderboard metrics...</p>
+            </div>
+          </article>
+
+          <article class="admin-card">
+            <h3>Tracker Live Feed (Altered Maps)</h3>
+            <ul id="leaderboardLiveFeedList" class="hook-map-list"></ul>
+          </article>
+
+          <article class="admin-card">
+            <h3>Top WR Holders</h3>
+            <ul id="leaderboardWrList" class="hook-map-list"></ul>
+          </article>
+
+          <article class="admin-card">
+            <h3>Most Played Maps</h3>
+            <ul id="leaderboardMostPlayedList" class="hook-map-list"></ul>
+          </article>
+        </div>
+      </section>
+
+      <section class="panel tab-panel" data-monitor-panel="displayname" hidden>
+        <div class="section-head">
+          <div>
+            <h2>Display Name Monitoring</h2>
+            <p>Live display-name sync state, targeted account refresh, and scheduler controls.</p>
+          </div>
+          <button id="refreshDisplayNameBtn" class="btn-lite" type="button">Refresh Display Names</button>
+        </div>
+
+        <div class="admin-grid" style="margin-top: 0.8rem;">
+          <article class="admin-card">
+            <h3>Live Status</h3>
+            <p id="displayNameStateLine" class="sync-note">Loading mapper-name tracking status...</p>
+            <p id="displayNameScheduleLine" class="sync-note">Schedule: -</p>
+            <p id="displayNameLastLine" class="sync-note">Last run: -</p>
+            <div class="live-progress-bar-outer live-progress-inline">
+              <div id="displayNameProgressBar" class="live-progress-bar-inner"></div>
+            </div>
+            <p id="displayNameProgressText" class="sync-note">Progress: idle</p>
+            <div class="live-monitor-actions" style="margin-top: 0.65rem;">
+              <button id="displayNameRunBtn" class="btn-main" type="button">Run Cached Sync</button>
+              <button id="displayNameRunForceBtn" class="btn-lite" type="button">Force Sync</button>
+              <button id="displayNameRunPriorityBtn" class="btn-lite" type="button">Run Priority Sync</button>
+            </div>
+            <p id="displayNameActionStatus" class="lookup-result">No display name sync action started yet.</p>
+          </article>
+
+          <article class="admin-card">
+            <h3>Sync Specific Account IDs</h3>
+            <label class="field">
+              <span>Account IDs</span>
+              <textarea id="displayNameAccountIdsInput" rows="5" placeholder="Paste UUIDs separated by commas, spaces, or new lines"></textarea>
+            </label>
+            <label class="field check">
+              <span>Force Refresh (Ignore Cache)</span>
+              <input id="displayNameSpecificForceInput" type="checkbox" />
+            </label>
+            <div class="live-monitor-actions">
+              <button id="displayNameSyncAccountsBtn" class="btn-main" type="button">Sync These IDs</button>
+            </div>
+            <p class="sync-note">Tracker cache is checked first, then Nadeo OAuth for unresolved IDs.</p>
+          </article>
+
+          <article class="admin-card">
+            <h3>Name Tracking Metrics</h3>
+            <div id="displayNameStatsGrid" class="live-progress-stats">
+              <p class="hook-map-meta">Loading display name metrics...</p>
+            </div>
+          </article>
+
+          <article class="admin-card">
+            <h3>Scheduler + Cache</h3>
+            <form id="displayNameConfigForm" class="live-monitor-grid">
+              <label class="field check">
+                <span>Automated Sync Enabled</span>
+                <input id="displayNameEnabledInput" type="checkbox" />
+              </label>
+              <label class="field">
+                <span>Bootstrap Interval Seconds</span>
+                <input id="displayNameBootstrapIntervalInput" type="number" min="5" max="3600" />
+              </label>
+              <label class="field">
+                <span>Maintenance Interval Seconds</span>
+                <input id="displayNameMaintenanceIntervalInput" type="number" min="10" max="86400" />
+              </label>
+              <label class="field">
+                <span>Priority Interval Seconds</span>
+                <input id="displayNamePriorityIntervalInput" type="number" min="5" max="3600" />
+              </label>
+              <label class="field">
+                <span>Cache TTL Seconds</span>
+                <input id="displayNameCacheTtlInput" type="number" min="0" max="2592000" />
+              </label>
+              <label class="field">
+                <span>Priority Cache TTL Seconds</span>
+                <input id="displayNamePriorityCacheTtlInput" type="number" min="0" max="2592000" />
+              </label>
+              <label class="field">
+                <span>Known Accounts Cache Seconds</span>
+                <input id="displayNameKnownAccountsRefreshInput" type="number" min="60" max="86400" />
+              </label>
+              <label class="field">
+                <span>Batch Size</span>
+                <input id="displayNameBatchSizeInput" type="number" min="1" max="50" />
+              </label>
+              <label class="field">
+                <span>Priority Batch Size</span>
+                <input id="displayNamePriorityBatchSizeInput" type="number" min="1" max="50" />
+              </label>
+              <label class="field">
+                <span>Min Request Gap (ms)</span>
+                <input id="displayNameRequestGapInput" type="number" min="5000" max="120000" />
+              </label>
+              <label class="field">
+                <span>Priority Top Limit</span>
+                <input id="displayNamePriorityTopLimitInput" type="number" min="1" max="2000" />
+              </label>
+              <div class="live-monitor-actions">
+                <button id="displayNameSaveConfigBtn" class="btn-main" type="submit">Save Display Name Scheduler</button>
+              </div>
+              <p id="displayNameConfigStatus" class="lookup-result">Display name config not changed yet.</p>
+            </form>
+          </article>
+        </div>
+      </section>
+    </section>
+  </main>
+
+  <div id="toastStack" class="toast-stack" aria-live="polite"></div>
+  <script src="/admin-monitoring.js" type="module"></script>
+</body>
+</html>

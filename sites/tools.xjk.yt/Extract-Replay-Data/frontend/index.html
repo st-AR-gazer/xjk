@@ -1,0 +1,99 @@
+<!doctype html>
+<html lang="en" data-tool-id="replay-data-extractor">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Replay Data Extractor</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@500;600;700&family=Manrope:wght@400;500;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="styles.css" />
+  <link rel="stylesheet" href="../../shared/tool-theme.css" />
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+</head>
+<body>
+  <div class="bg-grid" aria-hidden="true"></div>
+  <div class="bg-sweep bg-sweep-warm" aria-hidden="true"></div>
+  <div class="bg-sweep bg-sweep-cool" aria-hidden="true"></div>
+
+  <main class="shell">
+    <section class="hero">
+      <p class="eyebrow">Replay Utility</p>
+      <h1>Replay Data Extractor</h1>
+      <p class="lead">Upload a <code>.Replay.Gbx</code>, optionally provide a custom request JSON, and extract structured replay data.</p>
+    </section>
+
+    <section class="cards" aria-label="Inputs">
+      <article id="replayDrop" class="dropcard" tabindex="0" aria-label="Replay upload">
+        <input id="replayFile" type="file" accept=".Replay.Gbx,.replay.gbx" />
+        <p class="card-title">Replay Input</p>
+        <p class="card-copy">Drop <code>.Replay.Gbx</code> here or click to browse.</p>
+        <p id="replayName" class="card-meta">No replay selected</p>
+      </article>
+
+      <article id="requestDrop" class="dropcard optional" tabindex="0" aria-label="Request JSON upload">
+        <input id="requestFile" type="file" accept=".json,application/json" />
+        <p class="card-title">Request JSON (Optional)</p>
+        <p class="card-copy">Drop a JSON request file. A textarea request below overrides this file.</p>
+        <p id="requestName" class="card-meta">No request file selected</p>
+      </article>
+    </section>
+
+    <section class="panel" aria-label="Extractor options">
+      <h2>Options</h2>
+      <div class="option-grid">
+        <label class="opt"><input id="includeNulls" type="checkbox" /><span>Include null values</span></label>
+        <label class="opt"><input id="prettyPrint" type="checkbox" /><span>Pretty output JSON</span></label>
+      </div>
+
+      <div class="field-grid">
+        <label class="field">
+          <span>Max depth</span>
+          <input id="maxDepth" type="number" min="1" max="80" step="1" value="20" />
+        </label>
+        <label class="field">
+          <span>Max collection items</span>
+          <input id="maxCollectionItems" type="number" min="10" max="200000" step="10" value="100000" />
+        </label>
+      </div>
+
+      <label class="field wide">
+        <span>Custom Request JSON (Optional)</span>
+        <textarea id="requestJsonText" rows="8" placeholder='{"selection":{"Time":true,"Ghosts":{"*":{"RaceTime":true}}}}'></textarea>
+      </label>
+    </section>
+
+    <section class="actions">
+      <button id="go" class="go" disabled>Extract Replay Data</button>
+    </section>
+
+    <div id="status" class="status" role="status" aria-live="polite"></div>
+    <div id="error" class="error" role="alert"></div>
+
+    <section id="summary" class="panel hidden" aria-label="Summary">
+      <h2>Summary</h2>
+      <div id="summaryGrid" class="summary-grid"></div>
+    </section>
+
+    <section id="resultPanel" class="panel hidden" aria-label="JSON result">
+      <div class="panel-head">
+        <h2>Extracted JSON</h2>
+        <div class="panel-actions">
+          <button id="copyBtn" class="btn-lite" type="button">Copy JSON</button>
+          <button id="downloadBtn" class="btn-lite" type="button">Download JSON</button>
+        </div>
+      </div>
+      <pre id="resultJson" class="code"></pre>
+    </section>
+  </main>
+
+  <div id="overlay" class="overlay hidden" aria-live="polite" aria-busy="true">
+    <div class="loader" aria-hidden="true"></div>
+    <p id="overlayText" class="overlay-title">Working...</p>
+    <p id="progressText" class="overlay-copy"></p>
+  </div>
+
+  <script src="../../shared/tool-theme.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>

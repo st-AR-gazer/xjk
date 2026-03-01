@@ -1,0 +1,151 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>xjk / altered</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@400;500;600;700&family=Manrope:wght@400;500;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="altered-hub.css?v=20260301-refresh1" />
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+</head>
+<body>
+  <a class="corner-login" href="/admin-login/">Login</a>
+
+  <!-- Background -->
+  <div class="backdrop" aria-hidden="true">
+    <div class="grid-bg"></div>
+    <div class="orb orb-1"></div>
+    <div class="orb orb-2"></div>
+  </div>
+
+  <main>
+    <!-- Hero -->
+    <section class="hero-section">
+      <span class="hero-badge">Altered Nadeo</span>
+      <h1 class="hero-title">altered.</h1>
+      <p class="hero-sub">
+        Tracking world records, campaigns, and players across every Altered Nadeo map.
+      </p>
+      <div class="hero-actions">
+        <a class="btn btn-primary" href="/alterations/">Browse Maps</a>
+        <a class="btn btn-secondary" href="/rankings/">Rankings</a>
+      </div>
+    </section>
+
+    <!-- Season Ribbon -->
+    <section class="ribbon" aria-label="Season banners">
+      <a href="/season/?s=winter-2026" class="ribbon-panel">
+        <img src="/bannerbuilder/assets/backgrounds/Winter.png" alt="" />
+        <span class="ribbon-label">Winter 2026</span>
+      </a>
+      <a href="/season/?s=fall-2025" class="ribbon-panel">
+        <img src="/bannerbuilder/assets/backgrounds/Fall.png" alt="" />
+        <span class="ribbon-label">Fall 2025</span>
+      </a>
+      <a href="/season/?s=summer-2025" class="ribbon-panel">
+        <img src="/bannerbuilder/assets/backgrounds/Summer.png" alt="" />
+        <span class="ribbon-label">Summer 2025</span>
+      </a>
+      <a href="/season/?s=spring-2025" class="ribbon-panel">
+        <img src="/bannerbuilder/assets/backgrounds/Spring.png" alt="" />
+        <span class="ribbon-label">Spring 2025</span>
+      </a>
+    </section>
+
+    <!-- Content container -->
+    <div class="content">
+      <!-- Stats -->
+      <section class="stats-row reveal" aria-label="Overview stats">
+        <div class="stat-card">
+          <span class="stat-val" id="stat-maps">&mdash;</span>
+          <span class="stat-lbl">Maps Tracked</span>
+        </div>
+        <div class="stat-card">
+          <span class="stat-val" id="stat-campaigns">&mdash;</span>
+          <span class="stat-lbl">Campaigns</span>
+        </div>
+        <div class="stat-card">
+          <span class="stat-val" id="stat-players">&mdash;</span>
+          <span class="stat-lbl">WR Holders</span>
+        </div>
+        <div class="stat-card">
+          <span class="stat-val" id="stat-latest">&mdash;</span>
+          <span class="stat-lbl">Last WR</span>
+        </div>
+      </section>
+
+      <!-- Latest WR Spotlight -->
+      <section class="spotlight reveal" id="wr-spotlight" aria-label="Latest world record" hidden>
+        <div class="spotlight-header">
+          <span class="spotlight-badge"><span class="spotlight-pulse"></span>Latest WR</span>
+          <span class="spotlight-ago" id="wr-spotlight-ago"></span>
+        </div>
+        <div class="spotlight-body">
+          <div class="spotlight-info">
+            <span class="spotlight-map" id="wr-spotlight-map"></span>
+            <span class="spotlight-player" id="wr-spotlight-player"></span>
+          </div>
+          <span class="spotlight-time" id="wr-spotlight-time"></span>
+        </div>
+      </section>
+
+      <!-- Activity -->
+      <div class="section-label reveal"><span>Activity</span></div>
+
+      <section class="activity reveal" aria-label="Recent activity">
+        <div class="activity-col">
+          <h2 class="col-heading">Recent World Records</h2>
+          <div class="wr-feed" id="wr-feed">
+            <p class="empty-msg">Loading activity&hellip;</p>
+          </div>
+          <a class="see-all" href="/alterations/">View all maps &rarr;</a>
+        </div>
+        <div class="activity-col">
+          <h2 class="col-heading">Top WR Holders</h2>
+          <ol class="rankings" id="mini-rankings">
+            <li class="empty-msg">Loading rankings&hellip;</li>
+          </ol>
+          <a class="see-all" href="/rankings/">Full rankings &rarr;</a>
+        </div>
+      </section>
+
+      <!-- Request update -->
+      <div class="callout reveal">
+        <div class="callout-text">
+          <span class="callout-title">Missing records?</span>
+          <span class="callout-sub">Request a manual update if a map's records weren't picked up automatically.</span>
+        </div>
+        <a class="btn btn-secondary btn-sm" href="/request-update/">Request Update</a>
+      </div>
+
+      <!-- Quick links -->
+      <div class="section-label reveal"><span>Explore</span></div>
+
+      <nav class="quick-links reveal" aria-label="More pages">
+        <a class="qlink" href="/about/">About</a>
+        <a class="qlink" href="/team/">Team</a>
+        <a class="qlink" href="/tools/">Tools</a>
+        <a class="qlink" href="/request-update/">Request Update</a>
+        <a class="qlink" data-link="tracker" href="https://trackers.xjk.yt/leaderboard/">Tracker</a>
+      </nav>
+
+      <!-- Footer -->
+      <footer class="foot reveal">
+        <span class="foot-mark">altered.xjk.yt</span>
+        <nav aria-label="Hub navigation">
+          <a data-link="main" href="https://xjk.yt/">Main</a>
+          <a data-link="tools" href="https://tools.xjk.yt/">Tools</a>
+          <a data-link="plugins" href="https://plugins.xjk.yt/">Plugins</a>
+          <a data-link="learn" href="https://learn.xjk.yt/">Learn</a>
+          <a data-link="tracker" href="https://trackers.xjk.yt/leaderboard/">Tracker</a>
+        </nav>
+      </footer>
+    </div>
+  </main>
+
+  <script src="altered-hub.js?v=20260301-refresh1"></script>
+  <script src="hub.js?v=20260301-refresh1"></script>
+</body>
+</html>

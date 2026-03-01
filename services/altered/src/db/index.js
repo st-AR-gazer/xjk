@@ -1,0 +1,152 @@
+import { DatabaseSync } from "node:sqlite";
+import { MIGRATIONS } from "./schema.js";
+
+function applyMigrations(db) {
+  for (const statement of MIGRATIONS) {
+    db.exec(statement);
+  }
+}
+
+function getTableColumns(db, tableName) {
+  return new Set(
+    db
+      .prepare(`PRAGMA table_info(${tableName})`)
+      .all()
+      .map((row) => String(row?.name || "").trim())
+      .filter(Boolean)
+  );
+}
+
+function ensureColumn(db, tableName, columnName, columnDefinition) {
+  const columns = getTableColumns(db, tableName);
+  if (columns.has(columnName)) return;
+  db.exec(`ALTER TABLE ${tableName} ADD COLUMN ${columnDefinition};`);
+}
+
+function ensureCompatibilityColumns(db) {
+  ensureColumn(
+    db,
+    "altered_campaigns",
+    "external_campaign_id",
+    "external_campaign_id INTEGER"
+  );
+  ensureColumn(db, "altered_campaigns", "activity_id", "activity_id INTEGER");
+  ensureColumn(db, "altered_campaigns", "activity_type", "activity_type TEXT");
+  ensureColumn(db, "altered_campaigns", "campaign_type", "campaign_type TEXT");
+  ensureColumn(db, "altered_campaigns", "start_timestamp", "start_timestamp TEXT");
+  ensureColumn(db, "altered_campaigns", "end_timestamp", "end_timestamp TEXT");
+  ensureColumn(db, "altered_campaigns", "published", "published INTEGER NOT NULL DEFAULT 0");
+  ensureColumn(
+    db,
+    "altered_campaigns",
+    "leaderboard_group_uid",
+    "leaderboard_group_uid TEXT"
+  );
+  ensureColumn(db, "altered_campaigns", "payload_json", "payload_json TEXT");
+  ensureColumn(db, "altered_campaigns", "monitor_updated_at", "monitor_updated_at TEXT");
+
+  ensureColumn(db, "altered_maps", "map_type", "map_type TEXT");
+  ensureColumn(db, "altered_maps", "map_style", "map_style TEXT");
+  ensureColumn(db, "altered_maps", "map_environment", "map_environment TEXT");
+  ensureColumn(db, "altered_maps", "author_display_name", "author_display_name TEXT");
+  ensureColumn(db, "altered_maps", "submitter_display_name", "submitter_display_name TEXT");
+  ensureColumn(db, "altered_maps", "map_created_at", "map_created_at TEXT");
+  ensureColumn(db, "altered_maps", "map_updated_at", "map_updated_at TEXT");
+  ensureColumn(db, "altered_maps", "payload_json", "payload_json TEXT");
+  ensureColumn(db, "altered_maps", "monitor_updated_at", "monitor_updated_at TEXT");
+
+  ensureColumn(
+    db,
+    "altered_live_monitor_config",
+    "schedule_mode",
+    "schedule_mode TEXT NOT NULL DEFAULT 'interval'"
+  );
+  ensureColumn(
+    db,
+    "altered_live_monitor_config",
+    "daily_hour_utc",
+    "daily_hour_utc INTEGER NOT NULL DEFAULT 3"
+  );
+  ensureColumn(
+    db,
+    "altered_live_monitor_config",
+    "daily_minute_utc",
+    "daily_minute_utc INTEGER NOT NULL DEFAULT 0"
+  );
+  ensureColumn(
+    db,
+    "altered_live_monitor_config",
+    "tracker_chunk_size",
+    "tracker_chunk_size INTEGER NOT NULL DEFAULT 350"
+  );
+  ensureColumn(
+    db,
+    "altered_live_monitor_config",
+    "discovery_enabled",
+    "discovery_enabled INTEGER NOT NULL DEFAULT 1"
+  );
+  ensureColumn(
+    db,
+    "altered_live_monitor_config",
+    "discovery_interval_seconds",
+    "discovery_interval_seconds INTEGER NOT NULL DEFAULT 3600"
+  );
+  ensureColumn(
+    db,
+    "altered_live_monitor_config",
+    "discovery_campaign_limit",
+    "discovery_campaign_limit INTEGER NOT NULL DEFAULT 25"
+  );
+  ensureColumn(
+    db,
+    "altered_live_monitor_config",
+    "discovery_activity_page_size",
+    "discovery_activity_page_size INTEGER NOT NULL DEFAULT 100"
+  );
+
+  ensureColumn(db, "altered_maps", "player_count", "player_count INTEGER NOT NULL DEFAULT 0");
+  ensureColumn(db, "altered_maps", "player_count_updated_at", "player_count_updated_at TEXT");
+}
+
+function ensureCompatibilityIndexes(db) {
+  db.exec(
+    "CREATE INDEX IF NOT EXISTS idx_altered_campaigns_external_id ON altered_campaigns(club_id, external_campaign_id);"
+  );
+  db.exec(
+    "CREATE INDEX IF NOT EXISTS idx_altered_club_members_role ON altered_club_members(club_id, role, status);"
+  );
+  db.exec(
+    "CREATE INDEX IF NOT EXISTS idx_altered_club_members_seen ON altered_club_members(club_id, last_seen_at DESC);"
+  );
+  db.exec(
+    "CREATE INDEX IF NOT EXISTS idx_altered_club_activities_occurred ON altered_club_activities(club_id, occurred_at DESC);"
+  );
+  db.exec(
+    "CREATE INDEX IF NOT EXISTS idx_altered_club_activities_type ON altered_club_activities(club_id, activity_type, item_type);"
+  );
+  db.exec(
+    "CREATE INDEX IF NOT EXISTS idx_altered_club_activities_map ON altered_club_activities(map_uid);"
+  );
+  db.exec(
+    "CREATE INDEX IF NOT EXISTS idx_altered_upload_buckets_seen ON altered_upload_buckets(club_id, last_seen_at DESC);"
+  );
+  db.exec(
+    "CREATE INDEX IF NOT EXISTS idx_altered_upload_maps_bucket ON altered_upload_maps(club_id, bucket_id, slot);"
+  );
+  db.exec(
+    "CREATE INDEX IF NOT EXISTS idx_altered_upload_maps_map ON altered_upload_maps(map_uid);"
+  );
+}
+
+function createDatabase({ filePath }) {
+  const db = new DatabaseSync(filePath);
+  db.exec("PRAGMA journal_mode = WAL;");
+  db.exec("PRAGMA foreign_keys = ON;");
+  db.exec("PRAGMA synchronous = NORMAL;");
+  applyMigrations(db);
+  ensureCompatibilityColumns(db);
+  ensureCompatibilityIndexes(db);
+  return db;
+}
+
+export { createDatabase };

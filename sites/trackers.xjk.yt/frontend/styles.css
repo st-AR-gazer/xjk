@@ -1,0 +1,481 @@
+﻿:root {
+  --bg-deep: #08090f;
+  --bg-surface: #0e1320;
+  --ink: #f0f4ff;
+  --ink-dim: #8a9bb8;
+  --ink-muted: #4e5f7a;
+  --gold: #ffd07a;
+  --gold-bright: #ffe4a8;
+  --leaderboard: #f0bf67;
+  --displayname: #58cbff;
+  --club: #88d66f;
+  --surface: rgba(14, 19, 32, 0.84);
+  --border: rgba(255, 208, 122, 0.12);
+  --border-hover: rgba(255, 208, 122, 0.35);
+  --glow-gold: rgba(255, 208, 122, 0.15);
+  --glow-secondary: rgba(105, 214, 212, 0.08);
+  --radius: 16px;
+}
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  margin: 0;
+  min-height: 100vh;
+  color: var(--ink);
+  font-family: "Manrope", "Segoe UI", sans-serif;
+  background: var(--bg-deep);
+  overflow-x: hidden;
+}
+
+a { color: inherit; }
+
+h1, h2, h3 {
+  margin: 0;
+  font-family: "Chakra Petch", "Trebuchet MS", sans-serif;
+}
+
+:focus-visible {
+  outline: 2px solid var(--gold);
+  outline-offset: 2px;
+}
+.backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+}
+
+.dot-grid {
+  position: absolute;
+  inset: 0;
+  opacity: 0.35;
+  background-image: radial-gradient(circle, rgba(255, 208, 122, 0.12) 1px, transparent 1px);
+  background-size: 32px 32px;
+}
+
+.orb {
+  position: absolute;
+  border-radius: 50%;
+  filter: blur(110px);
+}
+
+.orb-1 {
+  width: 500px;
+  height: 500px;
+  top: -10%;
+  right: -5%;
+  background: var(--glow-gold);
+  animation: orbit 50s ease-in-out infinite;
+}
+
+.orb-2 {
+  width: 380px;
+  height: 380px;
+  bottom: -5%;
+  left: -6%;
+  background: var(--glow-secondary);
+  animation: orbit 60s ease-in-out infinite reverse;
+}
+
+@keyframes orbit {
+  0%, 100% { transform: translate(0, 0); }
+  25%      { transform: translate(20px, -30px); }
+  50%      { transform: translate(-15px, 25px); }
+  75%      { transform: translate(18px, 10px); }
+}
+main {
+  position: relative;
+  z-index: 1;
+  width: min(1100px, 100% - 2rem);
+  margin: 0 auto;
+  padding: 2rem 0 2.5rem;
+}
+.header {
+  border: 1px solid var(--border);
+  border-radius: 22px;
+  background: var(--surface);
+  backdrop-filter: blur(14px);
+  padding: 1.6rem;
+  overflow: hidden;
+  position: relative;
+  box-shadow: 0 16px 44px rgba(0, 0, 0, 0.3);
+}
+
+.header::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 200px;
+  background:
+    radial-gradient(500px 200px at 85% 0%, rgba(255, 208, 122, 0.16), transparent 70%),
+    radial-gradient(460px 180px at 10% 0%, rgba(105, 214, 212, 0.08), transparent 68%);
+  pointer-events: none;
+}
+
+.header-brand {
+  position: relative;
+  text-align: center;
+  padding: 1.5rem 0 0.5rem;
+}
+
+.header-badge {
+  display: inline-block;
+  padding: 0.3rem 0.8rem;
+  border: 1px solid rgba(255, 208, 122, 0.4);
+  border-radius: 999px;
+  font-family: "Chakra Petch", "Trebuchet MS", sans-serif;
+  font-size: 0.72rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--gold);
+  background: rgba(255, 208, 122, 0.1);
+  opacity: 0;
+  transform: translateY(12px);
+  animation: fadeUp 0.6s ease 0.15s forwards;
+}
+
+.header-title {
+  font-size: clamp(4rem, 12vw, 8rem);
+  font-weight: 700;
+  line-height: 1.1;
+  letter-spacing: -0.02em;
+  margin-top: 0.8rem;
+  background: linear-gradient(135deg, var(--ink) 10%, var(--gold) 70%, var(--gold-bright) 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  opacity: 0;
+  transform: translateY(16px);
+  animation: fadeUp 0.7s ease 0.3s forwards;
+}
+
+.header-sub {
+  margin: 0.8rem auto 0;
+  max-width: 520px;
+  color: var(--ink-dim);
+  font-size: 1.02rem;
+  line-height: 1.6;
+  opacity: 0;
+  transform: translateY(12px);
+  animation: fadeUp 0.6s ease 0.5s forwards;
+}
+
+.header-actions {
+  margin-top: 1.6rem;
+  display: flex;
+  gap: 0.65rem;
+  justify-content: center;
+  flex-wrap: wrap;
+  opacity: 0;
+  transform: translateY(12px);
+  animation: fadeUp 0.6s ease 0.65s forwards;
+}
+
+@keyframes fadeUp {
+  to { opacity: 1; transform: translateY(0); }
+}
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 42px;
+  padding: 0.45rem 1.1rem;
+  border: 1px solid transparent;
+  border-radius: 10px;
+  text-decoration: none;
+  color: var(--ink);
+  font-family: "Chakra Petch", "Trebuchet MS", sans-serif;
+  font-size: 0.84rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  cursor: pointer;
+  transition: transform 0.15s, box-shadow 0.15s, border-color 0.15s;
+}
+
+.btn:hover {
+  transform: translateY(-2px);
+}
+
+.btn-gold {
+  border-color: rgba(255, 208, 122, 0.4);
+  background: linear-gradient(135deg, rgba(200, 140, 20, 0.9), rgba(255, 208, 122, 0.85));
+  color: #fff;
+  box-shadow: 0 4px 20px rgba(255, 208, 122, 0.2);
+}
+
+.btn-gold:hover {
+  box-shadow: 0 8px 32px rgba(255, 208, 122, 0.35);
+  border-color: rgba(255, 208, 122, 0.6);
+}
+
+.btn-outline {
+  border-color: var(--border);
+  background: rgba(255, 255, 255, 0.04);
+  backdrop-filter: blur(8px);
+}
+
+.btn-outline:hover {
+  border-color: var(--border-hover);
+  box-shadow: 0 4px 16px rgba(255, 208, 122, 0.1);
+}
+.section-label {
+  display: flex;
+  align-items: center;
+  gap: 0.8rem;
+  margin-top: 2rem;
+  color: var(--ink-muted);
+  font-family: "Chakra Petch", "Trebuchet MS", sans-serif;
+  font-size: 0.68rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.section-label::before,
+.section-label::after {
+  content: "";
+  flex: 1;
+  height: 1px;
+  background: var(--border);
+}
+.tracker-grid {
+  margin-top: 1.2rem;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 0.8rem;
+}
+
+.tracker-card {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  padding: 1.2rem;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--surface);
+  backdrop-filter: blur(12px);
+  text-decoration: none;
+  transition: transform 0.2s, border-color 0.2s, box-shadow 0.2s;
+}
+
+.tracker-card:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.3);
+}
+
+.tracker-card.leaderboard {
+  border-left: 5px solid var(--leaderboard);
+}
+
+.tracker-card.leaderboard:hover {
+  border-color: rgba(240, 191, 103, 0.45);
+  border-left-color: var(--leaderboard);
+}
+
+.tracker-card.displayname {
+  border-left: 5px solid var(--displayname);
+}
+
+.tracker-card.displayname:hover {
+  border-color: rgba(88, 203, 255, 0.35);
+  border-left-color: var(--displayname);
+}
+
+.tracker-card.club {
+  border-left: 5px solid var(--club);
+}
+
+.tracker-card.club:hover {
+  border-color: rgba(136, 214, 111, 0.35);
+  border-left-color: var(--club);
+}
+
+.tracker-card-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  border-radius: 10px;
+  flex-shrink: 0;
+}
+
+.tracker-card-icon svg {
+  width: 22px;
+  height: 22px;
+}
+
+.tracker-card.leaderboard .tracker-card-icon {
+  background: rgba(240, 191, 103, 0.1);
+  border: 1px solid rgba(240, 191, 103, 0.25);
+  color: var(--leaderboard);
+}
+
+.tracker-card.displayname .tracker-card-icon {
+  background: rgba(88, 203, 255, 0.1);
+  border: 1px solid rgba(88, 203, 255, 0.25);
+  color: var(--displayname);
+}
+
+.tracker-card.club .tracker-card-icon {
+  background: rgba(136, 214, 111, 0.1);
+  border: 1px solid rgba(136, 214, 111, 0.25);
+  color: var(--club);
+}
+
+.tracker-card h2 {
+  font-size: 1.15rem;
+  font-weight: 700;
+}
+
+.tracker-card p {
+  margin: 0;
+  color: var(--ink-dim);
+  font-size: 0.9rem;
+  line-height: 1.5;
+  flex: 1;
+}
+
+.tracker-card-go {
+  font-family: "Chakra Petch", "Trebuchet MS", sans-serif;
+  font-size: 0.78rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  color: var(--ink-muted);
+  transition: color 0.2s;
+}
+
+.tracker-card.leaderboard .tracker-card-go { color: var(--leaderboard); }
+.tracker-card.displayname .tracker-card-go { color: var(--displayname); }
+.tracker-card.club .tracker-card-go { color: var(--club); }
+
+.tracker-card:hover .tracker-card-go {
+  color: var(--ink);
+}
+.callout {
+  margin-top: 1.5rem;
+  padding: 0.8rem 1rem;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--surface);
+  backdrop-filter: blur(10px);
+  display: flex;
+  align-items: center;
+  gap: 0.7rem;
+  color: var(--ink-dim);
+  font-size: 0.88rem;
+}
+
+.callout-icon {
+  font-size: 1.1rem;
+  flex-shrink: 0;
+}
+
+.callout a {
+  color: var(--ink);
+  text-underline-offset: 3px;
+}
+.foot {
+  margin-top: 2rem;
+  padding: 1rem 0;
+  border-top: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 0.8rem;
+}
+
+.foot-mark {
+  font-family: "Chakra Petch", "Trebuchet MS", sans-serif;
+  font-size: 0.82rem;
+  color: var(--ink-muted);
+  letter-spacing: 0.04em;
+}
+
+.foot nav {
+  display: flex;
+  gap: 0.4rem;
+  flex-wrap: wrap;
+}
+
+.foot nav a {
+  padding: 0.3rem 0.6rem;
+  border-radius: 8px;
+  border: 1px solid transparent;
+  font-family: "Chakra Petch", "Trebuchet MS", sans-serif;
+  font-size: 0.78rem;
+  text-decoration: none;
+  color: var(--ink-dim);
+  letter-spacing: 0.04em;
+  transition: border-color 0.2s, color 0.2s;
+}
+
+.foot nav a:hover {
+  border-color: var(--border-hover);
+  color: var(--ink);
+}
+.reveal {
+  opacity: 0;
+  transform: translateY(18px);
+  transition: opacity 0.5s ease, transform 0.5s ease;
+}
+
+.reveal.visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+@media (max-width: 720px) {
+  .header {
+    padding: 1rem;
+  }
+
+  .header-brand {
+    padding-top: 0.8rem;
+  }
+
+  .tracker-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .callout {
+    flex-direction: column;
+    text-align: center;
+  }
+}
+
+@media (max-width: 480px) {
+  .header-actions {
+    flex-direction: column;
+    align-items: center;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-delay: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+  }
+
+  .header-badge,
+  .header-title,
+  .header-sub,
+  .header-actions {
+    opacity: 1;
+    transform: none;
+  }
+
+  .reveal {
+    opacity: 1;
+    transform: none;
+  }
+}
+

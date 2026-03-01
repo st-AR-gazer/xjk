@@ -1,0 +1,58 @@
+# Dependencies
+**/node_modules/
+
+# Secrets and local environment overrides
+**/.env
+**/.env.local
+**/.env.*.local
+!**/.env.example
+
+# Runtime data and logs
+**/*.sqlite
+**/*.sqlite-shm
+**/*.sqlite-wal
+**/*.db
+**/*.db-shm
+**/*.db-wal
+**/*.log
+**/logs/
+deploy/local/.local-pids.json
+**/nadeo-token-cache.json
+**/*token-cache*.json
+**/diagnostics*.txt
+**/targeted-diagnostics*.txt
+
+# Build artifacts
+**/dist/
+**/build/
+**/coverage/
+
+# Temporary work
+tmp/
+
+# Local-only folders (do not sync/commit)
+/deploy/local/
+/deploy/ops-sync/
+/docs/
+/zDeploy/
+/deploy/ops-sync/refresh-requests/
+/deploy/ops-sync/refresh-results/
+/deploy/ops-sync/refresh-logs/
+/deploy/ops-sync/remote-refresh-status/
+/deploy/ops-sync/sync-config.local.cmd
+/deploy/ops-sync/$null
+
+# Tool runtime outputs (do not sync/commit)
+/sites/tools.xjk.yt/Embed-RaceValidationGhost/data/
+/sites/tools.xjk.yt/Embedded-Blocks-And-Items-Checker/data/
+/sites/tools.xjk.yt/Extract-Replay-Data/data/
+/sites/tools.xjk.yt/Gbx-Medal-Time-Modifier/data/
+/sites/tools.xjk.yt/Map-Validation-Checker/data/
+/sites/tools.xjk.yt/Strip-RaceValidationGhost/data/
+/sites/altered.xjk.yt/data_server/
+
+# OS/editor files
+.DS_Store
+Thumbs.db
+*.swp
+*.swo

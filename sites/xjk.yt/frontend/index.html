@@ -1,0 +1,315 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>xjk / hub</title>
+  <link rel="icon" href="favicon.svg" type="image/svg+xml" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@500;600;700&family=Manrope:wght@400;500;700&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      --bg-0: #060a16;
+      --bg-1: #0d1428;
+      --ink: #e8f0ff;
+      --muted: #9badcf;
+      --card: #111b33;
+      --stroke: #2b3e6a;
+      --accent-a: #f98a3b;
+      --accent-b: #2cbfd0;
+      --accent-c: #9a56e9;
+      --accent-d: #5ed28d;
+      --accent-e: #ffd07a;
+      --accent-f: #58cbff;
+      --accent-g: #88d66f;
+      --accent-h: #ff5f7a;
+      --radius: 18px;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      font-family: "Manrope", sans-serif;
+      color: var(--ink);
+      background:
+        radial-gradient(1400px 700px at 90% -5%, rgba(249, 138, 59, 0.2), transparent 60%),
+        radial-gradient(900px 600px at -15% 110%, rgba(44, 191, 208, 0.2), transparent 60%),
+        linear-gradient(165deg, var(--bg-0), var(--bg-1));
+    }
+
+    main {
+      width: min(1040px, 100% - 2rem);
+      margin: 0 auto;
+      padding: 3.2rem 0 3.8rem;
+    }
+
+    .kicker {
+      display: inline-block;
+      padding: 0.35rem 0.7rem;
+      border-radius: 999px;
+      border: 1px solid var(--stroke);
+      background: rgba(255, 255, 255, 0.04);
+      font-family: "Chakra Petch", sans-serif;
+      font-size: 0.74rem;
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
+      color: var(--muted);
+    }
+
+    h1 {
+      margin: 1rem 0 0.7rem;
+      font-size: clamp(1.9rem, 5.8vw, 3.6rem);
+      line-height: 1.05;
+      letter-spacing: -0.02em;
+      font-family: "Chakra Petch", sans-serif;
+    }
+
+    .lead {
+      margin: 0 0 2rem;
+      max-width: 62ch;
+      color: var(--muted);
+      line-height: 1.6;
+    }
+
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(12, minmax(0, 1fr));
+      gap: 0.9rem;
+    }
+
+    .card {
+      grid-column: span 12;
+      display: block;
+      text-decoration: none;
+      color: inherit;
+      border: 1px solid var(--stroke);
+      border-radius: var(--radius);
+      background: var(--card);
+      padding: 1.1rem 1.1rem 1rem;
+      box-shadow: 0 12px 32px rgba(0, 0, 0, 0.35);
+      transition: transform 160ms ease, box-shadow 160ms ease, border-color 160ms ease;
+    }
+
+    .card:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 16px 36px rgba(0, 0, 0, 0.42);
+      border-color: #45639d;
+    }
+
+    .card h2 {
+      margin: 0 0 0.3rem;
+      font-size: 1.1rem;
+      line-height: 1.2;
+      font-family: "Chakra Petch", sans-serif;
+    }
+
+    .card p {
+      margin: 0;
+      color: var(--muted);
+      font-size: 0.96rem;
+      line-height: 1.5;
+    }
+
+    .card .host {
+      margin-top: 0.75rem;
+      display: inline-block;
+      font-family: "Chakra Petch", sans-serif;
+      font-size: 0.78rem;
+      color: var(--ink);
+      padding: 0.3rem 0.5rem;
+      border-radius: 999px;
+      border: 1px solid var(--stroke);
+      background: rgba(255, 255, 255, 0.04);
+    }
+
+    .tools { border-left: 6px solid var(--accent-a); }
+    .plugins { border-left: 6px solid var(--accent-d); }
+    .learn { border-left: 6px solid var(--accent-b); }
+    .altered { border-left: 6px solid var(--accent-c); }
+    .trackers { border-left: 6px solid var(--accent-e); }
+    .aggregator {
+      border-left: 6px solid var(--accent-h);
+      border-color: #6a3751;
+      background:
+        linear-gradient(155deg, rgba(255, 95, 122, 0.22), rgba(255, 95, 122, 0.05) 42%, rgba(17, 27, 51, 0.96)),
+        var(--card);
+    }
+
+    .aggregator .host {
+      border-color: rgba(255, 95, 122, 0.55);
+      background: rgba(255, 95, 122, 0.18);
+    }
+
+    .planned {
+      position: relative;
+    }
+
+    .badge {
+      margin-top: 0.72rem;
+      display: inline-flex;
+      min-height: 1.45rem;
+      align-items: center;
+      border-radius: 999px;
+      border: 1px solid rgba(255, 208, 122, 0.5);
+      background: rgba(255, 208, 122, 0.13);
+      color: #ffd07a;
+      font-size: 0.72rem;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      font-family: "Chakra Petch", sans-serif;
+      padding: 0 0.46rem;
+    }
+
+    .stack {
+      margin-top: 1.15rem;
+      border: 1px solid var(--stroke);
+      border-radius: var(--radius);
+      background: rgba(17, 27, 51, 0.74);
+      padding: 1rem 1.1rem;
+    }
+
+    .stack h2 {
+      margin: 0;
+      font-size: 1rem;
+      font-family: "Chakra Petch", sans-serif;
+    }
+
+    .stack p {
+      margin: 0.35rem 0 0.8rem;
+      color: var(--muted);
+      font-size: 0.92rem;
+      line-height: 1.5;
+    }
+
+    .stack-grid {
+      display: grid;
+      grid-template-columns: repeat(1, minmax(0, 1fr));
+      gap: 0.55rem;
+      margin: 0;
+      padding: 0;
+      list-style: none;
+    }
+
+    .stack-grid li {
+      border: 1px solid var(--stroke);
+      border-radius: 12px;
+      padding: 0.55rem 0.65rem;
+      background: rgba(255, 255, 255, 0.025);
+      font-size: 0.88rem;
+      line-height: 1.4;
+      color: var(--muted);
+    }
+
+    .stack-grid code {
+      color: var(--ink);
+      font-family: "Chakra Petch", sans-serif;
+      font-size: 0.8rem;
+      margin-right: 0.3rem;
+    }
+
+    @media (min-width: 760px) {
+      .card { grid-column: span 4; }
+      .stack-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    }
+  </style>
+</head>
+<body>
+  <main>
+    <span class="kicker">XJK Network</span>
+    <h1>Hub of Hubs for xjk.yt</h1>
+    <p class="lead">
+      Central launchpad for every xjk subdomain. Each card opens a dedicated hub for that area.
+    </p>
+
+    <section class="grid" aria-label="Subdomain hubs">
+      <a class="card tools" data-link="tools" href="https://tools.xjk.yt/" target="_blank" rel="noopener noreferrer">
+        <h2>Tools Hub</h2>
+        <p>Trackmania utilities and conversion tools, with each tool hosted on a path under one domain.</p>
+        <span class="host">tools.xjk.yt</span>
+      </a>
+
+      <a class="card plugins" data-link="plugins" href="https://plugins.xjk.yt/" target="_blank" rel="noopener noreferrer">
+        <h2>Plugins Hub</h2>
+        <p>Catalog of your Trackmania plugins, with per-plugin cards and publish status tracking.</p>
+        <span class="host">plugins.xjk.yt</span>
+      </a>
+
+      <a class="card learn" data-link="learn" href="https://learn.xjk.yt/" target="_blank" rel="noopener noreferrer">
+        <h2>Learn Hub</h2>
+        <p>Tutorials, notes, and learning resources for your projects and workflows.</p>
+        <span class="host">learn.xjk.yt</span>
+      </a>
+
+      <a class="card altered" data-link="altered" href="https://altered.xjk.yt/" target="_blank" rel="noopener noreferrer">
+        <h2>Altered Hub</h2>
+        <p>Altered-related projects and experiments grouped under one dedicated subdomain.</p>
+        <span class="host">altered.xjk.yt</span>
+      </a>
+
+      <a
+        class="card trackers"
+        data-link="trackers"
+        href="https://trackers.xjk.yt/"
+        target="_blank"
+        rel="noopener noreferrer"
+      >
+        <h2>Trackers Hub</h2>
+        <p>Unified tracker group host for leaderboard, displayname, and club tracker runtimes.</p>
+        <span class="host">trackers.xjk.yt</span>
+        <span class="badge">Tracker Group</span>
+      </a>
+
+      <a
+        class="card aggregator"
+        data-link="aggregator"
+        href="https://aggregator.xjk.yt/"
+        target="_blank"
+        rel="noopener noreferrer"
+      >
+        <h2>Aggregator</h2>
+        <p>Shared source-of-truth cache for maps, names, club snapshots, and cross-project tracker events.</p>
+        <span class="host">aggregator.xjk.yt</span>
+      </a>
+
+    </section>
+
+  </main>
+  <script>
+    (function configureHubLinks() {
+      const host = window.location.hostname.toLowerCase();
+      const port = window.location.port || "80";
+      const isLoopbackPathMode = host === "localhost" || host === "127.0.0.1" || host === "xjk.localhost";
+      const isLocalSubdomainMode = host.endsWith(".localhost");
+      const isLocalMode = isLoopbackPathMode || isLocalSubdomainMode;
+
+      const links = {
+        tools: "https://tools.xjk.yt/",
+        plugins: "https://plugins.xjk.yt/",
+        learn: "https://learn.xjk.yt/",
+        altered: "https://altered.xjk.yt/",
+        trackers: "https://trackers.xjk.yt/",
+        aggregator: "https://aggregator.xjk.yt/",
+      };
+
+      if (isLocalMode) {
+        links.tools = `http://tools.localhost:${port}/`;
+        links.plugins = `http://plugins.localhost:${port}/`;
+        links.learn = `http://learn.localhost:${port}/`;
+        links.altered = `http://altered.localhost:${port}/`;
+        links.trackers = `http://trackers.localhost:${port}/`;
+        links.aggregator = `http://aggregator.localhost:${port}/`;
+      }
+
+      document.querySelectorAll("[data-link]").forEach((node) => {
+        const key = node.getAttribute("data-link");
+        const href = links[key];
+        if (!href) return;
+        node.setAttribute("href", href);
+      });
+    })();
+  </script>
+</body>
+</html>

@@ -1,0 +1,144 @@
+﻿{
+  # Replace before production.
+  email admin@xjk.yt
+}
+
+(secure_headers) {
+  encode zstd gzip
+  header {
+    Strict-Transport-Security "max-age=31536000; includeSubDomains; preload"
+    X-Content-Type-Options "nosniff"
+    Referrer-Policy "strict-origin-when-cross-origin"
+    -Server
+  }
+}
+
+xjk.yt, www.xjk.yt {
+  import secure_headers
+  root * C:/srv/xjk/sites/xjk.yt/frontend
+  file_server
+}
+
+learn.xjk.yt {
+  import secure_headers
+  root * C:/srv/xjk/sites/learn.xjk.yt/frontend
+  file_server
+}
+
+altered.xjk.yt {
+  import secure_headers
+  reverse_proxy 127.0.0.1:3030
+}
+
+alterednadeo.xjk.yt {
+  import secure_headers
+  redir https://altered.xjk.yt{uri} 308
+}
+
+tracker.xjk.yt {
+  import secure_headers
+  redir https://trackers.xjk.yt/wr{uri} 308
+}
+
+aggregator.xjk.yt {
+  import secure_headers
+  reverse_proxy 127.0.0.1:3040
+}
+
+tracker-displayname.xjk.yt {
+  import secure_headers
+  redir https://trackers.xjk.yt/displayname{uri} 308
+}
+
+tracker-club.xjk.yt {
+  import secure_headers
+  redir https://trackers.xjk.yt/club{uri} 308
+}
+
+trackers.xjk.yt {
+  import secure_headers
+  root * C:/srv/xjk/sites/trackers.xjk.yt/frontend
+
+  @wrExact path /wr
+  redir @wrExact /wr/ 308
+  handle_path /wr/* {
+    reverse_proxy 127.0.0.1:3031
+  }
+
+  @leaderboardExact path /leaderboard
+  redir @leaderboardExact /leaderboard/ 308
+  handle_path /leaderboard/* {
+    reverse_proxy 127.0.0.1:3043
+  }
+
+  @displaynameExact path /displayname
+  redir @displaynameExact /displayname/ 308
+  handle_path /displayname/* {
+    reverse_proxy 127.0.0.1:3041
+  }
+
+  @clubExact path /club
+  redir @clubExact /club/ 308
+  handle_path /club/* {
+    reverse_proxy 127.0.0.1:3042
+  }
+
+  handle /admin* {
+    reverse_proxy 127.0.0.1:3031
+  }
+
+  handle /api/v1* {
+    reverse_proxy 127.0.0.1:3031
+  }
+
+  file_server
+}
+
+plugins.xjk.yt {
+  import secure_headers
+  reverse_proxy 127.0.0.1:3020
+}
+
+tools.xjk.yt {
+  import secure_headers
+
+  @stripExact path /Strip-RaceValidationGhost
+  redir @stripExact /Strip-RaceValidationGhost/ 308
+  handle_path /Strip-RaceValidationGhost/* {
+    reverse_proxy 127.0.0.1:3011
+  }
+
+  @embedExact path /Embed-RaceValidationGhost
+  redir @embedExact /Embed-RaceValidationGhost/ 308
+  handle_path /Embed-RaceValidationGhost/* {
+    reverse_proxy 127.0.0.1:3012
+  }
+
+  @embeddedCheckerExact path /Embedded-Blocks-And-Items-Checker
+  redir @embeddedCheckerExact /Embedded-Blocks-And-Items-Checker/ 308
+  handle_path /Embedded-Blocks-And-Items-Checker/* {
+    reverse_proxy 127.0.0.1:3013
+  }
+
+  @extractReplayExact path /Extract-Replay-Data
+  redir @extractReplayExact /Extract-Replay-Data/ 308
+  handle_path /Extract-Replay-Data/* {
+    reverse_proxy 127.0.0.1:3014
+  }
+
+  @medalModifierExact path /Gbx-Medal-Time-Modifier
+  redir @medalModifierExact /Gbx-Medal-Time-Modifier/ 308
+  handle_path /Gbx-Medal-Time-Modifier/* {
+    reverse_proxy 127.0.0.1:3015
+  }
+
+  @mapValidationExact path /Map-Validation-Checker
+  redir @mapValidationExact /Map-Validation-Checker/ 308
+  handle_path /Map-Validation-Checker/* {
+    reverse_proxy 127.0.0.1:3016
+  }
+
+  handle {
+    reverse_proxy 127.0.0.1:3010
+  }
+}

@@ -1,0 +1,60 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>xjk / tools hub</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@500;600;700&family=Manrope:wght@400;500;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="styles.css" />
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+</head>
+<body>
+  <div class="bg-grid" aria-hidden="true"></div>
+  <div class="bg-sweep bg-sweep-warm" aria-hidden="true"></div>
+  <div class="bg-sweep bg-sweep-cool" aria-hidden="true"></div>
+  <div id="toolSquares" class="bg-tool-squares" aria-hidden="true"></div>
+
+  <header class="shell hero">
+    <div class="topline">
+      <p class="eyebrow">Trackmania Utilities</p>
+      <p class="build-note">Hub build <span id="buildDate"></span></p>
+    </div>
+
+    <h1>Trackmania Tool Hub</h1>
+
+    <dl class="stats">
+      <div class="stat">
+        <dt>Total Tools</dt>
+        <dd id="statTotal">0</dd>
+      </div>
+      <div class="stat">
+        <dt>Live Now</dt>
+        <dd id="statLive">0</dd>
+      </div>
+      <div class="stat">
+        <dt>Coming Soon</dt>
+        <dd id="statSoon">0</dd>
+      </div>
+    </dl>
+  </header>
+
+  <main class="shell panel">
+    <section class="section-head">
+      <div>
+        <h2>Tool Catalog</h2>
+      </div>
+    </section>
+
+    <section id="toolGrid" class="tool-grid" aria-live="polite"></section>
+  </main>
+
+  <footer class="shell foot">
+    <p>Trackmania Tool Hub</p>
+  </footer>
+
+  <script src="../../shared/tool-theme.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>

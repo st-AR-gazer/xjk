@@ -1,0 +1,321 @@
+﻿:root {
+  --bg-0: #05070d;
+  --bg-1: #0b1220;
+  --ink: #ecfcff;
+  --ink-soft: #abc4d8;
+  --line: rgba(34, 153, 238, 0.3);
+  --panel: rgba(9, 14, 25, 0.88);
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  margin: 0;
+  min-height: 100%;
+  font-family: "Manrope", "Segoe UI", sans-serif;
+  color: var(--ink);
+  background:
+    radial-gradient(900px 560px at 92% -10%, rgba(34, 153, 238, 0.18), transparent 58%),
+    radial-gradient(760px 460px at -8% 92%, rgba(34, 204, 238, 0.14), transparent 62%),
+    linear-gradient(156deg, var(--bg-0), var(--bg-1));
+}
+
+.page {
+  width: min(1380px, 100% - 2rem);
+  margin: 0 auto;
+  padding: 1.2rem 0 1.8rem;
+}
+
+.panel {
+  border: 1px solid var(--line);
+  border-radius: 18px;
+  background: var(--panel);
+  box-shadow: 0 16px 38px rgba(0, 0, 0, 0.33);
+}
+
+.hero {
+  padding: 0.95rem;
+}
+
+.hero-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 0.65rem;
+  flex-wrap: wrap;
+}
+
+.tag {
+  font-family: "Chakra Petch", "Trebuchet MS", sans-serif;
+  font-size: 0.74rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  padding: 0.26rem 0.56rem;
+  color: var(--ink-soft);
+}
+
+.chip {
+  text-decoration: none;
+  color: var(--ink);
+  border: 1px solid rgba(190, 210, 255, 0.24);
+  border-radius: 999px;
+  min-height: 30px;
+  padding: 0.24rem 0.54rem;
+  display: inline-flex;
+  align-items: center;
+  font-family: "Chakra Petch", "Trebuchet MS", sans-serif;
+  font-size: 0.78rem;
+  letter-spacing: 0.05em;
+  background: rgba(255, 255, 255, 0.04);
+}
+
+h1,
+h2,
+h3 {
+  margin: 0;
+  font-family: "Chakra Petch", "Trebuchet MS", sans-serif;
+}
+
+h1 {
+  margin-top: 0.7rem;
+  font-size: clamp(1.5rem, 3.4vw, 2.3rem);
+}
+
+.hero p {
+  margin: 0.45rem 0 0;
+  color: var(--ink-soft);
+}
+
+.workspace {
+  margin-top: 0.85rem;
+  display: grid;
+  gap: 0.75rem;
+  grid-template-columns: minmax(0, 470px) minmax(0, 1fr);
+}
+
+.controls {
+  padding: 0.88rem;
+  align-self: start;
+}
+
+.controls h2 {
+  margin-bottom: 0.62rem;
+}
+
+.field-row {
+  display: grid;
+  gap: 0.56rem;
+  grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+  margin-bottom: 0.62rem;
+}
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.34rem;
+}
+
+.field span {
+  font-size: 0.76rem;
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+  color: var(--ink-soft);
+}
+
+.field input,
+.field select {
+  min-height: 38px;
+  border-radius: 10px;
+  border: 1px solid rgba(190, 205, 255, 0.22);
+  background: rgba(255, 255, 255, 0.04);
+  color: var(--ink);
+  padding: 0.45rem 0.56rem;
+  font: inherit;
+}
+
+.field select,
+.slot-row select {
+  appearance: none;
+  background-image:
+    linear-gradient(45deg, transparent 50%, #33ffff 50%),
+    linear-gradient(135deg, #33ffff 50%, transparent 50%),
+    linear-gradient(to right, rgba(34, 204, 238, 0.42), rgba(34, 204, 238, 0.42));
+  background-position:
+    calc(100% - 15px) calc(50% - 2px),
+    calc(100% - 10px) calc(50% - 2px),
+    calc(100% - 2rem) 50%;
+  background-size: 5px 5px, 5px 5px, 1px 1.6rem;
+  background-repeat: no-repeat;
+  padding-right: 2.4rem;
+}
+
+.field select option,
+.slot-row select option {
+  background: #0d1528;
+  color: #ecfcff;
+}
+
+.field input[type="range"] {
+  padding: 0.25rem 0.2rem;
+}
+
+.slot-section {
+  margin-top: 0.35rem;
+  border: 1px solid rgba(51, 255, 255, 0.22);
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.03);
+  padding: 0.62rem;
+}
+
+.slot-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 0.6rem;
+  flex-wrap: wrap;
+}
+
+.slot-head span {
+  color: var(--ink-soft);
+  font-size: 0.82rem;
+}
+
+.slot-controls {
+  margin-top: 0.58rem;
+  display: grid;
+  gap: 0.45rem;
+}
+
+.slot-row {
+  display: grid;
+  gap: 0.4rem;
+  grid-template-columns: 74px minmax(0, 1fr) 110px;
+  align-items: center;
+}
+
+.slot-row strong {
+  font-size: 0.86rem;
+  color: var(--ink-soft);
+}
+
+.slot-row select,
+.slot-row input {
+  min-height: 36px;
+  border-radius: 9px;
+  border: 1px solid rgba(51, 255, 255, 0.28);
+  background: rgba(255, 255, 255, 0.05);
+  color: var(--ink);
+  padding: 0.35rem 0.5rem;
+  font: inherit;
+}
+
+.actions {
+  margin-top: 0.7rem;
+  display: grid;
+  gap: 0.45rem;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.btn {
+  min-height: 40px;
+  border-radius: 10px;
+  border: 1px solid transparent;
+  cursor: pointer;
+  color: var(--ink);
+  font-family: "Chakra Petch", "Trebuchet MS", sans-serif;
+  letter-spacing: 0.05em;
+  transition: transform 0.12s ease, filter 0.12s ease;
+}
+
+.btn:hover {
+  transform: translateY(-1px);
+  filter: brightness(1.05);
+}
+
+.btn.secondary {
+  background: rgba(255, 255, 255, 0.06);
+  border-color: rgba(190, 205, 255, 0.22);
+}
+
+.btn.primary {
+  grid-column: 1 / -1;
+  background:
+    linear-gradient(135deg, rgba(0, 51, 204, 0.95), rgba(51, 255, 255, 0.86));
+  border-color: rgba(206, 223, 255, 0.2);
+}
+
+.status-line {
+  margin: 0.65rem 0 0;
+  color: var(--ink-soft);
+  font-size: 0.85rem;
+}
+
+.status-line.ok {
+  color: #33ffff;
+}
+
+.status-line.bad {
+  color: #22ccee;
+}
+
+.preview {
+  padding: 0.78rem;
+}
+
+.preview-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 0.6rem;
+  flex-wrap: wrap;
+}
+
+.preview-head span {
+  color: var(--ink-soft);
+  font-size: 0.84rem;
+}
+
+.canvas-wrap {
+  margin-top: 0.62rem;
+  border: 1px solid rgba(51, 255, 255, 0.28);
+  border-radius: 14px;
+  overflow: hidden;
+  background: #0d1528;
+}
+
+#bannerCanvas {
+  width: 100%;
+  height: auto;
+  display: block;
+  image-rendering: auto;
+}
+
+@media (max-width: 1100px) {
+  .workspace {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 720px) {
+  .page {
+    width: min(1380px, 100% - 1rem);
+  }
+  .actions {
+    grid-template-columns: 1fr;
+  }
+  .btn.primary {
+    grid-column: auto;
+  }
+
+  .slot-row {
+    grid-template-columns: 1fr;
+    gap: 0.32rem;
+  }
+}
+
+

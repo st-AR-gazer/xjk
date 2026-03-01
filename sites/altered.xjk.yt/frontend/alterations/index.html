@@ -1,0 +1,112 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>xjk / altered / alterations</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@400;500;600;700&family=Manrope:wght@400;500;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="/altered-hub.css" />
+  <link rel="stylesheet" href="alterations.css" />
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+</head>
+<body>
+  <a class="corner-login" href="/admin-login/">Login</a>
+
+  <div class="backdrop" aria-hidden="true">
+    <div class="geo-mesh"></div>
+    <div class="orb orb-1"></div>
+    <div class="orb orb-2"></div>
+    <div class="orb orb-3"></div>
+  </div>
+
+  <div class="solids-layer" aria-hidden="true">
+    <img class="solid solid-1" src="/bannerbuilder/assets/solids/Dodecahedron.png" alt="" />
+    <img class="solid solid-2" src="/bannerbuilder/assets/solids/Icosahedron.png" alt="" />
+    <img class="solid solid-3" src="/bannerbuilder/assets/solids/Octahedron.png" alt="" />
+  </div>
+
+  <main class="alt-shell">
+    <a class="back-link" href="/">&larr; Back to Hub</a>
+
+    <!-- Header -->
+    <header class="alt-header">
+      <h1 class="alt-title">Alterations</h1>
+      <p class="alt-sub">Every map tracked by the Altered project, all in one place.</p>
+    </header>
+
+    <!-- Campaign ribbon -->
+    <div class="campaign-ribbon" id="campaign-ribbon">
+      <div class="ribbon-track" id="ribbon-track"></div>
+    </div>
+
+    <!-- Stats overview -->
+    <section class="stats-row" aria-label="Overview stats">
+      <div class="stat">
+        <span class="stat-value" id="stat-maps">&mdash;</span>
+        <span class="stat-label">Maps</span>
+      </div>
+      <div class="stat">
+        <span class="stat-value" id="stat-tracked">&mdash;</span>
+        <span class="stat-label">Actively Tracked</span>
+      </div>
+      <div class="stat">
+        <span class="stat-value" id="stat-wr-changes">&mdash;</span>
+        <span class="stat-label">WR Changes</span>
+      </div>
+      <div class="stat">
+        <span class="stat-value" id="stat-last-run">&mdash;</span>
+        <span class="stat-label">Last Checked</span>
+      </div>
+    </section>
+
+    <!-- Campaigns (hidden until data arrives) -->
+    <section class="campaigns-section" id="campaigns-section" hidden aria-label="Campaigns">
+      <h2 class="section-label">Campaigns</h2>
+      <div class="campaigns-scroll" id="campaigns-scroll"></div>
+    </section>
+
+    <!-- Controls -->
+    <div class="controls-bar">
+      <input type="search" id="map-search" class="search-input" placeholder="Search maps, authors, WR holders..." />
+      <select id="map-sort" class="sort-select">
+        <option value="newest">Sort: Newest</option>
+        <option value="name">Sort: Name</option>
+        <option value="wr_ms">Sort: WR Time</option>
+        <option value="author_time">Sort: Author Time</option>
+        <option value="wr_updated_at">Sort: Latest WR</option>
+        <option value="change_count">Sort: Most Changes</option>
+      </select>
+    </div>
+
+    <!-- Map grid -->
+    <section class="map-grid" id="map-grid" aria-label="Tracked maps"></section>
+
+    <!-- Pagination -->
+    <div class="pagination" id="pagination" hidden></div>
+
+    <!-- States -->
+    <div class="state-msg" id="loading-state">
+      <p>Loading maps&hellip;</p>
+    </div>
+    <div class="state-msg" id="empty-state" hidden>
+      <p>No maps match your search.</p>
+    </div>
+    <div class="state-msg" id="error-state" hidden>
+      <p>Could not reach the API &mdash; the backend may not be running yet.</p>
+    </div>
+
+    <!-- Map detail modal -->
+    <div class="map-modal-backdrop" id="map-modal-backdrop" hidden>
+      <div class="map-modal" id="map-modal">
+        <button class="map-modal-close" id="map-modal-close">&times;</button>
+        <div class="map-modal-content" id="map-modal-content"></div>
+      </div>
+    </div>
+  </main>
+
+  <script src="/altered-hub.js"></script>
+  <script src="alterations.js"></script>
+</body>
+</html>

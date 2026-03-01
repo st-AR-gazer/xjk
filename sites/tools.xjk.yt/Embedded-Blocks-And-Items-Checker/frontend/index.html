@@ -1,0 +1,88 @@
+<!doctype html>
+<html lang="en" data-tool-id="embedded-checker">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>xjk / tools / embedded blocks checker</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@500;600;700&family=Manrope:wght@400;500;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="styles.css" />
+  <link rel="stylesheet" href="../../shared/tool-theme.css" />
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+</head>
+<body>
+  <div class="bg-grid" aria-hidden="true"></div>
+  <div class="bg-sweep bg-sweep-warm" aria-hidden="true"></div>
+  <div class="bg-sweep bg-sweep-cool" aria-hidden="true"></div>
+
+  <main class="shell">
+    <section class="hero">
+      <p class="eyebrow">Validation Utility</p>
+      <h1>Embedded Blocks And Items Checker</h1>
+      <p class="lead">Upload one map and validate embedded blocks/items consistency from the checker engine.</p>
+    </section>
+
+    <section class="cards" aria-label="Inputs">
+      <article id="mapDrop" class="dropcard" tabindex="0" aria-label="Map upload">
+        <input id="mapFile" type="file" accept=".gbx,.Map.Gbx" />
+        <p class="card-title">Map Input</p>
+        <p class="card-copy">Drop <code>.Map.Gbx</code> here or click to browse.</p>
+        <p id="mapName" class="card-meta">No map selected</p>
+      </article>
+
+      <article id="manualDrop" class="dropcard optional" tabindex="0" aria-label="Manual overrides upload">
+        <input id="manualFile" type="file" accept=".json,application/json" />
+        <p class="card-title">Manual Overrides (Optional)</p>
+        <p class="card-copy">Drop a JSON file used with <code>--manual-overrides</code>.</p>
+        <p id="manualName" class="card-meta">No manual overrides file selected</p>
+      </article>
+    </section>
+
+    <section class="panel" aria-label="Checker options">
+      <h2>Options</h2>
+      <div class="option-grid">
+        <label class="opt"><input id="pretty" type="checkbox" checked /><span>Pretty print JSON</span></label>
+        <label class="opt"><input id="caseSensitive" type="checkbox" /><span>Case-sensitive compare</span></label>
+        <label class="opt"><input id="includeExpectedList" type="checkbox" checked /><span>Include expected list</span></label>
+        <label class="opt"><input id="includeMapName" type="checkbox" checked /><span>Include map name</span></label>
+        <label class="opt"><input id="relaxedStemMatch" type="checkbox" /><span>Relaxed stem match</span></label>
+        <label class="opt"><input id="dumpZip" type="checkbox" /><span>Dump ZIP entries (debug)</span></label>
+      </div>
+    </section>
+
+    <section class="actions">
+      <button id="go" class="go" disabled>Run Checker</button>
+    </section>
+
+    <div id="status" class="status" role="status" aria-live="polite"></div>
+    <div id="error" class="error" role="alert"></div>
+
+    <section id="summary" class="panel hidden" aria-label="Summary">
+      <h2>Summary</h2>
+      <div id="summaryGrid" class="summary-grid"></div>
+      <p id="summaryNote" class="muted small"></p>
+    </section>
+
+    <section id="resultPanel" class="panel hidden" aria-label="JSON result">
+      <div class="panel-head">
+        <h2>Result JSON</h2>
+        <div class="panel-actions">
+          <button id="copyBtn" class="btn-lite" type="button">Copy JSON</button>
+          <button id="downloadBtn" class="btn-lite" type="button">Download JSON</button>
+        </div>
+      </div>
+      <pre id="resultJson" class="code"></pre>
+    </section>
+  </main>
+
+  <div id="overlay" class="overlay hidden" aria-live="polite" aria-busy="true">
+    <div class="loader" aria-hidden="true"></div>
+    <p id="overlayText" class="overlay-title">Working...</p>
+    <p id="progressText" class="overlay-copy"></p>
+  </div>
+
+  <script src="../../shared/tool-theme.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>

@@ -1,0 +1,182 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>xjk / altered / platonic solids</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@500;600;700&family=Manrope:wght@400;500;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="solids.css" />
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+</head>
+<body>
+  <main class="page">
+    <header class="hero panel">
+      <div class="hero-top">
+        <span class="tag">Altered Creative</span>
+        <a class="chip" href="/">Back To Altered Hub</a>
+      </div>
+      <h1>Platonic Solids Studio</h1>
+      <p>
+        Interactive spin renderer for tetrahedron, cube, octahedron, dodecahedron, and icosahedron using the same
+        geometry family as your legacy spinning-solid generator.
+      </p>
+    </header>
+
+    <section class="workspace">
+      <aside class="panel controls">
+        <h2>Controls</h2>
+
+        <!-- Geometry -->
+        <div class="ctrl-section">
+          <h3 class="ctrl-label">Geometry</h3>
+          <label class="field">
+            <span>Solid</span>
+            <select id="solidType">
+              <option value="dodecahedron">Dodecahedron</option>
+              <option value="icosahedron">Icosahedron</option>
+              <option value="cube">Cube</option>
+              <option value="octahedron">Octahedron</option>
+              <option value="tetrahedron">Tetrahedron</option>
+            </select>
+          </label>
+          <div class="field-row">
+            <label class="field">
+              <span>Scale</span>
+              <div class="range-wrap">
+                <input id="scale" type="range" min="100" max="340" step="1" value="215" />
+                <input type="number" class="val-input" id="scaleVal" value="215" step="1" min="100" max="340" />
+              </div>
+            </label>
+            <label class="field">
+              <span>Perspective</span>
+              <div class="range-wrap">
+                <input id="perspective" type="range" min="1.6" max="4.8" step="0.01" value="2.7" />
+                <input type="number" class="val-input" id="perspectiveVal" value="2.70" step="0.01" min="1.6" max="4.8" />
+              </div>
+            </label>
+          </div>
+        </div>
+
+        <!-- Rotation -->
+        <div class="ctrl-section">
+          <h3 class="ctrl-label">Rotation</h3>
+          <div class="field-row">
+            <label class="field">
+              <span>Spin X</span>
+              <div class="range-wrap">
+                <input id="spinX" type="range" min="-6" max="6" step="0.01" value="0.2" />
+                <input type="number" class="val-input" id="spinXVal" value="0.20" step="0.01" min="-6" max="6" />
+              </div>
+            </label>
+            <label class="field">
+              <span>Spin Y</span>
+              <div class="range-wrap">
+                <input id="spinY" type="range" min="-6" max="6" step="0.01" value="0.58" />
+                <input type="number" class="val-input" id="spinYVal" value="0.58" step="0.01" min="-6" max="6" />
+              </div>
+            </label>
+            <label class="field">
+              <span>Spin Z</span>
+              <div class="range-wrap">
+                <input id="spinZ" type="range" min="-6" max="6" step="0.01" value="0.14" />
+                <input type="number" class="val-input" id="spinZVal" value="0.14" step="0.01" min="-6" max="6" />
+              </div>
+            </label>
+          </div>
+        </div>
+
+        <!-- Appearance -->
+        <div class="ctrl-section">
+          <h3 class="ctrl-label">Appearance</h3>
+          <div class="field-row">
+            <label class="field">
+              <span>Line Width</span>
+              <div class="range-wrap">
+                <input id="lineWidth" type="range" min="0.6" max="4.2" step="0.1" value="1.5" />
+                <input type="number" class="val-input" id="lineWidthVal" value="1.5" step="0.1" min="0.6" max="4.2" />
+              </div>
+            </label>
+            <label class="field">
+              <span>Fill Alpha</span>
+              <div class="range-wrap">
+                <input id="fillAlpha" type="range" min="0" max="1" step="0.01" value="0.54" />
+                <input type="number" class="val-input" id="fillAlphaVal" value="0.54" step="0.01" min="0" max="1" />
+              </div>
+            </label>
+          </div>
+          <div class="field-row colors">
+            <label class="field">
+              <span>Color A</span>
+              <input id="colorA" type="color" value="#0033cc" />
+            </label>
+            <label class="field">
+              <span>Color B</span>
+              <input id="colorB" type="color" value="#22ccee" />
+            </label>
+            <label class="field">
+              <span>Wire</span>
+              <input id="wireColor" type="color" value="#33ffff" />
+            </label>
+          </div>
+          <label class="field check">
+            <span>Transparent background</span>
+            <input id="transparentBg" type="checkbox" />
+          </label>
+        </div>
+
+        <!-- Animation & Export -->
+        <div class="ctrl-section export-section">
+          <h3 class="ctrl-label">Animation & Export</h3>
+          <div class="field-row">
+            <label class="field">
+              <span>Mode</span>
+              <select id="exportMode">
+                <option value="seconds">By Seconds</option>
+                <option value="rotations">By Rotations</option>
+              </select>
+            </label>
+            <label class="field">
+              <span>Duration (s)</span>
+              <input id="exportSeconds" type="number" min="0.5" max="60" step="0.1" value="4" />
+            </label>
+          </div>
+          <div class="field-row">
+            <label class="field">
+              <span>Rotations</span>
+              <input id="exportRotations" type="number" min="1" max="120" step="1" value="2" />
+            </label>
+            <label class="field">
+              <span>FPS</span>
+              <input id="exportFps" type="number" min="10" max="60" step="1" value="30" />
+            </label>
+          </div>
+          <label class="field check">
+            <span>Lock perfect loop</span>
+            <input id="exportLoopLock" type="checkbox" checked />
+          </label>
+        </div>
+
+        <div class="actions">
+          <button id="togglePlayBtn" class="btn secondary" type="button">Pause</button>
+          <button id="randomizeBtn" class="btn secondary" type="button">Randomize</button>
+          <button id="resetBtn" class="btn secondary" type="button">Reset</button>
+          <button id="downloadPngBtn" class="btn secondary" type="button">Download PNG</button>
+          <button id="exportVideoBgBtn" class="btn accent" type="button">Export Video</button>
+          <button id="exportVideoTransBtn" class="btn accent" type="button">Export Video (Alpha)</button>
+          <button id="downloadWebpBtn" class="btn primary" type="button">Export Animated WebP</button>
+        </div>
+
+        <p id="statusLine" class="status-line">Drag on the render area to orbit manually.</p>
+      </aside>
+
+      <section class="panel viewport">
+        <canvas id="solidCanvas"></canvas>
+      </section>
+    </section>
+  </main>
+
+  <script src="solids.js"></script>
+</body>
+</html>

@@ -1,0 +1,586 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>xjk / altered / admin</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@500;600;700&family=Manrope:wght@400;500;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="/altered-hub.css" />
+  <link rel="stylesheet" href="/admin.css" />
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+</head>
+<body>
+  <a class="corner-login" href="/">Home</a>
+
+  <div class="backdrop" aria-hidden="true">
+    <div class="geo-mesh"></div>
+    <div class="orb orb-1"></div>
+    <div class="orb orb-2"></div>
+    <div class="orb orb-3"></div>
+  </div>
+
+  <div class="solids-layer" aria-hidden="true">
+    <img class="solid solid-1" src="/bannerbuilder/assets/solids/Dodecahedron.png" alt="" />
+    <img class="solid solid-2" src="/bannerbuilder/assets/solids/Icosahedron.png" alt="" />
+    <img class="solid solid-3" src="/bannerbuilder/assets/solids/Octahedron.png" alt="" />
+  </div>
+
+  <main class="shell">
+    <header class="hero panel">
+      <div class="hero-head">
+        <span class="tag">Altered Admin</span>
+        <p id="authState" class="sync-note">Checking Ubisoft session...</p>
+      </div>
+      <h1>Altered Nadeo Admin Dashboard</h1>
+      <p class="hero-copy">
+        Manage Altered club map structure, sync club snapshots into tracker, and control what gets actively tracked.
+      </p>
+      <div class="section-head" style="margin-top: 0.8rem;">
+        <a class="chip" href="/">Back To Public Dashboard</a>
+        <div style="display: flex; gap: 0.45rem;">
+          <a data-link="trackers" class="btn-lite" href="https://trackers.xjk.yt/" style="text-decoration: none;">Open Tracker Hub</a>
+          <button id="logoutBtn" class="btn-lite" type="button">Logout</button>
+        </div>
+      </div>
+
+      <section class="hero-stats" aria-label="Admin quick stats">
+        <article class="stat">
+          <p>Tracked Maps</p>
+          <strong id="statTracked">0</strong>
+        </article>
+        <article class="stat">
+          <p>Campaigns</p>
+          <strong id="statCampaigns">0</strong>
+        </article>
+        <article class="stat">
+          <p>Latest WR</p>
+          <strong id="statLatest">-</strong>
+        </article>
+        <article class="stat">
+          <p>Tracker Runtime</p>
+          <strong id="trackerRuntime">-</strong>
+        </article>
+      </section>
+    </header>
+
+    <section class="main-col" style="margin-top: 1rem;">
+
+      <section class="panel admin-tabs" aria-label="Dashboard tabs">
+        <div class="tab-list" role="tablist" aria-label="Admin dashboard tabs">
+          <button class="tab-btn is-active" type="button" role="tab" aria-selected="true" data-admin-tab="overview">
+            Overview
+          </button>
+          <button class="tab-btn" type="button" role="tab" aria-selected="false" data-admin-tab="monitor">
+            Monitor
+          </button>
+          <button class="tab-btn" type="button" role="tab" aria-selected="false" data-admin-tab="tracker">
+            Tracker
+          </button>
+          <button class="tab-btn" type="button" role="tab" aria-selected="false" data-admin-tab="map-operations">
+            Map Operations
+          </button>
+          <button class="tab-btn" type="button" role="tab" aria-selected="false" data-admin-tab="diagnostics">
+            Diagnostics
+          </button>
+          <button class="tab-btn" type="button" role="tab" aria-selected="false" data-admin-tab="activity-log">
+            Activity Log
+          </button>
+        </div>
+      </section>
+
+      <!-- ==================== OVERVIEW ==================== -->
+      <section class="panel tab-panel is-active" data-tab-panel="overview">
+        <div class="section-head">
+          <div>
+            <h2>Overview</h2>
+            <p>Quick status of monitored club data, tracker sync, and system health.</p>
+          </div>
+        </div>
+
+        <div class="admin-grid">
+          <article class="admin-card">
+            <h3>Monitored Club Snapshot</h3>
+            <p id="overviewHookStatus" class="hook-status">Hook status: loading...</p>
+            <p id="overviewHookRun" class="hook-run">Latest sync run: -</p>
+          </article>
+
+          <article class="admin-card">
+            <h3>Recent Sync Runs</h3>
+            <ul id="overviewRunsList" class="hook-map-list"></ul>
+          </article>
+
+          <article class="admin-card">
+            <h3>System Health</h3>
+            <p id="overviewOpsStatus" class="sync-note">Loading ops overview...</p>
+            <div id="overviewOpsGrid" class="live-progress-stats"></div>
+          </article>
+
+          <article class="admin-card">
+            <h3>Live Monitor Status</h3>
+            <p id="overviewMonitorStatus" class="sync-note">Monitor: loading...</p>
+            <p id="overviewNextRuns" class="sync-note">Next runs: -</p>
+          </article>
+        </div>
+      </section>
+
+      <!-- ==================== MONITOR ==================== -->
+      <section class="panel tab-panel" data-tab-panel="monitor" hidden>
+        <div class="section-head">
+          <div>
+            <h2>Monitor</h2>
+            <p>Live club monitoring: config, status, progress, connected maps, and mapper name tracking.</p>
+          </div>
+          <div style="display: flex; gap: 0.45rem; align-items: center;">
+            <p id="monitorSummaryLine" class="sync-note">0 campaigns | 0 maps</p>
+            <button id="monitorOpenMapOpsBtn" class="btn-lite" type="button">Open Map Operations</button>
+            <a class="btn-lite" href="/admin/monitoring/" style="text-decoration: none;">Advanced Monitoring</a>
+          </div>
+        </div>
+
+        <div class="monitor-subtabs" role="tablist" aria-label="Monitor sections">
+          <button class="monitor-subtab-btn is-active" type="button" role="tab" aria-selected="true" data-monitor-subtab="scheduler">
+            Schedule & Runs
+          </button>
+          <button class="monitor-subtab-btn" type="button" role="tab" aria-selected="false" data-monitor-subtab="maps">
+            Connected Maps
+          </button>
+          <button class="monitor-subtab-btn" type="button" role="tab" aria-selected="false" data-monitor-subtab="campaigns">
+            Campaign Browser
+          </button>
+          <button class="monitor-subtab-btn" type="button" role="tab" aria-selected="false" data-monitor-subtab="names">
+            Name Tracking
+          </button>
+        </div>
+
+        <section class="monitor-subpanel is-active" data-monitor-subpanel="scheduler">
+          <div class="admin-grid" style="margin-top: 0.85rem;">
+            <form id="liveMonitorForm" class="admin-card live-monitor-form">
+              <h3>Live Club Monitor Config</h3>
+              <div class="live-monitor-grid">
+                <label class="field">
+                  <span>Club ID</span>
+                  <input id="liveClubIdInput" type="number" min="1" step="1" value="24231" />
+                </label>
+                <label class="field">
+                  <span>Activity Page Size</span>
+                  <input id="liveActivityPageSizeInput" type="number" min="1" max="250" value="250" />
+                </label>
+                <label class="field">
+                  <span>Schedule Mode</span>
+                  <select id="liveScheduleModeSelect">
+                    <option value="interval">Fixed Interval</option>
+                    <option value="daily">Daily Full Scan</option>
+                  </select>
+                </label>
+                <label class="field">
+                  <span>Monitor Interval (seconds)</span>
+                  <input id="liveIntervalInput" type="number" min="60" max="86400" value="21600" />
+                </label>
+                <label class="field">
+                  <span>Daily Hour (UTC)</span>
+                  <input id="liveDailyHourInput" type="number" min="0" max="23" value="3" />
+                </label>
+                <label class="field">
+                  <span>Daily Minute (UTC)</span>
+                  <input id="liveDailyMinuteInput" type="number" min="0" max="59" value="0" />
+                </label>
+                <label class="field">
+                  <span>Tracker Sync Chunk Size</span>
+                  <input id="liveTrackerChunkSizeInput" type="number" min="25" max="1000" value="350" />
+                </label>
+                <label class="field check">
+                  <span>Auto Monitor Enabled</span>
+                  <input id="liveEnabledToggle" type="checkbox" />
+                </label>
+                <label class="field check">
+                  <span>Active Campaigns Only</span>
+                  <input id="liveActiveOnlyToggle" type="checkbox" />
+                </label>
+                <label class="field check">
+                  <span>Fetch Map Metadata</span>
+                  <input id="liveFetchDetailsToggle" type="checkbox" checked />
+                </label>
+              </div>
+              <div class="live-monitor-actions">
+                <button class="btn-main" type="submit">Save Monitor Config</button>
+                <button id="liveRefreshBtn" class="btn-lite" type="button">Fetch Latest Data</button>
+                <button id="liveFetchBtn" class="btn-lite" type="button">Fetch Live Summary</button>
+                <button id="liveSyncBtn" class="btn-lite" type="button">Sync Live Club Into Altered + Tracker</button>
+              </div>
+              <div class="live-action-feedback" aria-live="polite">
+                <p id="liveActionStatus" class="sync-note">Manual fetch status: idle</p>
+                <div class="live-progress-bar-outer live-progress-inline">
+                  <div id="liveActionProgressBar" class="live-progress-bar-inner"></div>
+                </div>
+              </div>
+            </form>
+
+            <article class="admin-card live-progress-card">
+              <h3>Live Scan Progress</h3>
+              <p id="liveStatusLine" class="sync-note">Live monitor status: loading...</p>
+              <p id="liveNextRunLine" class="sync-note">Next scheduled run: -</p>
+              <p id="liveSummaryLine" class="sync-note">Last live sync: -</p>
+              <div class="live-progress-wrap" aria-label="Live sync progress">
+                <div id="liveProgressBarOuter" class="live-progress-bar-outer">
+                  <div id="liveProgressBar" class="live-progress-bar-inner"></div>
+                </div>
+                <p id="liveProgressLine" class="sync-note">Progress: idle</p>
+                <p id="liveProgressMeta" class="hook-map-meta">No active run.</p>
+                <div id="liveProgressStats" class="live-progress-stats">
+                  <p class="hook-map-meta">No live statistics yet.</p>
+                </div>
+              </div>
+            </article>
+          </div>
+        </section>
+
+        <section class="monitor-subpanel" data-monitor-subpanel="maps" hidden>
+          <div class="monitor-subpanel-body">
+            <p id="connectedMapsSummary" class="sync-note">Loading connected map data...</p>
+            <p id="connectedMapsLiveMeta" class="hook-map-meta">Last live scan: -</p>
+            <div class="table-wrap connected-maps-wrap">
+              <table class="map-table">
+                <thead>
+                  <tr>
+                    <th>Campaign</th>
+                    <th>Slot</th>
+                    <th>Map</th>
+                    <th>UID</th>
+                    <th>Status</th>
+                  </tr>
+                </thead>
+                <tbody id="connectedMapsBody"></tbody>
+              </table>
+            </div>
+            <div class="pager-controls" aria-label="Connected maps pagination">
+              <button id="connectedMapsPrevBtn" class="btn-lite pager-btn" type="button">Prev</button>
+              <span id="connectedMapsPageInfo" class="hook-map-meta">Page 1 / 1</span>
+              <button id="connectedMapsNextBtn" class="btn-lite pager-btn" type="button">Next</button>
+            </div>
+          </div>
+        </section>
+
+        <section class="monitor-subpanel" data-monitor-subpanel="campaigns" hidden>
+          <div class="monitor-subpanel-body">
+            <div class="pager-controls" aria-label="Campaign browser pagination">
+              <button id="clubStructurePrevBtn" class="btn-lite pager-btn" type="button">Prev</button>
+              <span id="clubStructurePageInfo" class="hook-map-meta">Page 1 / 1</span>
+              <button id="clubStructureNextBtn" class="btn-lite pager-btn" type="button">Next</button>
+            </div>
+            <div id="clubStructureBoard" class="club-structure-board"></div>
+          </div>
+        </section>
+
+        <section class="monitor-subpanel" data-monitor-subpanel="names" hidden>
+          <div class="monitor-subpanel-body">
+            <div class="admin-grid" style="grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));">
+              <label class="field"><span>Search</span><input id="namingSearchInput" type="search" placeholder="Map name or UID..." /></label>
+              <label class="field"><span>Automation</span>
+                <select id="namingAutomationFilter"><option value="">All</option><option value="matched">Matched</option><option value="unmatched">Unmatched</option></select>
+              </label>
+              <label class="field"><span>Review</span>
+                <select id="namingReviewFilter"><option value="">All</option><option value="pending">Pending</option><option value="approved">Approved</option><option value="ignored">Ignored</option></select>
+              </label>
+              <label class="field"><span>Requires Regex</span>
+                <select id="namingRegexFilter"><option value="">All</option><option value="true">Yes</option><option value="false">No</option></select>
+              </label>
+            </div>
+            <div class="live-monitor-actions" style="margin-top: 0.5rem;">
+              <button id="namingProcessBtn" class="btn-lite" type="button">Process Name Candidates</button>
+              <button id="namingRefreshBtn" class="btn-lite" type="button">Refresh Candidates</button>
+            </div>
+            <p id="namingSummaryLine" class="sync-note" style="margin-top: 0.4rem;">No naming candidates loaded yet.</p>
+            <div class="table-wrap" style="margin-top: 0.5rem;">
+              <table class="map-table naming-table">
+                <thead>
+                  <tr><th>Map</th><th>Current Name</th><th>Proposed</th><th>Status</th><th>Actions</th></tr>
+                </thead>
+                <tbody id="namingCandidatesBody"></tbody>
+              </table>
+            </div>
+          </div>
+        </section>
+      </section>
+
+      <!-- ==================== TRACKER ==================== -->
+      <section class="panel tab-panel hook-panel" data-tab-panel="tracker" hidden>
+        <div class="section-head">
+          <div>
+            <h2>Tracker Hook Config</h2>
+            <p>Set club source and sync map snapshots from Altered into tracker service.</p>
+          </div>
+        </div>
+
+        <p id="hookStatusLine" class="hook-status">Hook status: loading...</p>
+        <p id="hookRunLine" class="hook-run">Latest sync run: -</p>
+
+        <div class="hook-grid">
+          <form id="hookConfigForm" class="admin-card">
+            <h3>Hook Config</h3>
+            <label class="field">
+              <span>Club ID</span>
+              <input id="hookClubIdInput" type="number" min="1" step="1" />
+            </label>
+            <label class="field">
+              <span>Club Name</span>
+              <input id="hookClubNameInput" type="text" placeholder="Altered Nadeo Club" />
+            </label>
+            <label class="field">
+              <span>Source Label</span>
+              <input id="hookSourceInput" type="text" placeholder="altered-monitor" />
+            </label>
+            <label class="field check">
+              <span>Hook Enabled</span>
+              <input id="hookEnabledToggle" type="checkbox" />
+            </label>
+            <label class="field check">
+              <span>Auto-track New Maps</span>
+              <input id="hookAutoTrackToggle" type="checkbox" />
+            </label>
+            <button class="btn-main" type="submit">Save Hook Config</button>
+          </form>
+
+          <form id="hookSyncForm" class="admin-card">
+            <h3>Sync Club Snapshot</h3>
+            <label class="field">
+              <span>Snapshot JSON</span>
+              <textarea
+                id="hookSnapshotInput"
+                rows="9"
+                placeholder='{"club":{"id":558282,"name":"Altered Nadeo Club"},"campaigns":[{"name":"Spring 2026","maps":[{"uid":"AN-S26-01-FLIPWAY","name":"Flipway Nexus","slot":1,"tracked":true}]}]}'
+              ></textarea>
+            </label>
+            <button id="hookSyncBtn" class="btn-main" type="submit">Sync Snapshot Into Tracker</button>
+          </form>
+
+          <section class="admin-card hook-map-card" aria-label="Hook map list">
+            <h3>Hooked Maps</h3>
+            <label class="field">
+              <span>Search Hooked Maps</span>
+              <input id="hookMapSearch" type="search" placeholder="Map name or UID..." />
+            </label>
+            <ul id="hookMapList" class="hook-map-list"></ul>
+            <div class="pager-controls" aria-label="Hook map pagination">
+              <button id="hookMapPrevBtn" class="btn-lite pager-btn" type="button">Prev</button>
+              <span id="hookMapPageInfo" class="hook-map-meta">Page 1 / 1</span>
+              <button id="hookMapNextBtn" class="btn-lite pager-btn" type="button">Next</button>
+            </div>
+          </section>
+        </div>
+      </section>
+
+      <!-- ==================== MAP OPERATIONS ==================== -->
+      <section class="panel tab-panel" data-tab-panel="map-operations" hidden>
+        <div class="section-head">
+          <div>
+            <h2>Altered Map Management</h2>
+            <p>Update campaign placement and tracking status for existing maps.</p>
+            <p id="mapOpsStatusLine" class="sync-note">Loading map selectors...</p>
+          </div>
+        </div>
+
+        <div class="admin-grid">
+          <form id="campaignForm" class="admin-card">
+            <h3>Move Map In Campaign</h3>
+            <label class="field">
+              <span>Map</span>
+              <select id="adminMapSelect"></select>
+            </label>
+            <label class="field">
+              <span>Campaign</span>
+              <input id="adminCampaignInput" type="text" placeholder="Example: Summer 2026" />
+            </label>
+            <label class="field">
+              <span>Slot</span>
+              <input id="adminSlotInput" type="number" min="1" max="99" value="1" />
+            </label>
+            <button class="btn-main" type="submit">Apply Campaign Move</button>
+          </form>
+
+          <form id="trackingForm" class="admin-card">
+            <h3>Toggle Tracking</h3>
+            <label class="field">
+              <span>Map</span>
+              <select id="trackingMapSelect"></select>
+            </label>
+            <label class="field">
+              <span>Tracking State</span>
+              <select id="trackingStateSelect">
+                <option value="tracked">Tracked</option>
+                <option value="paused">Paused</option>
+              </select>
+            </label>
+            <button class="btn-main" type="submit">Update Tracking</button>
+          </form>
+
+          <form id="uidLookupForm" class="admin-card">
+            <h3>Altered Map API Check</h3>
+            <label class="field">
+              <span>Map UID</span>
+              <input id="uidLookupInput" type="text" placeholder="Paste map UID..." />
+            </label>
+            <button class="btn-main" type="submit">Check UID</button>
+            <p id="uidLookupResult" class="lookup-result">No lookup yet.</p>
+          </form>
+        </div>
+      </section>
+
+      <!-- ==================== DIAGNOSTICS ==================== -->
+      <section class="panel tab-panel" data-tab-panel="diagnostics" hidden>
+        <div class="section-head">
+          <div>
+            <h2>Diagnostics</h2>
+            <p>Statistics, visual breakdowns, and operational health metrics.</p>
+          </div>
+          <button id="diagRefreshBtn" class="btn-lite" type="button">Refresh Data</button>
+        </div>
+
+        <div class="diag-stats-row">
+          <article class="diag-stat-card">
+            <span class="diag-stat-label">Total Maps</span>
+            <strong id="diagTotalMaps" class="diag-stat-value">-</strong>
+          </article>
+          <article class="diag-stat-card">
+            <span class="diag-stat-label">Actively Tracked</span>
+            <strong id="diagActivelyTracked" class="diag-stat-value">-</strong>
+          </article>
+          <article class="diag-stat-card">
+            <span class="diag-stat-label">Total WR Changes</span>
+            <strong id="diagTotalWrChanges" class="diag-stat-value">-</strong>
+          </article>
+          <article class="diag-stat-card">
+            <span class="diag-stat-label">Campaigns</span>
+            <strong id="diagCampaigns" class="diag-stat-value">-</strong>
+          </article>
+          <article class="diag-stat-card">
+            <span class="diag-stat-label">Last Tracker Run</span>
+            <strong id="diagLastRun" class="diag-stat-value">-</strong>
+          </article>
+          <article class="diag-stat-card">
+            <span class="diag-stat-label">Scheduler Status</span>
+            <strong id="diagSchedulerStatus" class="diag-stat-value">-</strong>
+          </article>
+        </div>
+
+        <div class="diag-charts-grid">
+          <article class="admin-card diag-chart-card">
+            <h3>Maps Per Campaign</h3>
+            <p class="sync-note">Distribution of maps across campaigns.</p>
+            <div class="diag-canvas-wrap">
+              <canvas id="chartMapsPerCampaign"></canvas>
+            </div>
+          </article>
+
+          <article class="admin-card diag-chart-card">
+            <h3>Sync Runs Over Time</h3>
+            <p class="sync-note">Maps seen per recent sync run.</p>
+            <div class="diag-canvas-wrap">
+              <canvas id="chartSyncRuns"></canvas>
+            </div>
+          </article>
+
+          <article class="admin-card diag-chart-card">
+            <h3>Tracking Status Distribution</h3>
+            <p class="sync-note">Breakdown of tracked, paused, and untracked maps.</p>
+            <div class="diag-canvas-wrap diag-canvas-wrap-square">
+              <canvas id="chartTrackingStatus"></canvas>
+            </div>
+          </article>
+
+          <article class="admin-card diag-chart-card">
+            <h3>Campaign Additions Timeline</h3>
+            <p class="sync-note">Campaign additions grouped by publication/creation timestamps.</p>
+            <div class="diag-chart-controls">
+              <label class="diag-chart-control">
+                <span>Timestamp Source</span>
+                <select id="diagTimelineSource">
+                  <option value="best" selected>Best Available</option>
+                  <option value="publication">Publication Timestamp</option>
+                  <option value="creation">Creation Timestamp</option>
+                  <option value="start">Campaign Start Timestamp</option>
+                  <option value="discovered">First Seen (DB)</option>
+                </select>
+              </label>
+              <label class="diag-chart-control">
+                <span>Bucket</span>
+                <select id="diagTimelineBucket">
+                  <option value="day">Day</option>
+                  <option value="week">Week</option>
+                  <option value="month" selected>Month</option>
+                </select>
+              </label>
+              <label class="diag-chart-control">
+                <span>Range</span>
+                <select id="diagTimelineDays">
+                  <option value="90">Last 90 days</option>
+                  <option value="180">Last 180 days</option>
+                  <option value="365">Last 365 days</option>
+                  <option value="730" selected>Last 730 days</option>
+                  <option value="3650">Last 10 years</option>
+                </select>
+              </label>
+            </div>
+            <p id="diagCampaignTimelineSummary" class="sync-note">Loading campaign timeline...</p>
+            <div class="diag-canvas-wrap">
+              <canvas id="chartCampaignTimeline"></canvas>
+            </div>
+          </article>
+
+          <article class="admin-card diag-chart-card">
+            <h3>Ops Overview</h3>
+            <p id="diagOpsSchedulerLine" class="sync-note">Scheduler: loading...</p>
+            <div id="diagOpsGrid" class="live-progress-stats"></div>
+          </article>
+        </div>
+      </section>
+
+      <!-- ==================== ACTIVITY LOG ==================== -->
+      <section class="panel tab-panel" data-tab-panel="activity-log" hidden>
+        <div class="section-head">
+          <div>
+            <h2>Activity Log</h2>
+            <p>Admin action history and recent operational events.</p>
+          </div>
+          <button id="activityLogRefreshBtn" class="btn-lite" type="button">Refresh Events</button>
+        </div>
+
+        <div class="activity-log-grid">
+          <article class="admin-card">
+            <h3>Admin Actions (This Session)</h3>
+            <div class="ops-log">
+              <ul id="adminLogList"></ul>
+            </div>
+          </article>
+
+          <article class="admin-card">
+            <h3>Ops Events (Server)</h3>
+            <p id="opsEventsCount" class="sync-note">Loading events...</p>
+            <div class="ops-log">
+              <ul id="opsEventsList"></ul>
+            </div>
+            <div class="pager-controls">
+              <button id="opsEventsPrevBtn" class="btn-lite pager-btn" type="button">Prev</button>
+              <span id="opsEventsPageInfo" class="hook-map-meta">Page 1 / 1</span>
+              <button id="opsEventsNextBtn" class="btn-lite pager-btn" type="button">Next</button>
+            </div>
+          </article>
+
+          <article class="admin-card">
+            <h3>Recent Poll Runs</h3>
+            <div class="ops-log">
+              <ul id="opsRunsList"></ul>
+            </div>
+          </article>
+        </div>
+      </section>
+
+    </section>
+  </main>
+  <div id="toastStack" class="toast-stack" aria-live="polite" aria-atomic="false"></div>
+
+  <script src="/altered-hub.js"></script>
+  <script src="/admin.js"></script>
+</body>
+</html>

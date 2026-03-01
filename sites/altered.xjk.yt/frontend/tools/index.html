@@ -1,0 +1,77 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>xjk / altered / tools</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@400;500;600;700&family=Manrope:wght@400;500;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="/altered-hub.css" />
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+</head>
+<body>
+  <a class="corner-login" href="/admin-login/">Login</a>
+
+  <div class="backdrop" aria-hidden="true">
+    <div class="geo-mesh"></div>
+    <div class="orb orb-1"></div>
+    <div class="orb orb-2"></div>
+    <div class="orb orb-3"></div>
+  </div>
+
+  <div class="solids-layer" aria-hidden="true">
+    <img class="solid solid-1" src="/bannerbuilder/assets/solids/Dodecahedron.png" alt="" />
+    <img class="solid solid-2" src="/bannerbuilder/assets/solids/Icosahedron.png" alt="" />
+    <img class="solid solid-3" src="/bannerbuilder/assets/solids/Octahedron.png" alt="" />
+  </div>
+
+  <main>
+    <section class="vista" style="min-height: auto; padding: 4rem 1.5rem 2rem;">
+      <a class="vista-badge" href="/" style="animation: none; opacity: 1; transform: none; cursor: pointer; text-decoration: none;">&larr; Back to Hub</a>
+      <h1 class="vista-title" style="font-size: clamp(2.5rem, 8vw, 5rem); animation: none; opacity: 1; transform: none;">Tools</h1>
+      <p class="vista-sub" style="animation: none; opacity: 1; transform: none;">
+        Creative tools and services built for the Altered project.
+      </p>
+    </section>
+
+    <section class="showcase" aria-label="Tools">
+      <article class="card reveal">
+        <span class="card-tag">Creative Tool</span>
+        <h2>Banner Builder</h2>
+        <p>Build Altered-styled banners with season backgrounds, platonic solids, custom text placement, and PNG export.</p>
+        <a class="card-link" href="/bannerbuilder/">Launch Builder &rarr;</a>
+      </article>
+
+      <article class="card reveal">
+        <span class="card-tag">Creative Tool</span>
+        <h2>Platonic Solids Studio</h2>
+        <p>Render spinning tetrahedron, cube, octahedron, dodecahedron, and icosahedron with live controls and video export.</p>
+        <a class="card-link" href="/platonic-solids/">Launch Studio &rarr;</a>
+      </article>
+
+      <article class="card reveal">
+        <span class="card-tag">Service</span>
+        <h2>Tracker Integration</h2>
+        <p>WR data and map tracking powered by the independent tracker service.</p>
+        <div class="card-links">
+          <a class="card-link" data-link="tracker" href="https://trackers.xjk.yt/leaderboard/">trackers.xjk.yt/leaderboard &rarr;</a>
+          <a class="card-link" href="/api/v1/dashboard">API Snapshot &rarr;</a>
+        </div>
+      </article>
+    </section>
+
+    <footer class="foot reveal">
+      <span class="foot-mark">altered.xjk.yt</span>
+      <nav aria-label="Hub navigation">
+        <a href="/">Hub</a>
+        <a href="/alterations/">Maps</a>
+        <a href="/rankings/">Rankings</a>
+        <a data-link="tracker" href="https://trackers.xjk.yt/leaderboard/">Tracker</a>
+      </nav>
+    </footer>
+  </main>
+
+  <script src="/altered-hub.js"></script>
+</body>
+</html>

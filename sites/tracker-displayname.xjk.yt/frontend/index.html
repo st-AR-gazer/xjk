@@ -1,0 +1,145 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>xjk / displayname</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@400;500;600;700&family=Manrope:wght@400;500;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="styles.css?v=20260228-redesign" />
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+</head>
+<body>
+  <!-- Backdrop -->
+  <div class="backdrop" aria-hidden="true">
+    <div class="dot-grid"></div>
+    <div class="orb orb-1"></div>
+    <div class="orb orb-2"></div>
+  </div>
+
+  <a class="corner-back" href="/">Back to Trackers</a>
+
+  <main>
+    <!-- Header -->
+    <header class="header">
+      <div class="header-brand">
+        <span class="header-badge">Displayname Tracker</span>
+        <h1 class="header-title">displayname.</h1>
+        <p class="header-sub">
+          Resolves account IDs to display names and pushes normalized updates into the aggregator.
+        </p>
+        <div class="header-status" id="statusLine">Loading...</div>
+      </div>
+
+      <section class="stats-bar" aria-label="Tracker stats">
+        <div class="stat">
+          <span class="stat-value" id="stat-queue">&mdash;</span>
+          <span class="stat-label">Queue</span>
+        </div>
+        <div class="stat">
+          <span class="stat-value" id="stat-running">&mdash;</span>
+          <span class="stat-label">Running</span>
+        </div>
+        <div class="stat">
+          <span class="stat-value" id="stat-finished">&mdash;</span>
+          <span class="stat-label">Last Finished</span>
+        </div>
+        <div class="stat">
+          <span class="stat-value" id="stat-scheduler">&mdash;</span>
+          <span class="stat-label">Scheduler</span>
+        </div>
+      </section>
+    </header>
+
+    <!-- Dashboard Grid -->
+    <section class="dashboard-grid">
+      <!-- Runtime Config -->
+      <div class="panel-card">
+        <div class="section-bar">
+          <h2>Runtime Config</h2>
+        </div>
+
+        <div class="field-row" style="margin-top: 0.7rem;">
+          <label class="check-label">
+            <input id="enabled" type="checkbox" />
+            <span>Enabled</span>
+          </label>
+          <label class="check-label">
+            <input id="schedulerEnabled" type="checkbox" />
+            <span>Scheduler</span>
+          </label>
+        </div>
+
+        <div class="field-row">
+          <div class="field" style="flex: 1;">
+            <span class="field-label">Maintenance Interval (s)</span>
+            <input id="maintenanceIntervalSeconds" class="form-input" type="number" min="5" />
+          </div>
+          <div class="field" style="flex: 1;">
+            <span class="field-label">Stale After (s)</span>
+            <input id="staleAfterSeconds" class="form-input" type="number" min="0" />
+          </div>
+        </div>
+
+        <div class="field-row">
+          <div class="field" style="flex: 1;">
+            <span class="field-label">Batch Size (max 50)</span>
+            <input id="batchSize" class="form-input" type="number" min="1" max="50" />
+          </div>
+          <div class="field" style="flex: 1;">
+            <span class="field-label">Max Accounts Per Cycle</span>
+            <input id="maxAccountsPerCycle" class="form-input" type="number" min="1" />
+          </div>
+        </div>
+
+        <div class="btn-row">
+          <button id="saveConfig" class="btn btn-sky" type="button">Save Config</button>
+        </div>
+      </div>
+
+      <!-- Manual Sync -->
+      <div class="panel-card">
+        <div class="section-bar">
+          <h2>Manual Sync</h2>
+        </div>
+
+        <div class="field" style="margin-top: 0.7rem;">
+          <span class="field-label">Account IDs (comma/newline separated)</span>
+          <textarea id="accountIds" class="form-textarea" placeholder="d10cdccd-31e7-491f-9504-d72ee3a70de6"></textarea>
+        </div>
+
+        <div class="btn-row">
+          <button id="enqueueBtn" class="btn btn-sky" type="button">Enqueue IDs</button>
+          <button id="runNowBtn" class="btn btn-outline" type="button">Run Sync Now</button>
+          <label class="check-label">
+            <input id="forceCandidates" type="checkbox" />
+            <span>Force</span>
+          </label>
+        </div>
+      </div>
+    </section>
+
+    <!-- Status JSON -->
+    <section class="panel-card" style="margin-top: 0.8rem;">
+      <div class="section-bar">
+        <h2>Status JSON</h2>
+      </div>
+      <pre id="statusJson" class="json-display" style="margin-top: 0.6rem;">{}</pre>
+    </section>
+
+    <!-- Footer -->
+    <footer class="foot">
+      <span class="foot-mark">trackers.xjk.yt/displayname</span>
+      <nav aria-label="Hub navigation">
+        <a data-link="main" href="https://xjk.yt/">Main</a>
+        <a data-link="trackers" href="https://trackers.xjk.yt/">Trackers</a>
+        <a data-link="altered" href="https://altered.xjk.yt/">Altered</a>
+        <a data-link="aggregator" href="https://aggregator.xjk.yt/">Aggregator</a>
+      </nav>
+    </footer>
+  </main>
+
+  <script src="app.js?v=20260228-redesign"></script>
+</body>
+</html>

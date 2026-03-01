@@ -1,0 +1,198 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>xjk / world records</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@400;500;600;700&family=Manrope:wght@400;500;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="styles.css?v=20260226-tabs" />
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+</head>
+<body>
+  <!-- Backdrop -->
+  <div class="backdrop" aria-hidden="true">
+    <div class="dot-grid"></div>
+    <div class="orb orb-1"></div>
+    <div class="orb orb-2"></div>
+    <div class="orb orb-3"></div>
+  </div>
+
+  <main>
+    <!-- Header -->
+    <header class="header">
+      <div class="header-brand">
+        <span class="header-badge" id="header-badge">World Records</span>
+        <h1 class="header-title" id="header-title">wr.</h1>
+        <p class="header-sub" id="header-sub">
+          Real-time world-record monitoring for Trackmania &mdash; powering WR alerts and live map status.
+        </p>
+        <div class="header-actions">
+          <a class="btn btn-gold" href="#live-feed">Live Feed</a>
+          <a class="btn btn-outline" href="#maps">All Maps</a>
+          <a class="btn btn-outline" href="admin/login">Admin Login</a>
+        </div>
+      </div>
+
+      <section class="stats-bar" aria-label="Stats overview">
+        <div class="stat">
+          <span class="stat-value" id="stat-tracked">&mdash;</span>
+          <span class="stat-label">Tracked</span>
+        </div>
+        <div class="stat">
+          <span class="stat-value" id="stat-due">&mdash;</span>
+          <span class="stat-label">Due Now</span>
+        </div>
+        <div class="stat">
+          <span class="stat-value" id="stat-changes">&mdash;</span>
+          <span class="stat-label" id="stat-changes-label">WR Changes</span>
+        </div>
+        <div class="stat">
+          <span class="stat-value" id="stat-last-run">&mdash;</span>
+          <span class="stat-label">Last Run</span>
+        </div>
+      </section>
+    </header>
+
+    <!-- Latest Activity Spotlight -->
+    <section class="spotlight" id="spotlight" aria-label="Latest activity">
+      <div class="spotlight-inner">
+        <div class="spotlight-live">
+          <span class="pulse-dot"></span>
+          <span class="spotlight-live-label">Live</span>
+        </div>
+        <div class="spotlight-content">
+          <span class="spotlight-map" id="spotlight-map">Waiting for data&hellip;</span>
+          <span class="spotlight-detail" id="spotlight-detail">&mdash;</span>
+        </div>
+        <div class="spotlight-wr" id="spotlight-wr">&mdash;</div>
+      </div>
+    </section>
+
+    <!-- Tab Navigation -->
+    <nav class="tab-nav" aria-label="Dashboard sections">
+      <button class="tab-btn is-active" data-tab="live-feed">
+        <span class="tab-icon">&#x26A1;</span> Live Feed
+      </button>
+      <button class="tab-btn" data-tab="maps">
+        <span class="tab-icon">&#x1F5FA;</span> Maps
+      </button>
+      <button class="tab-btn" data-tab="engine">
+        <span class="tab-icon">&#x2699;</span> Engine
+      </button>
+    </nav>
+
+    <!-- Tab: Live Feed -->
+    <div class="tab-panel is-active" id="tab-live-feed">
+      <!-- WR Changes -->
+      <section class="panel-card" aria-label="World record changes">
+        <div class="section-bar">
+          <div class="section-bar-left">
+            <span class="pulse-dot"></span>
+            <h2 id="feed-title">WR Changes</h2>
+          </div>
+          <span class="feed-note" id="feed-note">Auto-updates every 15s</span>
+        </div>
+        <div class="feed-list" id="feed-list">
+          <div class="feed-empty" id="feed-empty">
+            <p id="feed-empty-text">Waiting for world-record data&hellip;</p>
+          </div>
+        </div>
+      </section>
+
+      <!-- Live Check Stream -->
+      <section class="panel-card" aria-label="Live map check stream">
+        <div class="section-bar">
+          <div class="section-bar-left">
+            <span class="pulse-dot pulse-dot-teal"></span>
+            <h2 id="check-stream-title">Check Stream</h2>
+          </div>
+          <span class="feed-note" id="check-feed-note">Waiting for checks...</span>
+        </div>
+        <div class="check-feed-list" id="check-feed-list">
+          <div class="feed-empty" id="check-feed-empty">
+            <p>Waiting for first checked map&hellip;</p>
+          </div>
+        </div>
+      </section>
+    </div>
+
+    <!-- Tab: Maps -->
+    <div class="tab-panel" id="tab-maps">
+      <section class="panel-card" aria-label="Tracked maps">
+        <div class="section-bar">
+          <h2>Tracked Maps</h2>
+          <span class="maps-count" id="maps-count">0 maps</span>
+        </div>
+
+        <div class="maps-controls">
+          <input type="search" id="map-search" class="search-input" placeholder="Search maps, UIDs&hellip;" />
+          <label class="due-toggle">
+            <input type="checkbox" id="due-only" />
+            <span>Due only</span>
+          </label>
+        </div>
+
+        <div class="table-wrap">
+          <table class="maps-table">
+            <thead>
+              <tr>
+                <th>Map</th>
+                <th>Campaign</th>
+                <th>WR</th>
+                <th>Holder</th>
+                <th>Status</th>
+                <th>Next</th>
+              </tr>
+            </thead>
+            <tbody id="map-rows"></tbody>
+          </table>
+        </div>
+
+        <div class="pagination" id="pagination">
+          <button class="page-btn" id="page-prev" type="button">&larr; Prev</button>
+          <span class="page-info" id="page-info">Page 1</span>
+          <button class="page-btn" id="page-next" type="button">Next &rarr;</button>
+        </div>
+      </section>
+    </div>
+
+    <!-- Tab: Engine -->
+    <div class="tab-panel" id="tab-engine">
+      <section class="panel-card" aria-label="Engine status">
+        <div class="section-bar">
+          <h2>Engine</h2>
+          <button id="run-now-btn" class="btn btn-gold btn-sm" type="button">Run Now</button>
+        </div>
+
+        <div class="engine-grid">
+          <div class="engine-kv"><span>Provider</span><strong id="engine-provider">&mdash;</strong></div>
+          <div class="engine-kv"><span>Tick</span><strong id="engine-tick">&mdash;</strong></div>
+          <div class="engine-kv"><span>Status</span><strong id="engine-status">&mdash;</strong></div>
+          <div class="engine-kv"><span>Last Started</span><strong id="engine-started">&mdash;</strong></div>
+          <div class="engine-kv"><span>Last Finished</span><strong id="engine-finished">&mdash;</strong></div>
+          <div class="engine-kv"><span>Last Error</span><strong id="engine-error">none</strong></div>
+        </div>
+
+        <h3 class="runs-title">Recent Runs</h3>
+        <ul class="runs-list" id="runs-list"></ul>
+      </section>
+    </div>
+
+    <!-- Footer -->
+    <footer class="foot">
+      <span class="foot-mark" id="foot-mark">trackers.xjk.yt/wr</span>
+      <nav aria-label="Hub navigation">
+        <a data-link="main" href="https://xjk.yt/">Main</a>
+        <a data-link="trackers" href="https://trackers.xjk.yt/">Trackers</a>
+        <a data-link="altered" href="https://altered.xjk.yt/">Altered</a>
+        <a data-link="aggregator" href="https://aggregator.xjk.yt/">Aggregator</a>
+        <a data-link="tools" href="https://tools.xjk.yt/">Tools</a>
+      </nav>
+    </footer>
+  </main>
+
+  <script src="app.js?v=20260226-tabs"></script>
+</body>
+</html>

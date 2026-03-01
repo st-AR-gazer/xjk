@@ -1,0 +1,71 @@
+<!doctype html>
+<html lang="en" data-tool-id="map-cleaner">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>xjk / tools / map cleaner</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@500;600;700&family=Manrope:wght@400;500;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="styles.css" />
+  <link rel="stylesheet" href="../../shared/tool-theme.css" />
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+</head>
+<body>
+  <div class="bg-grid" aria-hidden="true"></div>
+  <div class="bg-sweep bg-sweep-warm" aria-hidden="true"></div>
+  <div class="bg-sweep bg-sweep-cool" aria-hidden="true"></div>
+
+  <main class="shell">
+    <section class="hero">
+      <p class="eyebrow">Validation Utility</p>
+      <h1>Trackmania Map Cleaner</h1>
+      <p class="lead">
+        Upload a <code>.Map.Gbx</code>, remove the validation replay, and choose which files should be returned.
+      </p>
+    </section>
+
+    <section id="drop" class="dropcard" tabindex="0" aria-label="Map upload">
+      <input id="file" type="file" accept=".gbx,.Map.Gbx" />
+      <p class="card-title">Map Input</p>
+      <p class="card-copy">Drop <code>.Map.Gbx</code> here or click to browse.</p>
+      <p id="fileName" class="card-meta">No map selected</p>
+    </section>
+
+    <section class="returns panel" aria-label="Return options">
+      <h2>Return Files</h2>
+      <p class="muted option-intro">Pick one or more output artifacts to download after cleaning.</p>
+
+      <label class="returnOpt">
+        <input id="returnMap" type="checkbox" checked />
+        <span>Return cleaned map</span>
+      </label>
+      <label class="returnOpt">
+        <input id="returnGhost" type="checkbox" />
+        <span>Return extracted validation ghost</span>
+      </label>
+      <label class="returnOpt disabled">
+        <input id="returnReplay" type="checkbox" />
+        <span>Return replay <small>(currently unsupported)</small></span>
+      </label>
+    </section>
+
+    <section class="action-row">
+      <button id="go" class="go" disabled>Process Map</button>
+    </section>
+
+    <div id="status" class="status" role="status" aria-live="polite"></div>
+    <div id="error" class="error" role="alert"></div>
+
+  </main>
+
+  <div id="overlay" class="overlay hidden" aria-live="polite" aria-busy="true">
+    <div class="loader" aria-hidden="true"></div>
+    <p id="overlayText" class="overlay-title">Uploading...</p>
+    <p id="progressText" class="overlay-copy muted small"></p>
+  </div>
+
+  <script src="../../shared/tool-theme.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>
