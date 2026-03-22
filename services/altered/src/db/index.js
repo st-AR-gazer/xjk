@@ -7,7 +7,23 @@ function applyMigrations(db) {
   }
 }
 
+function tableExists(db, tableName) {
+  return Boolean(
+    db
+      .prepare(
+        `
+        SELECT 1
+        FROM sqlite_master
+        WHERE type = 'table' AND name = ?
+        LIMIT 1
+        `
+      )
+      .get(String(tableName || "").trim())
+  );
+}
+
 function getTableColumns(db, tableName) {
+  if (!tableExists(db, tableName)) return new Set();
   return new Set(
     db
       .prepare(`PRAGMA table_info(${tableName})`)
@@ -18,9 +34,19 @@ function getTableColumns(db, tableName) {
 }
 
 function ensureColumn(db, tableName, columnName, columnDefinition) {
+  if (!tableExists(db, tableName)) return;
   const columns = getTableColumns(db, tableName);
   if (columns.has(columnName)) return;
   db.exec(`ALTER TABLE ${tableName} ADD COLUMN ${columnDefinition};`);
+}
+
+function normalizeAccountId(value) {
+  const accountId = String(value || "").trim().toLowerCase();
+  if (!accountId) return "";
+  if (/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/.test(accountId)) {
+    return accountId;
+  }
+  return "";
 }
 
 function ensureCompatibilityColumns(db) {
@@ -106,6 +132,38 @@ function ensureCompatibilityColumns(db) {
 
   ensureColumn(db, "altered_maps", "player_count", "player_count INTEGER NOT NULL DEFAULT 0");
   ensureColumn(db, "altered_maps", "player_count_updated_at", "player_count_updated_at TEXT");
+  ensureColumn(db, "altered_wr_events", "account_id", "account_id TEXT");
+  ensureColumn(
+    db,
+    "altered_map_local_file_fixes",
+    "source_file_path",
+    "source_file_path TEXT"
+  );
+  ensureColumn(
+    db,
+    "altered_map_local_file_fixes",
+    "note",
+    "note TEXT"
+  );
+  ensureColumn(
+    db,
+    "altered_map_local_file_fixes",
+    "last_error",
+    "last_error TEXT"
+  );
+  ensureColumn(
+    db,
+    "altered_map_name_candidates",
+    "map_numbers_json",
+    "map_numbers_json TEXT"
+  );
+  ensureColumn(
+    db,
+    "altered_map_name_candidates",
+    "alteration_label",
+    "alteration_label TEXT"
+  );
+  ensureColumn(db, "altered_alterations", "slug", "slug TEXT");
 }
 
 function ensureCompatibilityIndexes(db) {
@@ -136,16 +194,47 @@ function ensureCompatibilityIndexes(db) {
   db.exec(
     "CREATE INDEX IF NOT EXISTS idx_altered_upload_maps_map ON altered_upload_maps(map_uid);"
   );
+  db.exec(
+    "CREATE UNIQUE INDEX IF NOT EXISTS idx_altered_alterations_slug ON altered_alterations(slug);"
+  );
 }
 
-function createDatabase({ filePath }) {
+function backfillCompatibilityData(db) {
+  const rows = db
+    .prepare(
+      `
+      SELECT event_id AS eventId, holder
+      FROM altered_wr_events
+      WHERE account_id IS NULL OR TRIM(COALESCE(account_id, '')) = ''
+      `
+    )
+    .all();
+  if (!rows.length) return;
+
+  const updateStmt = db.prepare(
+    "UPDATE altered_wr_events SET account_id = ? WHERE event_id = ?"
+  );
+  for (const row of rows) {
+    const accountId = normalizeAccountId(row?.holder);
+    if (!accountId) continue;
+    updateStmt.run(accountId, Number(row?.eventId || 0));
+  }
+}
+
+function createDatabase({ filePath, busyTimeoutMs = 30000 } = {}) {
   const db = new DatabaseSync(filePath);
   db.exec("PRAGMA journal_mode = WAL;");
   db.exec("PRAGMA foreign_keys = ON;");
   db.exec("PRAGMA synchronous = NORMAL;");
+  const safeBusyTimeoutMs = Math.max(0, Math.min(Number(busyTimeoutMs) || 0, 10 * 60 * 1000));
+  db.exec(`PRAGMA busy_timeout = ${Math.floor(safeBusyTimeoutMs)};`);
+  // Old local DBs can already have altered_alterations without the newer slug column.
+  // Add compatibility columns before migrations so CREATE INDEX statements do not fail.
+  ensureCompatibilityColumns(db);
   applyMigrations(db);
   ensureCompatibilityColumns(db);
   ensureCompatibilityIndexes(db);
+  backfillCompatibilityData(db);
   return db;
 }
 

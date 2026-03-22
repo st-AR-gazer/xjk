@@ -91,6 +91,19 @@ function createAdminRoutes(service, { adminAuth }) {
     }
   });
 
+  router.post("/tracker/config", (req, res) => {
+    const body = req.body || {};
+    const result = service.setTrackerConfig({
+      enabled: body.enabled,
+      tickSeconds: body.tickSeconds,
+      batchSize: body.batchSize,
+      maxCheckIntervalSeconds: body.maxCheckIntervalSeconds,
+      leaderboardTopN: body.leaderboardTopN,
+    });
+    if (result.error) return res.status(400).json(result);
+    return res.json(result);
+  });
+
   return router;
 }
 

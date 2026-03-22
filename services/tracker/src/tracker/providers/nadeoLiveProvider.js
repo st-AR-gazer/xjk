@@ -1,4 +1,5 @@
 import fs from "fs";
+import { waitForGlobalNadeoSlot } from "../../../../shared/nadeoGlobalThrottle.js";
 
 const CORE_AUTH_BASE_URL = "https://prod.trackmania.core.nadeo.online";
 const LIVE_API_BASE_URL = "https://live-services.trackmania.nadeo.live/api/token";
@@ -101,9 +102,12 @@ class NadeoLiveTrackerProvider {
     tokenCacheFile = "",
     userAgent = "altered project by ar, contact @ar___ on discord",
     requestTimeoutMs = 10000,
-    minRequestGapMs = 600,
+    minRequestGapMs = 5000,
+    globalThrottleFile = "",
+    globalMinRequestGapMs = 0,
     groupUid = "Personal_Best",
     onlyWorld = true,
+    onHttpEvent = null,
     coreAuthBaseUrl = CORE_AUTH_BASE_URL,
     liveApiBaseUrl = LIVE_API_BASE_URL,
     logger = console,
@@ -118,8 +122,16 @@ class NadeoLiveTrackerProvider {
     this.userAgent = toText(userAgent, "xjk-tracker/1.0 (+https://xjk.yt)");
     this.requestTimeoutMs = Math.max(1000, Number(requestTimeoutMs) || 10000);
     this.minRequestGapMs = Math.max(0, Number(minRequestGapMs) || 0);
+    this.globalThrottleFile = String(
+      globalThrottleFile || process.env.NADEO_GLOBAL_THROTTLE_FILE || ""
+    ).trim();
+    this.globalMinRequestGapMs = Math.max(
+      0,
+      Number(globalMinRequestGapMs || process.env.NADEO_GLOBAL_MIN_REQUEST_GAP_MS || 0) || 0
+    );
     this.groupUid = toText(groupUid, "Personal_Best");
     this.onlyWorld = Boolean(onlyWorld);
+    this.onHttpEvent = typeof onHttpEvent === "function" ? onHttpEvent : null;
     this.coreAuthBaseUrl = sanitizeBaseUrl(coreAuthBaseUrl, CORE_AUTH_BASE_URL);
     this.liveApiBaseUrl = sanitizeBaseUrl(liveApiBaseUrl, LIVE_API_BASE_URL);
     this.logger = logger;
@@ -129,6 +141,15 @@ class NadeoLiveTrackerProvider {
     this.accessTokenExpiryMs = tokenExpiryMs(this.accessToken);
 
     this.loadTokenCache();
+  }
+
+  emitHttpEvent(sample = {}) {
+    if (typeof this.onHttpEvent !== "function") return;
+    try {
+      this.onHttpEvent(sample);
+    } catch {
+      // Ignore telemetry callback failures.
+    }
   }
 
   get isReady() {
@@ -190,24 +211,77 @@ class NadeoLiveTrackerProvider {
   }
 
   async waitForRateSlot() {
-    if (this.minRequestGapMs <= 0) return;
-    const now = Date.now();
-    const waitMs = Math.max(0, this.nextRequestAtMs - now);
-    if (waitMs > 0) {
-      await sleep(waitMs);
+    if (this.minRequestGapMs > 0) {
+      const now = Date.now();
+      const waitMs = Math.max(0, this.nextRequestAtMs - now);
+      if (waitMs > 0) {
+        await sleep(waitMs);
+      }
+      this.nextRequestAtMs = Date.now() + this.minRequestGapMs;
     }
-    this.nextRequestAtMs = Date.now() + this.minRequestGapMs;
+
+    const sharedGapMs = Math.max(this.minRequestGapMs, this.globalMinRequestGapMs);
+    if (sharedGapMs > 0) {
+      await waitForGlobalNadeoSlot({
+        stateFile: this.globalThrottleFile,
+        minGapMs: sharedGapMs,
+        label: String(process.env.TRACKER_INSTANCE_ID || "tracker-nadeo-live"),
+      });
+    }
   }
 
   async requestJson(url, { method = "GET", headers = {}, body } = {}) {
+    const startedAt = Date.now();
+    const safeMethod = String(method || "GET").toUpperCase();
+    let targetHost = "";
+    let targetPath = "/";
+    try {
+      const parsed = new URL(String(url || ""));
+      targetHost = String(parsed.host || "").toLowerCase();
+      targetPath = `${parsed.pathname || "/"}${parsed.search || ""}`;
+    } catch {
+      targetHost = "";
+      targetPath = "/";
+    }
+    const requestBodyText =
+      body === null || body === undefined
+        ? ""
+        : typeof body === "string"
+          ? body
+          : body instanceof URLSearchParams
+            ? body.toString()
+            : "";
+    const requestBytes = requestBodyText ? Buffer.byteLength(requestBodyText, "utf8") : 0;
+
     await this.waitForRateSlot();
-    const response = await fetch(url, {
-      method,
-      headers,
-      body,
-      signal: AbortSignal.timeout(this.requestTimeoutMs),
-    });
+
+    let response;
+    try {
+      response = await fetch(url, {
+        method,
+        headers,
+        body,
+        signal: AbortSignal.timeout(this.requestTimeoutMs),
+      });
+    } catch (error) {
+      this.emitHttpEvent({
+        direction: "outgoing",
+        component: "nadeo-live",
+        service: "tracker",
+        method: safeMethod,
+        route: targetPath,
+        targetHost,
+        targetPath,
+        statusCode: 0,
+        durationMs: Date.now() - startedAt,
+        bytesIn: requestBytes,
+        bytesOut: 0,
+      });
+      throw error;
+    }
+
     const raw = await response.text();
+    const responseBytes = raw ? Buffer.byteLength(raw, "utf8") : 0;
     let payload = null;
     if (raw) {
       try {
@@ -218,6 +292,19 @@ class NadeoLiveTrackerProvider {
     }
 
     if (!response.ok) {
+      this.emitHttpEvent({
+        direction: "outgoing",
+        component: "nadeo-live",
+        service: "tracker",
+        method: safeMethod,
+        route: targetPath,
+        targetHost,
+        targetPath,
+        statusCode: Number(response.status || 0),
+        durationMs: Date.now() - startedAt,
+        bytesIn: requestBytes,
+        bytesOut: responseBytes,
+      });
       const details =
         payload?.message ||
         payload?.error ||
@@ -231,6 +318,20 @@ class NadeoLiveTrackerProvider {
       error.payload = payload;
       throw error;
     }
+
+    this.emitHttpEvent({
+      direction: "outgoing",
+      component: "nadeo-live",
+      service: "tracker",
+      method: safeMethod,
+      route: targetPath,
+      targetHost,
+      targetPath,
+      statusCode: Number(response.status || 0),
+      durationMs: Date.now() - startedAt,
+      bytesIn: requestBytes,
+      bytesOut: responseBytes,
+    });
 
     return payload;
   }

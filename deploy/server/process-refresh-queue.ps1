@@ -35,6 +35,11 @@ foreach ($requestFile in $requestFiles) {
   }
 
   try {
+    $runningUser = [System.Security.Principal.WindowsIdentity]::GetCurrent().Name
+    if ($runningUser -match "(^|\\)SYSTEM$") {
+      throw "Queue worker is running as SYSTEM. Reinstall task to run as Admin: deploy\\server\\setup-refresh-queue-agent.ps1 -TaskUser Admin"
+    }
+
     $requestRaw = Get-Content -Path $processingPath -Raw -ErrorAction Stop
     $request = $requestRaw | ConvertFrom-Json -ErrorAction Stop
 

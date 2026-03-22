@@ -4,6 +4,18 @@ function trimTrailingSlash(value) {
     .replace(/\/+$/, "");
 }
 
+function normalizeApiPath(baseUrl, path) {
+  const safePath = String(path || "").replace(/^\/+/, "");
+  if (!safePath) return "";
+  if (/\/v1$/i.test(String(baseUrl || ""))) {
+    return safePath.replace(/^v1\/+/i, "");
+  }
+  if (/^v1(\/|$)/i.test(safePath)) {
+    return safePath;
+  }
+  return `v1/${safePath}`;
+}
+
 class TrackerClubClient {
   constructor({ baseUrl = "", timeoutMs = 15000, logger = console } = {}) {
     this.baseUrl = trimTrailingSlash(baseUrl);
@@ -24,7 +36,7 @@ class TrackerClubClient {
       };
     }
 
-    const safePath = String(path || "").replace(/^\/+/, "");
+    const safePath = normalizeApiPath(this.baseUrl, path);
     const url = `${this.baseUrl}/${safePath}`;
     try {
       const response = await fetch(url, {

@@ -5,6 +5,10 @@ function esc(str) {
   return el.innerHTML;
 }
 
+const NADEO_FMT_RE = /\$([0-9a-fA-F]{1,3}|[gimnostuwzGIMNOSTUWZ<>]|[hlpHLP](\[[^\]]+\])?)/g;
+function stripFmt(v) { return String(v ?? "").replace(NADEO_FMT_RE, ""); }
+function escN(v) { return esc(stripFmt(v)); }
+
 function relTime(iso) {
   if (!iso) return "";
   const diff = Date.now() - new Date(iso).getTime();
@@ -22,6 +26,37 @@ async function fetchJson(url) {
   const res = await fetch(url);
   if (!res.ok) throw new Error(`HTTP ${res.status}`);
   return res.json();
+}
+
+async function fetchPagedCollection(baseUrl, key, { limit = 1000, maxPages = 400 } = {}) {
+  const out = [];
+  let offset = 0;
+  const safeLimit = Math.max(1, Math.min(Number(limit) || 1000, 5000));
+  const safeMaxPages = Math.max(1, Math.min(Number(maxPages) || 400, 2000));
+
+  for (let page = 0; page < safeMaxPages; page += 1) {
+    const params = new URLSearchParams({
+      limit: String(safeLimit),
+      offset: String(offset),
+    });
+    const payload = await fetchJson(`${baseUrl}?${params.toString()}`);
+    const rows = Array.isArray(payload?.[key])
+      ? payload[key]
+      : Array.isArray(payload)
+        ? payload
+        : [];
+
+    if (rows.length) out.push(...rows);
+
+    const hasMore = Boolean(payload?.paging?.has_more);
+    const nextOffset = Number(payload?.paging?.next_offset);
+    if (!hasMore || !Number.isFinite(nextOffset) || nextOffset <= offset || rows.length === 0) {
+      break;
+    }
+    offset = nextOffset;
+  }
+
+  return out;
 }
 function parseMeta(map) {
   const campaign = map.campaign || "";
@@ -81,8 +116,10 @@ const $historyList = document.getElementById("history-list");
 async function loadMaps() {
   if (state.allMaps) return;
   try {
-    const data = await fetchJson("/api/v1/alterations/maps");
-    const rawMaps = data.maps || data || [];
+    const rawMaps = await fetchPagedCollection("/api/v1/alterations/maps", "maps", {
+      limit: 1200,
+      maxPages: 200,
+    });
     state.allMaps = (Array.isArray(rawMaps) ? rawMaps : []).map((map) => ({
       ...map,
       uid: String(map.uid || map.map_uid || map.mapUid || "").trim(),
@@ -173,8 +210,8 @@ function renderResults() {
     .map(
       (m) => `<div class="ru-result-item" data-uid="${esc(m.uid)}">
       <div class="ru-result-info">
-        <span class="ru-result-name">${esc(m.name)}</span>
-        <span class="ru-result-meta">${esc(m.campaign || "")}${m.wrHolder ? " &middot; WR: " + esc(m.wrHolder) : ""}</span>
+        <span class="ru-result-name">${escN(m.name)}</span>
+        <span class="ru-result-meta">${escN(m.campaign || "")}${m.wrHolder ? " &middot; WR: " + escN(m.wrHolder) : ""}</span>
       </div>
       <span class="ru-result-action">Request &rarr;</span>
     </div>`
@@ -208,7 +245,7 @@ function renderHistory() {
     .slice(0, 10)
     .map(
       (r) => `<div class="ru-history-item">
-      <span class="ru-history-name">${esc(r.name)}</span>
+      <span class="ru-history-name">${escN(r.name)}</span>
       <span class="ru-history-time">${relTime(r.at)}</span>
       <span class="ru-history-badge ${r.status === "done" ? "done" : "queued"}">${esc(r.status)}</span>
     </div>`

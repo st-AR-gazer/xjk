@@ -143,12 +143,32 @@ class TrackerService {
     });
   }
 
+  getLeaderboardCoverage({ trackedOnly = true } = {}) {
+    return this.repository.getLeaderboardCoverage({
+      trackedOnly,
+    });
+  }
+
   async runTrackerNow() {
     if (!this.trackerEngine) {
       return { error: "Tracker runtime is not enabled." };
     }
     const result = await this.trackerEngine.runNow({ reason: "manual-api" });
     return { run: result };
+  }
+
+  setTrackerConfig(config = {}) {
+    if (!this.trackerEngine) {
+      return { error: "Tracker runtime is not enabled." };
+    }
+    const runtime = this.trackerEngine.setConfig({
+      enabled: config.enabled,
+      tickSeconds: config.tickSeconds,
+      batchSize: config.batchSize,
+      maxCheckIntervalSeconds: config.maxCheckIntervalSeconds,
+      leaderboardTopN: config.leaderboardTopN,
+    });
+    return { runtime };
   }
 
   updateMapTracking({ mapUid, tracked, status, checkFrequency }) {

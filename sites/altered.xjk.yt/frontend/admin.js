@@ -90,6 +90,7 @@ const state = {
   },
   filters: {
     hookSearch: "",
+    opsEventMapUid: "",
   },
   adminLog: [],
   ui: {
@@ -143,13 +144,19 @@ const elements = {
   trackerRuntime: document.getElementById("trackerRuntime"),
   tabButtons: Array.from(document.querySelectorAll("[data-admin-tab]")),
   tabPanels: Array.from(document.querySelectorAll("[data-tab-panel]")),
+  overviewHookPills: document.getElementById("overviewHookPills"),
+  overviewHookGrid: document.getElementById("overviewHookGrid"),
   overviewHookStatus: document.getElementById("overviewHookStatus"),
   overviewHookRun: document.getElementById("overviewHookRun"),
   overviewRunsList: document.getElementById("overviewRunsList"),
   overviewOpsStatus: document.getElementById("overviewOpsStatus"),
   overviewOpsGrid: document.getElementById("overviewOpsGrid"),
+  overviewMonitorPills: document.getElementById("overviewMonitorPills"),
+  overviewMonitorGrid: document.getElementById("overviewMonitorGrid"),
   overviewMonitorStatus: document.getElementById("overviewMonitorStatus"),
+  overviewLastFullSync: document.getElementById("overviewLastFullSync"),
   overviewNextRuns: document.getElementById("overviewNextRuns"),
+  overviewRunFullSyncBtn: document.getElementById("overviewRunFullSyncBtn"),
   monitorSummaryLine: document.getElementById("monitorSummaryLine"),
   monitorOpenMapOpsBtn: document.getElementById("monitorOpenMapOpsBtn"),
   monitorSubTabButtons: Array.from(document.querySelectorAll("[data-monitor-subtab]")),
@@ -178,9 +185,12 @@ const elements = {
   liveRefreshBtn: document.getElementById("liveRefreshBtn"),
   liveFetchBtn: document.getElementById("liveFetchBtn"),
   liveSyncBtn: document.getElementById("liveSyncBtn"),
+  liveStatePills: document.getElementById("liveStatePills"),
+  liveSnapshotGrid: document.getElementById("liveSnapshotGrid"),
   liveStatusLine: document.getElementById("liveStatusLine"),
   liveNextRunLine: document.getElementById("liveNextRunLine"),
   liveSummaryLine: document.getElementById("liveSummaryLine"),
+  liveIntegrationGrid: document.getElementById("liveIntegrationGrid"),
   liveProgressBar: document.getElementById("liveProgressBar"),
   liveProgressLine: document.getElementById("liveProgressLine"),
   liveProgressMeta: document.getElementById("liveProgressMeta"),
@@ -206,6 +216,8 @@ const elements = {
   namingRegexFilter: document.getElementById("namingRegexFilter"),
   namingSummaryLine: document.getElementById("namingSummaryLine"),
   namingCandidatesBody: document.getElementById("namingCandidatesBody"),
+  hookStatusPills: document.getElementById("hookStatusPills"),
+  hookStatusGrid: document.getElementById("hookStatusGrid"),
   hookStatusLine: document.getElementById("hookStatusLine"),
   hookRunLine: document.getElementById("hookRunLine"),
   hookConfigForm: document.getElementById("hookConfigForm"),
@@ -243,10 +255,14 @@ const elements = {
   chartCampaignTimeline: document.getElementById("chartCampaignTimeline"),
   activityLogRefreshBtn: document.getElementById("activityLogRefreshBtn"),
   opsEventsCount: document.getElementById("opsEventsCount"),
+  opsEventsMapUidInput: document.getElementById("opsEventsMapUidInput"),
+  opsEventsApplyBtn: document.getElementById("opsEventsApplyBtn"),
+  opsEventsClearBtn: document.getElementById("opsEventsClearBtn"),
   opsEventsList: document.getElementById("opsEventsList"),
   opsEventsPrevBtn: document.getElementById("opsEventsPrevBtn"),
   opsEventsNextBtn: document.getElementById("opsEventsNextBtn"),
   opsEventsPageInfo: document.getElementById("opsEventsPageInfo"),
+  opsRunsSummary: document.getElementById("opsRunsSummary"),
   opsRunsList: document.getElementById("opsRunsList"),
 };
 async function apiRequest(path, { method = "GET", body } = {}) {
@@ -528,6 +544,103 @@ function escapeHtml(value) {
     .replaceAll('"', "&quot;")
     .replaceAll("'", "&#39;");
 }
+
+function getToneClassName(tone) {
+  const normalized = String(tone || "").trim().toLowerCase();
+  if (normalized === "live") return "status-live";
+  if (normalized === "paused") return "status-paused";
+  if (normalized === "archived") return "status-archived";
+  if (normalized === "info") return "status-info";
+  if (normalized === "good" || normalized === "ok" || normalized === "success") return "status-good";
+  if (normalized === "warn" || normalized === "warning") return "status-warn";
+  if (normalized === "bad" || normalized === "error" || normalized === "failed") return "status-bad";
+  return "status-neutral";
+}
+
+function toneFromStatus(status, fallback = "neutral") {
+  const normalized = String(status || "").trim().toLowerCase();
+  if (!normalized) return fallback;
+  if (["ok", "success", "complete", "completed", "enabled", "ready"].includes(normalized)) return "good";
+  if (["running", "started", "queued", "active", "loading"].includes(normalized)) return "info";
+  if (["warn", "warning", "skipped", "paused", "disabled", "idle"].includes(normalized)) return "warn";
+  if (["bad", "error", "failed", "failure"].includes(normalized)) return "bad";
+  return fallback;
+}
+
+function renderStatusPills(container, pills = []) {
+  if (!container) return;
+  container.innerHTML = "";
+  const list = Array.isArray(pills) ? pills : [];
+  list.forEach((pill) => {
+    const label = stripTmStyleCodes(pill?.label || "").trim();
+    if (!label) return;
+    const span = document.createElement("span");
+    span.className = `status-pill ${getToneClassName(pill?.tone)}`;
+    span.textContent = label;
+    container.appendChild(span);
+  });
+}
+
+function renderStatusGrid(container, stats = [], { emptyText = "No status data yet." } = {}) {
+  if (!container) return;
+  container.innerHTML = "";
+  const items = Array.isArray(stats) ? stats : [];
+  const filtered = items.filter((stat) => stripTmStyleCodes(stat?.label || "").trim());
+  if (!filtered.length) {
+    const empty = document.createElement("p");
+    empty.className = "hook-map-meta";
+    empty.textContent = emptyText;
+    container.appendChild(empty);
+    return;
+  }
+
+  filtered.forEach((stat) => {
+    const card = document.createElement("article");
+    const tone = String(stat?.tone || "").trim().toLowerCase();
+    card.className = `admin-status-card${tone ? ` is-${tone}` : ""}`;
+
+    const label = document.createElement("span");
+    label.className = "admin-status-label";
+    label.textContent = stripTmStyleCodes(stat.label || "-") || "-";
+
+    const value = document.createElement("strong");
+    value.className = "admin-status-value";
+    value.textContent = stripTmStyleCodes(stat?.value ?? "-") || "-";
+
+    card.appendChild(label);
+    card.appendChild(value);
+    container.appendChild(card);
+  });
+}
+
+function formatWhenDetailed(iso) {
+  const ago = formatAgo(iso);
+  const exact = formatTimestamp(iso);
+  if (ago === "-" && exact === "-") return "-";
+  if (ago === "-") return exact;
+  if (exact === "-") return ago;
+  return `${ago} (${exact})`;
+}
+
+function formatScheduleSummary(monitor, kind = "full") {
+  if (!monitor || typeof monitor !== "object") return "-";
+  if (kind === "discovery") {
+    if (!monitor.discoveryEnabled) return "disabled";
+    return `${formatTimestamp(monitor.nextDiscoveryRunAt)} | every ${Number(monitor.discoveryIntervalSeconds || 0)}s`;
+  }
+  if (monitor.scheduleMode === "daily") {
+    const hour = clampNumber(monitor.dailyHourUtc, 0, 23, 3);
+    const minute = clampNumber(monitor.dailyMinuteUtc, 0, 59, 0);
+    return `${formatTimestamp(monitor.nextRunAt)} | daily ${String(hour).padStart(2, "0")}:${String(minute).padStart(2, "0")} UTC`;
+  }
+  return `${formatTimestamp(monitor.nextRunAt)} | every ${Number(monitor.intervalSeconds || 0)}s`;
+}
+
+function createOpsEntryPill(label, tone) {
+  const safeLabel = escapeHtml(label || "-");
+  const safeTone = getToneClassName(tone);
+  return `<span class="status-pill ${safeTone}">${safeLabel}</span>`;
+}
 function getInitialTab() {
   const hashTab = String(window.location.hash || "").replace(/^#/, "").trim();
   if (VALID_TABS.has(hashTab)) return hashTab;
@@ -729,7 +842,16 @@ function renderStats() {
 }
 function renderOverviewPanel() {
   const hook = state.hook.status;
+  const liveStatus = state.live.status;
+  const monitor = liveStatus?.monitor || null;
+  const auth = liveStatus?.auth || null;
   if (!hook) {
+    renderStatusPills(elements.overviewHookPills, [{ label: "Hook not configured", tone: "bad" }]);
+    renderStatusGrid(
+      elements.overviewHookGrid,
+      [{ label: "Club", value: "-" }, { label: "Maps", value: "0" }, { label: "Tracked", value: "0" }],
+      { emptyText: "Configure the hook to see current club state." }
+    );
     elements.overviewHookStatus.textContent = "Hook status: not configured";
     elements.overviewHookRun.textContent = "Latest sync run: -";
   } else {
@@ -737,10 +859,21 @@ function renderOverviewPanel() {
     const autoTrack = hook.autoTrackNewMaps ? "on" : "off";
     const hookKey = stripTmStyleCodes(hook.hookKey || "") || "altered-club";
     const clubName = stripTmStyleCodes(hook.clubName || "") || "Unknown club";
-    elements.overviewHookStatus.textContent = `Hook ${hookKey} | club ${clubName} (${hook.clubId}) | ${enabled} | auto-track ${autoTrack}`;
+    renderStatusPills(elements.overviewHookPills, [
+      { label: hook.enabled ? "Hook enabled" : "Hook disabled", tone: hook.enabled ? "good" : "warn" },
+      { label: hook.autoTrackNewMaps ? "Auto-track on" : "Auto-track off", tone: hook.autoTrackNewMaps ? "info" : "neutral" },
+      { label: `Club #${hook.clubId || "-"}`, tone: "neutral" },
+    ]);
+    renderStatusGrid(elements.overviewHookGrid, [
+      { label: "Club", value: clubName, tone: "info" },
+      { label: "Hook Key", value: hookKey },
+      { label: "Maps", value: formatCount(hook.mapCount || 0) },
+      { label: "Tracked", value: formatCount(hook.trackedCount || 0), tone: Number(hook.trackedCount || 0) > 0 ? "good" : "" },
+    ]);
+    elements.overviewHookStatus.textContent = `Club ${clubName} (#${hook.clubId || "-"}) via ${hookKey} | hook ${enabled} | auto-track ${autoTrack}`;
 
     if (hook.latestRun) {
-      elements.overviewHookRun.textContent = `Latest sync #${hook.latestRun.runId} | ${hook.latestRun.status} | ${hook.latestRun.mapsSeen} seen, ${hook.latestRun.mapsInserted} inserted, ${hook.latestRun.mapsUpdated} updated | ${formatAgo(hook.latestRun.finishedAt)}`;
+      elements.overviewHookRun.textContent = `Latest sync #${hook.latestRun.runId} ${String(hook.latestRun.status || "ok").toUpperCase()} | ${hook.latestRun.mapsSeen} seen | +${hook.latestRun.mapsInserted} inserted | ~${hook.latestRun.mapsUpdated} updated | ${formatWhenDetailed(hook.latestRun.finishedAt)}`;
     } else {
       elements.overviewHookRun.textContent = "Latest sync run: none yet";
     }
@@ -750,18 +883,33 @@ function renderOverviewPanel() {
   const runs = Array.isArray(state.hook.runs) ? state.hook.runs.slice(0, 8) : [];
   if (!runs.length) {
     const item = document.createElement("li");
-    item.innerHTML = '<strong>No sync runs yet.</strong><span class="hook-map-meta">Sync a club snapshot to start building history.</span>';
+    item.className = "ops-entry is-empty";
+    item.innerHTML = '<strong class="ops-entry-title">No sync runs yet.</strong><span class="ops-entry-detail muted">Sync a club snapshot to start building history.</span>';
     elements.overviewRunsList.appendChild(item);
   } else {
     runs.forEach((run) => {
       const item = document.createElement("li");
       const runId = Number(run.runId || 0);
-      const status = String(run.status || "ok");
-      const finishedText = run.finishedAt ? formatAgo(run.finishedAt) : "-";
+      const status = String(run.status || "ok").toLowerCase();
+      const finishedText = formatWhenDetailed(run.finishedAt);
+      const statusTone = toneFromStatus(status, "neutral");
+      item.className = `ops-entry${status === "running" ? " is-running" : statusTone === "bad" ? " is-error" : ""}`;
       item.innerHTML = `
-        <strong>Run #${runId || "-"} | ${status}</strong>
-        <span class="hook-map-meta">${run.mapsSeen || 0} seen | ${run.mapsInserted || 0} inserted | ${run.mapsUpdated || 0} updated</span>
-        <span class="hook-map-meta">${finishedText}</span>
+        <div class="ops-entry-head">
+          <div>
+            <strong class="ops-entry-title">Sync run #${runId || "-"}</strong>
+            <span class="ops-entry-subtitle">${escapeHtml(stripTmStyleCodes(hook?.clubName || "") || "Altered club snapshot")}</span>
+          </div>
+          <div class="ops-entry-pills">
+            ${createOpsEntryPill(status.toUpperCase(), statusTone)}
+          </div>
+        </div>
+        <div class="ops-entry-meta">
+          <span>${escapeHtml(finishedText)}</span>
+          <span>${escapeHtml(`${run.mapsSeen || 0} seen`)}</span>
+          <span>${escapeHtml(`${run.mapsInserted || 0} inserted`)}</span>
+          <span>${escapeHtml(`${run.mapsUpdated || 0} updated`)}</span>
+        </div>
       `;
       elements.overviewRunsList.appendChild(item);
     });
@@ -785,11 +933,55 @@ function renderOverviewPanel() {
     }
   }
 
-  if (elements.overviewMonitorStatus && state.live.status) {
-    const monitor = state.live.status.monitor || {};
-    elements.overviewMonitorStatus.textContent = `Monitor ${monitor.enabled ? "enabled" : "disabled"} | full=${monitor.running ? "running" : "idle"} | discovery=${monitor.discoveryRunning ? "running" : monitor.discoveryEnabled ? "enabled" : "disabled"}`;
+  if (elements.overviewMonitorStatus && monitor) {
+    renderStatusPills(elements.overviewMonitorPills, [
+      { label: monitor.enabled ? "Monitor enabled" : "Monitor disabled", tone: monitor.enabled ? "good" : "warn" },
+      { label: liveStatus?.configured ? `Auth ${auth?.authMode || "ready"}` : "Auth missing", tone: liveStatus?.configured ? "good" : "bad" },
+      { label: monitor.running ? "Full sync running" : "Full sync idle", tone: monitor.running ? "info" : "neutral" },
+      {
+        label: monitor.discoveryRunning ? "Discovery running" : monitor.discoveryEnabled ? "Discovery armed" : "Discovery off",
+        tone: monitor.discoveryRunning ? "info" : monitor.discoveryEnabled ? "good" : "warn",
+      },
+    ]);
+    renderStatusGrid(elements.overviewMonitorGrid, [
+      { label: "Club", value: monitor.clubId ? `#${monitor.clubId}` : "-" },
+      { label: "Schedule", value: monitor.scheduleMode === "daily" ? "Daily" : "Interval", tone: "info" },
+      { label: "Chunk Size", value: formatCount(monitor.trackerChunkSize || 0) },
+      {
+        label: "Last Full",
+        value: monitor.lastFinishedAt ? formatAgo(monitor.lastFinishedAt) : monitor.lastError ? "error" : "never",
+        tone: monitor.lastError ? "bad" : monitor.lastFinishedAt ? "good" : "warn",
+      },
+    ]);
+    elements.overviewMonitorStatus.textContent = `Monitor ${monitor.enabled ? "enabled" : "disabled"} | auth ${liveStatus?.configured ? auth?.authMode || "ready" : "missing"} | active-only ${monitor.activeOnly ? "on" : "off"} | metadata ${monitor.fetchMapDetails ? "on" : "off"}`;
+    if (elements.overviewLastFullSync) {
+      if (monitor.lastSummary) {
+        elements.overviewLastFullSync.textContent = `Last full sync: ${monitor.lastSummary.campaignsLoaded || 0} campaigns | ${monitor.lastSummary.mapsLoaded || 0} maps | ${formatWhenDetailed(monitor.lastFinishedAt)} | duration ${formatDurationShort(monitor.lastDurationMs)}`;
+      } else if (monitor.lastError) {
+        elements.overviewLastFullSync.textContent = `Last full sync error: ${monitor.lastError}`;
+      } else {
+        elements.overviewLastFullSync.textContent = "Last full sync: none yet";
+      }
+    }
     if (elements.overviewNextRuns) {
-      elements.overviewNextRuns.textContent = `Next full: ${formatTimestamp(monitor.nextRunAt)} | Next discovery: ${formatTimestamp(monitor.nextDiscoveryRunAt)}`;
+      elements.overviewNextRuns.textContent = `Next full: ${formatScheduleSummary(monitor, "full")} | Next discovery: ${formatScheduleSummary(monitor, "discovery")}`;
+    }
+    if (elements.overviewRunFullSyncBtn) {
+      elements.overviewRunFullSyncBtn.disabled = Boolean(monitor.running);
+      elements.overviewRunFullSyncBtn.textContent = monitor.running ? "Full Sync Running..." : "Run Full Sync";
+    }
+  } else if (elements.overviewLastFullSync) {
+    renderStatusPills(elements.overviewMonitorPills, [{ label: "Monitor unavailable", tone: "bad" }]);
+    renderStatusGrid(
+      elements.overviewMonitorGrid,
+      [{ label: "Club", value: "-" }, { label: "Schedule", value: "-" }, { label: "Chunk Size", value: "-" }, { label: "Last Full", value: "-" }],
+      { emptyText: "Load live monitor state to see scheduler health." }
+    );
+    if (elements.overviewMonitorStatus) elements.overviewMonitorStatus.textContent = "Monitor: unavailable";
+    elements.overviewLastFullSync.textContent = "Last full sync: unavailable";
+    if (elements.overviewNextRuns) elements.overviewNextRuns.textContent = "Next runs: unavailable";
+    if (elements.overviewRunFullSyncBtn) {
+      elements.overviewRunFullSyncBtn.disabled = true;
     }
   }
 }
@@ -894,19 +1086,28 @@ function renderLiveProgress(progress, monitor = null) {
   const status = String(safeProgress.status || "running");
   const phase = String(safeProgress.phase || "running");
   const message = String(safeProgress.message || "Working...");
-  const startedAt = safeProgress.startedAt ? formatTimestamp(safeProgress.startedAt) : "-";
-  const finishedAt = safeProgress.finishedAt ? formatTimestamp(safeProgress.finishedAt) : "-";
+  const startedAt = safeProgress.startedAt ? formatWhenDetailed(safeProgress.startedAt) : "-";
+  const finishedAt = safeProgress.finishedAt ? formatWhenDetailed(safeProgress.finishedAt) : "-";
   const counters = safeProgress.counters || {};
 
-  if (elements.liveProgressLine) elements.liveProgressLine.textContent = `Progress ${percent}% | ${status} | ${phase}`;
-  if (elements.liveProgressMeta) elements.liveProgressMeta.textContent = `${message} | started ${startedAt} | finished ${finishedAt} | campaigns ${Number(counters.campaignsLoaded || counters.campaignsProcessed || 0)} | maps ${Number(counters.mapsLoaded || counters.mapsStored || 0)}`;
+  if (elements.liveProgressLine) elements.liveProgressLine.textContent = `Progress ${percent}% | ${status.toUpperCase()} | ${phase}`;
+  if (elements.liveProgressMeta) {
+    elements.liveProgressMeta.textContent = `${message} | started ${startedAt} | finished ${finishedAt} | campaigns ${Number(counters.campaignsLoaded || counters.campaignsProcessed || 0)} | maps ${Number(counters.mapsLoaded || counters.mapsStored || 0)}`;
+  }
   renderLiveProgressStats(safeProgress, monitor);
-  if (elements.liveActionStatus) elements.liveActionStatus.textContent = `Manual fetch status: ${status} | ${phase} | ${percent}%`;
+  if (elements.liveActionStatus) elements.liveActionStatus.textContent = `Manual fetch status: ${status.toUpperCase()} | ${phase} | ${percent}%`;
 }
 
 function renderLiveMonitorPanel() {
   const payload = state.live.status;
   if (!payload) {
+    renderStatusPills(elements.liveStatePills, [{ label: "Monitor unavailable", tone: "bad" }]);
+    renderStatusGrid(
+      elements.liveSnapshotGrid,
+      [{ label: "Club", value: "-" }, { label: "Schedule", value: "-" }, { label: "Last Full", value: "-" }, { label: "Last Discovery", value: "-" }],
+      { emptyText: "No live monitor snapshot loaded yet." }
+    );
+    renderStatusGrid(elements.liveIntegrationGrid, [], { emptyText: "No integration data yet." });
     if (elements.liveStatusLine) elements.liveStatusLine.textContent = "Live monitor status: unavailable";
     if (elements.liveNextRunLine) elements.liveNextRunLine.textContent = "Next scheduled run: -";
     if (elements.liveSummaryLine) elements.liveSummaryLine.textContent = "Last live sync: -";
@@ -916,6 +1117,11 @@ function renderLiveMonitorPanel() {
 
   const monitor = payload.monitor || {};
   const auth = payload.auth || {};
+  const integrations = payload.integrations || {};
+  const displaynameRelay = integrations.trackerDisplayname || {};
+  const clubRelay = integrations.trackerClub || {};
+  const mapperNameSync = payload.mapperNameSync || {};
+  const mapSyncTargets = Array.isArray(integrations.trackerMapSync?.targets) ? integrations.trackerMapSync.targets : [];
   const authAdvice = String(payload.authAdvice || "").trim();
   elements.liveClubIdInput.value = String(monitor.clubId || elements.liveClubIdInput.value || "24231");
   elements.liveActivityPageSizeInput.value = String(monitor.activityPageSize || elements.liveActivityPageSizeInput.value || "250");
@@ -930,8 +1136,93 @@ function renderLiveMonitorPanel() {
   toggleLiveScheduleInputs();
 
   const authState = payload.configured ? `auth ready (${auth.authMode || "unknown"})` : "auth not configured (Nadeo account required)";
+  renderStatusPills(elements.liveStatePills, [
+    { label: monitor.enabled ? "Monitor enabled" : "Monitor disabled", tone: monitor.enabled ? "good" : "warn" },
+    { label: payload.configured ? `Auth ${auth.authMode || "ready"}` : "Auth missing", tone: payload.configured ? "good" : "bad" },
+    { label: monitor.running ? "Full sync running" : "Full sync idle", tone: monitor.running ? "info" : "neutral" },
+    {
+      label: monitor.discoveryRunning ? "Discovery running" : monitor.discoveryEnabled ? "Discovery armed" : "Discovery off",
+      tone: monitor.discoveryRunning ? "info" : monitor.discoveryEnabled ? "good" : "warn",
+    },
+    {
+      label: mapperNameSync.running ? "Name sync running" : mapperNameSync.enabled ? "Name sync armed" : "Name sync off",
+      tone: mapperNameSync.running ? "info" : mapperNameSync.enabled ? "good" : "warn",
+    },
+  ]);
+  renderStatusGrid(elements.liveSnapshotGrid, [
+    { label: "Club", value: monitor.clubId ? `#${monitor.clubId}` : "-" },
+    {
+      label: "Schedule",
+      value:
+        monitor.scheduleMode === "daily"
+          ? `${String(clampNumber(monitor.dailyHourUtc, 0, 23, 3)).padStart(2, "0")}:${String(clampNumber(monitor.dailyMinuteUtc, 0, 59, 0)).padStart(2, "0")} UTC`
+          : `Every ${Number(monitor.intervalSeconds || 0)}s`,
+      tone: "info",
+    },
+    {
+      label: "Last Full",
+      value: monitor.lastFinishedAt ? formatAgo(monitor.lastFinishedAt) : monitor.lastError ? "error" : "never",
+      tone: monitor.lastError ? "bad" : monitor.lastFinishedAt ? "good" : "warn",
+    },
+    {
+      label: "Last Discovery",
+      value: monitor.lastDiscoveryFinishedAt ? formatAgo(monitor.lastDiscoveryFinishedAt) : monitor.lastDiscoveryError ? "error" : monitor.discoveryEnabled ? "waiting" : "disabled",
+      tone: monitor.lastDiscoveryError ? "bad" : monitor.lastDiscoveryFinishedAt ? "good" : monitor.discoveryEnabled ? "warn" : "neutral",
+    },
+    {
+      label: "Chunk Size",
+      value: formatCount(monitor.trackerChunkSize || 0),
+    },
+    {
+      label: "Last Duration",
+      value: formatDurationShort(monitor.lastDurationMs),
+      tone: monitor.running ? "info" : "",
+    },
+  ]);
+  renderStatusGrid(elements.liveIntegrationGrid, [
+    {
+      label: "Displayname Relay",
+      value: !displaynameRelay.enabled
+        ? "disabled"
+        : displaynameRelay.relayAvailable
+          ? "remote relay"
+          : displaynameRelay.fallbackLocal
+            ? "local fallback"
+            : displaynameRelay.configured
+              ? "configured"
+              : "not configured",
+      tone: !displaynameRelay.enabled ? "warn" : displaynameRelay.relayAvailable ? "good" : displaynameRelay.fallbackLocal ? "info" : "bad",
+    },
+    {
+      label: "Club Relay",
+      value: !clubRelay.enabled
+        ? "disabled"
+        : clubRelay.relayAvailable
+          ? "remote relay"
+          : clubRelay.fallbackLocal
+            ? "local fallback"
+            : clubRelay.configured
+              ? "configured"
+              : "not configured",
+      tone: !clubRelay.enabled ? "warn" : clubRelay.relayAvailable ? "good" : clubRelay.fallbackLocal ? "info" : "bad",
+    },
+    {
+      label: "Name Sync",
+      value: mapperNameSync.enabled
+        ? `${mapperNameSync.mode || "maintenance"} | next ${formatAgo(mapperNameSync.nextRunAt)}`
+        : "disabled",
+      tone: mapperNameSync.running ? "info" : mapperNameSync.enabled ? "good" : "warn",
+    },
+    {
+      label: "Map Sync Targets",
+      value: mapSyncTargets.length
+        ? mapSyncTargets.map((target) => stripTmStyleCodes(target.label || target.key || "target")).slice(0, 2).join(", ")
+        : "none",
+      tone: mapSyncTargets.length ? "info" : "warn",
+    },
+  ]);
   if (elements.liveStatusLine) {
-    elements.liveStatusLine.textContent = `Live monitor ${monitor.enabled ? "enabled" : "disabled"} | ${authState} | mode ${monitor.scheduleMode || "interval"} | full=${monitor.running ? "running" : "idle"} | discovery=${monitor.discoveryRunning ? "running" : monitor.discoveryEnabled ? "enabled" : "disabled"}${authAdvice ? ` | ${authAdvice}` : ""}`;
+    elements.liveStatusLine.textContent = `Live monitor ${monitor.enabled ? "enabled" : "disabled"} | ${authState} | mode ${monitor.scheduleMode || "interval"} | active-only ${monitor.activeOnly ? "on" : "off"} | metadata ${monitor.fetchMapDetails ? "on" : "off"}${authAdvice ? ` | ${authAdvice}` : ""}`;
   }
 
   let fullScheduleText = "-";
@@ -949,9 +1240,9 @@ function renderLiveMonitorPanel() {
   if (elements.liveNextRunLine) elements.liveNextRunLine.textContent = `Next runs | full: ${fullScheduleText} | discovery: ${discoveryScheduleText}`;
 
   if (monitor.lastSummary) {
-    let text = `Last sync: ${monitor.lastSummary.campaignsLoaded || 0} campaigns, ${monitor.lastSummary.mapsLoaded || 0} maps, details ${monitor.lastSummary.mapDetailsLoaded || 0} | ${formatAgo(monitor.lastFinishedAt)}`;
+    let text = `Last sync: ${monitor.lastSummary.campaignsLoaded || 0} campaigns | ${monitor.lastSummary.mapsLoaded || 0} maps | details ${monitor.lastSummary.mapDetailsLoaded || 0} | ${formatWhenDetailed(monitor.lastFinishedAt)}`;
     if (monitor.lastDiscoverySummary) {
-      text += ` | last discovery: ${monitor.lastDiscoverySummary.newCampaignsStored || 0} new campaigns, ${monitor.lastDiscoverySummary.uploadBucketsSeen || 0} upload buckets (${formatAgo(monitor.lastDiscoveryFinishedAt)})`;
+      text += ` | last discovery: ${monitor.lastDiscoverySummary.newCampaignsStored || 0} new campaigns | ${monitor.lastDiscoverySummary.uploadBucketsSeen || 0} upload buckets | ${formatWhenDetailed(monitor.lastDiscoveryFinishedAt)}`;
     }
     if (elements.liveSummaryLine) elements.liveSummaryLine.textContent = text;
   } else if (monitor.lastError) {
@@ -1537,6 +1828,13 @@ function renderHookForm() {
 function renderHookStatus() {
   const hook = state.hook.status;
   if (!hook) {
+    renderStatusPills(elements.hookStatusPills, [{ label: "Hook not configured", tone: "bad" }]);
+    renderStatusGrid(elements.hookStatusGrid, [
+      { label: "Club", value: "-" },
+      { label: "Hook Key", value: "-" },
+      { label: "Maps", value: "0" },
+      { label: "Tracked", value: "0" },
+    ]);
     elements.hookStatusLine.textContent = "Hook status: not configured";
     elements.hookRunLine.textContent = "Latest sync run: -";
     return;
@@ -1545,9 +1843,20 @@ function renderHookStatus() {
   const autoTrack = hook.autoTrackNewMaps ? "on" : "off";
   const hookKey = stripTmStyleCodes(hook.hookKey || "") || "altered-club";
   const clubName = stripTmStyleCodes(hook.clubName || "") || "Unknown club";
-  elements.hookStatusLine.textContent = `Hook ${hookKey} | club ${clubName} (${hook.clubId}) | ${enabled} | auto-track ${autoTrack} | maps ${hook.mapCount} (${hook.trackedCount} tracked)`;
+  renderStatusPills(elements.hookStatusPills, [
+    { label: hook.enabled ? "Hook enabled" : "Hook disabled", tone: hook.enabled ? "good" : "warn" },
+    { label: hook.autoTrackNewMaps ? "Auto-track on" : "Auto-track off", tone: hook.autoTrackNewMaps ? "info" : "neutral" },
+    { label: `Club #${hook.clubId || "-"}`, tone: "neutral" },
+  ]);
+  renderStatusGrid(elements.hookStatusGrid, [
+    { label: "Club", value: clubName, tone: "info" },
+    { label: "Hook Key", value: hookKey },
+    { label: "Maps", value: formatCount(hook.mapCount || 0) },
+    { label: "Tracked", value: formatCount(hook.trackedCount || 0), tone: Number(hook.trackedCount || 0) > 0 ? "good" : "" },
+  ]);
+  elements.hookStatusLine.textContent = `Club ${clubName} (#${hook.clubId || "-"}) via ${hookKey} | hook ${enabled} | auto-track ${autoTrack}`;
   if (hook.latestRun) {
-    elements.hookRunLine.textContent = `Latest sync run #${hook.latestRun.runId} | ${hook.latestRun.status} | ${hook.latestRun.mapsSeen} maps seen, ${hook.latestRun.mapsInserted} inserted, ${hook.latestRun.mapsUpdated} updated | ${formatAgo(hook.latestRun.finishedAt)}`;
+    elements.hookRunLine.textContent = `Latest sync run #${hook.latestRun.runId} ${String(hook.latestRun.status || "ok").toUpperCase()} | ${hook.latestRun.mapsSeen} maps seen | +${hook.latestRun.mapsInserted} inserted | ~${hook.latestRun.mapsUpdated} updated | ${formatWhenDetailed(hook.latestRun.finishedAt)}`;
   } else {
     elements.hookRunLine.textContent = "Latest sync run: none yet";
   }
@@ -1607,13 +1916,31 @@ function renderAdminLog() {
   elements.adminLogList.innerHTML = "";
   if (!state.adminLog.length) {
     const li = document.createElement("li");
-    li.textContent = "No operations yet.";
+    li.className = "ops-entry is-empty";
+    li.innerHTML = '<strong class="ops-entry-title">No operations yet.</strong><span class="ops-entry-detail muted">Actions you trigger from this browser session will show up here.</span>';
     elements.adminLogList.appendChild(li);
     return;
   }
   state.adminLog.forEach((entry) => {
     const li = document.createElement("li");
-    li.textContent = entry;
+    const match = /^\[([^\]]+)\]\s*(.*)$/.exec(String(entry || ""));
+    const stamp = match?.[1] || "--:--:--";
+    const message = match?.[2] || String(entry || "Log entry");
+    li.className = "ops-entry";
+    li.innerHTML = `
+      <div class="ops-entry-head">
+        <div>
+          <strong class="ops-entry-title">${escapeHtml(message)}</strong>
+          <span class="ops-entry-subtitle">Admin action from this browser session</span>
+        </div>
+        <div class="ops-entry-pills">
+          ${createOpsEntryPill("Session", "info")}
+        </div>
+      </div>
+      <div class="ops-entry-meta">
+        <span>${escapeHtml(stamp)}</span>
+      </div>
+    `;
     elements.adminLogList.appendChild(li);
   });
 }
@@ -1621,6 +1948,7 @@ function renderAdminLog() {
 function renderOpsEvents() {
   if (!elements.opsEventsList) return;
   const events = state.diagnostics.opsEvents || [];
+  const filterUid = asText(state.filters.opsEventMapUid);
   const pager = resolvePager(events.length, state.ui.opsEventsPage, OPS_EVENTS_PAGE_SIZE);
   state.ui.opsEventsPage = pager.page;
   renderPagerControls({
@@ -1631,23 +1959,57 @@ function renderOpsEvents() {
     label: "Events",
   });
   if (elements.opsEventsCount) {
-    elements.opsEventsCount.textContent = `${formatCount(events.length)} events loaded`;
+    const changedCount = events.filter((event) => Boolean(event?.changed || event?.wrChanged)).length;
+    const errorCount = events.filter((event) => Boolean(event?.error)).length;
+    elements.opsEventsCount.textContent = `${formatCount(events.length)} events | ${formatCount(changedCount)} WR changes | ${formatCount(errorCount)} errors${filterUid ? ` | filter ${filterUid}` : ""}`;
+  }
+  if (elements.opsEventsMapUidInput && elements.opsEventsMapUidInput.value !== filterUid) {
+    elements.opsEventsMapUidInput.value = filterUid;
   }
   elements.opsEventsList.innerHTML = "";
   if (!events.length) {
     const li = document.createElement("li");
-    li.textContent = "No server ops events loaded.";
+    li.className = "ops-entry is-empty";
+    li.innerHTML = `<strong class="ops-entry-title">${escapeHtml(filterUid ? `No server ops events found for ${filterUid}.` : "No server ops events loaded.")}</strong>`;
     elements.opsEventsList.appendChild(li);
     return;
   }
   events.slice(pager.start, pager.end).forEach((event) => {
     const li = document.createElement("li");
     const mapName = event.mapName || event.map_name || event.mapUid || event.map_uid || "-";
-    const timestamp = formatAgo(event.checkedAt || event.checked_at || event.created_at || event.timestamp);
+    const checkedAt = event.checkedAt || event.checked_at || event.created_at || event.timestamp;
+    const timestamp = formatWhenDetailed(checkedAt);
     const changed = Boolean(event.changed || event.wrChanged);
-    const wrInfo = changed ? ` | WR ${formatMs(event.oldWrMs || event.old_wr_ms)} -> ${formatMs(event.newWrMs || event.new_wr_ms)}` : "";
-    li.textContent = `[${timestamp}] ${escapeHtml(mapName)}${wrInfo}`;
-    if (changed) li.style.borderLeftColor = "rgba(51, 255, 255, 0.8)";
+    const hasError = Boolean(event.error);
+    const oldWrMs = event.oldWrMs || event.old_wr_ms;
+    const newWrMs = event.newWrMs || event.new_wr_ms;
+    const oldHolder = stripTmStyleCodes(event.oldWrHolder || event.old_wr_holder || "") || "-";
+    const newHolder = stripTmStyleCodes(event.newWrHolder || event.new_wr_holder || "") || "-";
+    li.className = `ops-entry${changed ? " is-changed" : ""}${hasError ? " is-error" : ""}`;
+    li.innerHTML = `
+      <div class="ops-entry-head">
+        <div>
+          <strong class="ops-entry-title">${escapeHtml(mapName)}</strong>
+          <span class="ops-entry-subtitle ops-entry-code">${escapeHtml(event.mapUid || event.map_uid || "-")}</span>
+        </div>
+        <div class="ops-entry-pills">
+          ${createOpsEntryPill(hasError ? "Error" : changed ? "WR changed" : "Checked", hasError ? "bad" : changed ? "good" : "neutral")}
+          ${event.runId ? createOpsEntryPill(`Run #${event.runId}`, "info") : ""}
+        </div>
+      </div>
+      <div class="ops-entry-meta">
+        <span>${escapeHtml(timestamp)}</span>
+        ${event.scheduleId ? `<span>${escapeHtml(`Schedule #${event.scheduleId}`)}</span>` : ""}
+        ${event.userId ? `<span>${escapeHtml(`User #${event.userId}`)}</span>` : ""}
+      </div>
+      ${
+        hasError
+          ? `<div class="ops-entry-detail">${escapeHtml(event.error)}</div>`
+          : changed
+            ? `<div class="ops-entry-detail">WR ${escapeHtml(formatMs(oldWrMs))} by ${escapeHtml(oldHolder)} -> ${escapeHtml(formatMs(newWrMs))} by ${escapeHtml(newHolder)}</div>`
+            : '<div class="ops-entry-detail muted">Checked with no WR change recorded.</div>'
+      }
+    `;
     elements.opsEventsList.appendChild(li);
   });
 }
@@ -1655,20 +2017,47 @@ function renderOpsEvents() {
 function renderOpsRuns() {
   if (!elements.opsRunsList) return;
   const runs = state.diagnostics.opsRuns || [];
+  if (elements.opsRunsSummary) {
+    const changedRuns = runs.filter((run) => Number(run.mapsChanged || run.maps_changed || 0) > 0).length;
+    elements.opsRunsSummary.textContent = `${formatCount(runs.length)} runs loaded | ${formatCount(changedRuns)} with changes`;
+  }
   elements.opsRunsList.innerHTML = "";
   if (!runs.length) {
     const li = document.createElement("li");
-    li.textContent = "No poll runs loaded.";
+    li.className = "ops-entry is-empty";
+    li.innerHTML = '<strong class="ops-entry-title">No poll runs loaded.</strong>';
     elements.opsRunsList.appendChild(li);
     return;
   }
   runs.slice(0, 20).forEach((run) => {
     const li = document.createElement("li");
-    const status = String(run.status || "ok").toUpperCase();
-    const finishedAt = formatAgo(run.finishedAt || run.finished_at || run.startedAt || run.started_at);
+    const statusRaw = String(run.status || "ok");
+    const status = statusRaw.toUpperCase();
+    const statusTone = toneFromStatus(statusRaw, "neutral");
+    const finishedAt = formatWhenDetailed(run.finishedAt || run.finished_at || run.startedAt || run.started_at);
     const mapsTotal = Number(run.mapsTotal || run.maps_total || run.mapsChecked || run.maps_checked || 0);
     const mapsChanged = Number(run.mapsChanged || run.maps_changed || 0);
-    li.textContent = `[${finishedAt}] ${status} | ${mapsTotal} maps checked | ${mapsChanged} changed`;
+    const durationMs = Date.parse(run.finishedAt || run.finished_at || "") - Date.parse(run.startedAt || run.started_at || "");
+    const durationText = Number.isFinite(durationMs) && durationMs >= 0 ? formatDurationShort(durationMs) : "-";
+    li.className = `ops-entry${statusRaw.toLowerCase() === "running" ? " is-running" : ""}${statusTone === "bad" ? " is-error" : ""}`;
+    li.innerHTML = `
+      <div class="ops-entry-head">
+        <div>
+          <strong class="ops-entry-title">Poll run #${escapeHtml(run.runId || "-")}</strong>
+          <span class="ops-entry-subtitle">${escapeHtml(run.note || "Scheduler poll execution")}</span>
+        </div>
+        <div class="ops-entry-pills">
+          ${createOpsEntryPill(status, statusTone)}
+          ${mapsChanged > 0 ? createOpsEntryPill(`${mapsChanged} changed`, "good") : ""}
+        </div>
+      </div>
+      <div class="ops-entry-meta">
+        <span>${escapeHtml(finishedAt)}</span>
+        ${run.scheduleId ? `<span>${escapeHtml(`Schedule #${run.scheduleId}`)}</span>` : ""}
+        ${run.userId ? `<span>${escapeHtml(`User #${run.userId}`)}</span>` : ""}
+      </div>
+      <div class="ops-entry-detail">${escapeHtml(`${mapsTotal} maps checked | ${mapsChanged} changed | duration ${durationText}`)}</div>
+    `;
     elements.opsRunsList.appendChild(li);
   });
 }
@@ -2341,8 +2730,13 @@ async function loadDiagnosticsData({ silent = false } = {}) {
 
 async function loadActivityLogData({ silent = false } = {}) {
   try {
+    const eventQuery = new URLSearchParams();
+    eventQuery.set("limit", "200");
+    if (asText(state.filters.opsEventMapUid)) {
+      eventQuery.set("mapUid", asText(state.filters.opsEventMapUid));
+    }
     const [eventsPayload, runsPayload] = await Promise.all([
-      apiRequest("/api/v1/admin/ops/events?limit=200").catch(() => null),
+      apiRequest(`/api/v1/admin/ops/events?${eventQuery.toString()}`).catch(() => null),
       apiRequest("/api/v1/admin/ops/runs?limit=100").catch(() => null),
     ]);
     state.diagnostics.opsEvents = Array.isArray(eventsPayload?.events) ? eventsPayload.events : [];
@@ -2354,6 +2748,12 @@ async function loadActivityLogData({ silent = false } = {}) {
       notify("error", `Failed to load activity data: ${error.message}`);
     }
   }
+}
+
+function applyOpsEventFilter() {
+  state.filters.opsEventMapUid = asText(elements.opsEventsMapUidInput?.value);
+  state.ui.opsEventsPage = 1;
+  return loadActivityLogData({ silent: false });
 }
 
 function readNamingFiltersFromInputs() {
@@ -2722,6 +3122,22 @@ async function handleLiveRefreshData() {
   }
 }
 
+async function handleOverviewRunFullSync() {
+  if (!elements.overviewRunFullSyncBtn) {
+    await handleLiveRefreshData();
+    return;
+  }
+  elements.overviewRunFullSyncBtn.disabled = true;
+  const oldText = elements.overviewRunFullSyncBtn.textContent;
+  elements.overviewRunFullSyncBtn.textContent = "Starting...";
+  try {
+    await handleLiveRefreshData();
+  } finally {
+    elements.overviewRunFullSyncBtn.disabled = false;
+    elements.overviewRunFullSyncBtn.textContent = oldText;
+  }
+}
+
 async function handleLiveSyncNow() {
   const payload = readLiveMonitorFormValues();
   elements.liveSyncBtn.disabled = true;
@@ -2789,6 +3205,7 @@ function bindEvents() {
   if (elements.liveRefreshBtn) elements.liveRefreshBtn.addEventListener("click", handleLiveRefreshData);
   if (elements.liveFetchBtn) elements.liveFetchBtn.addEventListener("click", handleLiveFetchSummary);
   if (elements.liveSyncBtn) elements.liveSyncBtn.addEventListener("click", handleLiveSyncNow);
+  if (elements.overviewRunFullSyncBtn) elements.overviewRunFullSyncBtn.addEventListener("click", handleOverviewRunFullSync);
   if (elements.hookMapSearch) {
     elements.hookMapSearch.addEventListener("input", debounce(() => {
       state.filters.hookSearch = elements.hookMapSearch.value;
@@ -2824,6 +3241,22 @@ function bindEvents() {
     .filter(Boolean)
     .forEach((node) => node.addEventListener("change", debouncedDiagTimelineReload));
   if (elements.activityLogRefreshBtn) elements.activityLogRefreshBtn.addEventListener("click", () => loadActivityLogData({ silent: false }));
+  if (elements.opsEventsApplyBtn) elements.opsEventsApplyBtn.addEventListener("click", applyOpsEventFilter);
+  if (elements.opsEventsClearBtn) {
+    elements.opsEventsClearBtn.addEventListener("click", () => {
+      state.filters.opsEventMapUid = "";
+      if (elements.opsEventsMapUidInput) elements.opsEventsMapUidInput.value = "";
+      state.ui.opsEventsPage = 1;
+      loadActivityLogData({ silent: false });
+    });
+  }
+  if (elements.opsEventsMapUidInput) {
+    elements.opsEventsMapUidInput.addEventListener("keydown", (event) => {
+      if (event.key !== "Enter") return;
+      event.preventDefault();
+      applyOpsEventFilter();
+    });
+  }
   if (elements.opsEventsPrevBtn) elements.opsEventsPrevBtn.addEventListener("click", () => { state.ui.opsEventsPage = Math.max(1, state.ui.opsEventsPage - 1); renderOpsEvents(); });
   if (elements.opsEventsNextBtn) elements.opsEventsNextBtn.addEventListener("click", () => { state.ui.opsEventsPage += 1; renderOpsEvents(); });
 }
@@ -2862,4 +3295,3 @@ async function boot() {
 }
 
 boot();
-

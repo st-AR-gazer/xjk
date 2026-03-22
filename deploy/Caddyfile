@@ -1,5 +1,4 @@
 ﻿{
-  # Replace before production.
   email admin@xjk.yt
 }
 
@@ -41,6 +40,11 @@ tracker.xjk.yt {
 }
 
 aggregator.xjk.yt {
+  import secure_headers
+  reverse_proxy 127.0.0.1:3040
+}
+
+dash.xjk.yt {
   import secure_headers
   reverse_proxy 127.0.0.1:3040
 }

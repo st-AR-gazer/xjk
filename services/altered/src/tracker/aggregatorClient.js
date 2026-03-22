@@ -90,6 +90,54 @@ class AggregatorClient {
     const query = normalized.map((accountId) => `accountId[]=${encodeURIComponent(accountId)}`).join("&");
     return this.request(`display-names?${query}`);
   }
+
+  async ingestDisplayNames(
+    namesByAccountId = {},
+    {
+      source = "altered-mapper-sync",
+      projectKey = "altered-mapper-displayname",
+      projectName = "Altered Mapper Displayname",
+      observedAt = new Date().toISOString(),
+    } = {}
+  ) {
+    const map = namesByAccountId && typeof namesByAccountId === "object" ? namesByAccountId : {};
+    const payloadMap = {};
+    for (const [rawAccountId, rawDisplayName] of Object.entries(map)) {
+      const accountId = normalizeAccountId(rawAccountId);
+      const displayName = String(rawDisplayName || "").trim();
+      if (!accountId || !displayName) continue;
+      if (normalizeAccountId(displayName) === accountId) continue;
+      payloadMap[accountId] = displayName;
+    }
+
+    if (!Object.keys(payloadMap).length) {
+      return {
+        ok: true,
+        status: 200,
+        data: {
+          ok: true,
+          ingest: {
+            accepted: 0,
+            inserted: 0,
+            updated: 0,
+            unchanged: 0,
+            skipped: true,
+          },
+        },
+      };
+    }
+
+    return this.request("ingest/display-names", {
+      method: "POST",
+      body: {
+        projectKey: String(projectKey || "").trim() || "altered-mapper-displayname",
+        projectName: String(projectName || "").trim() || "Altered Mapper Displayname",
+        sourceLabel: String(source || "").trim() || "altered-mapper-sync",
+        observedAt,
+        namesByAccountId: payloadMap,
+      },
+    });
+  }
 }
 
 export { AggregatorClient };

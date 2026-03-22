@@ -72,6 +72,7 @@ New-Item -ItemType Directory -Force -Path (Join-Path $RepoPath "sites/trackers.x
 New-Item -ItemType Directory -Force -Path (Join-Path $RepoPath "sites/tracker-displayname.xjk.yt/frontend") | Out-Null
 New-Item -ItemType Directory -Force -Path (Join-Path $RepoPath "sites/tracker-club.xjk.yt/frontend") | Out-Null
 New-Item -ItemType Directory -Force -Path (Join-Path $RepoPath "sites/aggregator.xjk.yt/frontend") | Out-Null
+New-Item -ItemType Directory -Force -Path (Join-Path $RepoPath "sites/dash.xjk.yt/frontend") | Out-Null
 New-Item -ItemType Directory -Force -Path (Join-Path $RepoPath "sites/altered.xjk.yt/data") | Out-Null
 New-Item -ItemType Directory -Force -Path (Join-Path $RepoPath "sites/plugins.xjk.yt/Plugins-Hub/frontend") | Out-Null
 

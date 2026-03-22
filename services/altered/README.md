@@ -25,6 +25,8 @@ Tracker runtimes stay generic and reusable by other projects.
 
 Public:
 
+- `GET /api/v1/public/endpoints`
+- `GET /api/v1/public/maps/:mapUid`
 - `GET /api/v1/dashboard`
 - `GET /api/v1/latest-wr`
 - `GET /api/v1/maps/info/:mapUid`
@@ -34,6 +36,10 @@ Public:
 - `GET /api/v1/tracker/status`
 - `POST /api/v1/request-update`
 - `POST /api/v1/webhook/wr` (shared-secret protected)
+
+Public docs:
+
+- `/api/`
 
 Admin:
 
@@ -56,6 +62,7 @@ Admin:
 - `GET /api/v1/admin/auth/allowlist`
 - `POST /api/v1/admin/auth/allowlist`
 - `POST /api/v1/admin/auth/allowlist/:adminUserId/active`
+- `GET /api/v1/admin/public-api/summary`
 
 Ops module:
 

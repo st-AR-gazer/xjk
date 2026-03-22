@@ -3,7 +3,9 @@
   z-index: 1;
   max-width: 720px;
   margin: 0 auto;
-  padding: 2rem 1.5rem 3rem;
+  padding-right: 1.5rem;
+  padding-bottom: 3rem;
+  padding-left: 1.5rem;
 }
 
 .back-link {
@@ -296,7 +298,9 @@
 }
 @media (max-width: 720px) {
   .page-shell {
-    padding: 1.5rem 1rem 2rem;
+    padding-right: 1rem;
+    padding-bottom: 2rem;
+    padding-left: 1rem;
   }
 
   .ru-filters {

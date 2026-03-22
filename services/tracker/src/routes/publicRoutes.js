@@ -89,6 +89,18 @@ function createPublicRoutes(service, { realtimeHub = null } = {}) {
     });
   });
 
+  router.get("/leaderboards/coverage", (req, res) => {
+    const trackedOnly =
+      req.query.tracked_only === undefined ? true : parseTrackedOnly(req.query.tracked_only);
+    const coverage = service.getLeaderboardCoverage({
+      trackedOnly,
+    });
+    res.json({
+      coverage,
+      sampledAt: new Date().toISOString(),
+    });
+  });
+
   router.get("/players/names", (req, res) => {
     const query = req.query || {};
     const accountIds = parseAccountIds(query.accountId || query["accountId[]"]);

@@ -2,6 +2,7 @@
   "use strict";
 
   const PER_PAGE = 25;
+  const POLL_REFRESH_MS = 15000;
   function configureLocalLinks() {
     const host = window.location.hostname.toLowerCase();
     const port = window.location.port || "80";
@@ -106,6 +107,12 @@
     if (el) el.textContent = text;
   }
 
+  function waitForNextPaint() {
+    return new Promise((resolve) => {
+      requestAnimationFrame(() => resolve());
+    });
+  }
+
   async function fetchJson(url) {
     const response = await fetch(url, { cache: "no-store" });
     const payload = await response.json().catch(() => ({}));
@@ -143,6 +150,11 @@
     },
     maps: [],
     names: [],
+    namesMeta: {
+      mode: "cached",
+      cachedCount: 0,
+      candidateCount: 0,
+    },
     page: { events: 1, maps: 1, names: 1 },
     db: {
       table: "",
@@ -449,25 +461,99 @@
 
   async function loadNames() {
     const payload = await fetchJson("/api/v1/display-names?limit=500");
-    state.names = payload?.names || [];
+    const names = Array.isArray(payload?.names) ? payload.names : [];
+    state.namesMeta.cachedCount = Number(payload?.count || names.length || 0);
+    state.namesMeta.candidateCount = 0;
+
+    if (names.length) {
+      state.namesMeta.mode = "cached";
+      state.names = names;
+    } else {
+      let candidates = [];
+      try {
+        const candidatePayload = await fetchJson(
+          "/api/v1/display-names/candidates/details?limit=500&stale_after_seconds=3600"
+        );
+        candidates = Array.isArray(candidatePayload?.candidates) ? candidatePayload.candidates : [];
+        state.namesMeta.candidateCount = Number(candidatePayload?.count || candidates.length || 0);
+      } catch {
+        candidates = [];
+      }
+
+      state.namesMeta.mode = "pending";
+      state.names = candidates.map((candidate) => ({
+        accountId: candidate.accountId || "-",
+        displayName: null,
+        observedAt: candidate.observedAt || null,
+        lastSeenAt: candidate.lastSeenAt || null,
+        stale: Boolean(candidate.stale),
+        pending: true,
+      }));
+    }
+
     state.page.names = 1;
     renderNames();
   }
 
   async function loadClubSummary() {
     const clubId = Number(document.getElementById("clubId").value || 0);
-    if (!clubId) return;
-
-    const [summaryPayload, campaignsPayload] = await Promise.all([
-      fetchJson(`/api/v1/clubs/${clubId}/summary`),
-      fetchJson(`/api/v1/clubs/${clubId}/campaigns?limit=10`),
+    const [tablePayload, recentEventsPayload] = await Promise.all([
+      fetchJson("/api/v1/db/tables?include_counts=1").catch(() => ({ tables: [] })),
+      fetchJson("/api/v1/events/recent?limit=10&event_type=club.snapshot&include_system=1").catch(
+        () => ({ events: [] })
+      ),
     ]);
 
+    const clubTables = (Array.isArray(tablePayload?.tables) ? tablePayload.tables : [])
+      .filter((item) => /^clubs?$|^club_/i.test(String(item?.table || "")))
+      .map((item) => ({
+        table: item.table,
+        rowCount: Number(item?.rowCount || 0),
+      }));
+    const clubRowsTotal = clubTables.reduce((acc, item) => acc + Number(item.rowCount || 0), 0);
+    const recentSnapshots = (Array.isArray(recentEventsPayload?.events) ? recentEventsPayload.events : [])
+      .slice(0, 5)
+      .map((event) => ({
+        occurredAt: event.occurredAt || null,
+        projectKey: event.projectKey || null,
+        detail: event.eventDetail || event.detail2 || "-",
+      }));
+
+    let summaryPayload = null;
+    let campaignsPayload = null;
+    let summaryError = null;
+
+    if (clubId > 0 && clubRowsTotal > 0) {
+      try {
+        [summaryPayload, campaignsPayload] = await Promise.all([
+          fetchJson(`/api/v1/clubs/${clubId}/summary`),
+          fetchJson(`/api/v1/clubs/${clubId}/campaigns?limit=10`),
+        ]);
+      } catch (error) {
+        summaryError = error;
+      }
+    }
+
+    const payload = {
+      clubId: clubId || null,
+      summary: summaryPayload?.summary || null,
+      campaigns: campaignsPayload?.campaigns || [],
+      tableCounts: clubTables,
+      recentSnapshots,
+    };
+
+    if (!clubId) {
+      payload.note = "Enter a club ID to query a specific club snapshot.";
+    } else if (clubRowsTotal <= 0) {
+      payload.note = "No club snapshots ingested yet. Club tables are currently empty.";
+    } else if (!payload.summary) {
+      payload.note = summaryError?.message
+        ? `No snapshot found for club ${clubId}: ${summaryError.message}`
+        : `No snapshot found for club ${clubId}.`;
+    }
+
     document.getElementById("clubSummary").textContent = JSON.stringify(
-      {
-        summary: summaryPayload?.summary || null,
-        campaigns: campaignsPayload?.campaigns || [],
-      },
+      payload,
       null,
       2
     );
@@ -548,19 +634,31 @@
     const { slice, page, totalPages, total } = paginate(state.names, state.page.names);
     state.page.names = page;
 
-    document.getElementById("namesCount").textContent = `${total} names`;
+    const mode = String(state.namesMeta?.mode || "cached");
+    const cachedCount = Number(state.namesMeta?.cachedCount || 0);
+    const candidateCount = Number(state.namesMeta?.candidateCount || 0);
+    document.getElementById("namesCount").textContent =
+      mode === "pending"
+        ? `${fmtNumber(cachedCount)} cached | ${fmtNumber(candidateCount)} pending`
+        : `${fmtNumber(total)} names`;
     const body = document.getElementById("namesBody");
     body.innerHTML = "";
 
     if (!slice.length) {
-      body.innerHTML = '<tr><td colspan="3" class="muted">No display names cached yet.</td></tr>';
+      body.innerHTML = '<tr><td colspan="3" class="muted">No display names or pending candidates yet.</td></tr>';
     } else {
       slice.forEach((row) => {
         const tr = document.createElement("tr");
+        const nameCell = row.pending
+          ? `<span class="muted">pending lookup${row.stale ? " (stale)" : ""}</span>`
+          : escapeHtml(row.displayName || "-");
+        const observed = row.pending
+          ? fmtDate(row.lastSeenAt || row.observedAt)
+          : fmtDate(row.observedAt);
         tr.innerHTML =
           `<td>${escapeHtml(row.accountId)}</td>` +
-          `<td>${escapeHtml(row.displayName || "-")}</td>` +
-          `<td>${fmtDate(row.observedAt)}</td>`;
+          `<td>${nameCell}</td>` +
+          `<td>${observed}</td>`;
         body.appendChild(tr);
       });
     }
@@ -588,10 +686,14 @@
       select.appendChild(option);
     });
 
-    state.db.table =
-      (tables.find((item) => item.table === previous) || tables[0] || {}).table || "";
+    const previousMatch = tables.find((item) => item.table === previous);
+    const firstNonEmpty = tables.find((item) => Number(item?.rowCount || 0) > 0);
+    state.db.table = (previousMatch || firstNonEmpty || tables[0] || {}).table || "";
     select.value = state.db.table;
     state.db.offset = 0;
+    if (!tables.length) {
+      setDbTableStats("No tables available.");
+    }
   }
 
   function renderSchemaPills(columns = []) {
@@ -663,7 +765,12 @@
   }
 
   async function loadDbSchema() {
-    if (!state.db.table) return;
+    if (!state.db.table) {
+      state.db.columns = [];
+      renderSchemaPills([]);
+      renderDbSortColumns([]);
+      return;
+    }
     const payload = await fetchJson(`/api/v1/db/tables/${encodeURIComponent(state.db.table)}/schema`);
     const schema = payload?.schema || {};
     const columns = schema.columns || [];
@@ -673,7 +780,11 @@
   }
 
   async function loadDbRows() {
-    if (!state.db.table) return;
+    if (!state.db.table) {
+      renderDbRows({ columns: [], rows: [] });
+      setDbTableStats("No table selected.");
+      return;
+    }
 
     const params = new URLSearchParams();
     params.set("limit", String(state.db.limit));
@@ -777,14 +888,7 @@
       legend;
   }
 
-  async function loadMetrics() {
-    const [overviewPayload, timelinePayload] = await Promise.all([
-      fetchJson("/api/v1/metrics/overview"),
-      fetchJson(
-        `/api/v1/metrics/timeseries?bucket=${encodeURIComponent(state.metrics.bucket)}&window_hours=${encodeURIComponent(state.metrics.windowHours)}`
-      ),
-    ]);
-
+  function applyMetricsOverview(overviewPayload) {
     const metrics = overviewPayload?.metrics || {};
     const freshness = metrics.freshness || {};
     const throughput24h = metrics.throughput24h || {};
@@ -792,6 +896,18 @@
     const runHealth = metrics.runHealth || {};
     const instanceHealth = metrics.instanceHealth || {};
     const nameHealth = metrics.nameHealth || {};
+    const totalAccounts = Math.max(0, Number(metrics.accounts || 0));
+    const matchedDisplayNames = Math.max(0, Number(metrics.displayNames || 0));
+    const missingDisplayNames = Math.max(
+      0,
+      Number(nameHealth.missingDisplayNames ?? totalAccounts - matchedDisplayNames)
+    );
+    const computedCoveragePct =
+      totalAccounts > 0 ? (matchedDisplayNames / totalAccounts) * 100 : 0;
+    const coveragePct = Number(
+      Number.isFinite(nameHealth.coveragePct) ? nameHealth.coveragePct : computedCoveragePct
+    );
+    const clampedCoveragePct = Math.max(0, Math.min(100, Number.isFinite(coveragePct) ? coveragePct : 0));
 
     setText("metricOnlineInstances", fmtNumber(metrics.onlineInstances || 0));
     setText("metricOfflineInstances", fmtNumber(instanceHealth.staleOrOfflineInstances || 0));
@@ -804,11 +920,110 @@
     setText("metricTrackedMaps", fmtNumber(freshness.trackedMaps || 0));
     setText("metricStaleMaps24h", fmtNumber(freshness.stale24h || 0));
     setText("metricAvgRunDuration24h", fmtDurationSeconds(runHealth.avgRunDurationSeconds24h || 0));
-    setText("metricNameCoverage", fmtPercent(nameHealth.coveragePct || 0, 2));
+    setText("metricNameCoverage", fmtPercent(clampedCoveragePct, 2));
     setText("metricNameUpdates24h", fmtNumber(nameHealth.observed24h || 0));
     setText("metricStaleNames20d", fmtNumber(nameHealth.stale20d || 0));
     setText("metricDbSize", fmtBytes(metrics?.storage?.dbBytes || 0));
+    setText("metricDisplayNamesMatched", fmtNumber(matchedDisplayNames));
+    setText("metricDisplayNamesTotal", fmtNumber(totalAccounts));
+    setText("metricDisplayNamesMissing", fmtNumber(missingDisplayNames));
+    setText("metricDisplayNamesCoverage", fmtPercent(clampedCoveragePct, 2));
 
+    const coverageBarEl = document.getElementById("metricDisplayNamesCoverageBar");
+    if (coverageBarEl) {
+      coverageBarEl.style.width = `${clampedCoveragePct.toFixed(2)}%`;
+      const progressEl = coverageBarEl.parentElement;
+      if (progressEl) progressEl.setAttribute("aria-valuenow", clampedCoveragePct.toFixed(2));
+    }
+    const coverageStateEl = document.getElementById("metricNameCoverageState");
+    if (coverageStateEl) {
+      const isComplete = totalAccounts > 0 && missingDisplayNames === 0;
+      coverageStateEl.textContent = totalAccounts === 0 ? "No Accounts" : isComplete ? "Complete" : "In Progress";
+      coverageStateEl.classList.toggle("is-complete", isComplete);
+    }
+    renderMetricTopProjects(metrics.topProjects || []);
+  }
+
+  function applyLeaderboardCoverage(coveragePayload) {
+    const coverage = coveragePayload?.coverage || {};
+    const totalMaps = Math.max(0, Number(coverage.totalMaps || 0));
+    const mapsWithKnownWr = Math.max(0, Number(coverage.mapsWithKnownWr || 0));
+    const mapsWithLeaderboardRows = Math.max(0, Number(coverage.mapsWithLeaderboardRows || 0));
+    const mapsWithExtendedLeaderboard = Math.max(0, Number(coverage.mapsWithExtendedLeaderboard || 0));
+    const leaderboardRowsStored = Math.max(0, Number(coverage.leaderboardRowsStored || 0));
+    const extendedCoveragePct = Math.max(
+      0,
+      Math.min(100, Number(coverage.extendedCoveragePct || 0))
+    );
+
+    setText("metricLeaderboardWrKnown", `${fmtNumber(mapsWithKnownWr)} / ${fmtNumber(totalMaps)}`);
+    setText(
+      "metricLeaderboardAnyRows",
+      `${fmtNumber(mapsWithLeaderboardRows)} / ${fmtNumber(totalMaps)}`
+    );
+    setText(
+      "metricLeaderboardExtended",
+      `${fmtNumber(mapsWithExtendedLeaderboard)} / ${fmtNumber(totalMaps)}`
+    );
+    setText("metricLeaderboardRowsStored", fmtNumber(leaderboardRowsStored));
+
+    const coverageBarEl = document.getElementById("metricLeaderboardCoverageBar");
+    if (coverageBarEl) {
+      coverageBarEl.style.width = `${extendedCoveragePct.toFixed(2)}%`;
+      const progressEl = coverageBarEl.parentElement;
+      if (progressEl) progressEl.setAttribute("aria-valuenow", extendedCoveragePct.toFixed(2));
+    }
+
+    const coverageStateEl = document.getElementById("metricLeaderboardCoverageState");
+    if (coverageStateEl) {
+      const isComplete = totalMaps > 0 && mapsWithExtendedLeaderboard >= totalMaps;
+      coverageStateEl.textContent =
+        totalMaps === 0 ? "No Maps" : isComplete ? "Complete" : fmtPercent(extendedCoveragePct, 1);
+      coverageStateEl.classList.toggle("is-complete", isComplete);
+    }
+
+    const barsEl = document.getElementById("metricLeaderboardCoverageBars");
+    if (barsEl) {
+      const rows = [
+        {
+          label: "WR Known",
+          value: mapsWithKnownWr,
+          pct: Number(coverage.wrCoveragePct || 0),
+          tone: "is-known",
+        },
+        {
+          label: "Any Leaderboard Rows",
+          value: mapsWithLeaderboardRows,
+          pct: Number(coverage.leaderboardCoveragePct || 0),
+          tone: "is-any",
+        },
+        {
+          label: "Fuller Leaderboard",
+          value: mapsWithExtendedLeaderboard,
+          pct: Number(coverage.extendedCoveragePct || 0),
+          tone: "is-fuller",
+        },
+      ];
+      barsEl.innerHTML = rows
+        .map((row) => {
+          const pct = Math.max(0, Math.min(100, Number(row.pct || 0)));
+          return `
+            <div class="coverage-bar-row">
+              <div class="coverage-bar-head">
+                <span class="coverage-bar-label">${escapeHtml(row.label)}</span>
+                <span class="coverage-bar-value">${escapeHtml(`${fmtNumber(row.value)} / ${fmtNumber(totalMaps)} (${fmtPercent(pct, 1)})`)}</span>
+              </div>
+              <div class="coverage-bar-track">
+                <span class="coverage-bar-fill ${row.tone}" style="width:${pct.toFixed(2)}%"></span>
+              </div>
+            </div>
+          `;
+        })
+        .join("");
+    }
+  }
+
+  function applyMetricsTimeline(timelinePayload) {
     const series = timelinePayload?.series || {};
     renderLineChart("eventsChart", series.events || [], ["checks", "changes"], ["Checks", "Changes"]);
     renderLineChart(
@@ -818,34 +1033,156 @@
       ["Maps Checked", "Avg Run Seconds"]
     );
     renderLineChart("namesChart", series.names || [], ["updates"], ["Name Updates"]);
-    renderMetricTopProjects(metrics.topProjects || []);
   }
-  async function refreshAll() {
-    try {
-      setStatus("Refreshing...");
-      await loadMeta();
+
+  async function loadMetrics() {
+    const overviewPayload = await fetchJson("/api/v1/metrics/overview");
+    applyMetricsOverview(overviewPayload);
+    const leaderboardCoveragePayload = await fetchJson("/api/v1/metrics/leaderboards/coverage");
+    applyLeaderboardCoverage(leaderboardCoveragePayload);
+    await waitForNextPaint();
+    const timelinePayload = await fetchJson(
+      `/api/v1/metrics/timeseries?bucket=${encodeURIComponent(state.metrics.bucket)}&window_hours=${encodeURIComponent(state.metrics.windowHours)}`
+    );
+    applyMetricsTimeline(timelinePayload);
+  }
+
+  function stampStatus(prefix = "Updated") {
+    setStatus(
+      `${prefix} ${new Date().toLocaleTimeString(undefined, {
+        hour: "2-digit",
+        minute: "2-digit",
+        second: "2-digit",
+        hour12: false,
+        hourCycle: "h23",
+      })}`
+    );
+  }
+
+  async function refreshMeta({ silent = false } = {}) {
+    if (!silent) setStatus("Loading summary...");
+    await loadMeta();
+  }
+
+  async function refreshEventsPanel({ silent = false, refreshProjects = false, refreshFacets = false } = {}) {
+    if (refreshProjects || !state.projects.length) {
+      if (!silent) setStatus("Loading projects...");
       await loadProjects();
+      await waitForNextPaint();
+    }
+    if (refreshFacets || (!state.eventFacets.sources.length && !state.eventFacets.eventTypes.length)) {
+      if (!silent) setStatus("Loading event facets...");
       await loadEventFacets();
-      await Promise.all([loadProjectData(), loadEvents(), loadNames()]);
-      await loadDbTables();
-      await loadDbSchema();
-      await Promise.all([loadDbRows(), loadMetrics()]);
-      setStatus(
-        `Updated ${new Date().toLocaleTimeString(undefined, {
-          hour: "2-digit",
-          minute: "2-digit",
-          second: "2-digit",
-          hour12: false,
-          hourCycle: "h23",
-        })}`
-      );
+      await waitForNextPaint();
+    }
+    if (!silent) setStatus("Loading events...");
+    await loadEvents();
+  }
+
+  async function refreshProjectsPanel({ silent = false, refreshProjects = false } = {}) {
+    if (refreshProjects || !state.projects.length) {
+      if (!silent) setStatus("Loading projects...");
+      await loadProjects();
+      await waitForNextPaint();
+    }
+    if (!silent) setStatus("Loading project view...");
+    await loadProjectData();
+  }
+
+  async function refreshNamesPanel({ silent = false } = {}) {
+    if (!silent) setStatus("Loading names...");
+    await loadNames();
+  }
+
+  async function refreshDatabasePanel({ silent = false } = {}) {
+    if (!silent) setStatus("Loading database tables...");
+    await loadDbTables();
+    await waitForNextPaint();
+    if (!silent) setStatus("Loading database schema...");
+    await loadDbSchema();
+    await waitForNextPaint();
+    if (!silent) setStatus("Loading database rows...");
+    await loadDbRows();
+  }
+
+  async function refreshMetricsPanel({ silent = false } = {}) {
+    if (!silent) setStatus("Loading metrics...");
+    await loadMetrics();
+  }
+
+  async function refreshActiveTab({ silent = false, fromPoll = false } = {}) {
+    if (state.activeTab === "projects") {
+      await refreshProjectsPanel({ silent });
+      return;
+    }
+    if (state.activeTab === "names") {
+      await refreshNamesPanel({ silent });
+      return;
+    }
+    if (state.activeTab === "clubs") {
+      return;
+    }
+    if (state.activeTab === "database") {
+      if (fromPoll) return;
+      await refreshDatabasePanel({ silent });
+      return;
+    }
+    if (state.activeTab === "metrics") {
+      await refreshMetricsPanel({ silent });
+      return;
+    }
+    await refreshEventsPanel({ silent });
+  }
+
+  let refreshBusy = false;
+
+  async function refreshAll() {
+    if (refreshBusy) return;
+    refreshBusy = true;
+    const issues = [];
+    const runStep = async (label, fn) => {
+      try {
+        await fn();
+      } catch (error) {
+        issues.push(`${label}: ${error?.message || error}`);
+      }
+    };
+
+    try {
+      await runStep("meta", () => refreshMeta({ silent: false }));
+      await waitForNextPaint();
+      await runStep(state.activeTab, () => refreshActiveTab({ silent: false, fromPoll: false }));
+
+      const updatedAt = new Date().toLocaleTimeString(undefined, {
+        hour: "2-digit",
+        minute: "2-digit",
+        second: "2-digit",
+        hour12: false,
+        hourCycle: "h23",
+      });
+      if (!issues.length) {
+        stampStatus("Updated");
+      } else {
+        const first = issues[0];
+        const rest = issues.length - 1;
+        setStatus(
+          `Partial update ${updatedAt}: ${first}${rest > 0 ? ` (+${rest} more)` : ""}`
+        );
+      }
     } catch (error) {
       setStatus(`Error: ${error?.message || error}`);
+    } finally {
+      refreshBusy = false;
     }
   }
   function wireEvents() {
     document.querySelectorAll(".tab-btn").forEach((btn) => {
-      btn.addEventListener("click", () => switchTab(btn.dataset.tab));
+      btn.addEventListener("click", () => {
+        const tabId = btn.dataset.tab;
+        if (tabId === state.activeTab) return;
+        switchTab(tabId);
+        refreshAll().catch((err) => setStatus(`Refresh failed: ${err?.message || err}`));
+      });
     });
     document.getElementById("eventsFirst").addEventListener("click", () => {
       loadEvents({ page: 1 }).catch((err) =>
@@ -1027,6 +1364,15 @@
   configureLocalLinks();
   wireEvents();
   refreshAll();
-  setInterval(refreshAll, 15000);
+  setInterval(() => {
+    if (refreshBusy) return;
+    if (state.activeTab === "clubs" || state.activeTab === "database") {
+      loadMeta()
+        .then(() => stampStatus("Updated"))
+        .catch((err) => setStatus(`Error: ${err?.message || err}`));
+      return;
+    }
+    refreshAll().catch((err) => setStatus(`Error: ${err?.message || err}`));
+  }, POLL_REFRESH_MS);
 })();
 

@@ -212,7 +212,7 @@
               <tr>
                 <th>Account</th>
                 <th>Name</th>
-                <th>Observed</th>
+                <th>Observed / Last Seen</th>
               </tr>
             </thead>
             <tbody id="namesBody"></tbody>
@@ -358,6 +358,67 @@
           </div>
         </div>
 
+        <div class="name-progress-card" aria-live="polite">
+          <div class="name-progress-head">
+            <h3>Displayname Match Progress</h3>
+            <span class="name-progress-state" id="metricNameCoverageState">&mdash;</span>
+          </div>
+          <div class="name-progress-grid">
+            <div class="name-progress-stat">
+              <span class="name-progress-label">Matched</span>
+              <span class="name-progress-value" id="metricDisplayNamesMatched">&mdash;</span>
+            </div>
+            <div class="name-progress-stat">
+              <span class="name-progress-label">Total Accounts</span>
+              <span class="name-progress-value" id="metricDisplayNamesTotal">&mdash;</span>
+            </div>
+            <div class="name-progress-stat">
+              <span class="name-progress-label">Missing</span>
+              <span class="name-progress-value" id="metricDisplayNamesMissing">&mdash;</span>
+            </div>
+            <div class="name-progress-stat">
+              <span class="name-progress-label">Coverage</span>
+              <span class="name-progress-value" id="metricDisplayNamesCoverage">&mdash;</span>
+            </div>
+          </div>
+          <div class="name-progress-track" role="progressbar" aria-label="Displayname coverage" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0">
+            <span class="name-progress-fill" id="metricDisplayNamesCoverageBar"></span>
+          </div>
+        </div>
+
+        <div class="name-progress-card" aria-live="polite">
+          <div class="name-progress-head">
+            <h3>Global Leaderboard Coverage</h3>
+            <span class="name-progress-state" id="metricLeaderboardCoverageState">&mdash;</span>
+          </div>
+          <div class="name-progress-grid">
+            <div class="name-progress-stat">
+              <span class="name-progress-label">WR Known</span>
+              <span class="name-progress-value" id="metricLeaderboardWrKnown">&mdash;</span>
+            </div>
+            <div class="name-progress-stat">
+              <span class="name-progress-label">Any Rows</span>
+              <span class="name-progress-value" id="metricLeaderboardAnyRows">&mdash;</span>
+            </div>
+            <div class="name-progress-stat">
+              <span class="name-progress-label">Fuller LB</span>
+              <span class="name-progress-value" id="metricLeaderboardExtended">&mdash;</span>
+            </div>
+            <div class="name-progress-stat">
+              <span class="name-progress-label">Stored Rows</span>
+              <span class="name-progress-value" id="metricLeaderboardRowsStored">&mdash;</span>
+            </div>
+          </div>
+          <div class="name-progress-track" role="progressbar" aria-label="Leaderboard fuller coverage" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0">
+            <span class="name-progress-fill" id="metricLeaderboardCoverageBar"></span>
+          </div>
+        </div>
+
+        <div class="chart-card">
+          <h3>Leaderboard Coverage Snapshot</h3>
+          <div class="coverage-bars" id="metricLeaderboardCoverageBars" aria-live="polite"></div>
+        </div>
+
         <div class="toolbar">
           <span class="toolbar-label">Bucket</span>
           <select id="metricBucket" class="form-select">
@@ -420,6 +481,6 @@
     </footer>
   </main>
 
-  <script src="app.js?v=20260228-events-filter-paging"></script>
+  <script src="app.js?v=20260306-staged-refresh"></script>
 </body>
 </html>

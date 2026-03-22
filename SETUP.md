@@ -17,6 +17,8 @@ sites/
   altered.xjk.yt/
     frontend/
     data/
+  dash.xjk.yt/
+    frontend/
   trackers.xjk.yt/
     frontend/
   tracker.xjk.yt/
@@ -137,7 +139,7 @@ powershell -ExecutionPolicy Bypass -File C:\srv\xjk\deploy\server\bootstrap-clea
 After bootstrap, copy the two embed binaries into the embed `tools/` folder, then:
 
 ```powershell
-powershell -ExecutionPolicy Bypass -File C:\srv\xjk\deploy\server\apply-update.ps1 -RepoPath "C:\srv\xjk" -Branch "main" -SkipGit -CaddyConfigPath "deploy/Caddyfile.tunnel"
+powershell -ExecutionPolicy Bypass -File C:\srv\xjk\deploy\server\apply-update.ps1 -RepoPath "C:\srv\xjk" -SkipGit -CaddyConfigPath "deploy/Caddyfile.tunnel"
 ```
 
 ## DNS + Network
@@ -152,6 +154,7 @@ Create DNS records to your server IP for:
 - `altered.xjk.yt`
 - `trackers.xjk.yt`
 - `aggregator.xjk.yt`
+- `dash.xjk.yt`
 - `tracker-displayname.xjk.yt`
 - `tracker-club.xjk.yt`
 - `tracker.xjk.yt` (legacy redirect)
@@ -179,6 +182,7 @@ powershell -ExecutionPolicy Bypass -File C:\srv\xjk\deploy\server\setup-cloudfla
 - `altered.xjk.yt` -> `127.0.0.1:80`
 - `trackers.xjk.yt` -> `127.0.0.1:80`
 - `aggregator.xjk.yt` -> `127.0.0.1:80`
+- `dash.xjk.yt` -> `127.0.0.1:80`
 - `tracker-displayname.xjk.yt` -> `127.0.0.1:80`
 - `tracker-club.xjk.yt` -> `127.0.0.1:80`
 - `tracker.xjk.yt` -> `127.0.0.1:80`
@@ -189,21 +193,36 @@ powershell -ExecutionPolicy Bypass -File C:\srv\xjk\deploy\server\setup-cloudfla
 
 ## Deploy From Dev Machine
 
+Optional local deploy defaults:
+
 ```powershell
-powershell -ExecutionPolicy Bypass -File .\deploy\deploy-from-dev.ps1 -Server "user@your-server" -RemoteRepoPath "C:\srv\xjk" -Branch "main"
+Copy-Item .\deploy\.env.example .\deploy\.env
+```
+
+Then set at least `DEPLOY_SERVER` in `deploy/.env`.
+
+```powershell
+powershell -ExecutionPolicy Bypass -File .\deploy\deploy-from-dev.ps1 -Server "user@your-server" -RemoteRepoPath "C:\srv\xjk"
 ```
 
 Fast path when only frontend/code changed and lockfiles did not change:
 
 ```powershell
-powershell -ExecutionPolicy Bypass -File .\deploy\deploy-from-dev.ps1 -Server "user@your-server" -RemoteRepoPath "C:\srv\xjk" -Branch "main" -SkipInstall -CaddyConfigPath "deploy/Caddyfile.tunnel"
+powershell -ExecutionPolicy Bypass -File .\deploy\deploy-from-dev.ps1 -Server "user@your-server" -RemoteRepoPath "C:\srv\xjk" -SkipInstall -CaddyConfigPath "deploy/Caddyfile.tunnel"
 ```
 
 This script:
 
-1. Pushes `main`
-2. SSHs to server
-3. Runs `deploy/server/apply-update.ps1` (supports `-SkipInstall`, `-ForceInstall`, and `-CaddyConfigPath`)
+1. Packs the current local workspace into a deployment archive
+2. Copies that archive to the primary server over SSH/SCP
+3. Extracts it into `C:\srv\xjk`
+4. Runs `deploy/server/apply-update.ps1 -SkipGit` (supports `-SkipInstall`, `-ForceInstall`, and `-CaddyConfigPath`)
+
+If you only want to rerun restart/install steps on the server without copying files again:
+
+```powershell
+powershell -ExecutionPolicy Bypass -File .\deploy\deploy-from-dev.ps1 -Server "user@your-server" -RemoteRepoPath "C:\srv\xjk" -SkipSync -SkipInstall -CaddyConfigPath "deploy/Caddyfile.tunnel"
+```
 
 ## Local Test
 
@@ -218,12 +237,14 @@ Preferred local hosts:
 - `http://plugins.localhost:8080/`
 - `http://learn.localhost:8080/`
 - `http://altered.localhost:8080/`
+- `http://altered.localhost:8080/api/`
 - `http://trackers.localhost:8080/`
 - `http://trackers.localhost:8080/wr/`
 - `http://trackers.localhost:8080/leaderboard/`
 - `http://trackers.localhost:8080/displayname/`
 - `http://trackers.localhost:8080/club/`
 - `http://aggregator.localhost:8080/`
+- `http://dash.localhost:8080/`
 - `http://tracker.localhost:8080/`
 - `http://tracker-displayname.localhost:8080/`
 - `http://tracker-club.localhost:8080/`
@@ -235,12 +256,14 @@ Path-mode aliases:
 - `http://localhost:8080/plugins/`
 - `http://localhost:8080/learn/`
 - `http://localhost:8080/altered/`
+- `http://localhost:8080/altered/api/`
 - `http://localhost:8080/trackers/`
 - `http://localhost:8080/trackers/wr/`
 - `http://localhost:8080/trackers/leaderboard/`
 - `http://localhost:8080/trackers/displayname/`
 - `http://localhost:8080/trackers/club/`
 - `http://localhost:8080/aggregator/`
+- `http://localhost:8080/dash/`
 - `http://localhost:8080/tracker/`
 - `http://localhost:8080/tracker-displayname/`
 - `http://localhost:8080/tracker-club/`
@@ -284,7 +307,7 @@ Get-Service xjk-cloudflared
 On server:
 
 ```powershell
-cd C:\srv\xjk
-git checkout <known-good-commit>
-powershell -ExecutionPolicy Bypass -File .\deploy\server\apply-update.ps1 -RepoPath "C:\srv\xjk" -Branch "main" -SkipGit -CaddyConfigPath "deploy/Caddyfile.tunnel"
+powershell -ExecutionPolicy Bypass -File .\deploy\server\apply-update.ps1 -RepoPath "C:\srv\xjk" -SkipGit -CaddyConfigPath "deploy/Caddyfile.tunnel"
 ```
+
+If you need to roll back code, redeploy an older known-good workspace snapshot from your dev machine, then run the same `apply-update.ps1 -SkipGit` flow.

@@ -1,4 +1,5 @@
-﻿const path = require("path");
+const fs = require("fs");
+const path = require("path");
 
 const repoRoot = path.resolve(__dirname, "..", "..");
 const sitesRoot = path.join(repoRoot, "sites");
@@ -7,6 +8,7 @@ const pluginsDomainRoot = path.join(sitesRoot, "plugins.xjk.yt");
 const alteredDomainRoot = path.join(sitesRoot, "altered.xjk.yt");
 const trackerDomainRoot = path.join(sitesRoot, "tracker.xjk.yt");
 const aggregatorDomainRoot = path.join(sitesRoot, "aggregator.xjk.yt");
+const dashDomainRoot = path.join(sitesRoot, "dash.xjk.yt");
 const trackerDisplaynameDomainRoot = path.join(sitesRoot, "tracker-displayname.xjk.yt");
 const trackerClubDomainRoot = path.join(sitesRoot, "tracker-club.xjk.yt");
 const alteredServiceRoot = path.join(repoRoot, "services", "altered");
@@ -14,6 +16,59 @@ const trackerServiceRoot = path.join(repoRoot, "services", "tracker");
 const aggregatorServiceRoot = path.join(repoRoot, "services", "aggregator");
 const trackerDisplaynameServiceRoot = path.join(repoRoot, "services", "tracker-displayname");
 const trackerClubServiceRoot = path.join(repoRoot, "services", "tracker-club");
+
+function loadEnvFile(filePath) {
+  if (!filePath || !fs.existsSync(filePath)) {
+    return;
+  }
+
+  const lines = fs.readFileSync(filePath, "utf8").split(/\r?\n/);
+  for (const rawLine of lines) {
+    const line = String(rawLine || "").trim();
+    if (!line || line.startsWith("#")) {
+      continue;
+    }
+
+    const equalsIndex = line.indexOf("=");
+    if (equalsIndex <= 0) {
+      continue;
+    }
+
+    const key = line.slice(0, equalsIndex).trim();
+    if (!/^[A-Za-z_][A-Za-z0-9_]*$/.test(key)) {
+      continue;
+    }
+
+    let value = line.slice(equalsIndex + 1);
+    if (
+      (value.startsWith('"') && value.endsWith('"')) ||
+      (value.startsWith("'") && value.endsWith("'"))
+    ) {
+      value = value.slice(1, -1);
+    }
+
+    process.env[key] = value;
+  }
+}
+
+[
+  path.join(repoRoot, "deploy", "server", ".env"),
+  path.join(repoRoot, "services", "altered", ".env"),
+  path.join(repoRoot, "services", "tracker", ".env"),
+  path.join(repoRoot, "services", "tracker-displayname", ".env"),
+  path.join(repoRoot, "services", "tracker-club", ".env"),
+].forEach(loadEnvFile);
+
+function optionalEnvVar(targetKey, ...sourceKeys) {
+  const keys = [targetKey, ...sourceKeys].filter(Boolean);
+  for (const key of keys) {
+    const value = process.env[key];
+    if (typeof value === "string" && value.trim()) {
+      return { [targetKey]: value };
+    }
+  }
+  return {};
+}
 
 module.exports = {
   apps: [
@@ -39,19 +94,25 @@ module.exports = {
         NODE_ENV: "production",
         PORT: "3030",
         FRONTEND_DIR: path.join(alteredDomainRoot, "frontend"),
-        TRACKER_PUBLIC_BASE_URL:
-          process.env.TRACKER_PUBLIC_BASE_URL || "http://127.0.0.1:3031/api/v1",
-        TRACKER_ADMIN_BASE_URL:
-          process.env.TRACKER_ADMIN_BASE_URL || "http://127.0.0.1:3031/api/v1/admin",
-        TRACKER_DISPLAYNAME_BASE_URL:
-          process.env.TRACKER_DISPLAYNAME_BASE_URL || "http://127.0.0.1:3041/api/v1",
-        TRACKER_CLUB_BASE_URL:
-          process.env.TRACKER_CLUB_BASE_URL || "http://127.0.0.1:3042/api/v1",
-        AGGREGATOR_BASE_URL: process.env.AGGREGATOR_BASE_URL || "http://127.0.0.1:3040/api/v1",
+        TRACKER_PUBLIC_BASE_URL: "http://127.0.0.1:3031/api",
+        TRACKER_ADMIN_BASE_URL: "http://127.0.0.1:3031/api/admin",
+        TRACKER_DISPLAYNAME_BASE_URL: "http://127.0.0.1:3041/api",
+        TRACKER_CLUB_BASE_URL: "http://127.0.0.1:3042/api",
+        AGGREGATOR_BASE_URL: "http://127.0.0.1:3040/api",
         AGGREGATOR_TOKEN: process.env.AGGREGATOR_TOKEN || process.env.AGGREGATOR_INGEST_TOKEN || "",
         TRACKER_PROXY_TIMEOUT_MS: process.env.TRACKER_PROXY_TIMEOUT_MS || "15000",
+        NADEO_GLOBAL_THROTTLE_FILE:
+          process.env.NADEO_GLOBAL_THROTTLE_FILE ||
+          path.join(alteredDomainRoot, "data", "nadeo-global-throttle.txt"),
+        NADEO_GLOBAL_MIN_REQUEST_GAP_MS:
+          process.env.NADEO_GLOBAL_MIN_REQUEST_GAP_MS || "5000",
         ALTERED_ADMIN_TOKEN: process.env.ALTERED_ADMIN_TOKEN || "",
         TRACKER_ADMIN_TOKEN: process.env.TRACKER_ADMIN_TOKEN || "",
+        ALTERED_WR_WEBHOOK_SECRET:
+          process.env.ALTERED_WR_WEBHOOK_SECRET ||
+          process.env.TRACKER_ADMIN_TOKEN ||
+          process.env.ALTERED_ADMIN_TOKEN ||
+          "",
         UBI_OAUTH_ENABLED: process.env.UBI_OAUTH_ENABLED || "0",
         UBI_OAUTH_CLIENT_ID: process.env.UBI_OAUTH_CLIENT_ID || "",
         UBI_OAUTH_CLIENT_SECRET: process.env.UBI_OAUTH_CLIENT_SECRET || "",
@@ -81,17 +142,47 @@ module.exports = {
         TRACKER_ENABLED: "1",
         TRACKER_MODE: process.env.TRACKER_MODE || "wr",
         TRACKER_LEADERBOARD_TOP_N: process.env.TRACKER_LEADERBOARD_TOP_N || "1",
-        TRACKER_PROVIDER: process.env.TRACKER_PROVIDER || "noop",
+        TRACKER_PROVIDER: "nadeo-live",
+        TRACKER_NADEO_AUTH_MODE: process.env.TRACKER_NADEO_AUTH_MODE || "basic",
+        ...optionalEnvVar(
+          "TRACKER_NADEO_DEDI_LOGIN",
+          "TRACKER_UBI_EMAIL",
+          "NADEO_ACCOUNT_EMAIL"
+        ),
+        ...optionalEnvVar(
+          "TRACKER_NADEO_DEDI_PASSWORD",
+          "TRACKER_UBI_PASSWORD",
+          "NADEO_ACCOUNT_PASSWORD"
+        ),
+        ...optionalEnvVar("TRACKER_NADEO_LIVE_ACCESS_TOKEN"),
+        ...optionalEnvVar("TRACKER_NADEO_LIVE_REFRESH_TOKEN"),
+        TRACKER_TOKEN_CACHE_FILE:
+          process.env.TRACKER_TOKEN_CACHE_FILE ||
+          path.join(alteredDomainRoot, "data", "nadeo-token-cache.json"),
         TRACKER_TICK_SECONDS: process.env.TRACKER_TICK_SECONDS || "15",
-        TRACKER_BATCH_SIZE: process.env.TRACKER_BATCH_SIZE || "6",
-        TRACKER_MAX_CHECK_INTERVAL_SECONDS: process.env.TRACKER_MAX_CHECK_INTERVAL_SECONDS || "30",
+        TRACKER_BATCH_SIZE: process.env.TRACKER_BATCH_SIZE || "20",
+        TRACKER_MAX_CHECK_INTERVAL_SECONDS: "3600",
         TRACKER_REQUEST_TIMEOUT_MS: process.env.TRACKER_REQUEST_TIMEOUT_MS || "15000",
-        TRACKER_MIN_REQUEST_GAP_MS: process.env.TRACKER_MIN_REQUEST_GAP_MS || "5000",
+        TRACKER_MIN_REQUEST_GAP_MS: "3000",
+        NADEO_GLOBAL_THROTTLE_FILE:
+          process.env.NADEO_GLOBAL_THROTTLE_FILE ||
+          path.join(alteredDomainRoot, "data", "nadeo-global-throttle.txt"),
+        NADEO_GLOBAL_MIN_REQUEST_GAP_MS: "3000",
         TRACKER_USER_AGENT:
           process.env.TRACKER_USER_AGENT || "altered project by ar, contact @ar___ on discord",
+        TRACKER_WR_WEBHOOK_ENABLED: process.env.TRACKER_WR_WEBHOOK_ENABLED || "1",
+        TRACKER_WR_WEBHOOK_URL:
+          process.env.TRACKER_WR_WEBHOOK_URL || "http://127.0.0.1:3030/api/v1/webhook/wr",
+        TRACKER_WR_WEBHOOK_SECRET:
+          process.env.TRACKER_WR_WEBHOOK_SECRET ||
+          process.env.ALTERED_WR_WEBHOOK_SECRET ||
+          process.env.TRACKER_ADMIN_TOKEN ||
+          process.env.ALTERED_ADMIN_TOKEN ||
+          "",
+        TRACKER_WR_WEBHOOK_TIMEOUT_MS: process.env.TRACKER_WR_WEBHOOK_TIMEOUT_MS || "5000",
         TRACKER_AGGREGATOR_ENABLED: process.env.TRACKER_AGGREGATOR_ENABLED || "1",
         TRACKER_AGGREGATOR_BASE_URL:
-          process.env.TRACKER_AGGREGATOR_BASE_URL || "http://127.0.0.1:3040/api/v1",
+          process.env.TRACKER_AGGREGATOR_BASE_URL || "http://127.0.0.1:3040/api",
         TRACKER_AGGREGATOR_TOKEN:
           process.env.TRACKER_AGGREGATOR_TOKEN || process.env.AGGREGATOR_INGEST_TOKEN || "",
         TRACKER_AGGREGATOR_PROJECT_KEY:
@@ -115,30 +206,38 @@ module.exports = {
         TRACKER_ENABLED: "1",
         TRACKER_MODE: "leaderboard",
         TRACKER_LEADERBOARD_TOP_N: process.env.TRACKER_LEADERBOARD_TOP_N || "100",
-        TRACKER_PROVIDER: process.env.TRACKER_PROVIDER || "noop",
+        TRACKER_PROVIDER: "nadeo-live",
         TRACKER_NADEO_AUTH_MODE: process.env.TRACKER_NADEO_AUTH_MODE || "basic",
-        TRACKER_NADEO_DEDI_LOGIN: process.env.TRACKER_NADEO_DEDI_LOGIN || "",
-        TRACKER_NADEO_DEDI_PASSWORD: process.env.TRACKER_NADEO_DEDI_PASSWORD || "",
-        TRACKER_NADEO_LIVE_ACCESS_TOKEN: process.env.TRACKER_NADEO_LIVE_ACCESS_TOKEN || "",
-        TRACKER_NADEO_LIVE_REFRESH_TOKEN: process.env.TRACKER_NADEO_LIVE_REFRESH_TOKEN || "",
+        ...optionalEnvVar(
+          "TRACKER_NADEO_DEDI_LOGIN",
+          "TRACKER_UBI_EMAIL",
+          "NADEO_ACCOUNT_EMAIL"
+        ),
+        ...optionalEnvVar(
+          "TRACKER_NADEO_DEDI_PASSWORD",
+          "TRACKER_UBI_PASSWORD",
+          "NADEO_ACCOUNT_PASSWORD"
+        ),
+        ...optionalEnvVar("TRACKER_NADEO_LIVE_ACCESS_TOKEN"),
+        ...optionalEnvVar("TRACKER_NADEO_LIVE_REFRESH_TOKEN"),
         TRACKER_TOKEN_CACHE_FILE:
           process.env.TRACKER_LEADERBOARD_TOKEN_CACHE_FILE ||
           process.env.TRACKER_TOKEN_CACHE_FILE ||
-          path.join(alteredDomainRoot, "data", "nadeo-token-cache-leaderboard.json"),
+          path.join(alteredDomainRoot, "data", "nadeo-token-cache.json"),
         TRACKER_LIVE_GROUP_UID: process.env.TRACKER_LIVE_GROUP_UID || "Personal_Best",
         TRACKER_LIVE_ONLY_WORLD: process.env.TRACKER_LIVE_ONLY_WORLD || "1",
         TRACKER_TICK_SECONDS: process.env.TRACKER_LEADERBOARD_TICK_SECONDS || "15",
-        TRACKER_BATCH_SIZE: process.env.TRACKER_LEADERBOARD_BATCH_SIZE || "4",
-        TRACKER_MAX_CHECK_INTERVAL_SECONDS:
-          process.env.TRACKER_LEADERBOARD_MAX_CHECK_INTERVAL_SECONDS || "45",
+        TRACKER_BATCH_SIZE: process.env.TRACKER_LEADERBOARD_BATCH_SIZE || "10",
+        TRACKER_MAX_CHECK_INTERVAL_SECONDS: "3600",
         TRACKER_REQUEST_TIMEOUT_MS:
           process.env.TRACKER_LEADERBOARD_REQUEST_TIMEOUT_MS ||
           process.env.TRACKER_REQUEST_TIMEOUT_MS ||
           "15000",
-        TRACKER_MIN_REQUEST_GAP_MS:
-          process.env.TRACKER_LEADERBOARD_MIN_REQUEST_GAP_MS ||
-          process.env.TRACKER_MIN_REQUEST_GAP_MS ||
-          "5000",
+        TRACKER_MIN_REQUEST_GAP_MS: "3000",
+        NADEO_GLOBAL_THROTTLE_FILE:
+          process.env.NADEO_GLOBAL_THROTTLE_FILE ||
+          path.join(alteredDomainRoot, "data", "nadeo-global-throttle.txt"),
+        NADEO_GLOBAL_MIN_REQUEST_GAP_MS: "3000",
         TRACKER_USER_AGENT:
           process.env.TRACKER_LEADERBOARD_USER_AGENT ||
           process.env.TRACKER_USER_AGENT ||
@@ -146,7 +245,7 @@ module.exports = {
         TRACKER_WR_WEBHOOK_ENABLED: "0",
         TRACKER_AGGREGATOR_ENABLED: process.env.TRACKER_AGGREGATOR_ENABLED || "1",
         TRACKER_AGGREGATOR_BASE_URL:
-          process.env.TRACKER_AGGREGATOR_BASE_URL || "http://127.0.0.1:3040/api/v1",
+          process.env.TRACKER_AGGREGATOR_BASE_URL || "http://127.0.0.1:3040/api",
         TRACKER_AGGREGATOR_TOKEN:
           process.env.TRACKER_AGGREGATOR_TOKEN || process.env.AGGREGATOR_INGEST_TOKEN || "",
         TRACKER_AGGREGATOR_PROJECT_KEY:
@@ -170,9 +269,16 @@ module.exports = {
         NODE_ENV: "production",
         PORT: "3040",
         FRONTEND_DIR: path.join(aggregatorDomainRoot, "frontend"),
+        DASH_FRONTEND_DIR: path.join(dashDomainRoot, "frontend"),
         DATA_DIR: path.join(alteredDomainRoot, "data"),
         DB_FILE: path.join(alteredDomainRoot, "data", "tracker-aggregator.sqlite"),
         AGGREGATOR_INGEST_TOKEN: process.env.AGGREGATOR_INGEST_TOKEN || "",
+        DASH_ADMIN_TOKEN: process.env.DASH_ADMIN_TOKEN || process.env.AGGREGATOR_INGEST_TOKEN || "",
+        DASH_TRACKER_ADMIN_TOKEN:
+          process.env.DASH_TRACKER_ADMIN_TOKEN || process.env.TRACKER_ADMIN_TOKEN || "",
+        TRACKER_ADMIN_TOKEN:
+          process.env.TRACKER_ADMIN_TOKEN || process.env.DASH_TRACKER_ADMIN_TOKEN || "",
+        DASH_HOSTNAMES: process.env.DASH_HOSTNAMES || "dash.xjk.yt,dash.localhost",
       },
     },
     {
@@ -185,7 +291,7 @@ module.exports = {
         PORT: "3041",
         FRONTEND_DIR: path.join(trackerDisplaynameDomainRoot, "frontend"),
         TRACKER_DISPLAYNAME_AGGREGATOR_BASE_URL:
-          process.env.TRACKER_DISPLAYNAME_AGGREGATOR_BASE_URL || "http://127.0.0.1:3040/api/v1",
+          process.env.TRACKER_DISPLAYNAME_AGGREGATOR_BASE_URL || "http://127.0.0.1:3040/api",
         TRACKER_DISPLAYNAME_AGGREGATOR_TOKEN:
           process.env.TRACKER_DISPLAYNAME_AGGREGATOR_TOKEN ||
           process.env.AGGREGATOR_INGEST_TOKEN ||
@@ -209,6 +315,11 @@ module.exports = {
           process.env.TRACKER_DISPLAYNAME_REQUEST_TIMEOUT_MS || "15000",
         TRACKER_DISPLAYNAME_MIN_REQUEST_GAP_MS:
           process.env.TRACKER_DISPLAYNAME_MIN_REQUEST_GAP_MS || "5000",
+        NADEO_GLOBAL_THROTTLE_FILE:
+          process.env.NADEO_GLOBAL_THROTTLE_FILE ||
+          path.join(alteredDomainRoot, "data", "nadeo-global-throttle.txt"),
+        NADEO_GLOBAL_MIN_REQUEST_GAP_MS:
+          process.env.NADEO_GLOBAL_MIN_REQUEST_GAP_MS || "5000",
         TRACKER_DISPLAYNAME_API_BASE_URL:
           process.env.TRACKER_DISPLAYNAME_API_BASE_URL || "https://api.trackmania.com",
         TRACKER_DISPLAYNAME_SCOPE: process.env.TRACKER_DISPLAYNAME_SCOPE || "clubs",
@@ -235,7 +346,7 @@ module.exports = {
         TRACKER_CLUB_PROJECT_NAME: process.env.TRACKER_CLUB_PROJECT_NAME || "Prod Tracker Club",
         TRACKER_CLUB_SOURCE_LABEL: process.env.TRACKER_CLUB_SOURCE_LABEL || "prod",
         TRACKER_CLUB_AGGREGATOR_BASE_URL:
-          process.env.TRACKER_CLUB_AGGREGATOR_BASE_URL || "http://127.0.0.1:3040/api/v1",
+          process.env.TRACKER_CLUB_AGGREGATOR_BASE_URL || "http://127.0.0.1:3040/api",
         TRACKER_CLUB_AGGREGATOR_TOKEN:
           process.env.TRACKER_CLUB_AGGREGATOR_TOKEN || process.env.AGGREGATOR_INGEST_TOKEN || "",
         TRACKER_CLUB_REQUEST_TIMEOUT_MS: process.env.TRACKER_CLUB_REQUEST_TIMEOUT_MS || "15000",
@@ -352,3 +463,4 @@ module.exports = {
     },
   ],
 };
+

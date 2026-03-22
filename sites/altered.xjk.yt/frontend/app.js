@@ -143,6 +143,9 @@ function formatAgo(iso) {
   return `${Math.floor(deltaSeconds / 86400)}d ago`;
 }
 
+const NADEO_FMT_RE = /\$([0-9a-fA-F]{1,3}|[gimnostuwzGIMNOSTUWZ<>]|[hlpHLP](\[[^\]]+\])?)/g;
+function stripFmt(v) { return String(v ?? "").replace(NADEO_FMT_RE, ""); }
+
 function sanitizeStatus(statusRaw) {
   const status = String(statusRaw || "").toLowerCase();
   if (status === "live" || status === "paused" || status === "archived") return status;
@@ -160,13 +163,13 @@ function normalizeMap(map) {
   return {
     uid: String(map.uid || ""),
     mapId: String(map.mapId || ""),
-    name: String(map.name || "Unknown map"),
-    campaign: String(map.campaign || "Unassigned"),
+    name: stripFmt(map.name || "Unknown map"),
+    campaign: stripFmt(map.campaign || "Unassigned"),
     campaignId: map.campaignId ?? null,
     slot: Number(map.slot || 0),
     authorMs: Number(map.authorMs || 0),
     wrMs: Number(map.wrMs || 0),
-    wrHolder: String(map.wrHolder || "-"),
+    wrHolder: stripFmt(map.wrHolder || "-"),
     wrUpdatedAt: map.wrUpdatedAt || null,
     tracked: Boolean(map.tracked),
     status: sanitizeStatus(map.status),
@@ -178,10 +181,10 @@ function normalizeMap(map) {
 function normalizeWrEvent(event) {
   return {
     uid: String(event.uid || ""),
-    name: String(event.name || "Unknown map"),
-    campaign: String(event.campaign || "Unassigned"),
+    name: stripFmt(event.name || "Unknown map"),
+    campaign: stripFmt(event.campaign || "Unassigned"),
     wrMs: Number(event.wrMs || 0),
-    holder: String(event.holder || "Unknown"),
+    holder: stripFmt(event.holder || "Unknown"),
     at: event.at || null,
   };
 }
@@ -404,7 +407,7 @@ function renderCampaignFilter() {
   campaigns.forEach((campaign) => {
     const option = document.createElement("option");
     option.value = campaign;
-    option.textContent = campaign;
+    option.textContent = stripFmt(campaign);
     elements.campaignFilter.appendChild(option);
   });
 
@@ -423,7 +426,7 @@ function renderAdminSelectors() {
     .map((map) => {
       const campaign = String(map.campaign || "Unassigned");
       const slot = Number(map.slot || 0);
-      return `<option value="${map.uid}">${campaign} #${slot} - ${map.name}</option>`;
+      return `<option value="${map.uid}">${stripFmt(campaign)} #${slot} - ${stripFmt(map.name)}</option>`;
     })
     .join("");
 
@@ -477,7 +480,7 @@ function renderHookStatus() {
   const enabled = hook.enabled ? "enabled" : "disabled";
   const autoTrack = hook.autoTrackNewMaps ? "on" : "off";
   elements.hookStatusLine.textContent =
-    `Hook ${hook.hookKey} • club ${hook.clubName} (${hook.clubId}) • ${enabled} • auto-track ${autoTrack} • maps ${hook.mapCount} (${hook.trackedCount} tracked)`;
+    `Hook ${hook.hookKey} • club ${stripFmt(hook.clubName)} (${hook.clubId}) • ${enabled} • auto-track ${autoTrack} • maps ${hook.mapCount} (${hook.trackedCount} tracked)`;
 
   if (hook.latestRun) {
     elements.hookRunLine.textContent =
@@ -513,11 +516,11 @@ function renderHookMapList() {
     const tracked = Boolean(map.tracked);
     item.innerHTML = `
       <div class="hook-map-head">
-        <strong>${map.name}</strong>
+        <strong>${stripFmt(map.name)}</strong>
         <span class="${statusClass(map.status)}">${map.status}</span>
       </div>
-      <div class="hook-map-meta">${map.campaign} #${map.slot} • UID: ${map.uid}</div>
-      <div class="hook-map-meta">WR ${formatMs(map.wrMs)} by ${map.wrHolder || "-"}</div>
+      <div class="hook-map-meta">${stripFmt(map.campaign)} #${map.slot} • UID: ${map.uid}</div>
+      <div class="hook-map-meta">WR ${formatMs(map.wrMs)} by ${stripFmt(map.wrHolder || "-")}</div>
       <div class="hook-map-actions">
         <button class="hook-action" type="button" data-hook-action="track" data-map-uid="${map.uid}" ${
           tracked ? "disabled" : ""

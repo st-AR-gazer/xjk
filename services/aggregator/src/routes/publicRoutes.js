@@ -5,8 +5,35 @@ function parseBool(value) {
   return raw === "1" || raw === "true" || raw === "yes";
 }
 
-function createPublicRoutes(repository) {
+function normalizeBaseUrl(value) {
+  return String(value || "").trim().replace(/\/+$/, "");
+}
+
+function buildTrackerApiUrl(baseUrl, path) {
+  const safeBaseUrl = normalizeBaseUrl(baseUrl);
+  if (!safeBaseUrl) return "";
+  const safePath = String(path || "").replace(/^\/+/, "");
+  if (!safePath) return `${safeBaseUrl}/api/v1`;
+  return `${safeBaseUrl}/api/v1/${safePath}`;
+}
+
+async function fetchJsonWithTimeout(url, { timeoutMs = 15000 } = {}) {
+  const response = await fetch(url, {
+    method: "GET",
+    signal: AbortSignal.timeout(Math.max(1000, Number(timeoutMs) || 15000)),
+  });
+  const payload = await response.json().catch(() => null);
+  if (!response.ok) {
+    const error = new Error(payload?.error || payload?.message || `Request failed (${response.status}).`);
+    error.statusCode = response.status;
+    throw error;
+  }
+  return payload;
+}
+
+function createPublicRoutes(repository, { trackerControl = {} } = {}) {
   const router = express.Router();
+  const trackerLeaderboardBaseUrl = normalizeBaseUrl(trackerControl?.leaderboardBaseUrl);
 
   router.get("/meta", (_req, res) => {
     res.json({
@@ -22,6 +49,34 @@ function createPublicRoutes(repository) {
       generatedAt: new Date().toISOString(),
       metrics,
     });
+  });
+
+  router.get("/metrics/leaderboards/coverage", async (req, res) => {
+    if (!trackerLeaderboardBaseUrl) {
+      return res.status(503).json({
+        error: "Leaderboard tracker base URL is not configured.",
+      });
+    }
+    try {
+      const trackedOnly =
+        req.query.tracked_only === undefined ? true : parseBool(req.query.tracked_only);
+      const url = buildTrackerApiUrl(
+        trackerLeaderboardBaseUrl,
+        `leaderboards/coverage?tracked_only=${trackedOnly ? 1 : 0}`
+      );
+      const payload = await fetchJsonWithTimeout(url, {
+        timeoutMs: Number(req.query.timeout_ms) || 15000,
+      });
+      return res.json({
+        generatedAt: new Date().toISOString(),
+        coverage: payload?.coverage || {},
+        sampledAt: payload?.sampledAt || null,
+      });
+    } catch (error) {
+      return res.status(502).json({
+        error: error?.message || "Failed to fetch leaderboard coverage.",
+      });
+    }
   });
 
   router.get("/metrics/timeseries", (req, res) => {
@@ -185,6 +240,15 @@ function createPublicRoutes(repository) {
       accountIds,
       count: accountIds.length,
     });
+  });
+
+  router.get("/display-names/candidates/details", (req, res) => {
+    const payload = repository.listDisplayNameCandidateDetails({
+      staleAfterSeconds: Number(req.query.stale_after_seconds) || 86400,
+      limit: Number(req.query.limit) || 200,
+      offset: Number(req.query.offset) || 0,
+    });
+    return res.json(payload);
   });
 
   router.get("/clubs/:clubId/summary", (req, res) => {

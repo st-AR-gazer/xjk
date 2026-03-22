@@ -137,6 +137,9 @@ function n(v, d = 0) {
 function fmtCount(v) {
   return n(v).toLocaleString();
 }
+function fmtPct(v, digits = 1) {
+  return `${n(v).toFixed(digits)}%`;
+}
 function fmtTs(iso) {
   const t = Date.parse(iso || "");
   return Number.isFinite(t)
@@ -360,6 +363,7 @@ function renderLeaderboards() {
   const p = state.leaderboards || {};
   const l = p.leaderboards || {};
   const s = l.summary || {};
+  const coverage = s.leaderboard_coverage || {};
   const feed = Array.isArray(p.feed) ? p.feed : [];
   const wr = Array.isArray(l?.wr?.overall) ? l.wr.overall : [];
   const mp = Array.isArray(l?.maps?.most_played) ? l.maps.most_played : [];
@@ -374,6 +378,10 @@ function renderLeaderboards() {
     <article class="live-progress-stat"><p class="live-progress-stat-label">Altered Active Maps</p><p class="live-progress-stat-value">${esc(fmtCount(s.active_maps || 0))}</p></article>
     <article class="live-progress-stat"><p class="live-progress-stat-label">Unique WR Players</p><p class="live-progress-stat-value">${esc(fmtCount(s.unique_wr_players || 0))}</p></article>
     <article class="live-progress-stat"><p class="live-progress-stat-label">Total WRs</p><p class="live-progress-stat-value">${esc(fmtCount(s.total_wrs || 0))}</p></article>
+    <article class="live-progress-stat"><p class="live-progress-stat-label">Maps With WR Known</p><p class="live-progress-stat-value">${esc(`${fmtCount(coverage.maps_with_known_wr || 0)} / ${fmtCount(coverage.total_maps || 0)}`)}</p></article>
+    <article class="live-progress-stat"><p class="live-progress-stat-label">Maps With Fuller LB</p><p class="live-progress-stat-value">${esc(`${fmtCount(coverage.maps_with_extended_leaderboard || 0)} / ${fmtCount(coverage.total_maps || 0)}`)}</p></article>
+    <article class="live-progress-stat"><p class="live-progress-stat-label">Stored LB Rows</p><p class="live-progress-stat-value">${esc(fmtCount(coverage.leaderboard_rows_stored || 0))}</p></article>
+    <article class="live-progress-stat"><p class="live-progress-stat-label">Extended Coverage</p><p class="live-progress-stat-value">${esc(fmtPct(coverage.extended_coverage_pct || 0))}</p></article>
   `;
 
   renderList(el.leaderboardLiveFeedList, feed.slice(0, 40), (r) =>

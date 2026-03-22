@@ -1,6 +1,5 @@
 ﻿import express from "express";
 import helmet from "helmet";
-import rateLimit from "express-rate-limit";
 import morgan from "morgan";
 import cors from "cors";
 import path from "path";
@@ -42,22 +41,39 @@ app.use(
 );
 app.use(morgan("combined"));
 app.use(express.json({ limit: "20mb" }));
-app.use(
-  "/api/",
-  rateLimit({
-    windowMs: 5 * 60 * 1000,
-    limit: 500,
-    standardHeaders: true,
-    legacyHeaders: false,
-  })
-);
-
+app.use((req, res, next) => {
+  const startedAt = Date.now();
+  const requestBytes = Number(req.headers["content-length"] || 0) || 0;
+  res.on("finish", () => {
+    service.reportTraffic({
+      direction: "incoming",
+      component: "express",
+      method: req.method,
+      route: req.path || "/",
+      targetHost: String(req.hostname || req.headers.host || "").replace(/:\d+$/, ""),
+      targetPath: req.originalUrl || req.url || req.path || "/",
+      statusCode: Number(res.statusCode || 0),
+      durationMs: Date.now() - startedAt,
+      bytesIn: Math.max(0, requestBytes),
+      bytesOut: Math.max(0, Number(res.getHeader("content-length") || 0) || 0),
+    });
+  });
+  next();
+});
 app.get("/health", (_req, res) => {
   res.type("text").send("ok");
 });
 
 app.get("/api/v1/status", (_req, res) => {
   return res.json(service.getStatus());
+});
+
+app.post("/api/v1/config", (req, res) => {
+  const body = req.body || {};
+  const status = service.setConfig({
+    enabled: body.enabled,
+  });
+  return res.json(status);
 });
 
 app.post("/api/v1/snapshot/ingest", async (req, res) => {

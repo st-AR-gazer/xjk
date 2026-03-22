@@ -1,343 +1,663 @@
 const API = {
-  maps: "/api/v1/alterations/maps",
-  campaigns: "/api/v1/alterations/campaigns",
   stats: "/api/v1/alterations/stats",
+  alterations: "/api/v1/alterations/types",
+  campaigns: "/api/v1/alterations/campaigns",
+  maps: "/api/v1/alterations/maps",
+  mapDetail: "/api/v1/public/maps",
 };
-let allMaps = [];
-let allCampaigns = [];
-let activeCampaign = null;
-let searchQuery = "";
-let sortField = "newest";
-let currentPage = 1;
-const PAGE_SIZE = 24;
-let ribbonOffset = 0;
-let ribbonHalfWidth = 0;
-let ribbonCurrentSpeed = 50;
-let ribbonTargetSpeed = 50;
-let ribbonLastTime = 0;
-const RIBBON_NORMAL_SPEED = 50;
-const RIBBON_SLOW_SPEED = 3;
-const $mapGrid = document.getElementById("map-grid");
-const $campaignsSection = document.getElementById("campaigns-section");
-const $campaignsScroll = document.getElementById("campaigns-scroll");
+
+const state = {
+  stats: null,
+  alterations: [],
+  campaigns: [],
+  activeAlterationSlug: "",
+  activeCampaignId: "",
+  alterationSearch: "",
+  mapSearch: "",
+  mapSort: "name",
+  alterationMaps: new Map(),
+  campaignMaps: new Map(),
+};
+
+const NADEO_FMT_RE = /\$([0-9a-fA-F]{1,3}|[gimnostuwzGIMNOSTUWZ<>]|[hlpHLP](\[[^\]]+\])?)/g;
+const TIMELINE_SEASON_ORDER = {
+  winter: 1,
+  spring: 2,
+  summer: 3,
+  fall: 4,
+};
+const DISCOVERY_TIMELINE = {
+  "snow-discovery": { season: "fall", year: 2023, offset: 0.5 },
+  "rally-discovery": { season: "winter", year: 2024, offset: 0.5 },
+  "desert-discovery": { season: "spring", year: 2024, offset: 0.5 },
+  "stunt-discovery": { season: "summer", year: 2024, offset: 0.5 },
+  "platform-discovery": { season: "fall", year: 2024, offset: 0.5 },
+};
+
+const $container = document.getElementById("content-container");
+const $controlsBar = document.getElementById("controls-bar");
 const $searchInput = document.getElementById("map-search");
 const $sortSelect = document.getElementById("map-sort");
 const $loading = document.getElementById("loading-state");
 const $empty = document.getElementById("empty-state");
 const $error = document.getElementById("error-state");
-const $pagination = document.getElementById("pagination");
-const $ribbon = document.getElementById("ribbon-track");
 const $modalBackdrop = document.getElementById("map-modal-backdrop");
 const $modalContent = document.getElementById("map-modal-content");
 const $modalClose = document.getElementById("map-modal-close");
+
+function esc(value) {
+  const node = document.createElement("span");
+  node.textContent = String(value || "");
+  return node.innerHTML;
+}
+
+function stripFmt(value) {
+  return String(value ?? "").replace(NADEO_FMT_RE, "");
+}
+
+function escN(value) {
+  return esc(stripFmt(value));
+}
+
 function fmtTime(ms) {
   if (!ms || ms <= 0) return "\u2014";
-  const m = Math.floor(ms / 60000);
-  const s = Math.floor((ms % 60000) / 1000);
-  const f = ms % 1000;
-  return `${m}:${String(s).padStart(2, "0")}.${String(f).padStart(3, "0")}`;
+  const minutes = Math.floor(ms / 60000);
+  const seconds = Math.floor((ms % 60000) / 1000);
+  const millis = ms % 1000;
+  return `${minutes}:${String(seconds).padStart(2, "0")}.${String(millis).padStart(3, "0")}`;
 }
+
 function relTime(iso) {
   if (!iso) return "\u2014";
-  const diff = Date.now() - new Date(iso).getTime();
-  const mins = Math.floor(diff / 60000);
+  const diffMs = Date.now() - new Date(iso).getTime();
+  const mins = Math.floor(diffMs / 60000);
   if (mins < 1) return "just now";
   if (mins < 60) return `${mins}m ago`;
-  const hrs = Math.floor(mins / 60);
-  if (hrs < 24) return `${hrs}h ago`;
-  const days = Math.floor(hrs / 24);
+  const hours = Math.floor(mins / 60);
+  if (hours < 24) return `${hours}h ago`;
+  const days = Math.floor(hours / 24);
   if (days < 30) return `${days}d ago`;
   return new Date(iso).toLocaleDateString();
 }
-function esc(str) {
-  if (!str) return "";
-  const el = document.createElement("span");
-  el.textContent = str;
-  return el.innerHTML;
-}
-function renderStats(stats) {
-  const set = (id, v) => {
-    const el = document.getElementById(id);
-    if (el) el.textContent = v ?? "\u2014";
-  };
-  set("stat-maps", stats.total_maps);
-  set("stat-tracked", stats.actively_tracked);
-  set("stat-wr-changes", stats.total_wr_changes);
-  set("stat-last-run", relTime(stats.last_run_at));
+
+function fetchJson(url) {
+  return fetch(url, { cache: "no-store" }).then((res) => {
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    return res.json();
+  });
 }
 
-function renderCampaigns(campaigns) {
-  if (!campaigns.length) {
-    $campaignsSection.hidden = true;
+async function fetchPagedCollection(baseUrl, key, { limit = 250, maxPages = 20, params = {} } = {}) {
+  const out = [];
+  let offset = 0;
+
+  for (let page = 0; page < maxPages; page += 1) {
+    const query = new URLSearchParams({
+      limit: String(limit),
+      offset: String(offset),
+    });
+    Object.entries(params || {}).forEach(([paramKey, value]) => {
+      if (value === undefined || value === null || value === "") return;
+      query.set(paramKey, String(value));
+    });
+    const payload = await fetchJson(`${baseUrl}?${query.toString()}`);
+    const rows = Array.isArray(payload?.[key]) ? payload[key] : [];
+    out.push(...rows);
+    if (!payload?.paging?.has_more) break;
+    const nextOffset = Number(payload?.paging?.next_offset || 0);
+    if (!nextOffset || nextOffset <= offset) break;
+    offset = nextOffset;
+  }
+
+  return out;
+}
+
+function readUrlState() {
+  const params = new URLSearchParams(window.location.search);
+  return {
+    alteration: params.get("alteration") || "",
+    campaign: params.get("campaign") || "",
+    map: params.get("map") || "",
+  };
+}
+
+function writeUrl({ alteration = "", campaign = "", map = "" } = {}, replace = false) {
+  const params = new URLSearchParams();
+  if (alteration) params.set("alteration", alteration);
+  if (campaign) params.set("campaign", campaign);
+  if (map) params.set("map", map);
+  const target = params.toString() ? `?${params.toString()}` : window.location.pathname;
+  const method = replace ? "replaceState" : "pushState";
+  history[method]({ alteration, campaign, map }, "", target);
+}
+
+function normalizeAlteration(item) {
+  return {
+    id: Number(item?.id || 0) || null,
+    name: String(item?.name || "").trim(),
+    slug: String(item?.slug || "").trim(),
+    campaign_count: Number(item?.campaign_count || 0),
+    map_count: Number(item?.map_count || 0),
+  };
+}
+
+function getCampaignKey(campaign) {
+  return String(campaign?.id || campaign?.campaign_external_id || campaign?.campaign_db_id || "");
+}
+
+function getAlterationBySlug(slug) {
+  return state.alterations.find((item) => item.slug === slug) || null;
+}
+
+function getCampaignById(campaignId) {
+  return state.campaigns.find((item) => getCampaignKey(item) === String(campaignId || "")) || null;
+}
+
+function getCampaignTimelineInfo(campaign) {
+  const seasonKey = String(campaign?.season_key || "").trim().toLowerCase();
+  if (DISCOVERY_TIMELINE[seasonKey]) {
+    const special = DISCOVERY_TIMELINE[seasonKey];
+    return {
+      season: special.season,
+      year: special.year,
+      slot: Number(TIMELINE_SEASON_ORDER[special.season] || 0) + Number(special.offset || 0),
+      value: special.year * 10 + Number(TIMELINE_SEASON_ORDER[special.season] || 0) + Number(special.offset || 0),
+    };
+  }
+
+  const season = String(campaign?.season || "").trim().toLowerCase();
+  const seasonYear = Number(campaign?.season_year || 0) || 0;
+  if (TIMELINE_SEASON_ORDER[season] && seasonYear) {
+    return {
+      season,
+      year: seasonYear,
+      slot: TIMELINE_SEASON_ORDER[season],
+      value: seasonYear * 10 + TIMELINE_SEASON_ORDER[season],
+    };
+  }
+
+  const nameYear = Number(String(campaign?.name || "").match(/\b(20\d{2})\b/)?.[1] || 0) || 0;
+  if (TIMELINE_SEASON_ORDER[season] && nameYear) {
+    return {
+      season,
+      year: nameYear,
+      slot: TIMELINE_SEASON_ORDER[season],
+      value: nameYear * 10 + TIMELINE_SEASON_ORDER[season],
+    };
+  }
+
+  return {
+    season,
+    year: seasonYear || nameYear || null,
+    slot: null,
+    value: null,
+  };
+}
+
+function compareCampaignTimeline(left, right) {
+  const leftTimeline = getCampaignTimelineInfo(left);
+  const rightTimeline = getCampaignTimelineInfo(right);
+  if (Number.isFinite(leftTimeline.value) && Number.isFinite(rightTimeline.value)) {
+    const diff = rightTimeline.value - leftTimeline.value;
+    if (diff !== 0) return diff;
+  } else if (Number.isFinite(leftTimeline.value)) {
+    return -1;
+  } else if (Number.isFinite(rightTimeline.value)) {
+    return 1;
+  }
+
+  const timestampDiff = Number(right?.sort_timestamp_ms || 0) - Number(left?.sort_timestamp_ms || 0);
+  if (timestampDiff !== 0) return timestampDiff;
+  return String(right?.id || "").localeCompare(String(left?.id || ""), undefined, {
+    numeric: true,
+    sensitivity: "base",
+  });
+}
+
+function getAlterationCampaigns(slug) {
+  return state.campaigns
+    .filter((campaign) =>
+      Array.isArray(campaign?.alterations) &&
+      campaign.alterations.some((item) => item?.slug === slug)
+    )
+    .sort(compareCampaignTimeline);
+}
+
+function getAlterationStats(slug) {
+  const campaigns = getAlterationCampaigns(slug);
+  const alterationMaps = state.alterationMaps.get(String(slug || "")) || [];
+  return {
+    campaignCount: campaigns.length,
+    mapCount: alterationMaps.length || campaigns.reduce((sum, campaign) => sum + Number(campaign?.map_count || 0), 0),
+    trackedCount: alterationMaps.length
+      ? alterationMaps.filter((map) => map?.tracking_status === "active" || map?.tracking_status === "live").length
+      : campaigns.reduce((sum, campaign) => sum + Number(campaign?.map_count || 0), 0),
+    wrChangeCount: alterationMaps.reduce((sum, map) => sum + Number(map?.change_count || 0), 0),
+    latestSeason:
+      campaigns.find((campaign) => campaign?.season_label)?.season_label ||
+      campaigns[0]?.name ||
+      "\u2014",
+  };
+}
+
+function setStatValue(id, value) {
+  const element = document.getElementById(id);
+  if (element) element.textContent = value ?? "\u2014";
+}
+
+function renderStats() {
+  if (state.activeAlterationSlug) {
+    const stats = getAlterationStats(state.activeAlterationSlug);
+    setStatValue("stat-alterations", 1);
+    setStatValue("stat-campaigns", stats.campaignCount || "\u2014");
+    setStatValue("stat-maps", stats.mapCount || "\u2014");
+    setStatValue("stat-tracked", stats.trackedCount || "\u2014");
+    setStatValue("stat-wr-changes", stats.wrChangeCount || 0);
     return;
   }
-  $campaignsSection.hidden = false;
 
-  let html = `<button class="campaign-card active" data-campaign="">
-    <span class="campaign-name">All Maps</span>
-    <span class="campaign-count">${allMaps.length} maps</span>
-  </button>`;
+  setStatValue("stat-alterations", state.alterations.length || "\u2014");
+  setStatValue("stat-campaigns", state.campaigns.length || "\u2014");
+  setStatValue("stat-maps", state.stats?.total_maps || "\u2014");
+  setStatValue("stat-tracked", state.stats?.actively_tracked || "\u2014");
+  setStatValue("stat-wr-changes", state.stats?.total_wr_changes || "\u2014");
+}
 
-  for (const c of campaigns) {
-    const id = c.id ?? c.name ?? "";
-    html += `<button class="campaign-card" data-campaign="${esc(String(id))}">
-      <span class="campaign-name">${esc(c.name)}</span>
-      <span class="campaign-count">${c.map_count ?? 0} maps</span>
-    </button>`;
-  }
+function mapCardHtml(map) {
+  const tracking = map.tracking_status || "idle";
+  const trackingClass =
+    tracking === "active" || tracking === "live" ? "active" : tracking === "paused" ? "paused" : "idle";
+  const thumb = map.thumbnail_url
+    ? `<img src="${esc(map.thumbnail_url)}" alt="" loading="lazy" />`
+    : "";
+  const wrBlock = map.wr_ms
+    ? `<span class="wr-time">${fmtTime(map.wr_ms)}</span><span class="wr-holder">${escN(map.wr_holder)}</span>`
+    : `<span class="wr-empty">No WR data</span>`;
+  const metaBits = [
+    map.map_number ? `#${map.map_number}` : "",
+    map.change_count ? `${map.change_count} WR changes` : "",
+  ].filter(Boolean);
 
-  $campaignsScroll.innerHTML = html;
+  return `
+    <article class="map-card" data-uid="${esc(map.map_uid)}">
+      <div class="map-thumb">
+        ${thumb}
+        <span class="map-status map-status-${trackingClass}">${esc(tracking)}</span>
+      </div>
+      <div class="map-body">
+        <h3 class="map-name" title="${escN(map.name)}">${escN(map.name || "Untitled")}</h3>
+        <p class="map-author">by ${escN(map.author || "Unknown")}</p>
+        <div class="map-wr">${wrBlock}</div>
+        <div class="map-medals">
+          <span class="medal medal-at">${fmtTime(map.author_time)}</span>
+          <span class="medal medal-gold">${fmtTime(map.gold_time)}</span>
+          <span class="medal medal-silver">${fmtTime(map.silver_time)}</span>
+          <span class="medal medal-bronze">${fmtTime(map.bronze_time)}</span>
+        </div>
+        ${
+          metaBits.length
+            ? `<div class="map-card-meta">${metaBits.map((bit) => `<span>${esc(bit)}</span>`).join("")}</div>`
+            : ""
+        }
+      </div>
+    </article>
+  `;
+}
 
-  $campaignsScroll.querySelectorAll(".campaign-card").forEach((btn) => {
-    btn.addEventListener("click", () => {
-      $campaignsScroll.querySelector(".active")?.classList.remove("active");
-      btn.classList.add("active");
-      activeCampaign = btn.dataset.campaign || null;
-      currentPage = 1;
-      renderMaps();
+function getActiveCampaignMaps() {
+  const campaignId = String(state.activeCampaignId || "");
+  return state.campaignMaps.get(campaignId) || [];
+}
+
+function filterAndSortCampaignMaps(maps) {
+  let out = [...maps];
+  const query = state.mapSearch.trim().toLowerCase();
+  if (query) {
+    out = out.filter((map) => {
+      const haystack = [
+        map.name,
+        map.author,
+        map.wr_holder,
+        map.map_uid,
+        map.campaign_name,
+      ]
+        .map((value) => String(value || "").toLowerCase())
+        .join(" ");
+      return haystack.includes(query);
     });
-  });
-}
-function renderRibbon(campaigns) {
-  if (!$ribbon || !campaigns.length) return;
-
-  const shuffled = [...campaigns].sort(() => Math.random() - 0.5);
-
-  const pill = (c) =>
-    `<a class="ribbon-pill" href="#" data-campaign="${esc(String(c.id ?? c.name ?? ""))}">${esc(c.name)}</a>`;
-
-  const pills = shuffled.map(pill).join("");
-  $ribbon.innerHTML = pills + pills;
-
-  $ribbon.querySelectorAll(".ribbon-pill").forEach((el) => {
-    el.addEventListener("click", (e) => {
-      e.preventDefault();
-      const cId = el.dataset.campaign;
-      if (cId) {
-        activeCampaign = cId;
-        currentPage = 1;
-        $campaignsScroll.querySelector(".active")?.classList.remove("active");
-        const match = $campaignsScroll.querySelector(`[data-campaign="${cId}"]`);
-        if (match) match.classList.add("active");
-        renderMaps();
-      }
-    });
-  });
-
-  const container = document.getElementById("campaign-ribbon");
-  container.addEventListener("mouseenter", () => {
-    ribbonTargetSpeed = RIBBON_SLOW_SPEED;
-  });
-  container.addEventListener("mouseleave", () => {
-    ribbonTargetSpeed = RIBBON_NORMAL_SPEED;
-  });
-
-  requestAnimationFrame(() => {
-    ribbonHalfWidth = $ribbon.scrollWidth / 2;
-    ribbonCurrentSpeed = RIBBON_NORMAL_SPEED;
-    ribbonLastTime = performance.now();
-    requestAnimationFrame(tickRibbon);
-  });
-}
-
-function tickRibbon(now) {
-  const dt = Math.min((now - ribbonLastTime) / 1000, 0.1);
-  ribbonLastTime = now;
-
-  const ease = 1 - Math.pow(0.03, dt);
-  ribbonCurrentSpeed += (ribbonTargetSpeed - ribbonCurrentSpeed) * ease;
-
-  ribbonOffset += ribbonCurrentSpeed * dt;
-  if (ribbonHalfWidth > 0 && ribbonOffset >= ribbonHalfWidth) {
-    ribbonOffset -= ribbonHalfWidth;
   }
 
-  $ribbon.style.transform = `translateX(-${ribbonOffset}px)`;
-  requestAnimationFrame(tickRibbon);
-}
-function renderMaps() {
-  let maps = [...allMaps];
-  if (activeCampaign) {
-    maps = maps.filter(
-      (m) =>
-        String(m.campaign_id) === activeCampaign ||
-        m.campaign_name === activeCampaign
-    );
-  }
-  if (searchQuery) {
-    const q = searchQuery.toLowerCase();
-    maps = maps.filter(
-      (m) =>
-        (m.name || "").toLowerCase().includes(q) ||
-        (m.author || "").toLowerCase().includes(q) ||
-        (m.wr_holder || "").toLowerCase().includes(q)
-    );
-  }
-  maps.sort((a, b) => {
-    switch (sortField) {
-      case "newest":
-        return (b._idx ?? 0) - (a._idx ?? 0);
-      case "wr_ms":
-        return (a.wr_ms || Infinity) - (b.wr_ms || Infinity);
-      case "author_time":
-        return (a.author_time || Infinity) - (b.author_time || Infinity);
-      case "wr_updated_at":
-        return new Date(b.wr_updated_at || 0) - new Date(a.wr_updated_at || 0);
-      case "change_count":
-        return (b.change_count || 0) - (a.change_count || 0);
-      default:
-        return (a.name || "").localeCompare(b.name || "");
+  out.sort((left, right) => {
+    if (state.mapSort === "wr_ms") {
+      return (left.wr_ms || Number.MAX_SAFE_INTEGER) - (right.wr_ms || Number.MAX_SAFE_INTEGER);
     }
+    if (state.mapSort === "author_time") {
+      return (left.author_time || Number.MAX_SAFE_INTEGER) - (right.author_time || Number.MAX_SAFE_INTEGER);
+    }
+    if (state.mapSort === "wr_updated_at") {
+      return new Date(right.wr_updated_at || 0) - new Date(left.wr_updated_at || 0);
+    }
+    if (state.mapSort === "change_count") {
+      return Number(right.change_count || 0) - Number(left.change_count || 0);
+    }
+    return String(left.name || "").localeCompare(String(right.name || ""), undefined, {
+      numeric: true,
+      sensitivity: "base",
+    });
   });
-  const totalFiltered = maps.length;
-  const totalPages = Math.max(1, Math.ceil(totalFiltered / PAGE_SIZE));
-  if (currentPage > totalPages) currentPage = totalPages;
-  const start = (currentPage - 1) * PAGE_SIZE;
-  const pageMaps = maps.slice(start, start + PAGE_SIZE);
-  if (!maps.length) {
-    $mapGrid.innerHTML = "";
-    $mapGrid.hidden = true;
+
+  return out;
+}
+
+function renderAlterationOverview() {
+  state.activeAlterationSlug = "";
+  state.activeCampaignId = "";
+  state.mapSearch = "";
+  if ($searchInput) $searchInput.value = "";
+  if ($controlsBar) $controlsBar.hidden = true;
+  renderStats();
+
+  const query = state.alterationSearch.trim().toLowerCase();
+  const visibleAlterations = state.alterations.filter((alteration) => {
+    if (!query) return true;
+    const stats = getAlterationStats(alteration.slug);
+    const haystack = [alteration.name, stats.latestSeason]
+      .map((value) => String(value || "").toLowerCase())
+      .join(" ");
+    return haystack.includes(query);
+  });
+
+  if (!visibleAlterations.length) {
+    $container.innerHTML = `
+      <div class="alteration-toolbar">
+        <label class="alteration-search-wrap">
+          <span class="alteration-search-label">Find an alteration</span>
+          <input class="alteration-search-input" id="alteration-search" type="search" placeholder="Search alteration names..." value="${esc(state.alterationSearch)}" />
+        </label>
+      </div>
+    `;
     $empty.hidden = false;
-    if ($pagination) $pagination.hidden = true;
     return;
   }
 
   $empty.hidden = true;
-  $mapGrid.hidden = false;
+  $container.innerHTML = `
+    <div class="alteration-toolbar">
+      <label class="alteration-search-wrap">
+        <span class="alteration-search-label">Find an alteration</span>
+        <input class="alteration-search-input" id="alteration-search" type="search" placeholder="Search alteration names..." value="${esc(state.alterationSearch)}" />
+      </label>
+      <p class="alteration-toolbar-meta">${visibleAlterations.length} alterations with mapped campaigns</p>
+    </div>
+    <section class="alteration-grid" aria-label="Alteration catalog">
+      ${visibleAlterations
+        .map((alteration) => {
+          const stats = getAlterationStats(alteration.slug);
+          return `
+            <button class="alteration-card" type="button" data-slug="${esc(alteration.slug)}">
+              <span class="alteration-card-kicker">Alteration</span>
+              <h2 class="alteration-card-title">${esc(alteration.name)}</h2>
+              <p class="alteration-card-sub">Latest season: ${esc(stats.latestSeason)}</p>
+              <div class="alteration-card-stats">
+                <span><strong>${stats.campaignCount}</strong> campaigns</span>
+                <span><strong>${stats.mapCount}</strong> maps</span>
+              </div>
+            </button>
+          `;
+        })
+        .join("")}
+    </section>
+  `;
 
-  $mapGrid.innerHTML = pageMaps
-    .map((m) => {
-      const st = m.tracking_status || "idle";
-      const stClass = st === "active" ? "active" : st === "paused" ? "paused" : "idle";
-
-      const thumb = m.thumbnail_url
-        ? `<img src="${esc(m.thumbnail_url)}" alt="" loading="lazy" />`
-        : "";
-
-      const wrBlock = m.wr_ms
-        ? `<span class="wr-time">${fmtTime(m.wr_ms)}</span>
-           <span class="wr-holder">${esc(m.wr_holder)}</span>`
-        : `<span class="wr-empty">No WR data</span>`;
-
-      return `<article class="map-card" data-uid="${esc(m.map_uid)}">
-        <div class="map-thumb">
-          ${thumb}
-          <span class="map-status map-status-${stClass}">${esc(st)}</span>
-        </div>
-        <div class="map-body">
-          <h3 class="map-name" title="${esc(m.name)}">${esc(m.name || "Untitled")}</h3>
-          <p class="map-author">by ${esc(m.author || "Unknown")}</p>
-          <div class="map-wr">${wrBlock}</div>
-          <div class="map-medals">
-            <span class="medal medal-at" title="Author Time">${fmtTime(m.author_time)}</span>
-            <span class="medal medal-gold" title="Gold">${fmtTime(m.gold_time)}</span>
-            <span class="medal medal-silver" title="Silver">${fmtTime(m.silver_time)}</span>
-            <span class="medal medal-bronze" title="Bronze">${fmtTime(m.bronze_time)}</span>
-          </div>
-        </div>
-      </article>`;
-    })
-    .join("");
-
-  renderPagination(totalFiltered, totalPages);
-}
-function renderPagination(total, totalPages) {
-  if (!$pagination) return;
-  if (totalPages <= 1) {
-    $pagination.hidden = true;
-    return;
-  }
-  $pagination.hidden = false;
-
-  const start = (currentPage - 1) * PAGE_SIZE + 1;
-  const end = Math.min(currentPage * PAGE_SIZE, total);
-
-  let html = `<span class="page-info">Showing ${start}\u2013${end} of ${total}</span>`;
-  html += `<div class="page-buttons">`;
-  html += `<button class="page-btn" data-page="prev" ${currentPage <= 1 ? "disabled" : ""}>\u2039 Prev</button>`;
-
-  for (let i = 1; i <= totalPages; i++) {
-    if (totalPages > 7) {
-      if (i === 1 || i === totalPages || (i >= currentPage - 1 && i <= currentPage + 1)) {
-        html += `<button class="page-btn ${i === currentPage ? "active" : ""}" data-page="${i}">${i}</button>`;
-      } else if (i === currentPage - 2 || i === currentPage + 2) {
-        html += `<span class="page-ellipsis">\u2026</span>`;
-      }
-    } else {
-      html += `<button class="page-btn ${i === currentPage ? "active" : ""}" data-page="${i}">${i}</button>`;
-    }
+  const search = document.getElementById("alteration-search");
+  if (search) {
+    search.addEventListener("input", (event) => {
+      state.alterationSearch = event.target.value || "";
+      renderAlterationOverview();
+    });
   }
 
-  html += `<button class="page-btn" data-page="next" ${currentPage >= totalPages ? "disabled" : ""}>Next \u203a</button>`;
-  html += `</div>`;
-
-  $pagination.innerHTML = html;
-
-  $pagination.querySelectorAll(".page-btn").forEach((btn) => {
-    btn.addEventListener("click", () => {
-      const p = btn.dataset.page;
-      if (p === "prev") currentPage = Math.max(1, currentPage - 1);
-      else if (p === "next") currentPage = Math.min(totalPages, currentPage + 1);
-      else currentPage = parseInt(p, 10);
-      renderMaps();
-      $mapGrid.scrollIntoView({ behavior: "smooth", block: "start" });
+  $container.querySelectorAll(".alteration-card").forEach((card) => {
+    card.addEventListener("click", () => {
+      state.activeAlterationSlug = card.dataset.slug || "";
+      writeUrl({ alteration: state.activeAlterationSlug }, false);
+      renderCurrentView();
     });
   });
 }
-function openMapModal(uid, updateUrl = true) {
-  const m = allMaps.find((x) => x.map_uid === uid);
-  if (!m || !$modalContent) return;
 
-  const thumb = m.thumbnail_url
-    ? `<img class="modal-thumb" src="${esc(m.thumbnail_url)}" alt="" />`
-    : `<div class="modal-thumb modal-thumb-empty"></div>`;
+async function ensureAlterationMaps(slug) {
+  const key = String(slug || "").trim();
+  if (!key || state.alterationMaps.has(key)) return;
+  const maps = await fetchPagedCollection(API.maps, "maps", {
+    limit: 250,
+    maxPages: 20,
+    params: {
+      alteration: key,
+      sort: "change_count",
+    },
+  });
+  state.alterationMaps.set(key, maps);
+}
 
-  const st = m.tracking_status || "idle";
-  const stClass = st === "active" ? "active" : st === "paused" ? "paused" : "idle";
+async function renderAlterationDetail() {
+  const alteration = getAlterationBySlug(state.activeAlterationSlug);
+  if (!alteration) {
+    renderAlterationOverview();
+    return;
+  }
 
-  const wrSection = m.wr_ms
-    ? `<div class="modal-wr">
+  state.activeCampaignId = "";
+  state.mapSearch = "";
+  if ($searchInput) $searchInput.value = "";
+  if ($controlsBar) $controlsBar.hidden = true;
+
+  if (!state.alterationMaps.has(state.activeAlterationSlug)) {
+    $container.innerHTML = '<div class="state-msg"><p>Loading alteration campaigns...</p></div>';
+    try {
+      await ensureAlterationMaps(state.activeAlterationSlug);
+    } catch (_error) {
+      $container.innerHTML = '<div class="state-msg"><p>Could not load alteration data.</p></div>';
+      return;
+    }
+  }
+
+  const campaigns = getAlterationCampaigns(alteration.slug);
+  const stats = getAlterationStats(alteration.slug);
+  renderStats();
+
+  $empty.hidden = campaigns.length > 0;
+  $container.innerHTML = `
+    <button class="back-link" id="alteration-back" type="button">
+      <span aria-hidden="true">&larr;</span> All Alterations
+    </button>
+    <section class="alteration-spotlight">
+      <div>
+        <span class="alteration-spotlight-kicker">Alteration Type</span>
+        <h2 class="alteration-spotlight-title">${esc(alteration.name)}</h2>
+        <p class="alteration-spotlight-sub">Campaigns using this alteration, ordered from newest season to oldest.</p>
+      </div>
+      <div class="alteration-spotlight-stats">
+        <span><strong>${stats.campaignCount}</strong> campaigns</span>
+        <span><strong>${stats.mapCount}</strong> maps</span>
+      </div>
+    </section>
+    ${
+      campaigns.length
+        ? `
+          <section class="campaign-grid" aria-label="Campaigns for ${esc(alteration.name)}">
+            ${campaigns
+              .map((campaign) => {
+                const thumb = campaign.thumbnail_url
+                  ? `<div class="campaign-card-thumb"><img src="${esc(campaign.thumbnail_url)}" alt="" loading="lazy" /></div>`
+                  : '<div class="campaign-card-thumb"></div>';
+                return `
+                  <button class="campaign-card campaign-card-season" type="button" data-campaign="${esc(getCampaignKey(campaign))}">
+                    ${thumb}
+                    <div class="campaign-card-body">
+                      <span class="campaign-card-name">${esc(campaign.season_label || campaign.name || "Unknown season")}</span>
+                      <span class="campaign-card-count">${Number(campaign.map_count || 0)} maps</span>
+                    </div>
+                    <span class="campaign-card-meta">${esc(campaign.name || "")}</span>
+                    <span class="campaign-card-arrow">&rarr;</span>
+                  </button>
+                `;
+              })
+              .join("")}
+          </section>
+        `
+        : ""
+    }
+  `;
+
+  document.getElementById("alteration-back")?.addEventListener("click", () => {
+    state.activeAlterationSlug = "";
+    writeUrl({}, false);
+    renderCurrentView();
+  });
+
+  $container.querySelectorAll(".campaign-card").forEach((card) => {
+    card.addEventListener("click", async () => {
+      state.activeCampaignId = card.dataset.campaign || "";
+      writeUrl(
+        {
+          alteration: state.activeAlterationSlug,
+          campaign: state.activeCampaignId,
+        },
+        false
+      );
+      await renderCurrentView();
+    });
+  });
+}
+
+async function ensureCampaignMaps(campaignId) {
+  const key = String(campaignId || "");
+  if (!key || state.campaignMaps.has(key)) return;
+  const maps = await fetchPagedCollection(API.maps, "maps", {
+    limit: 250,
+    maxPages: 12,
+    params: {
+      campaignIds: key,
+      sort: "name",
+    },
+  });
+  state.campaignMaps.set(key, maps);
+}
+
+function renderCampaignMaps(campaign) {
+  const alteration = getAlterationBySlug(state.activeAlterationSlug);
+  const maps = filterAndSortCampaignMaps(getActiveCampaignMaps());
+  $empty.hidden = maps.length > 0;
+
+  $container.innerHTML = `
+    <button class="back-link" id="campaign-back" type="button">
+      <span aria-hidden="true">&larr;</span> ${esc(alteration?.name || "Alteration")}
+    </button>
+    <section class="alteration-spotlight">
+      <div>
+        <span class="alteration-spotlight-kicker">${esc(alteration?.name || "Alteration")}</span>
+        <h2 class="alteration-spotlight-title">${esc(campaign?.name || "Campaign")}</h2>
+        <p class="alteration-spotlight-sub">${esc(campaign?.season_label || campaign?.name || "")}</p>
+      </div>
+      <div class="alteration-spotlight-stats">
+        <span><strong>${Number(campaign?.map_count || maps.length || 0)}</strong> maps</span>
+        <span><strong>${maps.reduce((sum, map) => sum + Number(map?.change_count || 0), 0)}</strong> WR changes</span>
+      </div>
+    </section>
+    ${
+      maps.length
+        ? `<section class="campaign-maps-grid" id="campaign-maps-grid" aria-label="Maps">${maps
+            .map((map) => mapCardHtml(map))
+            .join("")}</section>`
+        : `<div class="state-msg"><p>${state.mapSearch ? "No maps match your search." : "No maps in this campaign yet."}</p></div>`
+    }
+  `;
+
+  document.getElementById("campaign-back")?.addEventListener("click", () => {
+    state.activeCampaignId = "";
+    writeUrl({ alteration: state.activeAlterationSlug }, false);
+    renderCurrentView();
+  });
+
+  document.getElementById("campaign-maps-grid")?.addEventListener("click", (event) => {
+    const card = event.target.closest(".map-card");
+    if (!card) return;
+    openMapModal(card.dataset.uid || "");
+  });
+}
+
+async function renderCampaignDetail() {
+  const campaign = getCampaignById(state.activeCampaignId);
+  if (!campaign) {
+    state.activeCampaignId = "";
+    renderCurrentView();
+    return;
+  }
+
+  try {
+    await ensureAlterationMaps(state.activeAlterationSlug);
+  } catch (_error) {
+    // Per-campaign data can still load even if the alteration-wide fetch failed.
+  }
+  renderStats();
+
+  if ($controlsBar) $controlsBar.hidden = false;
+  $container.innerHTML = '<div class="state-msg"><p>Loading maps...</p></div>';
+
+  try {
+    await ensureCampaignMaps(getCampaignKey(campaign));
+    renderCampaignMaps(campaign);
+  } catch (_error) {
+    $container.innerHTML = '<div class="state-msg"><p>Could not load maps for this campaign.</p></div>';
+  }
+}
+
+function openMapModal(mapUid, updateUrl = true) {
+  if (!mapUid) return;
+  const map = getActiveCampaignMaps().find((item) => item.map_uid === mapUid);
+  if (!map || !$modalContent) return;
+
+  const tracking = map.tracking_status || "idle";
+  const trackingClass =
+    tracking === "active" || tracking === "live" ? "active" : tracking === "paused" ? "paused" : "idle";
+  const thumb = map.thumbnail_url
+    ? `<img class="modal-thumb" src="${esc(map.thumbnail_url)}" alt="" />`
+    : '<div class="modal-thumb modal-thumb-empty"></div>';
+  const wrSection = map.wr_ms
+    ? `
+      <div class="modal-wr">
         <div class="modal-wr-row">
           <span class="modal-wr-rank">1</span>
           <div class="modal-wr-detail">
-            <span class="modal-wr-holder">${esc(m.wr_holder)}</span>
-            <span class="modal-wr-ago">${relTime(m.wr_updated_at)}</span>
+            <span class="modal-wr-holder">${escN(map.wr_holder)}</span>
+            <span class="modal-wr-ago">${relTime(map.wr_updated_at)}</span>
           </div>
-          <span class="modal-wr-time">${fmtTime(m.wr_ms)}</span>
+          <span class="modal-wr-time">${fmtTime(map.wr_ms)}</span>
         </div>
-      </div>`
-    : `<div class="modal-wr modal-wr-empty"><span>No WR data recorded yet</span></div>`;
+      </div>
+    `
+    : '<div class="modal-wr modal-wr-empty"><span>No WR data recorded yet</span></div>';
 
   $modalContent.innerHTML = `
     <div class="modal-hero">
       ${thumb}
       <div class="modal-info">
-        <h2 class="modal-name">${esc(m.name || "Untitled")}</h2>
-        <p class="modal-author">by ${esc(m.author || "Unknown")}</p>
+        <h2 class="modal-name">${escN(map.name || "Untitled")}</h2>
+        <p class="modal-author">by ${escN(map.author || "Unknown")}</p>
         <div class="modal-tags">
-          ${m.campaign_name ? `<span class="modal-campaign">${esc(m.campaign_name)}</span>` : ""}
-          <span class="map-status map-status-${stClass}" style="position:static">${esc(st)}</span>
+          ${map.campaign_name ? `<span class="modal-campaign">${escN(map.campaign_name)}</span>` : ""}
+          ${map.season_label ? `<span class="modal-campaign">${esc(map.season_label)}</span>` : ""}
+          <span class="map-status map-status-${trackingClass}" style="position:static">${esc(tracking)}</span>
         </div>
       </div>
     </div>
 
     <div class="modal-medals">
-      <div class="modal-medal modal-medal-at">
-        <span class="modal-medal-label">Author</span>
-        <span class="modal-medal-time">${fmtTime(m.author_time)}</span>
-      </div>
-      <div class="modal-medal modal-medal-gold">
-        <span class="modal-medal-label">Gold</span>
-        <span class="modal-medal-time">${fmtTime(m.gold_time)}</span>
-      </div>
-      <div class="modal-medal modal-medal-silver">
-        <span class="modal-medal-label">Silver</span>
-        <span class="modal-medal-time">${fmtTime(m.silver_time)}</span>
-      </div>
-      <div class="modal-medal modal-medal-bronze">
-        <span class="modal-medal-label">Bronze</span>
-        <span class="modal-medal-time">${fmtTime(m.bronze_time)}</span>
-      </div>
+      <div class="modal-medal modal-medal-at"><span class="modal-medal-label">Author</span><span class="modal-medal-time">${fmtTime(map.author_time)}</span></div>
+      <div class="modal-medal modal-medal-gold"><span class="modal-medal-label">Gold</span><span class="modal-medal-time">${fmtTime(map.gold_time)}</span></div>
+      <div class="modal-medal modal-medal-silver"><span class="modal-medal-label">Silver</span><span class="modal-medal-time">${fmtTime(map.silver_time)}</span></div>
+      <div class="modal-medal modal-medal-bronze"><span class="modal-medal-label">Bronze</span><span class="modal-medal-time">${fmtTime(map.bronze_time)}</span></div>
     </div>
 
     <div class="modal-section">
@@ -346,131 +666,177 @@ function openMapModal(uid, updateUrl = true) {
     </div>
 
     <div class="modal-section">
-      <h3 class="modal-section-title">Tracking</h3>
+      <h3 class="modal-section-title">Map Meta</h3>
       <div class="modal-stats">
-        <div class="modal-stat">
-          <span class="modal-stat-value">${m.check_count ?? 0}</span>
-          <span class="modal-stat-label">Checks</span>
-        </div>
-        <div class="modal-stat">
-          <span class="modal-stat-value">${m.change_count ?? 0}</span>
-          <span class="modal-stat-label">WR Changes</span>
-        </div>
+        <div class="modal-stat"><span class="modal-stat-value">${map.map_number || "\u2014"}</span><span class="modal-stat-label">Map #</span></div>
+        <div class="modal-stat"><span class="modal-stat-value">${map.change_count ?? 0}</span><span class="modal-stat-label">WR Changes</span></div>
       </div>
     </div>
 
-    <div class="modal-uid">
-      <span>UID:</span> ${esc(m.map_uid)}
-    </div>
+    <div class="modal-uid"><span>UID:</span> ${esc(map.map_uid)}</div>
   `;
 
   $modalBackdrop.hidden = false;
   document.body.style.overflow = "hidden";
+
   if (updateUrl) {
-    history.pushState({ map: uid }, "", `?map=${encodeURIComponent(uid)}`);
+    writeUrl(
+      {
+        alteration: state.activeAlterationSlug,
+        campaign: state.activeCampaignId,
+        map: mapUid,
+      },
+      false
+    );
   }
 }
 
 function closeMapModal(updateUrl = true) {
-  if ($modalBackdrop) {
-    $modalBackdrop.hidden = true;
-    document.body.style.overflow = "";
-  }
+  if ($modalBackdrop) $modalBackdrop.hidden = true;
+  document.body.style.overflow = "";
   if (updateUrl) {
-    const params = new URLSearchParams(window.location.search);
-    if (params.has("map")) {
-      history.pushState(null, "", window.location.pathname);
-    }
+    writeUrl(
+      {
+        alteration: state.activeAlterationSlug,
+        campaign: state.activeCampaignId,
+      },
+      false
+    );
   }
 }
-async function fetchJson(url) {
-  const res = await fetch(url);
-  if (!res.ok) throw new Error(`HTTP ${res.status}`);
-  return res.json();
-}
 
-async function loadData() {
-  $loading.hidden = false;
-  $mapGrid.hidden = true;
-  $empty.hidden = true;
-  $error.hidden = true;
-
-  const [statsRes, mapsRes, campaignsRes] = await Promise.allSettled([
-    fetchJson(API.stats),
-    fetchJson(API.maps),
-    fetchJson(API.campaigns),
-  ]);
-
-  const anySuccess =
-    statsRes.status === "fulfilled" ||
-    mapsRes.status === "fulfilled" ||
-    campaignsRes.status === "fulfilled";
-
-  if (!anySuccess) {
-    $loading.hidden = true;
-    $error.hidden = false;
+async function openMapModalByUid(mapUid) {
+  const existing = getActiveCampaignMaps().find((item) => item.map_uid === mapUid);
+  if (existing) {
+    openMapModal(mapUid, false);
     return;
   }
 
-  if (statsRes.status === "fulfilled") {
-    renderStats(statsRes.value);
-  }
-
-  if (mapsRes.status === "fulfilled") {
-    const body = mapsRes.value;
-    allMaps = body.maps || body || [];
-    allMaps.forEach((m, i) => { m._idx = i; });
-  }
-
-  if (campaignsRes.status === "fulfilled") {
-    const body = campaignsRes.value;
-    allCampaigns = body.campaigns || body || [];
-  }
-
-  renderCampaigns(allCampaigns);
-  renderRibbon(allCampaigns);
-  renderMaps();
-
-  $loading.hidden = true;
-
-  if (!allMaps.length) {
-    $empty.querySelector("p").textContent = "No maps tracked yet.";
-    $empty.hidden = false;
+  try {
+    const payload = await fetchJson(`${API.mapDetail}/${encodeURIComponent(mapUid)}`);
+    const map = payload?.map;
+    if (!map || !$modalContent) return;
+    $modalContent.innerHTML = `
+      <div class="modal-hero">
+        ${map.thumbnailUrl ? `<img class="modal-thumb" src="${esc(map.thumbnailUrl)}" alt="" />` : '<div class="modal-thumb modal-thumb-empty"></div>'}
+        <div class="modal-info">
+          <h2 class="modal-name">${escN(map.name || "Untitled")}</h2>
+          <p class="modal-author">by ${escN(map.author || "Unknown")}</p>
+          <div class="modal-tags">
+            ${map.campaignName ? `<span class="modal-campaign">${escN(map.campaignName)}</span>` : ""}
+          </div>
+        </div>
+      </div>
+      <div class="modal-section">
+        <h3 class="modal-section-title">World Record</h3>
+        ${
+          map.wrMs
+            ? `<div class="modal-wr"><div class="modal-wr-row"><span class="modal-wr-rank">1</span><div class="modal-wr-detail"><span class="modal-wr-holder">${escN(map.wrHolder)}</span><span class="modal-wr-ago">${relTime(map.wrUpdatedAt)}</span></div><span class="modal-wr-time">${fmtTime(map.wrMs)}</span></div></div>`
+            : '<div class="modal-wr modal-wr-empty"><span>No WR data recorded yet</span></div>'
+        }
+      </div>
+      <div class="modal-uid"><span>UID:</span> ${esc(map.mapUid)}</div>
+    `;
+    $modalBackdrop.hidden = false;
+    document.body.style.overflow = "hidden";
+  } catch (_error) {
+    // Ignore direct-link failures.
   }
 }
-$searchInput.addEventListener("input", (e) => {
-  searchQuery = e.target.value;
-  currentPage = 1;
-  renderMaps();
-});
 
-$sortSelect.addEventListener("change", (e) => {
-  sortField = e.target.value;
-  currentPage = 1;
-  renderMaps();
-});
-
-$mapGrid.addEventListener("click", (e) => {
-  const card = e.target.closest(".map-card");
-  if (!card) return;
-  const uid = card.dataset.uid;
-  if (uid) openMapModal(uid);
-});
-
-if ($modalClose) {
-  $modalClose.addEventListener("click", closeMapModal);
+async function renderCurrentView() {
+  if (state.activeCampaignId) {
+    await renderCampaignDetail();
+    return;
+  }
+  if (state.activeAlterationSlug) {
+    await renderAlterationDetail();
+    return;
+  }
+  renderAlterationOverview();
 }
 
-if ($modalBackdrop) {
-  $modalBackdrop.addEventListener("click", (e) => {
-    if (e.target === $modalBackdrop) closeMapModal();
-  });
+async function bootstrap() {
+  $loading.hidden = false;
+  $error.hidden = true;
+  $empty.hidden = true;
+
+  try {
+    const [statsPayload, alterationsPayload, campaignsPayload] = await Promise.all([
+      fetchJson(API.stats),
+      fetchJson(API.alterations),
+      fetchJson(`${API.campaigns}?limit=2000&offset=0&catalog_only=1&linked_only=1`),
+    ]);
+
+    state.stats = statsPayload || null;
+    state.alterations = (Array.isArray(alterationsPayload?.alterations) ? alterationsPayload.alterations : [])
+      .map(normalizeAlteration)
+      .filter((item) => item.slug);
+    state.campaigns = Array.isArray(campaignsPayload?.campaigns) ? campaignsPayload.campaigns : [];
+
+    renderStats();
+    $loading.hidden = true;
+
+    const urlState = readUrlState();
+    if (urlState.campaign) {
+      const campaign = getCampaignById(urlState.campaign);
+      state.activeCampaignId = campaign ? getCampaignKey(campaign) : "";
+      if (campaign) {
+        state.activeAlterationSlug =
+          urlState.alteration ||
+          campaign?.primary_alteration?.slug ||
+          campaign?.alterations?.[0]?.slug ||
+          "";
+      }
+    } else if (urlState.alteration) {
+      state.activeAlterationSlug = urlState.alteration;
+    }
+
+    await renderCurrentView();
+
+    if (urlState.map) {
+      await openMapModalByUid(urlState.map);
+    }
+  } catch (_error) {
+    $loading.hidden = true;
+    $error.hidden = false;
+  }
 }
 
-document.addEventListener("keydown", (e) => {
-  if (e.key === "Escape" && $modalBackdrop && !$modalBackdrop.hidden) {
+$searchInput?.addEventListener("input", (event) => {
+  state.mapSearch = event.target.value || "";
+  if (state.activeCampaignId) renderCampaignMaps(getCampaignById(state.activeCampaignId));
+});
+
+$sortSelect?.addEventListener("change", (event) => {
+  state.mapSort = event.target.value || "name";
+  if (state.activeCampaignId) renderCampaignMaps(getCampaignById(state.activeCampaignId));
+});
+
+$modalClose?.addEventListener("click", () => closeMapModal());
+$modalBackdrop?.addEventListener("click", (event) => {
+  if (event.target === $modalBackdrop) closeMapModal();
+});
+
+document.addEventListener("keydown", (event) => {
+  if (event.key === "Escape" && $modalBackdrop && !$modalBackdrop.hidden) {
     closeMapModal();
   }
 });
-loadData();
 
+window.addEventListener("popstate", async () => {
+  const urlState = readUrlState();
+  if (!urlState.map && $modalBackdrop && !$modalBackdrop.hidden) {
+    closeMapModal(false);
+  }
+
+  state.activeAlterationSlug = urlState.alteration || "";
+  state.activeCampaignId = urlState.campaign || "";
+  await renderCurrentView();
+
+  if (urlState.map) {
+    await openMapModalByUid(urlState.map);
+  }
+});
+
+bootstrap();

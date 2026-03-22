@@ -1,3 +1,7 @@
+const WR_FEED_LIMIT = 6;
+const WR_HOLDERS_PAGE_SIZE = 10;
+const ACCOUNT_ID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
 function fmtTime(ms) {
   if (!ms || ms <= 0) return "\u2014";
   const m = Math.floor(ms / 60000);
@@ -26,11 +30,63 @@ function esc(str) {
   return el.innerHTML;
 }
 
+const NADEO_FMT_RE = /\$([0-9a-fA-F]{1,3}|[gimnostuwzGIMNOSTUWZ<>]|[hlpHLP](\[[^\]]+\])?)/g;
+function stripFmt(v) { return String(v ?? "").replace(NADEO_FMT_RE, ""); }
+function escN(v) { return esc(stripFmt(v)); }
+
 async function fetchJson(url) {
   const res = await fetch(url);
   if (!res.ok) throw new Error(`HTTP ${res.status}`);
   return res.json();
 }
+
+function isPlaceholderHolder(value) {
+  const text = String(value || "").trim().toLowerCase();
+  return !text || text === "-" || text === "unknown";
+}
+
+function looksLikeAccountId(value) {
+  return ACCOUNT_ID_RE.test(String(value || "").trim());
+}
+
+function collectPendingDisplayNameAccountIds(rows = []) {
+  const out = [];
+  const seen = new Set();
+  for (const row of Array.isArray(rows) ? rows : []) {
+    const accountId =
+      [
+        row?.accountId,
+        row?.account_id,
+        row?.wrAccountId,
+        row?.wr_account_id,
+        row?.holder,
+        row?.player,
+        row?.display_name,
+        row?.displayName,
+        row?.wr_holder,
+        row?.wrHolder,
+      ]
+        .map((value) => String(value || "").trim().toLowerCase())
+        .find((value) => looksLikeAccountId(value)) || "";
+    const unresolvedText =
+      [
+        row?.holder,
+        row?.player,
+        row?.display_name,
+        row?.displayName,
+        row?.wr_holder,
+        row?.wrHolder,
+      ]
+        .map((value) => String(value || "").trim())
+        .find((value) => looksLikeAccountId(value)) || "";
+    const pending = Boolean(row?.displayNamePending) || Boolean(accountId && unresolvedText);
+    if (!pending || !accountId || seen.has(accountId)) continue;
+    seen.add(accountId);
+    out.push(accountId);
+  }
+  return out;
+}
+
 const $statMaps = document.getElementById("stat-maps");
 const $statCampaigns = document.getElementById("stat-campaigns");
 const $statPlayers = document.getElementById("stat-players");
@@ -42,36 +98,54 @@ const $wrSpotlightMap = document.getElementById("wr-spotlight-map");
 const $wrSpotlightPlayer = document.getElementById("wr-spotlight-player");
 const $wrSpotlightTime = document.getElementById("wr-spotlight-time");
 const $wrSpotlightAgo = document.getElementById("wr-spotlight-ago");
-function renderStats(summary, maps) {
-  const holders = new Set();
-  if (maps) {
-    maps.forEach((m) => {
-      if (m.wrHolder) holders.add(m.wrHolder);
-    });
-  }
+const $hubRefresh = document.getElementById("hub-refresh");
+const $miniRankPrev = document.getElementById("mini-rank-prev");
+const $miniRankNext = document.getElementById("mini-rank-next");
+const $miniRankPageInfo = document.getElementById("mini-rank-page-info");
 
-  if ($statMaps) $statMaps.textContent = summary.trackedMaps ?? "\u2014";
-  if ($statCampaigns) $statCampaigns.textContent = summary.campaignCount ?? "\u2014";
-  if ($statPlayers) $statPlayers.textContent = holders.size || "\u2014";
-  if ($statLatest) $statLatest.textContent = relTime(summary.latestWrAt);
+const state = {
+  activeWrHoldersPage: 1,
+  wrHoldersLoading: false,
+  dashboardLoading: false,
+  activeWrHoldersData: null,
+  dashboardPendingAccountIds: [],
+  wrHoldersPendingAccountIds: [],
+  displayNameRefreshTimer: null,
+  displayNameRefreshAttempts: 0,
+  displayNameRefreshKey: "",
+};
+
+const cache = {
+  dashboard: null,
+  wrHoldersPages: new Map(),
+  wrHoldersTotal: null,
+};
+
+function renderStats(summary, playersTotal = null) {
+  if ($statMaps) $statMaps.textContent = summary?.trackedMaps ?? "\u2014";
+  if ($statCampaigns) $statCampaigns.textContent = summary?.campaignCount ?? "\u2014";
+  if ($statLatest) $statLatest.textContent = relTime(summary?.latestWrAt);
+  if ($statPlayers) {
+    const safePlayers = Number(playersTotal);
+    $statPlayers.textContent = Number.isFinite(safePlayers) && safePlayers > 0 ? safePlayers : "\u2014";
+  }
 }
 
 function renderWrFeed(feed) {
   if (!$wrFeed) return;
-
-  if (!feed || !feed.length) {
+  if (!Array.isArray(feed) || !feed.length) {
     $wrFeed.innerHTML = `<p class="activity-empty">No recent WR changes.</p>`;
     return;
   }
 
-  const items = feed.slice(0, 6);
-  $wrFeed.innerHTML = items
+  $wrFeed.innerHTML = feed
+    .slice(0, WR_FEED_LIMIT)
     .map(
       (entry) => `<div class="wr-feed-item">
       <span class="wr-feed-dot"></span>
       <div class="wr-feed-info">
-        <span class="wr-feed-map">${esc(entry.name)}</span>
-        <span class="wr-feed-player">by ${esc(entry.holder)}</span>
+        <span class="wr-feed-map">${escN(entry.name)}</span>
+        <span class="wr-feed-player">by ${escN(entry.holder)}</span>
       </div>
       <div style="text-align:right">
         <span class="wr-feed-time">${fmtTime(entry.wrMs)}</span>
@@ -82,78 +156,268 @@ function renderWrFeed(feed) {
     .join("");
 }
 
-function renderMiniRankings(maps) {
+function renderLatestWr(feedOrEntry) {
+  if (!$wrSpotlight || !feedOrEntry) return;
+  const latest = Array.isArray(feedOrEntry) ? feedOrEntry[0] : feedOrEntry;
+  if (!latest) return;
+
+  $wrSpotlightMap.textContent = stripFmt(latest.name) || "\u2014";
+  $wrSpotlightPlayer.textContent = "by " + stripFmt(latest.holder || "Unknown");
+  $wrSpotlightTime.textContent = fmtTime(latest.wrMs);
+  $wrSpotlightAgo.textContent = relTime(latest.at);
+  $wrSpotlight.hidden = false;
+}
+
+function renderWrHoldersPage() {
   if (!$miniRankings) return;
-
-  if (!maps || !maps.length) {
-    $miniRankings.innerHTML = `<li class="activity-empty">No data yet.</li>`;
-    return;
-  }
-
-  const counts = {};
-  maps.forEach((m) => {
-    if (!m.wrHolder) return;
-    if (!counts[m.wrHolder]) counts[m.wrHolder] = 0;
-    counts[m.wrHolder] += 1;
-  });
-
-  const ranked = Object.entries(counts)
-    .map(([player, count]) => ({ player, count }))
-    .sort((a, b) => b.count - a.count)
-    .slice(0, 5);
-
-  if (!ranked.length) {
-    $miniRankings.innerHTML = `<li class="activity-empty">No WR holders found.</li>`;
+  const pageData = state.activeWrHoldersData;
+  if (!pageData || !Array.isArray(pageData.rows) || !pageData.rows.length) {
+    $miniRankings.innerHTML = `<li class="activity-empty">No rankings yet.</li>`;
+    updateWrHoldersPager();
     return;
   }
 
   const posClass = ["gold", "silver", "bronze"];
+  const pageOffset = (state.activeWrHoldersPage - 1) * WR_HOLDERS_PAGE_SIZE;
+  const ranked = pageData.rows
+    .map((row, idx) => ({
+      rank: pageOffset + idx + 1,
+      player: String(row.display_name || row.displayName || row.player || "Unknown"),
+      count: Number(row.wr_count || 0),
+    }))
+    .filter((row) => row.count > 0 && !isPlaceholderHolder(row.player));
+
+  if (!ranked.length) {
+    $miniRankings.innerHTML = `<li class="activity-empty">No rankings yet.</li>`;
+    updateWrHoldersPager();
+    return;
+  }
 
   $miniRankings.innerHTML = ranked
     .map(
-      (r, i) => `<li class="mini-rank-item">
-      <span class="mini-rank-pos ${posClass[i] || ""}">${i + 1}</span>
-      <span class="mini-rank-name">${esc(r.player)}</span>
-      <span class="mini-rank-count">${r.count} WR${r.count !== 1 ? "s" : ""}</span>
+      (row, idx) => `<li class="mini-rank-item">
+      <span class="mini-rank-pos ${row.rank <= 3 ? posClass[row.rank - 1] || "" : ""}">${row.rank}</span>
+      <span class="mini-rank-name">${escN(row.player)}</span>
+      <span class="mini-rank-count">${row.count} WR${row.count !== 1 ? "s" : ""}</span>
     </li>`
     )
     .join("");
+
+  updateWrHoldersPager();
 }
-function renderLatestWr(feedOrEntry) {
-  if (!$wrSpotlight || !feedOrEntry) return;
 
-  const latest = Array.isArray(feedOrEntry) ? feedOrEntry[0] : feedOrEntry;
-  if (!latest) return;
+function updateWrHoldersPager() {
+  if (!$miniRankPageInfo || !$miniRankPrev || !$miniRankNext) return;
 
-  $wrSpotlightMap.textContent = latest.name || "\u2014";
-  $wrSpotlightPlayer.textContent = "by " + (latest.holder || "Unknown");
-  $wrSpotlightTime.textContent = fmtTime(latest.wrMs);
-  $wrSpotlightAgo.textContent = relTime(latest.at);
+  const totalPlayers = Number(cache.wrHoldersTotal || state.activeWrHoldersData?.total || 0);
+  const totalPages =
+    Number.isFinite(totalPlayers) && totalPlayers > 0
+      ? Math.max(1, Math.ceil(totalPlayers / WR_HOLDERS_PAGE_SIZE))
+      : null;
+  const activePage = state.activeWrHoldersPage;
+  const hasCachedNext = cache.wrHoldersPages.has(activePage + 1);
+  const hasMore = Boolean(state.activeWrHoldersData?.hasMore);
 
-  $wrSpotlight.hidden = false;
+  $miniRankPageInfo.textContent = totalPages
+    ? `Page ${activePage} / ${totalPages}`
+    : `Page ${activePage}`;
+  $miniRankPrev.disabled = state.wrHoldersLoading || activePage <= 1;
+  $miniRankNext.disabled = state.wrHoldersLoading || (!hasCachedNext && !hasMore);
 }
-async function loadHubData() {
-  try {
-    const data = await fetchJson("/api/v1/dashboard");
 
-    const maps = data.maps || [];
-    const wrFeed = data.wrFeed || [];
-    const latestWr = data.latestWr || (wrFeed.length ? wrFeed[0] : null);
-    const summary = data.summary || {};
+function updateRefreshState() {
+  if (!$hubRefresh) return;
+  const busy = state.dashboardLoading || state.wrHoldersLoading;
+  $hubRefresh.disabled = busy;
+  $hubRefresh.textContent = busy ? "Refreshing..." : "Refresh";
+}
 
-    renderStats(summary, maps);
-    renderLatestWr(latestWr);
-    renderWrFeed(wrFeed);
-    renderMiniRankings(maps);
-  } catch {
-    if ($wrFeed) {
-      $wrFeed.innerHTML = `<p class="activity-empty">Could not load data &mdash; the backend may not be running.</p>`;
-    }
-    if ($miniRankings) {
-      $miniRankings.innerHTML = `<li class="activity-empty">Could not load rankings.</li>`;
-    }
+function clearHubCache() {
+  cache.dashboard = null;
+  cache.wrHoldersPages.clear();
+  cache.wrHoldersTotal = null;
+}
+
+function clearDisplayNameRefresh({ reset = true } = {}) {
+  if (state.displayNameRefreshTimer) {
+    clearTimeout(state.displayNameRefreshTimer);
+    state.displayNameRefreshTimer = null;
+  }
+  if (reset) {
+    state.displayNameRefreshAttempts = 0;
+    state.displayNameRefreshKey = "";
   }
 }
 
-loadHubData();
+function schedulePendingDisplayNameRefresh() {
+  const pendingAccountIds = [...new Set([
+    ...state.dashboardPendingAccountIds,
+    ...state.wrHoldersPendingAccountIds,
+  ])].filter(Boolean);
+  if (!pendingAccountIds.length) {
+    clearDisplayNameRefresh({ reset: true });
+    return;
+  }
 
+  const refreshKey = pendingAccountIds.join(",");
+  if (state.displayNameRefreshKey !== refreshKey) {
+    clearDisplayNameRefresh({ reset: false });
+    state.displayNameRefreshKey = refreshKey;
+    state.displayNameRefreshAttempts = 0;
+  }
+  if (state.displayNameRefreshTimer || state.displayNameRefreshAttempts >= 6) {
+    return;
+  }
+
+  const delaysMs = [4000, 8000, 12000, 20000, 30000, 45000];
+  const delayMs = delaysMs[Math.min(state.displayNameRefreshAttempts, delaysMs.length - 1)];
+  state.displayNameRefreshAttempts += 1;
+  state.displayNameRefreshTimer = setTimeout(() => {
+    state.displayNameRefreshTimer = null;
+    refreshHubData({ resetDisplayNameRefresh: false });
+  }, delayMs);
+}
+
+async function fetchDashboardData({ force = false } = {}) {
+  if (!force && cache.dashboard) return cache.dashboard;
+
+  const dashboardQuery = new URLSearchParams({
+    mapsLimit: "0",
+    mapsOffset: "0",
+    wrFeedLimit: String(WR_FEED_LIMIT),
+    includeMapOptions: "0",
+    includeTracker: "0",
+  });
+  const payload = await fetchJson(`/api/v1/dashboard?${dashboardQuery.toString()}`);
+  cache.dashboard = payload;
+  return payload;
+}
+
+async function fetchWrHoldersPage(pageNumber, { force = false } = {}) {
+  const safePage = Math.max(1, Number(pageNumber) || 1);
+  if (!force && cache.wrHoldersPages.has(safePage)) {
+    return cache.wrHoldersPages.get(safePage);
+  }
+
+  const offset = (safePage - 1) * WR_HOLDERS_PAGE_SIZE;
+  const query = new URLSearchParams({
+    limit: "1",
+    overallLimit: String(WR_HOLDERS_PAGE_SIZE),
+    overallOffset: String(offset),
+    perBucketLimit: "1",
+    includeMaps: "0",
+    includeBuckets: "0",
+    includeMedals: "0",
+  });
+  const payload = await fetchJson(`/api/v1/alterations/leaderboards?${query.toString()}`);
+  const rows = Array.isArray(payload?.wr?.overall) ? payload.wr.overall : [];
+  const total = Number(
+    payload?.paging?.overall_players?.total ??
+      payload?.summary?.unique_wr_players ??
+      rows.length
+  );
+  const hasMore = Boolean(payload?.paging?.overall_players?.has_more);
+
+  const pageData = {
+    rows,
+    total: Number.isFinite(total) ? total : rows.length,
+    hasMore,
+  };
+  cache.wrHoldersPages.set(safePage, pageData);
+  if (Number.isFinite(pageData.total) && pageData.total > 0) {
+    cache.wrHoldersTotal = pageData.total;
+  }
+  return pageData;
+}
+
+async function loadDashboardSection({ force = false } = {}) {
+  state.dashboardLoading = true;
+  updateRefreshState();
+  try {
+    const dashboard = await fetchDashboardData({ force });
+    const summary = dashboard?.summary || {};
+    const wrFeed = Array.isArray(dashboard?.wrFeed) ? dashboard.wrFeed : [];
+    const latestWr = dashboard?.latestWr || (wrFeed.length ? wrFeed[0] : null);
+
+    renderStats(summary, cache.wrHoldersTotal);
+    renderLatestWr(latestWr);
+    renderWrFeed(wrFeed);
+    state.dashboardPendingAccountIds = collectPendingDisplayNameAccountIds([
+      ...(latestWr ? [latestWr] : []),
+      ...wrFeed,
+    ]);
+    schedulePendingDisplayNameRefresh();
+  } catch {
+    if ($wrFeed) {
+      $wrFeed.innerHTML = `<p class="activity-empty">Could not load activity feed.</p>`;
+    }
+    state.dashboardPendingAccountIds = [];
+    schedulePendingDisplayNameRefresh();
+  } finally {
+    state.dashboardLoading = false;
+    updateRefreshState();
+  }
+}
+
+async function loadWrHoldersPage(pageNumber, { force = false } = {}) {
+  state.wrHoldersLoading = true;
+  updateWrHoldersPager();
+  updateRefreshState();
+
+  try {
+    const pageData = await fetchWrHoldersPage(pageNumber, { force });
+    state.activeWrHoldersPage = Math.max(1, Number(pageNumber) || 1);
+    state.activeWrHoldersData = pageData;
+    renderWrHoldersPage();
+    state.wrHoldersPendingAccountIds = collectPendingDisplayNameAccountIds(pageData?.rows || []);
+    schedulePendingDisplayNameRefresh();
+    if ($statPlayers && Number.isFinite(cache.wrHoldersTotal) && cache.wrHoldersTotal > 0) {
+      $statPlayers.textContent = String(cache.wrHoldersTotal);
+    }
+  } catch {
+    if ($miniRankings) {
+      $miniRankings.innerHTML = `<li class="activity-empty">Could not load rankings.</li>`;
+    }
+    state.wrHoldersPendingAccountIds = [];
+    schedulePendingDisplayNameRefresh();
+  } finally {
+    state.wrHoldersLoading = false;
+    updateWrHoldersPager();
+    updateRefreshState();
+  }
+}
+
+async function refreshHubData({ resetDisplayNameRefresh = true } = {}) {
+  if (resetDisplayNameRefresh) {
+    clearDisplayNameRefresh({ reset: true });
+  }
+  const targetWrHoldersPage = Math.max(1, Number(state.activeWrHoldersPage) || 1);
+  clearHubCache();
+  state.activeWrHoldersPage = targetWrHoldersPage;
+  state.activeWrHoldersData = null;
+  loadDashboardSection({ force: true });
+  loadWrHoldersPage(targetWrHoldersPage, { force: true });
+}
+
+if ($miniRankPrev) {
+  $miniRankPrev.addEventListener("click", () => {
+    if (state.activeWrHoldersPage <= 1 || state.wrHoldersLoading) return;
+    loadWrHoldersPage(state.activeWrHoldersPage - 1);
+  });
+}
+
+if ($miniRankNext) {
+  $miniRankNext.addEventListener("click", () => {
+    if (state.wrHoldersLoading) return;
+    loadWrHoldersPage(state.activeWrHoldersPage + 1);
+  });
+}
+
+if ($hubRefresh) {
+  $hubRefresh.addEventListener("click", () => {
+    refreshHubData();
+  });
+}
+
+loadDashboardSection();
+loadWrHoldersPage(1);

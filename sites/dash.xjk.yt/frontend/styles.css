@@ -1,0 +1,856 @@
+:root {
+  --bg: #060913;
+  --surface: rgba(12, 18, 32, 0.9);
+  --surface-2: rgba(17, 25, 44, 0.9);
+  --text: #eef3ff;
+  --dim: #95a8c8;
+  --line: rgba(125, 169, 255, 0.18);
+  --accent: #55b2ff;
+  --accent-2: #73f2cc;
+  --warn: #ffc774;
+  --bad: #ff8f8f;
+  --radius: 12px;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  margin: 0;
+  min-height: 100vh;
+  background: radial-gradient(circle at 15% 10%, #102345 0%, var(--bg) 58%);
+  color: var(--text);
+  font-family: "Manrope", "Segoe UI", sans-serif;
+}
+
+/* ── App shell ─────────────────────────────────── */
+
+.app {
+  max-width: 1280px;
+  margin: 0 auto;
+  padding: 0.75rem 1rem 2rem;
+}
+
+/* ── Topbar ────────────────────────────────────── */
+
+.topbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 0.5rem 0;
+}
+
+.topbar-brand {
+  display: flex;
+  align-items: center;
+  gap: 0.65rem;
+}
+
+.topbar-brand h1 {
+  margin: 0;
+  font-family: "Chakra Petch", sans-serif;
+  font-size: 1.35rem;
+  font-weight: 700;
+  line-height: 1;
+}
+
+.topbar-brand .dim {
+  color: var(--dim);
+  font-weight: 500;
+}
+
+.topbar-right {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.badge {
+  display: inline-flex;
+  align-items: center;
+  border: 1px solid rgba(85, 178, 255, 0.55);
+  border-radius: 999px;
+  padding: 0.18rem 0.55rem;
+  color: #9dd9ff;
+  font-family: "Chakra Petch", sans-serif;
+  font-size: 0.65rem;
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+}
+
+.status-text {
+  color: #9dd9ff;
+  font-size: 0.78rem;
+  white-space: nowrap;
+}
+
+/* ── Toolbar / Filters ─────────────────────────── */
+
+.toolbar {
+  display: flex;
+  align-items: end;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  padding: 0.45rem 0;
+  border-top: 1px solid var(--line);
+}
+
+label {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+}
+
+label span {
+  font-size: 0.65rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--dim);
+  font-family: "Chakra Petch", sans-serif;
+}
+
+select,
+input[type="search"],
+input[type="number"] {
+  height: 32px;
+  min-width: 140px;
+  border-radius: 8px;
+  border: 1px solid var(--line);
+  background: var(--surface-2);
+  color: var(--text);
+  padding: 0 0.45rem;
+  font: inherit;
+  font-size: 0.82rem;
+}
+
+input[type="search"] {
+  min-width: 200px;
+}
+
+/* ── Buttons ───────────────────────────────────── */
+
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 8px;
+  border: 1px solid transparent;
+  text-decoration: none;
+  font-family: "Chakra Petch", sans-serif;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: opacity 0.15s;
+}
+
+.btn:hover {
+  opacity: 0.85;
+}
+
+.btn:disabled {
+  opacity: 0.4;
+  cursor: default;
+}
+
+.btn-sm {
+  height: 32px;
+  font-size: 0.72rem;
+  padding: 0 0.65rem;
+}
+
+.btn-primary {
+  border-color: rgba(85, 178, 255, 0.6);
+  background: linear-gradient(130deg, #0e4a90, #1770cc);
+  color: #eef7ff;
+}
+
+.btn-outline {
+  border-color: var(--line);
+  background: rgba(255, 255, 255, 0.03);
+  color: var(--text);
+}
+
+/* ── Tab Navigation ────────────────────────────── */
+
+.tab-nav {
+  display: flex;
+  gap: 0;
+  margin-top: 0.35rem;
+  border-bottom: 1px solid var(--line);
+  position: sticky;
+  top: 0;
+  z-index: 50;
+  background: var(--bg);
+}
+
+.tab-btn {
+  padding: 0.6rem 1.1rem;
+  border: none;
+  border-bottom: 2px solid transparent;
+  background: transparent;
+  color: var(--dim);
+  font-family: "Chakra Petch", sans-serif;
+  font-size: 0.78rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: color 0.15s, border-color 0.15s;
+}
+
+.tab-btn:hover {
+  color: var(--text);
+}
+
+.tab-btn.is-active {
+  color: var(--accent);
+  border-bottom-color: var(--accent);
+}
+
+/* ── Sub-Tab Navigation (Routes) ───────────────── */
+
+.sub-tab-nav {
+  display: flex;
+  gap: 0;
+  margin-bottom: 0.6rem;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  overflow: hidden;
+  width: fit-content;
+}
+
+.sub-tab-btn {
+  padding: 0.4rem 0.9rem;
+  border: none;
+  border-right: 1px solid var(--line);
+  background: rgba(10, 16, 30, 0.6);
+  color: var(--dim);
+  font-family: "Chakra Petch", sans-serif;
+  font-size: 0.72rem;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: color 0.15s, background 0.15s;
+}
+
+.sub-tab-btn:last-child {
+  border-right: none;
+}
+
+.sub-tab-btn:hover {
+  color: var(--text);
+}
+
+.sub-tab-btn.is-active {
+  color: var(--accent);
+  background: rgba(85, 178, 255, 0.12);
+}
+
+.sub-tab-panel[hidden] {
+  display: none !important;
+}
+
+/* ── Tab Content ───────────────────────────────── */
+
+.tab-content {
+  padding-top: 0.75rem;
+}
+
+.tab-panel[hidden] {
+  display: none !important;
+}
+
+/* ── Stat Strips (Overview) ────────────────────── */
+
+.stat-strips {
+  display: grid;
+  gap: 0.5rem;
+}
+
+.stat-strip-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.5rem;
+}
+
+.stat-strip {
+  padding: 0.6rem 0.85rem 0.6rem 1rem;
+  border-radius: var(--radius);
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-left: 3px solid var(--accent);
+}
+
+.stat-strip[data-accent="nadeo"] {
+  border-left-color: #ffcf74;
+}
+
+.stat-strip[data-accent="traffic"] {
+  border-left-color: #58b6ff;
+}
+
+.stat-strip[data-accent="segment"] {
+  border-left-color: #7ce4cf;
+}
+
+.stat-strip[data-accent="health"] {
+  border-left-color: #d29cff;
+}
+
+.stat-strip--nadeo {
+  background: linear-gradient(135deg, rgba(50, 32, 10, 0.35), var(--surface) 55%);
+}
+
+.stat-strip--queue {
+  border-left-color: #ffd77c;
+  background: linear-gradient(135deg, rgba(70, 45, 10, 0.35), rgba(12, 18, 32, 0.92) 60%);
+}
+
+.stat-strip-head {
+  display: flex;
+  align-items: baseline;
+  gap: 0.65rem;
+  margin-bottom: 0.3rem;
+}
+
+.stat-strip-action {
+  margin-left: auto;
+  height: 26px;
+  padding: 0 0.55rem;
+  font-size: 0.65rem;
+}
+
+.stat-strip-head h2 {
+  margin: 0;
+  font-family: "Chakra Petch", sans-serif;
+  font-size: 0.82rem;
+  color: #9dd9ff;
+}
+
+.stat-strip-note {
+  color: rgba(154, 176, 214, 0.8);
+  font-size: 0.7rem;
+  letter-spacing: 0.02em;
+}
+
+.stat-strip-stats {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.15rem 1.3rem;
+}
+
+.stat {
+  min-width: 85px;
+}
+
+.stat-label {
+  display: block;
+  font-size: 0.6rem;
+  color: var(--dim);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  font-family: "Chakra Petch", sans-serif;
+  line-height: 1.3;
+}
+
+.stat-value {
+  display: block;
+  font-size: 1.05rem;
+  font-weight: 700;
+  font-family: "Chakra Petch", sans-serif;
+  line-height: 1.25;
+}
+
+/* ── Chart ─────────────────────────────────────── */
+
+.chart-card {
+  margin-top: 0.6rem;
+  padding: 0.75rem 0.85rem;
+  border-radius: var(--radius);
+  background: var(--surface);
+  border: 1px solid var(--line);
+}
+
+.chart-card h2 {
+  margin: 0 0 0.35rem;
+  font-family: "Chakra Petch", sans-serif;
+  font-size: 0.82rem;
+  color: #9dd9ff;
+}
+
+.chart {
+  width: 100%;
+  height: 210px;
+  display: block;
+  border-radius: 8px;
+  background: rgba(5, 10, 18, 0.5);
+}
+
+/* ── Cards ─────────────────────────────────────── */
+
+.card {
+  padding: 0.85rem;
+  border-radius: var(--radius);
+  background: var(--surface);
+  border: 1px solid var(--line);
+}
+
+.card h2 {
+  margin: 0 0 0.45rem;
+  font-family: "Chakra Petch", sans-serif;
+  font-size: 0.82rem;
+  color: #9dd9ff;
+}
+
+/* ── Tables ────────────────────────────────────── */
+
+.table-wrap {
+  overflow: auto;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+  min-width: 360px;
+}
+
+tbody[data-loading="1"] {
+  opacity: 0.72;
+  transition: opacity 0.15s ease;
+}
+
+tbody[data-loading="1"]::before {
+  content: attr(data-loading-message);
+  display: block;
+  padding: 0.35rem 0.5rem 0;
+  color: var(--dim);
+  font-size: 0.68rem;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  font-family: "Chakra Petch", sans-serif;
+}
+
+th,
+td {
+  text-align: left;
+  border-bottom: 1px solid rgba(125, 169, 255, 0.08);
+  padding: 0.4rem 0.5rem;
+  font-size: 0.8rem;
+}
+
+th {
+  color: var(--dim);
+  font-family: "Chakra Petch", sans-serif;
+  font-size: 0.65rem;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+  background: rgba(7, 13, 24, 0.95);
+  position: sticky;
+  top: 0;
+  z-index: 1;
+}
+
+/* Numeric columns shrink to content, key column gets all remaining space */
+th:not(.col-key),
+td:not(.cell-key) {
+  white-space: nowrap;
+  width: 1%;
+}
+
+td.cell-key {
+  max-width: 0;
+  width: 45%;
+}
+
+.cell-key-host {
+  display: block;
+  font-size: 0.65rem;
+  color: var(--dim);
+  line-height: 1.3;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.cell-key-path {
+  display: block;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* Clickable rows */
+tr.clickable-row {
+  cursor: pointer;
+  transition: background 0.1s;
+}
+
+tr.clickable-row:hover {
+  background: rgba(85, 178, 255, 0.07);
+}
+
+/* ── Section Head ──────────────────────────────── */
+
+.section-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 0.5rem;
+}
+
+.section-head h2 {
+  margin: 0;
+}
+
+/* ── Errors Tab ────────────────────────────────── */
+
+.errors-toolbar {
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+  align-items: end;
+  margin-bottom: 0.6rem;
+}
+
+.error-summary {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.2rem 1.3rem;
+  margin-bottom: 0.6rem;
+  padding: 0.5rem 0.75rem;
+  border-radius: 8px;
+  background: rgba(10, 16, 30, 0.6);
+  border: 1px solid var(--line);
+}
+
+.errors-pager {
+  margin-top: 0.6rem;
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
+}
+
+/* ── Tracker Actions ───────────────────────────── */
+
+.tracker-actions {
+  display: flex;
+  gap: 0.35rem;
+  flex-wrap: wrap;
+}
+
+.tracker-priority-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 0.75rem;
+  margin: 0.2rem 0 0.8rem;
+  padding: 0.5rem 0.65rem;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: rgba(10, 16, 30, 0.55);
+}
+
+.tracker-priority-controls {
+  display: flex;
+  gap: 0.45rem;
+  align-items: end;
+  flex-wrap: wrap;
+}
+
+.tracker-priority-controls label {
+  min-width: 150px;
+}
+
+.tracker-priority-check {
+  min-width: auto;
+}
+
+.tracker-priority-check input[type="checkbox"] {
+  width: 16px;
+  height: 16px;
+  margin-top: 7px;
+}
+
+.tracker-priority-status {
+  margin: -0.35rem 0 0.5rem;
+}
+
+.tracker-status-ok {
+  color: var(--accent-2);
+}
+
+.tracker-status-error {
+  color: var(--bad);
+}
+
+.tracker-status-stale {
+  color: var(--warn);
+}
+
+.altered-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.6rem;
+  margin-top: 0.6rem;
+}
+
+.altered-summary-grid .stat {
+  min-width: 180px;
+}
+
+.altered-summary-grid .stat-value {
+  font-size: 0.88rem;
+}
+
+.altered-section-head,
+.altered-check-head {
+  gap: 0.75rem;
+  align-items: flex-start;
+}
+
+.altered-check-toolbar {
+  margin-bottom: 0;
+}
+
+/* Logs Tab */
+.logs-toolbar {
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+  align-items: end;
+  margin-bottom: 0.55rem;
+}
+
+.logs-meta {
+  font-size: 0.76rem;
+  margin-bottom: 0.45rem;
+}
+
+.logs-output {
+  margin: 0;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: rgba(7, 13, 24, 0.95);
+  padding: 0.65rem;
+  min-height: 360px;
+  max-height: calc(100vh - 300px);
+  overflow: auto;
+  white-space: pre-wrap;
+  word-break: break-word;
+  font-size: 0.76rem;
+  line-height: 1.35;
+  color: #d9e7ff;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace;
+}
+
+/* ── Detail Drawer ─────────────────────────────── */
+
+.drawer {
+  position: fixed;
+  inset: 0;
+  z-index: 200;
+}
+
+.drawer[hidden] {
+  display: none !important;
+}
+
+.drawer-backdrop {
+  position: absolute;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.45);
+}
+
+.drawer-panel {
+  position: absolute;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  width: min(460px, 92vw);
+  background: var(--bg);
+  border-left: 1px solid var(--line);
+  display: flex;
+  flex-direction: column;
+  animation: drawerSlideIn 0.15s ease-out;
+}
+
+@keyframes drawerSlideIn {
+  from { transform: translateX(100%); }
+  to { transform: translateX(0); }
+}
+
+.drawer-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.75rem 1rem;
+  border-bottom: 1px solid var(--line);
+  flex-shrink: 0;
+}
+
+.drawer-header h2 {
+  margin: 0;
+  font-family: "Chakra Petch", sans-serif;
+  font-size: 0.95rem;
+  color: var(--text);
+}
+
+.drawer-body {
+  flex: 1;
+  overflow-y: auto;
+  padding: 0.85rem 1rem;
+}
+
+.drawer-entries {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.7rem 1rem;
+}
+
+.drawer-entry {
+  min-width: 0;
+}
+
+.drawer-entry.full {
+  grid-column: 1 / -1;
+}
+
+.drawer-entry-label {
+  display: block;
+  font-size: 0.58rem;
+  color: var(--dim);
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+  font-family: "Chakra Petch", sans-serif;
+  margin-bottom: 0.12rem;
+}
+
+.drawer-entry-value {
+  display: block;
+  font-size: 0.92rem;
+  font-weight: 600;
+  font-family: "Chakra Petch", sans-serif;
+  line-height: 1.3;
+  word-break: break-all;
+  overflow-wrap: break-word;
+}
+
+.drawer-entry-value.mono {
+  font-family: "Manrope", monospace;
+  font-weight: 500;
+  font-size: 0.84rem;
+}
+
+.drawer-separator {
+  grid-column: 1 / -1;
+  height: 1px;
+  background: var(--line);
+  margin: 0.15rem 0;
+}
+
+/* ── Utilities ─────────────────────────────────── */
+
+.muted {
+  color: var(--dim);
+}
+
+h2 {
+  margin: 0;
+  font-family: "Chakra Petch", sans-serif;
+  font-size: 0.82rem;
+  color: #9dd9ff;
+}
+
+/* ── Responsive ────────────────────────────────── */
+
+@media (max-width: 980px) {
+  .stat-strip-row {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 680px) {
+  .topbar {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.4rem;
+  }
+
+  .toolbar {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .toolbar label {
+    width: 100%;
+  }
+
+  .toolbar select {
+    width: 100%;
+  }
+
+  .tab-btn {
+    padding: 0.5rem 0.7rem;
+    font-size: 0.7rem;
+  }
+
+  .stat-strip-stats {
+    gap: 0.2rem 0.8rem;
+  }
+
+  .stat {
+    min-width: 42%;
+  }
+
+  .stat-strip-row {
+    grid-template-columns: 1fr;
+  }
+
+  .errors-toolbar {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .errors-toolbar label {
+    width: 100%;
+  }
+
+  .logs-toolbar {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .logs-toolbar label {
+    width: 100%;
+  }
+
+  .altered-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .tracker-priority-row {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .tracker-priority-controls {
+    width: 100%;
+  }
+
+  .stat-strip-note {
+    display: none;
+  }
+
+  .sub-tab-btn {
+    padding: 0.35rem 0.6rem;
+    font-size: 0.65rem;
+  }
+
+  .drawer-panel {
+    width: 100vw;
+  }
+}

@@ -1,6 +1,5 @@
 import express from "express";
 import helmet from "helmet";
-import rateLimit from "express-rate-limit";
 import morgan from "morgan";
 import cors from "cors";
 import path from "path";
@@ -61,6 +60,17 @@ import {
 const db = createDatabase({ filePath: DB_FILE });
 
 const repository = new TrackerRepository(db);
+const trackerTrafficServiceName =
+  String(TRACKER_INSTANCE_ID || "").trim() ||
+  (TRACKER_MODE === "leaderboard" ? "tracker-leaderboard" : "tracker-wr");
+let aggregatorReporter = null;
+const reportTrackerTraffic = (sample = {}) => {
+  if (!aggregatorReporter?.isReady) return;
+  aggregatorReporter.reportTraffic({
+    service: trackerTrafficServiceName,
+    ...sample,
+  });
+};
 const trackerProvider = createTrackerProvider({
   providerName: TRACKER_PROVIDER,
   authMode: TRACKER_NADEO_AUTH_MODE,
@@ -74,15 +84,17 @@ const trackerProvider = createTrackerProvider({
   minRequestGapMs: TRACKER_MIN_REQUEST_GAP_MS,
   groupUid: TRACKER_LIVE_GROUP_UID,
   onlyWorld: TRACKER_LIVE_ONLY_WORLD,
+  onHttpEvent: reportTrackerTraffic,
   logger: console,
 });
-const aggregatorReporter = new AggregatorReporter({
+aggregatorReporter = new AggregatorReporter({
   enabled: TRACKER_AGGREGATOR_ENABLED,
   baseUrl: TRACKER_AGGREGATOR_BASE_URL,
   token: TRACKER_AGGREGATOR_TOKEN,
   projectKey: TRACKER_AGGREGATOR_PROJECT_KEY,
   projectName: TRACKER_AGGREGATOR_PROJECT_NAME,
   sourceLabel: TRACKER_AGGREGATOR_SOURCE_LABEL,
+  serviceName: trackerTrafficServiceName,
   instanceId: TRACKER_INSTANCE_ID,
   instanceName: TRACKER_INSTANCE_NAME,
   timeoutMs: TRACKER_AGGREGATOR_TIMEOUT_MS,
@@ -93,6 +105,7 @@ const wrWebhookReporter = new WrWebhookReporter({
   endpointUrl: TRACKER_WR_WEBHOOK_URL,
   secret: TRACKER_WR_WEBHOOK_SECRET,
   timeoutMs: TRACKER_WR_WEBHOOK_TIMEOUT_MS,
+  onHttpEvent: reportTrackerTraffic,
   logger: console,
 });
 const realtimeHub = new TrackerRealtimeHub({ logger: console });
@@ -137,23 +150,40 @@ app.use(
 );
 app.use(morgan("combined"));
 app.use(express.json({ limit: "2mb" }));
-
-app.use(
-  "/api/",
-  rateLimit({
-    windowMs: 5 * 60 * 1000,
-    limit: 200,
-    standardHeaders: true,
-    legacyHeaders: false,
-  })
-);
+app.use((req, res, next) => {
+  const startedAt = Date.now();
+  const requestBytes = Number(req.headers["content-length"] || 0) || 0;
+  res.on("finish", () => {
+    reportTrackerTraffic({
+      direction: "incoming",
+      component: "express",
+      method: req.method,
+      route: req.path || "/",
+      targetHost: String(req.hostname || req.headers.host || "").replace(/:\d+$/, ""),
+      targetPath: req.originalUrl || req.url || req.path || "/",
+      statusCode: Number(res.statusCode || 0),
+      durationMs: Date.now() - startedAt,
+      bytesIn: Math.max(0, requestBytes),
+      bytesOut: Math.max(0, Number(res.getHeader("content-length") || 0) || 0),
+    });
+  });
+  next();
+});
 
 app.get("/health", (_req, res) => {
   res.type("text").send("ok");
 });
 
-app.use("/api/v1", createPublicRoutes(service, { realtimeHub }));
-app.use("/api/v1/admin", createAdminRoutes(service, { adminAuth }));
+const publicRoutes = createPublicRoutes(service, { realtimeHub });
+const adminRoutes = createAdminRoutes(service, { adminAuth });
+
+app.use("/api/v1/admin", adminRoutes);
+app.use("/api/admin", adminRoutes);
+app.use("/v1/admin", adminRoutes);
+
+app.use("/api/v1", publicRoutes);
+app.use("/api", publicRoutes);
+app.use("/v1", publicRoutes);
 
 function requireAdminPageAuth(req, res, next) {
   const auth = adminAuth.authenticate(req);
@@ -255,11 +285,17 @@ setInterval(() => {
 process.on("SIGINT", () => {
   trackerEngine.stop();
   realtimeHub.close();
+  if (aggregatorReporter?.isReady) {
+    aggregatorReporter.flushTrafficQueue().catch(() => {});
+  }
   process.exit(0);
 });
 
 process.on("SIGTERM", () => {
   trackerEngine.stop();
   realtimeHub.close();
+  if (aggregatorReporter?.isReady) {
+    aggregatorReporter.flushTrafficQueue().catch(() => {});
+  }
   process.exit(0);
 });

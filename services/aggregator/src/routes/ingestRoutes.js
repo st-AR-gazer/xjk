@@ -99,6 +99,21 @@ function createIngestRoutes(repository, { ingestToken = "" } = {}) {
   router.post("/event", handleEventsIngest);
   router.post("/events", handleEventsIngest);
 
+  const handleTrafficIngest = (req, res) => {
+    try {
+      const result = repository.ingestTraffic(req.body || {});
+      if (result?.error) return res.status(400).json(result);
+      return res.json({ ok: true, ingest: result });
+    } catch (error) {
+      return res.status(500).json({
+        error: error?.message || "Failed to ingest traffic payload.",
+      });
+    }
+  };
+
+  router.post("/traffic", handleTrafficIngest);
+  router.post("/traffic/batch", handleTrafficIngest);
+
   return router;
 }
 

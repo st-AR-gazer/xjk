@@ -1,3 +1,6 @@
+import { waitForGlobalNadeoSlot } from "../../../shared/nadeoGlobalThrottle.js";
+import { sanitizeResolvedDisplayName } from "../../../shared/displayNameResolution.js";
+
 function clampInt(value, { min = 0, max = Number.MAX_SAFE_INTEGER, fallback = min } = {}) {
   const parsed = Number(value);
   if (!Number.isFinite(parsed)) return fallback;
@@ -38,7 +41,10 @@ class TrackmaniaOAuthClient {
     scope = "clubs",
     userAgent = "altered project by ar, contact @ar___ on discord",
     requestTimeoutMs = 15000,
-    minRequestGapMs = 1800,
+    minRequestGapMs = 5000,
+    globalThrottleFile = "",
+    globalMinRequestGapMs = 0,
+    onHttpEvent = null,
     logger = console,
   } = {}) {
     this.enabled = Boolean(enabled);
@@ -50,12 +56,34 @@ class TrackmaniaOAuthClient {
     this.userAgent = String(userAgent || "").trim() || "xjk-altered-monitor/1.0 (+https://xjk.yt)";
     this.requestTimeoutMs = Math.max(1000, Number(requestTimeoutMs) || 15000);
     this.minRequestGapMs = Math.max(0, Number(minRequestGapMs) || 0);
+    this.globalThrottleFile = String(
+      globalThrottleFile || process.env.NADEO_GLOBAL_THROTTLE_FILE || ""
+    ).trim();
+    this.globalMinRequestGapMs = Math.max(
+      0,
+      Number(globalMinRequestGapMs || process.env.NADEO_GLOBAL_MIN_REQUEST_GAP_MS || 0) || 0
+    );
+    this.onHttpEvent = typeof onHttpEvent === "function" ? onHttpEvent : null;
     this.logger = logger;
 
     this.accessToken = "";
     this.expiresAtMs = 0;
     this.pendingTokenPromise = null;
     this.nextRequestAtMs = 0;
+  }
+
+  emitHttpEvent(sample = {}) {
+    if (typeof this.onHttpEvent !== "function") return;
+    try {
+      this.onHttpEvent(sample);
+    } catch {
+      // Ignore telemetry callback failures.
+    }
+  }
+
+  setEnabled(enabled = true) {
+    this.enabled = Boolean(enabled);
+    return this.getStatus();
   }
 
   isConfigured() {
@@ -82,6 +110,28 @@ class TrackmaniaOAuthClient {
   }
 
   async requestJson(url, options = {}) {
+    const startedAt = Date.now();
+    const method = String(options?.method || "GET").toUpperCase();
+    let targetHost = "";
+    let targetPath = "/";
+    try {
+      const parsed = new URL(String(url || ""));
+      targetHost = String(parsed.host || "").toLowerCase();
+      targetPath = `${parsed.pathname || "/"}${parsed.search || ""}`;
+    } catch {
+      targetHost = "";
+      targetPath = "/";
+    }
+    const requestBody =
+      options?.body === null || options?.body === undefined
+        ? ""
+        : typeof options.body === "string"
+          ? options.body
+          : options.body instanceof URLSearchParams
+            ? options.body.toString()
+            : "";
+    const requestBytes = requestBody ? Buffer.byteLength(requestBody, "utf8") : 0;
+
     if (this.minRequestGapMs > 0) {
       const waitMs = Math.max(0, this.nextRequestAtMs - Date.now());
       if (waitMs > 0) {
@@ -89,12 +139,40 @@ class TrackmaniaOAuthClient {
       }
       this.nextRequestAtMs = Date.now() + this.minRequestGapMs;
     }
+    const sharedGapMs = Math.max(this.minRequestGapMs, this.globalMinRequestGapMs);
+    if (sharedGapMs > 0) {
+      await waitForGlobalNadeoSlot({
+        stateFile: this.globalThrottleFile,
+        minGapMs: sharedGapMs,
+        label: "tracker-displayname-oauth",
+      });
+    }
 
-    const response = await fetch(url, {
-      ...options,
-      signal: AbortSignal.timeout(this.requestTimeoutMs),
-    });
+    let response;
+    try {
+      response = await fetch(url, {
+        ...options,
+        signal: AbortSignal.timeout(this.requestTimeoutMs),
+      });
+    } catch (error) {
+      this.emitHttpEvent({
+        direction: "outgoing",
+        component: "trackmania-oauth",
+        service: "tracker-displayname",
+        method,
+        route: targetPath,
+        targetHost,
+        targetPath,
+        statusCode: 0,
+        durationMs: Date.now() - startedAt,
+        bytesIn: requestBytes,
+        bytesOut: 0,
+      });
+      throw error;
+    }
+
     const responseText = await response.text();
+    const responseBytes = responseText ? Buffer.byteLength(responseText, "utf8") : 0;
     let payload = null;
     if (responseText) {
       try {
@@ -103,6 +181,21 @@ class TrackmaniaOAuthClient {
         payload = null;
       }
     }
+
+    this.emitHttpEvent({
+      direction: "outgoing",
+      component: "trackmania-oauth",
+      service: "tracker-displayname",
+      method,
+      route: targetPath,
+      targetHost,
+      targetPath,
+      statusCode: Number(response.status || 0),
+      durationMs: Date.now() - startedAt,
+      bytesIn: requestBytes,
+      bytesOut: responseBytes,
+    });
+
     if (!response.ok) {
       const details =
         payload?.message ||
@@ -173,7 +266,7 @@ class TrackmaniaOAuthClient {
     if (payload && typeof payload === "object" && !Array.isArray(payload)) {
       for (const [rawAccountId, rawDisplayName] of Object.entries(payload)) {
         const accountId = normalizeAccountId(rawAccountId);
-        const displayName = String(rawDisplayName || "").trim();
+        const displayName = sanitizeResolvedDisplayName(rawDisplayName, { accountId });
         if (!accountId || !displayName) continue;
         out.set(accountId, displayName);
       }
@@ -190,9 +283,10 @@ class TrackmaniaOAuthClient {
       const accountId = normalizeAccountId(
         row?.accountId ?? row?.account_id ?? row?.id ?? row?.account
       );
-      const displayName = String(
-        row?.displayName ?? row?.display_name ?? row?.name ?? row?.value ?? ""
-      ).trim();
+      const displayName = sanitizeResolvedDisplayName(
+        row?.displayName ?? row?.display_name ?? row?.name ?? row?.value ?? "",
+        { accountId }
+      );
       if (!accountId || !displayName) continue;
       out.set(accountId, displayName);
     }

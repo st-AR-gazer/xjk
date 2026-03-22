@@ -65,7 +65,7 @@ const TRACKER_REQUEST_TIMEOUT_MS = Math.max(
 );
 const TRACKER_MIN_REQUEST_GAP_MS = Math.max(
   0,
-  Number(process.env.TRACKER_MIN_REQUEST_GAP_MS || 600)
+  Number(process.env.TRACKER_MIN_REQUEST_GAP_MS || 5000)
 );
 const TRACKER_LIVE_GROUP_UID = String(process.env.TRACKER_LIVE_GROUP_UID || "Personal_Best");
 const TRACKER_LIVE_ONLY_WORLD = String(process.env.TRACKER_LIVE_ONLY_WORLD || "1") !== "0";

@@ -4,6 +4,18 @@ function trimTrailingSlash(value) {
     .replace(/\/+$/, "");
 }
 
+function normalizeApiPath(baseUrl, path) {
+  const safePath = String(path || "").replace(/^\/+/, "");
+  if (!safePath) return "";
+  if (/\/v1$/i.test(String(baseUrl || ""))) {
+    return safePath.replace(/^v1\/+/i, "");
+  }
+  if (/^v1(\/|$)/i.test(safePath)) {
+    return safePath;
+  }
+  return `v1/${safePath}`;
+}
+
 function normalizeAccountId(value) {
   const accountId = String(value || "").trim().toLowerCase();
   if (!accountId) return "";
@@ -33,7 +45,7 @@ class TrackerDisplaynameClient {
       };
     }
 
-    const safePath = String(path || "").replace(/^\/+/, "");
+    const safePath = normalizeApiPath(this.baseUrl, path);
     const url = `${this.baseUrl}/${safePath}`;
     try {
       const response = await fetch(url, {
@@ -77,23 +89,25 @@ class TrackerDisplaynameClient {
     });
   }
 
-  async enqueueAccountIds(accountIds = []) {
+  async enqueueAccountIds(accountIds = [], { front = false } = {}) {
     const normalized = [...new Set((Array.isArray(accountIds) ? accountIds : []).map(normalizeAccountId).filter(Boolean))];
     return this.request("accounts/enqueue", {
       method: "POST",
       body: {
         accountIds: normalized,
+        front: Boolean(front),
       },
     });
   }
 
-  async runSync({ accountIds = [], forceCandidates = false } = {}) {
+  async runSync({ accountIds = [], forceCandidates = false, prioritizeAccountIds = true } = {}) {
     const normalized = [...new Set((Array.isArray(accountIds) ? accountIds : []).map(normalizeAccountId).filter(Boolean))];
     return this.request("sync/run-now", {
       method: "POST",
       body: {
         accountIds: normalized,
         forceCandidates: Boolean(forceCandidates),
+        prioritizeAccountIds: Boolean(prioritizeAccountIds),
       },
     });
   }

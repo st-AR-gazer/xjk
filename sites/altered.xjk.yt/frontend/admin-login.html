@@ -8,6 +8,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@500;600;700&family=Manrope:wght@400;500;700&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="/altered-hub.css" />
+  <link rel="stylesheet" href="/admin-login.css" />
   <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
 </head>
 <body>
@@ -30,15 +31,22 @@
     <section class="hero panel login-card">
       <div class="hero-top">
         <span class="tag">Admin Access</span>
+        <span class="login-chip">Allowlisted Ubisoft Accounts</span>
       </div>
-      <h1>Login To Altered Admin</h1>
-      <p>
-        Access is restricted to approved Ubisoft accounts only.
+      <h1>Sign In To Altered Admin</h1>
+      <p class="login-copy">
+        Use your approved Ubisoft account to access the admin dashboard.
       </p>
-      <p id="loginState" class="login-note">Checking login status...</p>
-      <div class="cta-row">
-        <a id="loginButton" class="btn btn-primary" href="/auth/ubisoft/login?return_to=%2Fadmin%2F">Login with Ubisoft</a>
+      <div id="loginState" class="login-status login-status-loading" role="status" aria-live="polite">
+        Checking login status...
       </div>
+      <div class="cta-row login-actions">
+        <a id="loginButton" class="btn btn-primary" href="/auth/ubisoft/login?return_to=%2Fadmin%2F">Continue with Ubisoft</a>
+        <a class="btn btn-secondary" href="/admin/">Open Admin</a>
+      </div>
+      <p class="login-footnote">
+        Approved accounts continue straight into the admin dashboard after callback.
+      </p>
     </section>
   </main>
 

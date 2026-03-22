@@ -1,3 +1,5 @@
+import { sanitizeResolvedDisplayName } from "../../../shared/displayNameResolution.js";
+
 function buildHeaders({ adminToken = "", sessionCookie = "", hasBody = false } = {}) {
   const headers = {};
   if (hasBody) headers["content-type"] = "application/json";
@@ -95,9 +97,10 @@ class TrackerClient {
     }
   }
 
-  async request(baseUrl, relativePath, { method = "GET", body, admin = false } = {}) {
+  async request(baseUrl, relativePath, { method = "GET", body, admin = false, timeoutMs = null } = {}) {
     const safePath = String(relativePath || "").replace(/^\/+/, "");
     const targetUrl = `${trimTrailingSlash(baseUrl)}/${safePath}`;
+    const safeTimeoutMs = Math.max(250, Number(timeoutMs ?? this.timeoutMs) || this.timeoutMs);
     const perform = async (attempt = 0) => {
       if (admin && !this.adminToken && this.hasAdminCredentials()) {
         try {
@@ -124,7 +127,7 @@ class TrackerClient {
             hasBody: body !== undefined,
           }),
           body: body === undefined ? undefined : JSON.stringify(body),
-          signal: AbortSignal.timeout(this.timeoutMs),
+          signal: AbortSignal.timeout(safeTimeoutMs),
         });
         const payload = await response.json().catch(() => null);
         if (!response.ok) {
@@ -166,18 +169,19 @@ class TrackerClient {
     return perform(0);
   }
 
-  async getTrackerStatus() {
-    return this.request(this.publicBaseUrl, "tracker/status");
+  async getTrackerStatus({ timeoutMs = null } = {}) {
+    return this.request(this.publicBaseUrl, "tracker/status", { timeoutMs });
   }
 
   async getWrFeed(limit = 24) {
     return this.request(this.publicBaseUrl, `wr/latest?limit=${Math.max(1, Number(limit) || 24)}`);
   }
 
-  async getTrackerRuns(limit = 50) {
+  async getTrackerRuns(limit = 50, { timeoutMs = null } = {}) {
     return this.request(
       this.publicBaseUrl,
-      `tracker/runs?limit=${Math.max(1, Number(limit) || 50)}`
+      `tracker/runs?limit=${Math.max(1, Number(limit) || 50)}`,
+      { timeoutMs }
     );
   }
 
@@ -207,6 +211,13 @@ class TrackerClient {
     );
   }
 
+  async getLeaderboardCoverage({ trackedOnly = true } = {}) {
+    return this.request(
+      this.publicBaseUrl,
+      `leaderboards/coverage?tracked_only=${trackedOnly === false ? 0 : 1}`
+    );
+  }
+
   async getPlayerNames(accountIds = [], { chunkSize = 50 } = {}) {
     const normalizedAccountIds = [];
     const seen = new Set();
@@ -232,7 +243,9 @@ class TrackerClient {
 
     for (let offset = 0; offset < normalizedAccountIds.length; offset += safeChunkSize) {
       const chunk = normalizedAccountIds.slice(offset, offset + safeChunkSize);
-      const query = chunk.map((accountId) => `accountId[]=${encodeURIComponent(accountId)}`).join("&");
+      // Express's default query parser can drop very long repeated `accountId[]` params.
+      // The tracker API accepts `accountId` as a delimited string, so send a single param.
+      const query = `accountId=${encodeURIComponent(chunk.join(","))}`;
       const response = await this.request(this.publicBaseUrl, `players/names?${query}`);
       if (!response?.ok) {
         warnings.push(response?.error || `Failed player-name lookup for chunk at offset ${offset}.`);
@@ -245,7 +258,7 @@ class TrackerClient {
         : {};
       for (const [rawAccountId, rawDisplayName] of Object.entries(map)) {
         const accountId = normalizeAccountId(rawAccountId);
-        const displayName = String(rawDisplayName || "").trim();
+        const displayName = sanitizeResolvedDisplayName(rawDisplayName, { accountId });
         if (!accountId || !displayName) continue;
         namesByAccountId[accountId] = displayName;
       }

@@ -3,7 +3,9 @@
   z-index: 1;
   max-width: 1000px;
   margin: 0 auto;
-  padding: 2rem 1.5rem 3rem;
+  padding-right: 1.5rem;
+  padding-bottom: 3rem;
+  padding-left: 1.5rem;
 }
 
 .back-link {
@@ -44,7 +46,7 @@
 }
 .stats-row {
   display: grid;
-  grid-template-columns: repeat(4, 1fr);
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
   gap: 0.75rem;
   margin-bottom: 2rem;
 }
@@ -75,6 +77,97 @@
   letter-spacing: 0.08em;
   color: var(--ink-muted);
 }
+
+.coverage-card {
+  margin-bottom: 1.5rem;
+  padding: 1rem;
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  background: var(--surface);
+  backdrop-filter: blur(12px);
+}
+
+.coverage-card-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.8rem;
+  flex-wrap: wrap;
+}
+
+.coverage-card-head .section-title {
+  margin: 0;
+}
+
+.coverage-card-meta {
+  color: var(--ink-dim);
+  font-family: "Chakra Petch", "Trebuchet MS", sans-serif;
+  font-size: 0.76rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.coverage-bars {
+  margin-top: 0.7rem;
+  display: grid;
+  gap: 0.6rem;
+}
+
+.coverage-bar-row {
+  display: grid;
+  gap: 0.3rem;
+}
+
+.coverage-bar-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 0.9rem;
+}
+
+.coverage-bar-label {
+  color: var(--ink);
+  font-family: "Chakra Petch", "Trebuchet MS", sans-serif;
+  font-size: 0.74rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.coverage-bar-value {
+  color: var(--ink-dim);
+  font-family: "Chakra Petch", "Trebuchet MS", sans-serif;
+  font-size: 0.74rem;
+  font-weight: 700;
+}
+
+.coverage-bar-track {
+  height: 12px;
+  border-radius: 999px;
+  overflow: hidden;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid var(--border);
+}
+
+.coverage-bar-fill {
+  display: block;
+  width: 0%;
+  height: 100%;
+  border-radius: inherit;
+  transition: width 180ms ease-out;
+}
+
+.coverage-bar-fill.is-known {
+  background: linear-gradient(90deg, rgba(255, 138, 89, 0.92), rgba(255, 190, 111, 0.92));
+}
+
+.coverage-bar-fill.is-any {
+  background: linear-gradient(90deg, rgba(34, 204, 238, 0.9), rgba(107, 232, 255, 0.92));
+}
+
+.coverage-bar-fill.is-fuller {
+  background: linear-gradient(90deg, rgba(121, 230, 160, 0.88), rgba(186, 255, 133, 0.92));
+}
+
 .controls-bar {
   display: flex;
   gap: 0.75rem;
@@ -236,8 +329,18 @@
 }
 
 .player-name {
+  display: block;
   font-weight: 500;
   color: var(--ink);
+}
+
+.player-account {
+  display: block;
+  margin-top: 0.16rem;
+  font-family: "Chakra Petch", "Trebuchet MS", sans-serif;
+  font-size: 0.64rem;
+  letter-spacing: 0.04em;
+  color: var(--ink-muted);
 }
 
 .wr-count {
@@ -281,6 +384,52 @@
   font-family: "Chakra Petch", "Trebuchet MS", sans-serif;
   font-weight: 600;
   margin-left: 0.3rem;
+}
+
+.pager {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  margin-top: 0.65rem;
+  margin-bottom: 1.1rem;
+  flex-wrap: wrap;
+}
+
+.pager-group {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.pager-group label {
+  font-family: "Chakra Petch", "Trebuchet MS", sans-serif;
+  font-size: 0.72rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--ink-muted);
+}
+
+.pager-info {
+  font-size: 0.82rem;
+  color: var(--ink-dim);
+}
+
+.pager-btn {
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.03);
+  color: var(--ink);
+  font-family: "Chakra Petch", "Trebuchet MS", sans-serif;
+  font-size: 0.76rem;
+  letter-spacing: 0.05em;
+  padding: 0.5rem 0.9rem;
+  cursor: pointer;
+}
+
+.pager-btn:disabled {
+  opacity: 0.45;
+  cursor: default;
 }
 .split-grid {
   margin-top: 1.5rem;
@@ -395,7 +544,9 @@
 }
 @media (max-width: 720px) {
   .rank-shell {
-    padding: 1.5rem 1rem 2rem;
+    padding-right: 1rem;
+    padding-bottom: 2rem;
+    padding-left: 1rem;
   }
 
   .stats-row {

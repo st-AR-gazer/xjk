@@ -1,0 +1,98 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Altered Public API</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link
+    href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap"
+    rel="stylesheet"
+  />
+  <link rel="stylesheet" href="./styles.css?v=20260315-api-v4" />
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+</head>
+<body class="api-docs-page">
+  <div class="docs-shell">
+    <aside class="docs-sidebar">
+      <div class="brand-block">
+        <a class="brand-home" href="/">altered.xjk.yt</a>
+        <h1>Public API</h1>
+      </div>
+
+      <label class="sidebar-search">
+        <input id="searchInput" type="search" placeholder="Search endpoints..." />
+      </label>
+
+      <nav class="sidebar-nav" aria-label="API documentation navigation">
+        <div class="sidebar-group">
+          <p class="sidebar-group-title">Guide</p>
+          <a href="#overview">Overview</a>
+          <a href="#tester">Try It</a>
+        </div>
+        <div id="sidebarGroups"></div>
+        <div class="sidebar-group">
+          <p class="sidebar-group-title">Links</p>
+          <a href="/api/v1/public/endpoints" target="_blank" rel="noreferrer">Raw JSON</a>
+          <a href="/">Public Site</a>
+          <a href="/admin/">Admin</a>
+        </div>
+      </nav>
+    </aside>
+
+    <main class="docs-main">
+      <header class="docs-topbar">
+        <div class="topbar-copy">
+          <strong id="topbarSummary">Loading...</strong>
+        </div>
+        <div class="topbar-actions">
+          <button id="resetSearchBtn" class="btn ghost" type="button">Reset</button>
+          <a class="btn primary" href="/api/v1/public/endpoints" target="_blank" rel="noreferrer">JSON</a>
+        </div>
+      </header>
+
+      <section id="overview" class="doc-section doc-section-compact">
+        <div class="overview-row">
+          <div class="overview-info">
+            <h2>API Reference</h2>
+            <p class="lead">Endpoints for maps, alterations, clubs, leaderboards, and the aggregator.</p>
+          </div>
+          <div class="stat-pills">
+            <span class="stat-pill"><strong id="statEndpoints">-</strong> endpoints</span>
+            <span class="stat-pill">v<strong id="statVersion">1</strong></span>
+          </div>
+        </div>
+        <div class="code-inline">
+          <code id="catalogCurl">curl "/api/v1/public/endpoints"</code>
+        </div>
+      </section>
+
+      <section id="tester" class="doc-section doc-section-compact">
+        <details class="tester-details">
+          <summary class="tester-summary">Try It &mdash; Map Detail Lookup</summary>
+          <form id="mapTesterForm" class="tester-form">
+            <label class="field">
+              <span>Map UID</span>
+              <input id="mapUidInput" name="mapUid" type="text" placeholder="Paste a known map UID" />
+            </label>
+            <label class="field field-small">
+              <span>WR History</span>
+              <input id="wrHistoryLimitInput" name="wrHistoryLimit" type="number" min="1" max="25" value="5" />
+            </label>
+            <button class="btn primary" type="submit">Run</button>
+          </form>
+          <p id="mapTesterStatus" class="tester-status">No request yet.</p>
+          <div class="code-block">
+            <pre id="mapTesterOutput" class="response-block">Awaiting request.</pre>
+          </div>
+        </details>
+      </section>
+
+      <div id="endpointSections"></div>
+    </main>
+  </div>
+
+  <script src="./app.js?v=20260315-api-v4" type="module"></script>
+</body>
+</html>

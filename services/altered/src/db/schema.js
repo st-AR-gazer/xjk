@@ -14,6 +14,23 @@ export const MIGRATIONS = [
   );
   `,
   `
+  CREATE TABLE IF NOT EXISTS altered_project_sources (
+    source_key TEXT PRIMARY KEY,
+    source_type TEXT NOT NULL DEFAULT 'special',
+    display_name TEXT NOT NULL,
+    source_label TEXT NOT NULL,
+    enabled INTEGER NOT NULL DEFAULT 1,
+    last_synced_at TEXT,
+    last_error TEXT,
+    summary_json TEXT,
+    metadata_json TEXT,
+    created_at TEXT NOT NULL,
+    updated_at TEXT NOT NULL
+  );
+  CREATE INDEX IF NOT EXISTS idx_altered_project_sources_type
+    ON altered_project_sources(source_type, enabled, updated_at DESC);
+  `,
+  `
   CREATE TABLE IF NOT EXISTS altered_live_monitor_config (
     config_id INTEGER PRIMARY KEY CHECK (config_id = 1),
     enabled INTEGER NOT NULL DEFAULT 0,
@@ -133,6 +150,8 @@ export const MIGRATIONS = [
     season TEXT,
     year INTEGER,
     map_number INTEGER,
+    map_numbers_json TEXT,
+    alteration_label TEXT,
     alteration_mix_json TEXT,
     automation_state TEXT NOT NULL DEFAULT 'unmatched' CHECK (automation_state IN ('matched', 'unmatched')),
     review_state TEXT NOT NULL DEFAULT 'pending' CHECK (review_state IN ('pending', 'approved', 'ignored')),
@@ -150,6 +169,79 @@ export const MIGRATIONS = [
     ON altered_map_name_candidates(season, year, map_number);
   CREATE INDEX IF NOT EXISTS idx_altered_map_name_candidates_regex
     ON altered_map_name_candidates(requires_regex, review_state);
+  `,
+  `
+  CREATE TABLE IF NOT EXISTS altered_map_local_files (
+    map_uid TEXT PRIMARY KEY REFERENCES altered_maps(map_uid) ON DELETE CASCADE,
+    relative_path TEXT NOT NULL,
+    download_url TEXT,
+    file_sha256 TEXT,
+    file_size_bytes INTEGER NOT NULL DEFAULT 0,
+    downloaded_at TEXT,
+    verified_at TEXT,
+    status TEXT NOT NULL DEFAULT 'missing' CHECK (status IN ('ready', 'missing', 'error')),
+    last_error TEXT,
+    updated_at TEXT NOT NULL
+  );
+  CREATE INDEX IF NOT EXISTS idx_altered_map_local_files_status
+    ON altered_map_local_files(status, updated_at DESC);
+  `,
+  `
+  CREATE TABLE IF NOT EXISTS altered_map_local_file_fixes (
+    map_uid TEXT PRIMARY KEY REFERENCES altered_maps(map_uid) ON DELETE CASCADE,
+    relative_path TEXT NOT NULL,
+    source_file_path TEXT,
+    file_sha256 TEXT,
+    file_size_bytes INTEGER NOT NULL DEFAULT 0,
+    imported_at TEXT,
+    verified_at TEXT,
+    status TEXT NOT NULL DEFAULT 'ready' CHECK (status IN ('ready', 'missing', 'error')),
+    note TEXT,
+    last_error TEXT,
+    created_at TEXT NOT NULL,
+    updated_at TEXT NOT NULL
+  );
+  CREATE INDEX IF NOT EXISTS idx_altered_map_local_file_fixes_status
+    ON altered_map_local_file_fixes(status, updated_at DESC);
+  `,
+  `
+  CREATE TABLE IF NOT EXISTS altered_map_content_signatures (
+    map_uid TEXT PRIMARY KEY REFERENCES altered_maps(map_uid) ON DELETE CASCADE,
+    extraction_version TEXT NOT NULL,
+    file_sha256 TEXT,
+    download_url TEXT,
+    printable_token_count INTEGER NOT NULL DEFAULT 0,
+    asset_token_count INTEGER NOT NULL DEFAULT 0,
+    signature_json TEXT,
+    source_status TEXT NOT NULL DEFAULT 'ready' CHECK (source_status IN ('ready', 'missing-download', 'error')),
+    source_error TEXT,
+    extracted_at TEXT NOT NULL,
+    updated_at TEXT NOT NULL
+  );
+  CREATE INDEX IF NOT EXISTS idx_altered_map_content_signatures_status
+    ON altered_map_content_signatures(source_status, updated_at DESC);
+  `,
+  `
+  CREATE TABLE IF NOT EXISTS altered_map_number_similarity (
+    map_uid TEXT PRIMARY KEY REFERENCES altered_maps(map_uid) ON DELETE CASCADE,
+    family_key TEXT,
+    reference_campaign_id INTEGER REFERENCES altered_campaigns(campaign_id) ON DELETE SET NULL,
+    reference_campaign_name TEXT,
+    primary_reference_map_uid TEXT,
+    primary_reference_slot INTEGER,
+    assigned_map_numbers_json TEXT NOT NULL DEFAULT '[]',
+    top_score REAL NOT NULL DEFAULT 0,
+    second_score REAL NOT NULL DEFAULT 0,
+    confidence REAL NOT NULL DEFAULT 0,
+    assignment_method TEXT NOT NULL DEFAULT 'asset-token-jaccard-v1',
+    candidate_matches_json TEXT,
+    details_json TEXT,
+    updated_at TEXT NOT NULL
+  );
+  CREATE INDEX IF NOT EXISTS idx_altered_map_number_similarity_family
+    ON altered_map_number_similarity(family_key, updated_at DESC);
+  CREATE INDEX IF NOT EXISTS idx_altered_map_number_similarity_reference
+    ON altered_map_number_similarity(reference_campaign_id, primary_reference_slot);
   `,
   `
   CREATE TABLE IF NOT EXISTS altered_map_positions (
@@ -268,6 +360,7 @@ export const MIGRATIONS = [
     event_id INTEGER PRIMARY KEY AUTOINCREMENT,
     map_uid TEXT NOT NULL,
     map_name TEXT NOT NULL DEFAULT '',
+    account_id TEXT,
     holder TEXT NOT NULL DEFAULT '',
     wr_ms INTEGER NOT NULL DEFAULT 0,
     recorded_at TEXT NOT NULL,
@@ -295,6 +388,27 @@ export const MIGRATIONS = [
     ON altered_update_requests(status, created_at DESC);
   CREATE INDEX IF NOT EXISTS idx_altered_update_requests_map
     ON altered_update_requests(map_uid, created_at DESC);
+  `,
+  `
+  CREATE TABLE IF NOT EXISTS altered_api_requests (
+    request_id INTEGER PRIMARY KEY AUTOINCREMENT,
+    endpoint_key TEXT NOT NULL,
+    request_path TEXT NOT NULL,
+    method TEXT NOT NULL,
+    status_code INTEGER NOT NULL,
+    map_uid TEXT,
+    origin TEXT,
+    client_hash TEXT,
+    user_agent TEXT,
+    duration_ms INTEGER NOT NULL DEFAULT 0,
+    created_at TEXT NOT NULL
+  );
+  CREATE INDEX IF NOT EXISTS idx_altered_api_requests_created
+    ON altered_api_requests(created_at DESC, request_id DESC);
+  CREATE INDEX IF NOT EXISTS idx_altered_api_requests_endpoint
+    ON altered_api_requests(endpoint_key, created_at DESC);
+  CREATE INDEX IF NOT EXISTS idx_altered_api_requests_map
+    ON altered_api_requests(map_uid, created_at DESC);
   `,
   `
   CREATE TABLE IF NOT EXISTS altered_admin_users (
@@ -476,6 +590,26 @@ export const MIGRATIONS = [
     '',
     CURRENT_TIMESTAMP
   );
+  `,
+  `
+  CREATE TABLE IF NOT EXISTS altered_alterations (
+    alteration_id INTEGER PRIMARY KEY AUTOINCREMENT,
+    name TEXT NOT NULL UNIQUE,
+    slug TEXT,
+    created_at TEXT NOT NULL,
+    updated_at TEXT NOT NULL
+  );
+  CREATE UNIQUE INDEX IF NOT EXISTS idx_altered_alterations_slug
+    ON altered_alterations(slug);
+  `,
+  `
+  CREATE TABLE IF NOT EXISTS altered_campaign_alterations (
+    campaign_id INTEGER NOT NULL REFERENCES altered_campaigns(campaign_id) ON DELETE CASCADE,
+    alteration_id INTEGER NOT NULL REFERENCES altered_alterations(alteration_id) ON DELETE CASCADE,
+    PRIMARY KEY (campaign_id, alteration_id)
+  );
+  CREATE INDEX IF NOT EXISTS idx_altered_campaign_alterations_alteration
+    ON altered_campaign_alterations(alteration_id);
   `,
   `
   CREATE TABLE IF NOT EXISTS discord_bot_commands (

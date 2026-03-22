@@ -2,6 +2,32 @@ const FALLBACK_REFRESH_MS = 5000;
 const STREAM_RECONNECT_MS = 3000;
 const FRESH_THRESHOLD_MS = 5 * 60 * 1000;
 const MAPS_PER_PAGE = 25;
+
+function isLocalHostName(hostname) {
+  const host = String(hostname || "").toLowerCase();
+  return host.endsWith(".localhost") || host === "localhost" || host === "127.0.0.1";
+}
+
+function detectTrackerScopeFromPath(pathname) {
+  const lower = String(pathname || "").toLowerCase();
+  if (lower.includes("/leaderboard")) return "leaderboard";
+  if (lower.includes("/displayname")) return "displayname";
+  if (lower.includes("/club")) return "club";
+  return "wr";
+}
+
+const IS_LOCAL_HOST = isLocalHostName(window.location.hostname);
+const TRACKER_SCOPE = detectTrackerScopeFromPath(window.location.pathname);
+const PRIMARY_TRACKER_BASE = `https://trackers.xjk.yt/${TRACKER_SCOPE}/`;
+const DIRECT_PRIMARY_READ = (() => {
+  try {
+    const value = String(new URL(window.location.href).searchParams.get("primary_read") || "").trim().toLowerCase();
+    return value === "1" || value === "true" || value === "yes";
+  } catch {
+    return false;
+  }
+})();
+
 const state = {
   mode: "wr",
   status: null,
@@ -16,6 +42,11 @@ const state = {
     source: null,
     connected: false,
     reconnectTimer: null,
+  },
+  source: {
+    usePrimaryRead: IS_LOCAL_HOST && DIRECT_PRIMARY_READ,
+    primaryReadHealthy: IS_LOCAL_HOST && DIRECT_PRIMARY_READ,
+    remoteProxyRead: false,
   },
 };
 function getAdminToken() {
@@ -79,19 +110,69 @@ const HAS_CHECK_FEED =
   Boolean(els.checkFeedNote) &&
   Boolean(els.checkFeedList) &&
   Boolean(els.checkFeedEmpty);
-async function api(path, { method = "GET", body, admin = false } = {}) {
-  const headers = body ? { "content-type": "application/json" } : {};
-  if (admin && ADMIN_TOKEN) headers["x-admin-token"] = ADMIN_TOKEN;
-  const res = await fetch(path, {
+
+function toLocalApiPath(path) {
+  const raw = String(path || "").trim();
+  if (!raw) return "/";
+  return raw.startsWith("/") ? raw : `/${raw}`;
+}
+
+function toPrimaryApiUrl(path) {
+  const raw = String(path || "").trim();
+  const normalized = raw.replace(/^\/+/, "");
+  return new URL(normalized, PRIMARY_TRACKER_BASE).toString();
+}
+
+async function fetchJson(url, { method, headers, body }) {
+  const res = await fetch(url, {
     method,
     cache: "no-store",
     headers,
-    body: body ? JSON.stringify(body) : undefined,
+    body,
   });
+  if (res.headers.get("x-xjk-remote-tracker") === "1") {
+    state.source.remoteProxyRead = true;
+  }
   let data = null;
-  try { data = await res.json(); } catch { data = null; }
+  try {
+    data = await res.json();
+  } catch {
+    data = null;
+  }
   if (!res.ok) throw new Error(data?.error || `Request failed (${res.status})`);
   return data;
+}
+
+async function api(path, { method = "GET", body, admin = false } = {}) {
+  const safeMethod = String(method || "GET").toUpperCase();
+  const localPath = toLocalApiPath(path);
+  const usePrimaryRead =
+    safeMethod === "GET" &&
+    !admin &&
+    state.source.usePrimaryRead &&
+    state.source.primaryReadHealthy;
+  const headers = body ? { "content-type": "application/json" } : {};
+  if (admin && ADMIN_TOKEN) headers["x-admin-token"] = ADMIN_TOKEN;
+
+  const requestBody = body ? JSON.stringify(body) : undefined;
+  if (usePrimaryRead) {
+    const primaryUrl = toPrimaryApiUrl(localPath);
+    try {
+      return await fetchJson(primaryUrl, {
+        method: safeMethod,
+        headers,
+        body: requestBody,
+      });
+    } catch {
+      state.source.primaryReadHealthy = false;
+    }
+  }
+
+  return fetchJson(localPath, {
+    method: safeMethod,
+    headers,
+    body: requestBody,
+  });
 }
 function fmtMs(ms) {
   const v = Math.max(0, Number(ms) || 0);
@@ -477,6 +558,7 @@ async function refreshData({ silent = false } = {}) {
     renderFeed();
     renderEngine();
     renderRuns();
+    applyRunNowAvailability();
     if (state.wrFeed.length) {
       renderSpotlight(state.wrFeed[0]);
     }
@@ -491,6 +573,7 @@ async function refreshData({ silent = false } = {}) {
         }
       });
   } catch (error) {
+    applyRunNowAvailability();
     if (!silent) {
       els.engineStatus.textContent = "error";
       els.engineError.textContent  = error.message;
@@ -572,7 +655,12 @@ function clearStreamReconnectTimer() {
 
 function updateFeedNote() {
   if (state.stream.connected) {
-    els.feedNote.textContent = "Live stream connected";
+    const sourceLabel = state.source.remoteProxyRead
+      ? "primary-via-gateway"
+      : state.source.usePrimaryRead && state.source.primaryReadHealthy
+        ? "primary"
+        : "local";
+    els.feedNote.textContent = `Live stream connected (${sourceLabel})`;
     if (HAS_CHECK_FEED && !state.liveChecks.length) {
       els.checkFeedNote.textContent = "Live stream connected. Waiting for checked maps...";
     }
@@ -617,7 +705,9 @@ function connectStream() {
 
   cleanupStream();
 
-  const source = new EventSource("api/v1/stream");
+  const usePrimaryStream = state.source.usePrimaryRead && state.source.primaryReadHealthy;
+  const streamUrl = usePrimaryStream ? toPrimaryApiUrl("/api/v1/stream") : "api/v1/stream";
+  const source = new EventSource(streamUrl);
   state.stream.source = source;
 
   source.addEventListener("open", () => {
@@ -658,10 +748,29 @@ function connectStream() {
 
   source.addEventListener("error", () => {
     state.stream.connected = false;
+    if (usePrimaryStream) {
+      state.source.primaryReadHealthy = false;
+    }
     updateFeedNote();
     cleanupStream();
     scheduleStreamReconnect();
   });
+}
+
+function applyRunNowAvailability() {
+  if (!els.runNowBtn) return;
+  const disableForPrimaryRead =
+    (state.source.usePrimaryRead && state.source.primaryReadHealthy) ||
+    state.source.remoteProxyRead;
+  if (disableForPrimaryRead) {
+    els.runNowBtn.disabled = true;
+    els.runNowBtn.title = "Disabled while reading tracker data from primary.";
+    els.runNowBtn.textContent = "Run Now (disabled on primary)";
+    return;
+  }
+  els.runNowBtn.disabled = false;
+  els.runNowBtn.title = "";
+  els.runNowBtn.textContent = "Run Now";
 }
 async function runNow() {
   els.runNowBtn.disabled = true;
@@ -725,6 +834,7 @@ async function boot() {
   configureLinks();
   applyModeUI();
   bindEvents();
+  applyRunNowAvailability();
   await refreshData();
   connectStream();
   window.setInterval(() => refreshData({ silent: true }), FALLBACK_REFRESH_MS);
@@ -735,5 +845,3 @@ async function boot() {
 }
 
 boot();
-
-

@@ -11,7 +11,29 @@
   <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
 </head>
 <body>
-  <a class="corner-login" href="/admin-login/">Login</a>
+  <!-- Nav Bar -->
+  <nav class="site-nav" id="site-nav" aria-label="Main navigation">
+    <a class="site-nav-brand" href="/">altered.</a>
+    <button class="site-nav-toggle" id="site-nav-toggle" type="button" aria-label="Menu">
+      <svg width="18" height="18" viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><path d="M3 5h12M3 9h12M3 13h12"/></svg>
+    </button>
+    <div class="site-nav-links" id="site-nav-links">
+      <a class="site-nav-link" href="/maps/">Maps</a>
+      <a class="site-nav-link" href="/rankings/">Rankings</a>
+      <a class="site-nav-link" href="/alterations/">Alterations</a>
+      <div class="site-nav-dropdown" id="season-dropdown">
+        <button class="site-nav-link site-nav-trigger" type="button" aria-expanded="false">
+          Seasons <svg width="10" height="10" viewBox="0 0 10 10" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M2.5 4L5 6.5L7.5 4"/></svg>
+        </button>
+        <div class="site-nav-panel" id="season-nav-panel">
+          <div class="site-nav-panel-loading">Loading seasons...</div>
+        </div>
+      </div>
+      <a class="site-nav-link" href="/tools/">Tools</a>
+      <a class="site-nav-link" href="/api/">API</a>
+      <a class="site-nav-link site-nav-login" href="/admin-login/">Login</a>
+    </div>
+  </nav>
 
   <div class="backdrop" aria-hidden="true">
     <div class="geo-mesh"></div>
@@ -28,7 +50,6 @@
 
   <main>
     <section class="vista" style="min-height: auto; padding: 4rem 1.5rem 2rem;">
-      <a class="vista-badge" href="/" style="animation: none; opacity: 1; transform: none; cursor: pointer; text-decoration: none;">&larr; Back to Hub</a>
       <h1 class="vista-title" style="font-size: clamp(2.5rem, 8vw, 5rem); animation: none; opacity: 1; transform: none;">Tools</h1>
       <p class="vista-sub" style="animation: none; opacity: 1; transform: none;">
         Creative tools and services built for the Altered project.
@@ -65,7 +86,7 @@
       <span class="foot-mark">altered.xjk.yt</span>
       <nav aria-label="Hub navigation">
         <a href="/">Hub</a>
-        <a href="/alterations/">Maps</a>
+        <a href="/maps/">Maps</a>
         <a href="/rankings/">Rankings</a>
         <a data-link="tracker" href="https://trackers.xjk.yt/leaderboard/">Tracker</a>
       </nav>

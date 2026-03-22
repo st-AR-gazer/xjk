@@ -1,0 +1,169 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>xjk / altered / maps</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@400;500;600;700&family=Manrope:wght@400;500;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="/altered-hub.css" />
+  <link rel="stylesheet" href="maps.css" />
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+</head>
+<body>
+  <nav class="site-nav" id="site-nav" aria-label="Main navigation">
+    <a class="site-nav-brand" href="/">altered.</a>
+    <button class="site-nav-toggle" id="site-nav-toggle" type="button" aria-label="Menu">
+      <svg width="18" height="18" viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><path d="M3 5h12M3 9h12M3 13h12"/></svg>
+    </button>
+    <div class="site-nav-links" id="site-nav-links">
+      <a class="site-nav-link" href="/maps/">Maps</a>
+      <a class="site-nav-link" href="/rankings/">Rankings</a>
+      <a class="site-nav-link" href="/alterations/">Alterations</a>
+      <div class="site-nav-dropdown" id="season-dropdown">
+        <button class="site-nav-link site-nav-trigger" type="button" aria-expanded="false">
+          Seasons <svg width="10" height="10" viewBox="0 0 10 10" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M2.5 4L5 6.5L7.5 4"/></svg>
+        </button>
+        <div class="site-nav-panel" id="season-nav-panel">
+          <div class="site-nav-panel-loading">Loading seasons...</div>
+        </div>
+      </div>
+      <a class="site-nav-link" href="/tools/">Tools</a>
+      <a class="site-nav-link" href="/api/">API</a>
+      <a class="site-nav-link site-nav-login" href="/admin-login/">Login</a>
+    </div>
+  </nav>
+
+  <div class="backdrop" aria-hidden="true">
+    <div class="geo-mesh"></div>
+    <div class="orb orb-1"></div>
+    <div class="orb orb-2"></div>
+    <div class="orb orb-3"></div>
+  </div>
+
+  <div class="solids-layer" aria-hidden="true">
+    <img class="solid solid-1" src="/bannerbuilder/assets/solids/Dodecahedron.png" alt="" />
+    <img class="solid solid-2" src="/bannerbuilder/assets/solids/Icosahedron.png" alt="" />
+    <img class="solid solid-3" src="/bannerbuilder/assets/solids/Octahedron.png" alt="" />
+  </div>
+
+  <main class="maps-shell">
+
+    <header class="maps-hero">
+      <div class="maps-hero-glow"></div>
+      <div class="maps-hero-content">
+        <span class="maps-badge">Altered Project</span>
+        <h1 class="maps-title">Maps</h1>
+        <p class="maps-sub">Find specific maps fast with season, alteration, status, WR, map number, environment, and type filters.</p>
+      </div>
+    </header>
+
+    <section class="stats-row" aria-label="Overview stats">
+      <div class="stat">
+        <span class="stat-value" id="stat-maps">&mdash;</span>
+        <span class="stat-label">Maps</span>
+      </div>
+      <div class="stat">
+        <span class="stat-value" id="stat-tracked">&mdash;</span>
+        <span class="stat-label">Tracked</span>
+      </div>
+      <div class="stat">
+        <span class="stat-value" id="stat-wr-changes">&mdash;</span>
+        <span class="stat-label">WR Changes</span>
+      </div>
+      <div class="stat">
+        <span class="stat-value" id="stat-last-run">&mdash;</span>
+        <span class="stat-label">Last Checked</span>
+      </div>
+    </section>
+
+    <section class="controls-shell" aria-label="Map filters">
+      <div class="controls-primary">
+        <label class="search-wrap" for="map-search">
+          <span class="search-label">Search</span>
+          <input type="search" id="map-search" class="search-input" placeholder="Map name, author, WR holder, UID, campaign..." />
+        </label>
+        <button class="clear-btn" id="clear-filters" type="button">Clear Filters</button>
+      </div>
+
+      <div class="filter-grid">
+        <select id="season-filter" class="sort-select">
+          <option value="">Season: All</option>
+        </select>
+        <select id="year-filter" class="sort-select">
+          <option value="">Year: All</option>
+        </select>
+        <select id="alteration-filter" class="sort-select">
+          <option value="">Alteration: All</option>
+        </select>
+        <select id="status-filter" class="sort-select">
+          <option value="">Status: All</option>
+        </select>
+        <select id="wr-filter" class="sort-select">
+          <option value="">WR: Any</option>
+        </select>
+        <input id="map-number-filter" class="search-input compact-input" type="number" min="1" max="25" placeholder="Map #" />
+        <select id="environment-filter" class="sort-select">
+          <option value="">Environment: All</option>
+        </select>
+        <select id="map-type-filter" class="sort-select">
+          <option value="">Map Type: All</option>
+        </select>
+        <select id="map-sort" class="sort-select">
+          <option value="newest">Sort: Newest</option>
+          <option value="name">Sort: Name</option>
+          <option value="wr_ms">Sort: WR Time</option>
+          <option value="author_time">Sort: Author Time</option>
+          <option value="wr_updated_at">Sort: Latest WR</option>
+          <option value="change_count">Sort: Most Changes</option>
+        </select>
+      </div>
+
+      <div class="results-bar">
+        <p class="results-summary" id="results-summary">Loading map catalog...</p>
+        <div class="active-filters" id="active-filters"></div>
+      </div>
+    </section>
+
+    <div class="load-progress" id="load-progress" hidden>
+      <div class="load-progress-bar" id="load-progress-bar"></div>
+    </div>
+
+    <section class="map-grid" id="map-grid" aria-label="Tracked maps"></section>
+
+    <div class="pagination" id="pagination" hidden></div>
+
+    <div class="state-msg" id="loading-state">
+      <p>Loading maps&hellip;</p>
+    </div>
+    <div class="state-msg" id="empty-state" hidden>
+      <p>No maps match your filters.</p>
+    </div>
+    <div class="state-msg" id="error-state" hidden>
+      <p>Could not reach the API &mdash; the backend may not be running yet.</p>
+    </div>
+
+    <div class="map-modal-backdrop" id="map-modal-backdrop" hidden>
+      <div class="map-modal" id="map-modal">
+        <button class="map-modal-close" id="map-modal-close">&times;</button>
+        <div class="map-modal-content" id="map-modal-content"></div>
+      </div>
+    </div>
+
+    <footer class="foot">
+      <span class="foot-mark">altered.xjk.yt</span>
+      <nav aria-label="Hub navigation">
+        <a href="https://xjk.yt/">Main</a>
+        <a href="https://tools.xjk.yt/">Tools</a>
+        <a href="https://plugins.xjk.yt/">Plugins</a>
+        <a href="https://learn.xjk.yt/">Learn</a>
+        <a href="https://trackers.xjk.yt/leaderboard/">Tracker</a>
+      </nav>
+    </footer>
+  </main>
+
+  <script src="/altered-hub.js"></script>
+  <script src="maps.js?v=20260316-filtered"></script>
+</body>
+</html>

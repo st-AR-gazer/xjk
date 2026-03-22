@@ -1,3 +1,5 @@
+import { sanitizeResolvedDisplayName } from "../../../shared/displayNameResolution.js";
+
 const LATEST_CAMPAIGN_JOIN = `
 LEFT JOIN (
   SELECT
@@ -7,7 +9,6 @@ LEFT JOIN (
     c.name AS campaign_name
   FROM map_campaigns mc
   JOIN campaigns c ON c.campaign_id = mc.campaign_id
-  WHERE mc.id IN (SELECT MAX(id) FROM map_campaigns GROUP BY map_uid)
 ) cm ON cm.map_uid = m.map_uid
 `;
 
@@ -32,6 +33,7 @@ function rowToMap(row) {
     slot: Number(row.slot || 0),
     authorMs: Number(row.authorMs || 0),
     wrMs: Number(row.wrMs || 0),
+    wrAccountId: row.wrAccountId || null,
     wrHolder: row.wrHolder || "-",
     wrUpdatedAt: row.wrUpdatedAt || null,
     tracked: Boolean(row.tracked),
@@ -155,6 +157,7 @@ class TrackerRepository {
         cm.slot AS slot,
         m.author_time AS authorMs,
         m.wr_time AS wrMs,
+        m.wr_account_id AS wrAccountId,
         m.wr_display_name AS wrHolder,
         m.wr_updated_at AS wrUpdatedAt,
         m.is_tracked AS tracked,
@@ -310,10 +313,12 @@ class TrackerRepository {
         m.name AS name,
         COALESCE(cm.campaign_name, 'Unassigned') AS campaign,
         h.record_time AS wrMs,
-        COALESCE(h.display_name, m.wr_display_name, 'Unknown') AS holder,
+        h.account_id AS accountId,
+        COALESCE(NULLIF(p.latest_display_name, ''), NULLIF(h.display_name, ''), NULLIF(m.wr_display_name, ''), 'Unknown') AS holder,
         h.timestamp AS at
       FROM wr_history h
       JOIN maps m ON m.map_uid = h.map_uid
+      LEFT JOIN player_profiles p ON p.account_id = h.account_id
       ${LATEST_CAMPAIGN_JOIN}
       WHERE h.removed = 0
       ORDER BY h.timestamp DESC
@@ -327,6 +332,7 @@ class TrackerRepository {
         name: row.name,
         campaign: row.campaign,
         wrMs: Number(row.wrMs || 0),
+        accountId: normalizeAccountId(row.accountId),
         holder: row.holder || "Unknown",
         at: row.at,
       }));
@@ -341,11 +347,13 @@ class TrackerRepository {
           m.name AS name,
           COALESCE(cm.campaign_name, 'Unassigned') AS campaign,
           lb.score AS scoreMs,
-          lb.display_name AS holder,
+          lb.account_id AS accountId,
+          COALESCE(NULLIF(p.latest_display_name, ''), NULLIF(lb.display_name, ''), NULLIF(m.wr_display_name, ''), 'Unknown') AS holder,
           lb.timestamp AS at,
           lb.ranking AS ranking
         FROM leaderboards lb
         JOIN maps m ON m.map_uid = lb.map_uid
+        LEFT JOIN player_profiles p ON p.account_id = lb.account_id
         ${LATEST_CAMPAIGN_JOIN}
         WHERE lb.ranking = 1
         ORDER BY lb.timestamp DESC
@@ -359,6 +367,7 @@ class TrackerRepository {
       name: row.name,
       campaign: row.campaign,
       wrMs: Number(row.scoreMs || 0),
+      accountId: normalizeAccountId(row.accountId),
       holder: row.holder || "Unknown",
       at: row.at,
       ranking: Number(row.ranking || 1),
@@ -775,12 +784,14 @@ class TrackerRepository {
       return {
         inserted: 0,
         updated: 0,
+        campaignLinks: 0,
         total: 0,
       };
     }
 
     let inserted = 0;
     let updated = 0;
+    let campaignLinks = 0;
 
     try {
       this.db.exec("BEGIN");
@@ -930,53 +941,96 @@ class TrackerRepository {
               mapUid
             );
           updated += 1;
-          continue;
+        } else {
+          this.db
+            .prepare(
+              `
+              INSERT INTO maps (
+                map_uid, map_id, name, author, submitter,
+                author_time, gold_time, silver_time, bronze_time, nb_laps,
+                thumbnail_url, download_url, created_at, updated_at, added_to_bot_at,
+                check_frequency, last_checked_at, wr_account_id, wr_display_name, wr_time, wr_updated_at,
+                is_tracked, tracking_status
+              ) VALUES (
+                ?, ?, ?, ?, ?,
+                ?, ?, ?, ?, ?,
+                ?, ?, ?, ?, ?,
+                ?, ?, ?, ?, ?, ?,
+                ?, ?
+              )
+              `
+            )
+            .run(
+              mapUid,
+              mapId,
+              mapName,
+              author,
+              submitter,
+              authorTime,
+              goldTime,
+              silverTime,
+              bronzeTime,
+              laps,
+              thumbnailUrl,
+              downloadUrl,
+              now,
+              now,
+              tracked ? now : null,
+              checkFrequency,
+              lastCheckedAt,
+              wrAccountId,
+              wrHolder,
+              wrTime,
+              wrUpdatedAt,
+              tracked ? 1 : 0,
+              status
+            );
+          inserted += 1;
         }
 
-        this.db
-          .prepare(
-            `
-            INSERT INTO maps (
-              map_uid, map_id, name, author, submitter,
-              author_time, gold_time, silver_time, bronze_time, nb_laps,
-              thumbnail_url, download_url, created_at, updated_at, added_to_bot_at,
-              check_frequency, last_checked_at, wr_account_id, wr_display_name, wr_time, wr_updated_at,
-              is_tracked, tracking_status
-            ) VALUES (
-              ?, ?, ?, ?, ?,
-              ?, ?, ?, ?, ?,
-              ?, ?, ?, ?, ?,
-              ?, ?, ?, ?, ?, ?,
-              ?, ?
+        const campaignName = String(
+          item?.campaignName ?? item?.campaign ?? item?.campaign_name ?? ""
+        ).trim();
+        if (campaignName) {
+          const slot = clampInt(item?.slot, { min: 1, max: 5000, fallback: 1 });
+          const clubId = clampInt(item?.clubId ?? item?.club_id, {
+            min: 1,
+            max: 2147483647,
+            fallback: 558282,
+          });
+          const latestCampaign = this.db
+            .prepare(
+              `
+              SELECT
+                c.name AS campaignName,
+                c.club_id AS clubId,
+                mc.slot AS slot
+              FROM map_campaigns mc
+              JOIN campaigns c ON c.campaign_id = mc.campaign_id
+              WHERE mc.map_uid = ?
+              ORDER BY mc.id DESC
+              LIMIT 1
+              `
             )
-            `
-          )
-          .run(
-            mapUid,
-            mapId,
-            mapName,
-            author,
-            submitter,
-            authorTime,
-            goldTime,
-            silverTime,
-            bronzeTime,
-            laps,
-            thumbnailUrl,
-            downloadUrl,
-            now,
-            now,
-            tracked ? now : null,
-            checkFrequency,
-            lastCheckedAt,
-            wrAccountId,
-            wrHolder,
-            wrTime,
-            wrUpdatedAt,
-            tracked ? 1 : 0,
-            status
-          );
-        inserted += 1;
+            .get(mapUid);
+          const latestName = String(latestCampaign?.campaignName || "").trim().toLowerCase();
+          const latestSlot = Number(latestCampaign?.slot || 0);
+          const latestClubId = Number(latestCampaign?.clubId || 0);
+          const desiredName = campaignName.toLowerCase();
+          const needsCampaignUpdate =
+            !latestName || latestName !== desiredName || latestSlot !== slot || latestClubId !== clubId;
+          if (needsCampaignUpdate) {
+            const linked = this.updateMapCampaign({
+              mapUid,
+              campaignName,
+              slot,
+              clubId,
+            });
+            if (linked) {
+              campaignLinks += 1;
+            }
+          }
+        }
       }
 
       this.db.exec("COMMIT");
@@ -990,6 +1044,7 @@ class TrackerRepository {
     return {
       inserted,
       updated,
+      campaignLinks,
       total: inserted + updated,
     };
   }
@@ -1090,6 +1145,7 @@ class TrackerRepository {
       name: map.name,
       campaign: this.getMapInfo(mapUid)?.map?.campaign || "Unassigned",
       wrMs: Math.max(1, Math.floor(recordTime)),
+      accountId: normalizeAccountId(accountId) || null,
       holder: displayName,
       at: now,
     };
@@ -1234,7 +1290,10 @@ class TrackerRepository {
     const seen = new Set();
     for (const item of Array.isArray(players) ? players : []) {
       const accountId = normalizeAccountId(item?.accountId ?? item?.account_id ?? item?.id);
-      const displayName = String(item?.displayName ?? item?.display_name ?? item?.name ?? "").trim();
+      const displayName = sanitizeResolvedDisplayName(
+        item?.displayName ?? item?.display_name ?? item?.name ?? "",
+        { accountId }
+      );
       if (!accountId || !displayName) continue;
       if (seen.has(accountId)) continue;
       seen.add(accountId);
@@ -1428,7 +1487,7 @@ class TrackerRepository {
     const profiles = rows
       .map((row) => {
         const accountId = normalizeAccountId(row.accountId);
-        const displayName = String(row.displayName || "").trim();
+        const displayName = sanitizeResolvedDisplayName(row.displayName, { accountId });
         if (accountId && displayName) {
           namesByAccountId[accountId] = displayName;
         }
@@ -1480,6 +1539,64 @@ class TrackerRepository {
         latestWrAt: normalizeIso(row.latestWrAt, null),
       }))
       .filter((row) => row.accountId);
+  }
+
+  getLeaderboardCoverage({ trackedOnly = true } = {}) {
+    const row =
+      this.db
+        .prepare(
+          `
+          SELECT
+            COUNT(*) AS totalMaps,
+            SUM(
+              CASE
+                WHEN COALESCE(m.wr_time, 0) > 0
+                  AND (
+                    NULLIF(TRIM(COALESCE(m.wr_account_id, '')), '') IS NOT NULL
+                    OR NULLIF(TRIM(COALESCE(m.wr_display_name, '')), '') IS NOT NULL
+                  )
+                THEN 1 ELSE 0
+              END
+            ) AS mapsWithKnownWr,
+            SUM(CASE WHEN COALESCE(lb.rowCount, 0) >= 1 THEN 1 ELSE 0 END) AS mapsWithLeaderboardRows,
+            SUM(CASE WHEN COALESCE(lb.rowCount, 0) > 1 THEN 1 ELSE 0 END) AS mapsWithExtendedLeaderboard,
+            COALESCE(SUM(COALESCE(lb.rowCount, 0)), 0) AS leaderboardRowsStored,
+            COALESCE(MAX(COALESCE(lb.rowCount, 0)), 0) AS maxRowsPerMap,
+            AVG(CASE WHEN COALESCE(lb.rowCount, 0) > 0 THEN lb.rowCount END) AS avgRowsPerCoveredMap,
+            AVG(COALESCE(lb.rowCount, 0)) AS avgRowsPerMap
+          FROM maps m
+          LEFT JOIN (
+            SELECT
+              map_uid,
+              COUNT(*) AS rowCount
+            FROM leaderboards
+            GROUP BY map_uid
+          ) lb ON lb.map_uid = m.map_uid
+          WHERE (? = 0 OR (m.is_tracked = 1 AND m.tracking_status = 'live'))
+          `
+        )
+        .get(trackedOnly ? 1 : 0) || {};
+
+    const totalMaps = Number(row.totalMaps || 0);
+    const mapsWithKnownWr = Number(row.mapsWithKnownWr || 0);
+    const mapsWithLeaderboardRows = Number(row.mapsWithLeaderboardRows || 0);
+    const mapsWithExtendedLeaderboard = Number(row.mapsWithExtendedLeaderboard || 0);
+    const leaderboardRowsStored = Number(row.leaderboardRowsStored || 0);
+
+    return {
+      trackedOnly: Boolean(trackedOnly),
+      totalMaps,
+      mapsWithKnownWr,
+      mapsWithLeaderboardRows,
+      mapsWithExtendedLeaderboard,
+      leaderboardRowsStored,
+      maxRowsPerMap: Number(row.maxRowsPerMap || 0),
+      avgRowsPerCoveredMap: Number(row.avgRowsPerCoveredMap || 0),
+      avgRowsPerMap: Number(row.avgRowsPerMap || 0),
+      wrCoveragePct: totalMaps > 0 ? (mapsWithKnownWr / totalMaps) * 100 : 0,
+      leaderboardCoveragePct: totalMaps > 0 ? (mapsWithLeaderboardRows / totalMaps) * 100 : 0,
+      extendedCoveragePct: totalMaps > 0 ? (mapsWithExtendedLeaderboard / totalMaps) * 100 : 0,
+    };
   }
 
   getMapOptions() {

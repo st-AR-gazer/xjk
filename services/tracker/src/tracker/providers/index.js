@@ -14,6 +14,7 @@ function createTrackerProvider({
   minRequestGapMs,
   groupUid,
   onlyWorld,
+  onHttpEvent,
   logger = console,
 }) {
   const name = String(providerName || "noop").trim().toLowerCase();
@@ -30,6 +31,7 @@ function createTrackerProvider({
       minRequestGapMs,
       groupUid,
       onlyWorld,
+      onHttpEvent,
       logger,
     });
     if (!provider.isReady) {

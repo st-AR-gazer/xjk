@@ -1,3 +1,5 @@
+import { waitForGlobalNadeoSlot } from "../../../shared/nadeoGlobalThrottle.js";
+
 const CORE_AUTH_BASE_URL = "https://prod.trackmania.core.nadeo.online";
 const LIVE_API_BASE_URL = "https://live-services.trackmania.nadeo.live/api/token";
 
@@ -43,6 +45,7 @@ function chunk(values, size) {
 
 class NadeoLiveClient {
   constructor({
+    defaultAudience = "NadeoLiveServices",
     authMode = "basic",
     dediLogin = "",
     dediPassword = "",
@@ -50,17 +53,27 @@ class NadeoLiveClient {
     refreshToken = "",
     userAgent = "altered project by ar, contact @ar___ on discord",
     requestTimeoutMs = 12000,
-    minRequestGapMs = 550,
+    minRequestGapMs = 5000,
+    globalThrottleFile = "",
+    globalMinRequestGapMs = 0,
     coreAuthBaseUrl = CORE_AUTH_BASE_URL,
     liveApiBaseUrl = LIVE_API_BASE_URL,
     logger = console,
   } = {}) {
+    this.defaultAudience = String(defaultAudience || "NadeoLiveServices").trim() || "NadeoLiveServices";
     this.authMode = String(authMode || "basic").trim().toLowerCase();
     this.dediLogin = String(dediLogin || "").trim();
     this.dediPassword = String(dediPassword || "").trim();
     this.userAgent = String(userAgent || "").trim() || "xjk-altered-monitor/1.0 (+https://xjk.yt)";
     this.requestTimeoutMs = Math.max(1000, Number(requestTimeoutMs) || 12000);
     this.minRequestGapMs = Math.max(0, Number(minRequestGapMs) || 0);
+    this.globalThrottleFile = String(
+      globalThrottleFile || process.env.NADEO_GLOBAL_THROTTLE_FILE || ""
+    ).trim();
+    this.globalMinRequestGapMs = Math.max(
+      0,
+      Number(globalMinRequestGapMs || process.env.NADEO_GLOBAL_MIN_REQUEST_GAP_MS || 0) || 0
+    );
     this.coreAuthBaseUrl = sanitizeBaseUrl(coreAuthBaseUrl, CORE_AUTH_BASE_URL);
     this.liveApiBaseUrl = sanitizeBaseUrl(liveApiBaseUrl, LIVE_API_BASE_URL);
     this.logger = logger;
@@ -109,6 +122,14 @@ class NadeoLiveClient {
       }
       this.nextRequestAtMs = Date.now() + this.minRequestGapMs;
     }
+    const sharedGapMs = Math.max(this.minRequestGapMs, this.globalMinRequestGapMs);
+    if (sharedGapMs > 0) {
+      await waitForGlobalNadeoSlot({
+        stateFile: this.globalThrottleFile,
+        minGapMs: sharedGapMs,
+        label: "altered-live",
+      });
+    }
     const response = await fetch(url, {
       ...options,
       signal: AbortSignal.timeout(this.requestTimeoutMs),
@@ -143,7 +164,7 @@ class NadeoLiveClient {
     return payload;
   }
 
-  async requestBasicAudienceToken(audience = "NadeoLiveServices") {
+  async requestBasicAudienceToken(audience = this.defaultAudience) {
     if (!this.dediLogin || !this.dediPassword) {
       throw new Error("Dedicated login/password missing for basic Nadeo auth.");
     }
@@ -170,7 +191,7 @@ class NadeoLiveClient {
 
   async requestUbisoftAudienceToken({
     ubisoftAccessToken,
-    audience = "NadeoLiveServices",
+    audience = this.defaultAudience,
   } = {}) {
     const token = String(ubisoftAccessToken || "").trim();
     if (!token) {
@@ -199,7 +220,7 @@ class NadeoLiveClient {
 
   async createUserScopedClient({
     ubisoftAccessToken,
-    audience = "NadeoLiveServices",
+    audience = this.defaultAudience,
   } = {}) {
     const payload = await this.requestUbisoftAudienceToken({
       ubisoftAccessToken,
@@ -207,12 +228,34 @@ class NadeoLiveClient {
     });
 
     return new NadeoLiveClient({
+      defaultAudience: audience,
       authMode: "token",
       accessToken: String(payload?.accessToken || "").trim(),
       refreshToken: String(payload?.refreshToken || "").trim(),
       userAgent: this.userAgent,
       requestTimeoutMs: this.requestTimeoutMs,
       minRequestGapMs: this.minRequestGapMs,
+      coreAuthBaseUrl: this.coreAuthBaseUrl,
+      liveApiBaseUrl: this.liveApiBaseUrl,
+      logger: this.logger,
+    });
+  }
+
+  createSiblingClient({ audience = this.defaultAudience } = {}) {
+    const safeAudience = String(audience || this.defaultAudience).trim() || this.defaultAudience;
+    const sameAudience = safeAudience === this.defaultAudience;
+    return new NadeoLiveClient({
+      defaultAudience: safeAudience,
+      authMode: this.authMode,
+      dediLogin: this.dediLogin,
+      dediPassword: this.dediPassword,
+      accessToken: sameAudience ? this.accessToken : "",
+      refreshToken: sameAudience ? this.refreshToken : "",
+      userAgent: this.userAgent,
+      requestTimeoutMs: this.requestTimeoutMs,
+      minRequestGapMs: this.minRequestGapMs,
+      globalThrottleFile: this.globalThrottleFile,
+      globalMinRequestGapMs: this.globalMinRequestGapMs,
       coreAuthBaseUrl: this.coreAuthBaseUrl,
       liveApiBaseUrl: this.liveApiBaseUrl,
       logger: this.logger,
@@ -267,7 +310,7 @@ class NadeoLiveClient {
       }
 
       if (this.authMode === "basic") {
-        return this.requestBasicAudienceToken("NadeoLiveServices");
+        return this.requestBasicAudienceToken(this.defaultAudience);
       }
 
       if (this.authMode === "token") {
@@ -310,6 +353,63 @@ class NadeoLiveClient {
         this.logger.warn("[altered-live] access token unauthorized, forcing token refresh.");
         await this.ensureAccessToken({ forceRefresh: true });
         return this.liveGet(pathname, query, { retryOnUnauthorized: false });
+      }
+      throw error;
+    }
+  }
+
+  async liveGetFromServiceRoot(pathname, query = null, { retryOnUnauthorized = true } = {}) {
+    const token = await this.ensureAccessToken();
+    const baseUrl = new URL(this.liveApiBaseUrl);
+    const url = new URL(`/api/${String(pathname || "").replace(/^\/+/, "")}`, baseUrl.origin);
+    if (query && typeof query === "object") {
+      for (const [key, value] of Object.entries(query)) {
+        if (value === undefined || value === null || value === "") continue;
+        url.searchParams.set(key, String(value));
+      }
+    }
+
+    try {
+      return await this.requestJson(url.toString(), {
+        method: "GET",
+        headers: {
+          authorization: `nadeo_v1 t=${token}`,
+          "user-agent": this.userAgent,
+        },
+      });
+    } catch (error) {
+      if (retryOnUnauthorized && Number(error?.statusCode || 0) === 401) {
+        this.logger.warn("[altered-live] access token unauthorized, forcing token refresh.");
+        await this.ensureAccessToken({ forceRefresh: true });
+        return this.liveGetFromServiceRoot(pathname, query, { retryOnUnauthorized: false });
+      }
+      throw error;
+    }
+  }
+
+  async coreGet(pathname, query = null, { retryOnUnauthorized = true } = {}) {
+    const token = await this.ensureAccessToken();
+    const url = new URL(`/${String(pathname || "").replace(/^\/+/, "")}`, this.coreAuthBaseUrl);
+    if (query && typeof query === "object") {
+      for (const [key, value] of Object.entries(query)) {
+        if (value === undefined || value === null || value === "") continue;
+        url.searchParams.set(key, String(value));
+      }
+    }
+
+    try {
+      return await this.requestJson(url.toString(), {
+        method: "GET",
+        headers: {
+          authorization: `nadeo_v1 t=${token}`,
+          "user-agent": this.userAgent,
+        },
+      });
+    } catch (error) {
+      if (retryOnUnauthorized && Number(error?.statusCode || 0) === 401) {
+        this.logger.warn("[altered-live] core access token unauthorized, forcing token refresh.");
+        await this.ensureAccessToken({ forceRefresh: true });
+        return this.coreGet(pathname, query, { retryOnUnauthorized: false });
       }
       throw error;
     }
@@ -372,6 +472,35 @@ class NadeoLiveClient {
     return this.liveGet(`club/${safeClubId}/bucket/${safeBucketId}`);
   }
 
+  async getWeeklyShortsCampaigns({ length = 10, offset = 0 } = {}) {
+    return this.liveGetFromServiceRoot("campaign/weekly-shorts", {
+      length: clampInt(length, { min: 1, max: 100, fallback: 10 }),
+      offset: clampInt(offset, { min: 0, max: 1000, fallback: 0 }),
+    });
+  }
+
+  async getOfficialSeasonalCampaignsV2({ length = 50, offset = 0 } = {}) {
+    return this.liveGetFromServiceRoot("campaign/official", {
+      length: clampInt(length, { min: 1, max: 100, fallback: 50 }),
+      offset: clampInt(offset, { min: 0, max: 2000, fallback: 0 }),
+    });
+  }
+
+  async getTotdMonths({ length = 12, offset = 0, royal = false } = {}) {
+    return this.liveGetFromServiceRoot("token/campaign/month", {
+      length: clampInt(length, { min: 1, max: 100, fallback: 12 }),
+      offset: clampInt(offset, { min: 0, max: 5000, fallback: 0 }),
+      royal: royal ? "true" : "false",
+    });
+  }
+
+  async getWeeklyGrandsCampaigns({ length = 10, offset = 0 } = {}) {
+    return this.liveGetFromServiceRoot("campaign/weekly-grands", {
+      length: clampInt(length, { min: 1, max: 100, fallback: 10 }),
+      offset: clampInt(offset, { min: 0, max: 5000, fallback: 0 }),
+    });
+  }
+
   async getMapsByUidList(mapUids = [], { onChunk } = {}) {
     const normalized = [...new Set(mapUids.map((value) => String(value || "").trim()).filter(Boolean))];
     if (!normalized.length) return [];
@@ -384,6 +513,34 @@ class NadeoLiveClient {
       });
       if (Array.isArray(payload?.mapList)) {
         results.push(...payload.mapList);
+      }
+      if (typeof onChunk === "function") {
+        onChunk({
+          index: index + 1,
+          total: chunks.length,
+          chunkSize: part.length,
+          requestedCount: normalized.length,
+          firstUid: part[0] || "",
+          lastUid: part[part.length - 1] || "",
+          loadedCount: results.length,
+        });
+      }
+    }
+    return results;
+  }
+
+  async getCoreMapsByUidList(mapUids = [], { onChunk } = {}) {
+    const normalized = [...new Set(mapUids.map((value) => String(value || "").trim()).filter(Boolean))];
+    if (!normalized.length) return [];
+    const results = [];
+    const chunks = chunk(normalized, 100);
+    for (let index = 0; index < chunks.length; index += 1) {
+      const part = chunks[index];
+      const payload = await this.coreGet("maps/by-uid/", {
+        mapUidList: part.join(","),
+      });
+      if (Array.isArray(payload)) {
+        results.push(...payload);
       }
       if (typeof onChunk === "function") {
         onChunk({

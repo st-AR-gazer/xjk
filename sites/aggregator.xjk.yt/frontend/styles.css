@@ -621,6 +621,102 @@ main {
   font-weight: 700;
 }
 
+.name-progress-card {
+  margin-top: 0.6rem;
+  border: 1px solid rgba(255, 95, 122, 0.16);
+  border-radius: 12px;
+  background: linear-gradient(180deg, rgba(13, 18, 31, 0.9), rgba(8, 12, 21, 0.82));
+  padding: 0.7rem;
+}
+
+.name-progress-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.6rem;
+}
+
+.name-progress-head h3 {
+  margin: 0;
+  color: var(--ink-dim);
+  font-family: "Chakra Petch", "Trebuchet MS", sans-serif;
+  font-size: 0.74rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+.name-progress-state {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 24px;
+  padding: 0.2rem 0.55rem;
+  border-radius: 999px;
+  border: 1px solid rgba(255, 95, 122, 0.28);
+  background: rgba(255, 95, 122, 0.12);
+  color: var(--coral-bright);
+  font-family: "Chakra Petch", "Trebuchet MS", sans-serif;
+  font-size: 0.69rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.name-progress-state.is-complete {
+  border-color: rgba(121, 230, 160, 0.35);
+  background: rgba(121, 230, 160, 0.12);
+  color: var(--ok);
+}
+
+.name-progress-grid {
+  margin-top: 0.55rem;
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 0.5rem;
+}
+
+.name-progress-stat {
+  border: 1px solid rgba(255, 95, 122, 0.12);
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.03);
+  padding: 0.46rem 0.55rem;
+}
+
+.name-progress-label {
+  display: block;
+  color: var(--ink-muted);
+  font-family: "Chakra Petch", "Trebuchet MS", sans-serif;
+  font-size: 0.66rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.name-progress-value {
+  display: block;
+  margin-top: 0.12rem;
+  color: var(--ink);
+  font-family: "Chakra Petch", "Trebuchet MS", sans-serif;
+  font-size: 1rem;
+  font-weight: 700;
+}
+
+.name-progress-track {
+  margin-top: 0.58rem;
+  height: 10px;
+  border-radius: 999px;
+  overflow: hidden;
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 95, 122, 0.2);
+}
+
+.name-progress-fill {
+  display: block;
+  width: 0%;
+  height: 100%;
+  background: linear-gradient(90deg, rgba(255, 95, 122, 0.85), rgba(121, 230, 160, 0.9));
+  transition: width 180ms ease-out;
+}
+
 .chart-card {
   margin-top: 0.6rem;
   border: 1px solid rgba(255, 95, 122, 0.1);
@@ -636,6 +732,67 @@ main {
   font-size: 0.74rem;
   text-transform: uppercase;
   letter-spacing: 0.08em;
+}
+
+.coverage-bars {
+  margin-top: 0.55rem;
+  display: grid;
+  gap: 0.55rem;
+}
+
+.coverage-bar-row {
+  display: grid;
+  gap: 0.28rem;
+}
+
+.coverage-bar-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 0.8rem;
+}
+
+.coverage-bar-label {
+  color: var(--ink);
+  font-family: "Chakra Petch", "Trebuchet MS", sans-serif;
+  font-size: 0.72rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.coverage-bar-value {
+  color: var(--ink-dim);
+  font-family: "Chakra Petch", "Trebuchet MS", sans-serif;
+  font-size: 0.72rem;
+  font-weight: 700;
+}
+
+.coverage-bar-track {
+  height: 12px;
+  border-radius: 999px;
+  overflow: hidden;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 95, 122, 0.16);
+}
+
+.coverage-bar-fill {
+  display: block;
+  width: 0%;
+  height: 100%;
+  border-radius: inherit;
+  transition: width 180ms ease-out;
+}
+
+.coverage-bar-fill.is-known {
+  background: linear-gradient(90deg, rgba(255, 95, 122, 0.92), rgba(255, 145, 106, 0.9));
+}
+
+.coverage-bar-fill.is-any {
+  background: linear-gradient(90deg, rgba(34, 204, 238, 0.9), rgba(102, 230, 255, 0.92));
+}
+
+.coverage-bar-fill.is-fuller {
+  background: linear-gradient(90deg, rgba(121, 230, 160, 0.86), rgba(200, 255, 145, 0.92));
 }
 
 .chart-svg {
@@ -720,6 +877,10 @@ main {
   }
 
   .metrics-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .name-progress-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 }

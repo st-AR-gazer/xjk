@@ -1,6 +1,7 @@
 import path from "path";
 import fs from "fs";
 import dotenv from "dotenv";
+import { DatabaseSync } from "node:sqlite";
 import { fileURLToPath } from "url";
 
 dotenv.config();
@@ -47,14 +48,89 @@ function parseBoolean(value, fallback = false) {
   return fallback;
 }
 
+function resolvePathFromCwd(value, fallback) {
+  const raw = String(value || "").trim();
+  const target = raw || fallback;
+  if (!target) return "";
+  return path.isAbsolute(target) ? target : path.resolve(process.cwd(), target);
+}
+
+function countAlteredCampaignRows(filePath) {
+  if (!filePath || !fs.existsSync(filePath)) return 0;
+  let db = null;
+  try {
+    db = new DatabaseSync(filePath, { open: true, readOnly: true });
+    const tableExists = db
+      .prepare(
+        `
+        SELECT 1
+        FROM sqlite_master
+        WHERE type = 'table' AND name = 'altered_campaigns'
+        LIMIT 1
+        `
+      )
+      .get();
+    if (!tableExists) return 0;
+    return Number(
+      db.prepare("SELECT COUNT(*) AS count FROM altered_campaigns").get()?.count || 0
+    );
+  } catch {
+    return 0;
+  } finally {
+    try {
+      db?.close();
+    } catch {
+      // Ignore probe cleanup failures during startup.
+    }
+  }
+}
+
+function resolveAlteredDbFile({ configuredFile, defaultFile, fallbackFile }) {
+  const preferredFile = resolvePathFromCwd(configuredFile, defaultFile);
+  const preferredCampaigns = countAlteredCampaignRows(preferredFile);
+  const fallbackCampaigns =
+    preferredFile !== fallbackFile ? countAlteredCampaignRows(fallbackFile) : preferredCampaigns;
+
+  if (preferredCampaigns > 0 || preferredFile !== defaultFile || fallbackCampaigns <= 0) {
+    return preferredFile;
+  }
+  return fallbackFile;
+}
+
+function resolveAlteredDataDir({ configuredDir, defaultDir, dbFile }) {
+  const resolvedDefaultDir = resolvePathFromCwd(defaultDir, defaultDir);
+  const resolvedConfiguredDir = configuredDir
+    ? resolvePathFromCwd(configuredDir, resolvedDefaultDir)
+    : "";
+  const resolvedDbDir = path.dirname(resolvePathFromCwd(dbFile, dbFile));
+
+  if (!resolvedConfiguredDir) return resolvedDbDir;
+  if (resolvedConfiguredDir === resolvedDefaultDir && resolvedDbDir !== resolvedConfiguredDir) {
+    return resolvedDbDir;
+  }
+  return resolvedConfiguredDir;
+}
+
 const PORT = Number(process.env.PORT || 3130);
-const FRONTEND_DIR =
-  process.env.FRONTEND_DIR ||
-  path.join(__dirname, "..", "..", "..", "sites", "altered.xjk.yt", "frontend");
-const DATA_DIR =
-  process.env.DATA_DIR ||
-  path.join(__dirname, "..", "..", "..", "sites", "altered.xjk.yt", "data");
-const DB_FILE = process.env.DB_FILE || path.join(DATA_DIR, "altered-service.sqlite");
+const isLocalStack = PORT >= 3100;
+const DEFAULT_SITE_DIR = path.join(__dirname, "..", "..", "..", "sites", "altered.xjk.yt");
+const DEFAULT_DATA_DIR = path.join(DEFAULT_SITE_DIR, "data");
+const DEFAULT_DB_FILE = path.join(DEFAULT_DATA_DIR, "altered-service.sqlite");
+const DEFAULT_SERVER_DB_FILE = path.join(DEFAULT_SITE_DIR, "data_server", "altered-service.sqlite");
+const FRONTEND_DIR = resolvePathFromCwd(
+  process.env.FRONTEND_DIR || path.join(DEFAULT_SITE_DIR, "frontend"),
+  path.join(DEFAULT_SITE_DIR, "frontend")
+);
+const DB_FILE = resolveAlteredDbFile({
+  configuredFile: process.env.DB_FILE || DEFAULT_DB_FILE,
+  defaultFile: resolvePathFromCwd(DEFAULT_DB_FILE, DEFAULT_DB_FILE),
+  fallbackFile: resolvePathFromCwd(DEFAULT_SERVER_DB_FILE, DEFAULT_SERVER_DB_FILE),
+});
+const DATA_DIR = resolveAlteredDataDir({
+  configuredDir: process.env.DATA_DIR || "",
+  defaultDir: DEFAULT_DATA_DIR,
+  dbFile: DB_FILE,
+});
 const TRACKER_DOTENV_FALLBACK = parseEnvFile(
   path.join(__dirname, "..", "..", "tracker", ".env")
 );
@@ -62,7 +138,7 @@ const ADMIN_TOKEN = String(process.env.ALTERED_ADMIN_TOKEN || "");
 const TRACKER_PUBLIC_BASE_URL = normalizeBaseUrl(
   process.env.TRACKER_PUBLIC_BASE_URL ||
     process.env.TRACKER_API_BASE_URL ||
-    "http://127.0.0.1:3131/api/v1"
+    (isLocalStack ? "http://127.0.0.1:3131/api" : "http://127.0.0.1:3031/api")
 );
 const TRACKER_ADMIN_BASE_URL = normalizeBaseUrl(
   process.env.TRACKER_ADMIN_BASE_URL || `${TRACKER_PUBLIC_BASE_URL}/admin`
@@ -77,7 +153,8 @@ const TRACKER_ADMIN_PASSWORD = String(
   process.env.TRACKER_ADMIN_PASSWORD || TRACKER_DOTENV_FALLBACK.TRACKER_ADMIN_PASSWORD || ""
 );
 const TRACKER_LEADERBOARD_PUBLIC_BASE_URL = normalizeBaseUrl(
-  process.env.TRACKER_LEADERBOARD_PUBLIC_BASE_URL || "http://127.0.0.1:3143/api/v1"
+  process.env.TRACKER_LEADERBOARD_PUBLIC_BASE_URL ||
+    (isLocalStack ? "http://127.0.0.1:3143/api" : "http://127.0.0.1:3043/api")
 );
 const TRACKER_LEADERBOARD_ADMIN_BASE_URL = normalizeBaseUrl(
   process.env.TRACKER_LEADERBOARD_ADMIN_BASE_URL ||
@@ -97,13 +174,16 @@ const TRACKER_PROXY_TIMEOUT_MS = Math.max(
   Number(process.env.TRACKER_PROXY_TIMEOUT_MS || 15000)
 );
 const TRACKER_DISPLAYNAME_BASE_URL = normalizeBaseUrl(
-  process.env.TRACKER_DISPLAYNAME_BASE_URL || "http://127.0.0.1:3141/api/v1"
+  process.env.TRACKER_DISPLAYNAME_BASE_URL ||
+    (isLocalStack ? "http://127.0.0.1:3141/api" : "http://127.0.0.1:3041/api")
 );
 const TRACKER_CLUB_BASE_URL = normalizeBaseUrl(
-  process.env.TRACKER_CLUB_BASE_URL || "http://127.0.0.1:3142/api/v1"
+  process.env.TRACKER_CLUB_BASE_URL ||
+    (isLocalStack ? "http://127.0.0.1:3142/api" : "http://127.0.0.1:3042/api")
 );
 const AGGREGATOR_BASE_URL = normalizeBaseUrl(
-  process.env.AGGREGATOR_BASE_URL || "http://127.0.0.1:3140/api/v1"
+  process.env.AGGREGATOR_BASE_URL ||
+    (isLocalStack ? "http://127.0.0.1:3140/api" : "http://127.0.0.1:3040/api")
 );
 const AGGREGATOR_TOKEN = String(
   process.env.AGGREGATOR_TOKEN || process.env.AGGREGATOR_INGEST_TOKEN || ""
@@ -238,7 +318,7 @@ const ALTERED_LIVE_REQUEST_TIMEOUT_MS = Math.max(
 );
 const ALTERED_LIVE_MIN_REQUEST_GAP_MS = Math.max(
   0,
-  Number(process.env.ALTERED_LIVE_MIN_REQUEST_GAP_MS || 550)
+  Number(process.env.ALTERED_LIVE_MIN_REQUEST_GAP_MS || 5000)
 );
 const ALTERED_MAPPER_NAME_TRACKING_ENABLED = parseBoolean(
   process.env.ALTERED_MAPPER_NAME_TRACKING_ENABLED,
@@ -262,7 +342,7 @@ const ALTERED_MAPPER_NAME_TRACKING_MIN_REQUEST_GAP_MS = Math.max(
   Number(
     process.env.ALTERED_MAPPER_NAME_TRACKING_MIN_REQUEST_GAP_MS ||
       process.env.ALTERED_LIVE_MIN_REQUEST_GAP_MS ||
-      1800
+      5000
   )
 );
 const ALTERED_MAPPER_NAME_TRACKING_USER_AGENT =
@@ -320,6 +400,22 @@ const ALTERED_OPS_MONITOR_TICK_SECONDS = clampInt(
 const ALTERED_OPS_MONITOR_MAX_MAPS_PER_RUN = clampInt(
   process.env.ALTERED_OPS_MONITOR_MAX_MAPS_PER_RUN || 5000,
   { min: 1, max: 25000, fallback: 5000 }
+);
+const ALTERED_MAP_COPY_BACKFILL_ENABLED = parseBoolean(
+  process.env.ALTERED_MAP_COPY_BACKFILL_ENABLED,
+  true
+);
+const ALTERED_MAP_COPY_BACKFILL_BATCH_SIZE = clampInt(
+  process.env.ALTERED_MAP_COPY_BACKFILL_BATCH_SIZE || 250,
+  { min: 1, max: 2000, fallback: 250 }
+);
+const ALTERED_MAP_COPY_MAX_CONCURRENT_DOWNLOADS = clampInt(
+  process.env.ALTERED_MAP_COPY_MAX_CONCURRENT_DOWNLOADS || 4,
+  { min: 1, max: 32, fallback: 4 }
+);
+const ALTERED_MAP_COPY_REQUEST_TIMEOUT_MS = Math.max(
+  2000,
+  Number(process.env.ALTERED_MAP_COPY_REQUEST_TIMEOUT_MS || 25000)
 );
 
 function ensureDir(dirPath) {
@@ -411,4 +507,8 @@ export {
   ALTERED_OPS_MONITOR_ENABLED,
   ALTERED_OPS_MONITOR_TICK_SECONDS,
   ALTERED_OPS_MONITOR_MAX_MAPS_PER_RUN,
+  ALTERED_MAP_COPY_BACKFILL_ENABLED,
+  ALTERED_MAP_COPY_BACKFILL_BATCH_SIZE,
+  ALTERED_MAP_COPY_MAX_CONCURRENT_DOWNLOADS,
+  ALTERED_MAP_COPY_REQUEST_TIMEOUT_MS,
 };

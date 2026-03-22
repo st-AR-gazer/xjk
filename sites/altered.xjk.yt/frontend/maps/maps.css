@@ -1,0 +1,812 @@
+.maps-shell {
+  position: relative;
+  z-index: 1;
+  max-width: 1240px;
+  margin: 0 auto;
+  padding: 0 1.5rem 3rem;
+}
+
+.maps-hero {
+  position: relative;
+  overflow: hidden;
+  min-height: 220px;
+  margin-bottom: 2rem;
+  border: 1px solid var(--border);
+  border-radius: 22px;
+  background:
+    radial-gradient(circle at 18% 16%, rgba(34, 204, 238, 0.16), transparent 34%),
+    radial-gradient(circle at 84% 78%, rgba(34, 136, 238, 0.12), transparent 32%),
+    linear-gradient(160deg, rgba(8, 14, 28, 0.95), rgba(4, 8, 18, 0.98));
+}
+
+.maps-hero-glow {
+  position: absolute;
+  inset: 0;
+  background:
+    linear-gradient(120deg, rgba(255, 255, 255, 0.05), transparent 35%),
+    linear-gradient(300deg, rgba(34, 204, 238, 0.08), transparent 40%);
+  pointer-events: none;
+}
+
+.maps-hero-content {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  min-height: 220px;
+  padding: 1.75rem;
+}
+
+.maps-badge {
+  display: inline-flex;
+  width: fit-content;
+  padding: 0.28rem 0.7rem;
+  margin-bottom: 0.65rem;
+  border: 1px solid rgba(34, 204, 238, 0.4);
+  border-radius: 999px;
+  background: rgba(34, 204, 238, 0.1);
+  color: var(--cyan);
+  font-family: "Chakra Petch", "Trebuchet MS", sans-serif;
+  font-size: 0.68rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.maps-title {
+  margin: 0;
+  font-size: clamp(2.2rem, 6vw, 3.8rem);
+  line-height: 1;
+  background: linear-gradient(135deg, var(--ink) 24%, var(--cyan) 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.maps-sub {
+  max-width: 620px;
+  margin: 0.55rem 0 0;
+  color: var(--ink-dim);
+  font-size: 0.95rem;
+}
+
+.stats-row {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 0.75rem;
+  margin-bottom: 2rem;
+}
+
+.stat {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+  padding: 1rem;
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  background: var(--surface);
+  text-align: center;
+}
+
+.stat-value {
+  color: var(--ink);
+  font-family: "Chakra Petch", "Trebuchet MS", sans-serif;
+  font-size: 1.8rem;
+  font-weight: 700;
+}
+
+.stat-label {
+  color: var(--ink-muted);
+  font-size: 0.68rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.controls-shell {
+  margin-bottom: 1.3rem;
+  padding: 1rem;
+  border: 1px solid var(--border);
+  border-radius: 18px;
+  background: linear-gradient(160deg, rgba(8, 14, 28, 0.95), rgba(4, 8, 18, 0.98));
+}
+
+.controls-primary {
+  display: flex;
+  gap: 0.75rem;
+  align-items: end;
+  margin-bottom: 0.9rem;
+  flex-wrap: wrap;
+}
+
+.search-wrap {
+  display: flex;
+  flex: 1 1 420px;
+  flex-direction: column;
+  gap: 0.45rem;
+}
+
+.search-label {
+  color: var(--ink-muted);
+  font-family: "Chakra Petch", "Trebuchet MS", sans-serif;
+  font-size: 0.72rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.search-input,
+.sort-select {
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.03);
+  color: var(--ink);
+  outline: none;
+}
+
+.search-input {
+  width: 100%;
+  padding: 0.72rem 0.95rem;
+  font-family: "Manrope", "Segoe UI", sans-serif;
+  font-size: 0.92rem;
+}
+
+.compact-input {
+  padding: 0.72rem 0.85rem;
+}
+
+.sort-select {
+  padding: 0.72rem 0.95rem;
+  font-family: "Chakra Petch", "Trebuchet MS", sans-serif;
+  font-size: 0.8rem;
+  letter-spacing: 0.03em;
+  cursor: pointer;
+}
+
+.sort-select option {
+  background: #09101f;
+}
+
+.clear-btn {
+  padding: 0.74rem 1rem;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.03);
+  color: var(--ink);
+  font-family: "Chakra Petch", "Trebuchet MS", sans-serif;
+  font-size: 0.78rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  cursor: pointer;
+}
+
+.clear-btn:hover {
+  border-color: var(--border-hover);
+}
+
+.filter-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.65rem;
+}
+
+.results-bar {
+  display: flex;
+  align-items: start;
+  justify-content: space-between;
+  gap: 0.8rem;
+  margin-top: 1rem;
+  flex-wrap: wrap;
+}
+
+.results-summary {
+  margin: 0;
+  color: var(--ink-dim);
+  font-size: 0.86rem;
+}
+
+.active-filters {
+  display: flex;
+  gap: 0.35rem;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+}
+
+.filter-chip {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.24rem 0.55rem;
+  border: 1px solid rgba(255, 255, 255, 0.09);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.03);
+  color: var(--ink-dim);
+  font-family: "Chakra Petch", "Trebuchet MS", sans-serif;
+  font-size: 0.7rem;
+  letter-spacing: 0.03em;
+}
+
+.filter-chip-muted {
+  opacity: 0.75;
+}
+
+.load-progress {
+  height: 3px;
+  margin-bottom: 1rem;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.06);
+  overflow: hidden;
+}
+
+.load-progress-bar {
+  height: 100%;
+  width: 0;
+  background: linear-gradient(90deg, rgba(34, 204, 238, 0.2), rgba(34, 204, 238, 1), rgba(34, 204, 238, 0.2));
+}
+
+.load-progress-bar.is-loading {
+  animation: maps-progress 1.2s linear infinite;
+}
+
+@keyframes maps-progress {
+  0% {
+    transform: translateX(-100%);
+  }
+
+  100% {
+    transform: translateX(100%);
+  }
+}
+
+.map-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(235px, 1fr));
+  gap: 0.9rem;
+}
+
+.map-card {
+  overflow: hidden;
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  background: var(--surface);
+  cursor: pointer;
+  transition: transform 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.map-card:hover {
+  transform: translateY(-3px);
+  border-color: var(--border-hover);
+  box-shadow: 0 14px 32px rgba(0, 0, 0, 0.24);
+}
+
+.map-thumb {
+  position: relative;
+  aspect-ratio: 16 / 9;
+  background: linear-gradient(135deg, rgba(34, 153, 238, 0.08), rgba(34, 204, 238, 0.04));
+}
+
+.map-thumb img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.map-status {
+  position: absolute;
+  top: 0.55rem;
+  right: 0.55rem;
+  padding: 0.18rem 0.45rem;
+  border-radius: 7px;
+  font-family: "Chakra Petch", "Trebuchet MS", sans-serif;
+  font-size: 0.6rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.map-status-active,
+.map-status-live {
+  border: 1px solid rgba(34, 204, 100, 0.26);
+  background: rgba(34, 204, 100, 0.18);
+  color: #22cc66;
+}
+
+.map-status-paused {
+  border: 1px solid rgba(230, 184, 0, 0.26);
+  background: rgba(230, 184, 0, 0.18);
+  color: #e6b800;
+}
+
+.map-status-idle {
+  border: 1px solid rgba(120, 140, 160, 0.25);
+  background: rgba(120, 140, 160, 0.18);
+  color: #7e90a3;
+}
+
+.map-body {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  padding: 0.85rem;
+}
+
+.map-name {
+  margin: 0;
+  font-size: 0.92rem;
+  font-weight: 600;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.map-author,
+.wr-holder,
+.wr-empty {
+  color: var(--ink-dim);
+  font-size: 0.76rem;
+}
+
+.map-author {
+  margin: 0;
+}
+
+.map-wr {
+  display: flex;
+  align-items: baseline;
+  gap: 0.5rem;
+  margin-top: 0.35rem;
+}
+
+.wr-time {
+  color: var(--cyan);
+  font-family: "Chakra Petch", "Trebuchet MS", sans-serif;
+  font-size: 1.08rem;
+  font-weight: 700;
+}
+
+.map-medals,
+.map-card-meta {
+  display: flex;
+  gap: 0.35rem;
+  flex-wrap: wrap;
+  margin-top: 0.4rem;
+}
+
+.map-card-meta span {
+  display: inline-flex;
+  padding: 0.18rem 0.48rem;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 999px;
+  color: var(--ink-muted);
+  font-family: "Chakra Petch", "Trebuchet MS", sans-serif;
+  font-size: 0.66rem;
+}
+
+.medal {
+  font-family: "Chakra Petch", "Trebuchet MS", sans-serif;
+  font-size: 0.66rem;
+}
+
+.medal-at {
+  color: #22cc66;
+}
+
+.medal-gold {
+  color: #e6b800;
+}
+
+.medal-silver {
+  color: #a8b4be;
+}
+
+.medal-bronze {
+  color: #cd8c3c;
+}
+
+.pagination {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-top: 1.5rem;
+  flex-wrap: wrap;
+}
+
+.page-info {
+  color: var(--ink-muted);
+  font-family: "Chakra Petch", "Trebuchet MS", sans-serif;
+  font-size: 0.82rem;
+}
+
+.page-buttons {
+  display: flex;
+  gap: 0.3rem;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.page-btn {
+  min-width: 38px;
+  height: 38px;
+  padding: 0 0.55rem;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: var(--surface);
+  color: var(--ink-dim);
+  font-family: "Chakra Petch", "Trebuchet MS", sans-serif;
+  font-size: 0.8rem;
+  cursor: pointer;
+}
+
+.page-btn.active {
+  border-color: var(--cyan);
+  color: var(--cyan);
+  background: rgba(34, 204, 238, 0.08);
+}
+
+.page-btn:disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
+}
+
+.page-ellipsis {
+  color: var(--ink-muted);
+  font-size: 0.8rem;
+}
+
+.state-msg {
+  padding: 2.75rem 1rem;
+  color: var(--ink-muted);
+  text-align: center;
+}
+
+.state-msg p {
+  margin: 0;
+}
+
+.map-modal-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 2rem;
+  background: rgba(2, 4, 8, 0.82);
+  backdrop-filter: blur(10px);
+}
+
+.map-modal-backdrop[hidden] {
+  display: none;
+}
+
+.map-modal {
+  position: relative;
+  width: min(660px, 100%);
+  max-height: 90vh;
+  overflow-y: auto;
+  border: 1px solid var(--border);
+  border-radius: 18px;
+  background: linear-gradient(160deg, rgba(8, 14, 28, 0.97), rgba(4, 8, 18, 0.98));
+}
+
+.map-modal-close {
+  position: sticky;
+  top: 0.75rem;
+  float: right;
+  z-index: 2;
+  width: 36px;
+  height: 36px;
+  margin: 0.75rem 0.75rem 0 0;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: rgba(0, 0, 0, 0.6);
+  color: var(--ink-dim);
+  font-size: 1.3rem;
+  cursor: pointer;
+}
+
+.modal-hero {
+  display: flex;
+  gap: 1.25rem;
+  padding: 1.25rem 1.25rem 1rem;
+}
+
+.modal-thumb {
+  width: 260px;
+  aspect-ratio: 16 / 9;
+  border-radius: 12px;
+  object-fit: cover;
+  flex-shrink: 0;
+}
+
+.modal-thumb-empty {
+  border: 1px solid var(--border);
+  background: linear-gradient(135deg, rgba(34, 153, 238, 0.08), rgba(34, 204, 238, 0.04));
+}
+
+.modal-info {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  min-width: 0;
+  gap: 0.3rem;
+}
+
+.modal-name {
+  margin: 0;
+  font-size: 1.25rem;
+  line-height: 1.2;
+}
+
+.modal-author {
+  margin: 0;
+  color: var(--ink-dim);
+  font-size: 0.86rem;
+}
+
+.modal-tags {
+  display: flex;
+  gap: 0.4rem;
+  flex-wrap: wrap;
+  margin-top: 0.35rem;
+}
+
+.modal-campaign {
+  display: inline-flex;
+  padding: 0.18rem 0.55rem;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  color: var(--ink-dim);
+  font-family: "Chakra Petch", "Trebuchet MS", sans-serif;
+  font-size: 0.68rem;
+}
+
+.modal-medals {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 0.5rem;
+  padding: 0 1.25rem;
+  margin-bottom: 1.2rem;
+}
+
+.modal-medal {
+  display: flex;
+  flex-direction: column;
+  gap: 0.12rem;
+  padding: 0.55rem 0.4rem;
+  border-radius: 10px;
+  text-align: center;
+}
+
+.modal-medal-label {
+  font-size: 0.58rem;
+  letter-spacing: 0.08em;
+  opacity: 0.75;
+  text-transform: uppercase;
+}
+
+.modal-medal-time {
+  font-family: "Chakra Petch", "Trebuchet MS", sans-serif;
+  font-size: 0.95rem;
+  font-weight: 600;
+}
+
+.modal-medal-at {
+  border: 1px solid rgba(34, 204, 100, 0.18);
+  background: rgba(34, 204, 100, 0.08);
+  color: #22cc66;
+}
+
+.modal-medal-gold {
+  border: 1px solid rgba(230, 184, 0, 0.18);
+  background: rgba(230, 184, 0, 0.08);
+  color: #e6b800;
+}
+
+.modal-medal-silver {
+  border: 1px solid rgba(168, 180, 190, 0.18);
+  background: rgba(168, 180, 190, 0.08);
+  color: #a8b4be;
+}
+
+.modal-medal-bronze {
+  border: 1px solid rgba(205, 140, 60, 0.18);
+  background: rgba(205, 140, 60, 0.08);
+  color: #cd8c3c;
+}
+
+.modal-section {
+  padding: 0 1.25rem 1.25rem;
+}
+
+.modal-section-title {
+  margin: 0 0 0.55rem;
+  color: var(--ink-muted);
+  font-family: "Chakra Petch", "Trebuchet MS", sans-serif;
+  font-size: 0.65rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.modal-wr {
+  overflow: hidden;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: rgba(34, 204, 238, 0.02);
+}
+
+.modal-wr-row {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.8rem 1rem;
+}
+
+.modal-wr-rank {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 30px;
+  height: 30px;
+  border-radius: 7px;
+  background: linear-gradient(135deg, #d4a800, #ffd700);
+  color: #1a1200;
+  font-family: "Chakra Petch", "Trebuchet MS", sans-serif;
+  font-size: 0.8rem;
+  font-weight: 700;
+}
+
+.modal-wr-detail {
+  display: flex;
+  flex: 1;
+  min-width: 0;
+  flex-direction: column;
+  gap: 0.1rem;
+}
+
+.modal-wr-holder {
+  font-size: 0.92rem;
+  font-weight: 500;
+}
+
+.modal-wr-ago {
+  color: var(--ink-muted);
+  font-size: 0.72rem;
+}
+
+.modal-wr-time {
+  color: var(--cyan);
+  font-family: "Chakra Petch", "Trebuchet MS", sans-serif;
+  font-size: 1.35rem;
+  font-weight: 700;
+}
+
+.modal-wr-empty {
+  padding: 1.5rem;
+  color: var(--ink-muted);
+  text-align: center;
+}
+
+.modal-stats {
+  display: flex;
+  gap: 2rem;
+}
+
+.modal-stat {
+  display: flex;
+  flex-direction: column;
+  gap: 0.08rem;
+}
+
+.modal-stat-value {
+  color: var(--ink);
+  font-family: "Chakra Petch", "Trebuchet MS", sans-serif;
+  font-size: 1.2rem;
+  font-weight: 700;
+}
+
+.modal-stat-label {
+  color: var(--ink-muted);
+  font-size: 0.65rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.modal-uid {
+  padding: 0.7rem 1.25rem;
+  border-top: 1px solid var(--border);
+  color: var(--ink-muted);
+  font-family: "Chakra Petch", "Trebuchet MS", sans-serif;
+  font-size: 0.64rem;
+  word-break: break-all;
+}
+
+.foot {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.8rem;
+  flex-wrap: wrap;
+  padding: 1.2rem 0;
+  margin-top: 2.5rem;
+  border-top: 1px solid var(--border);
+}
+
+.foot-mark {
+  color: var(--ink-muted);
+  font-family: "Chakra Petch", "Trebuchet MS", sans-serif;
+  font-size: 0.82rem;
+  letter-spacing: 0.04em;
+}
+
+.foot nav {
+  display: flex;
+  gap: 0.4rem;
+  flex-wrap: wrap;
+}
+
+.foot nav a {
+  padding: 0.28rem 0.5rem;
+  border: 1px solid transparent;
+  border-radius: 8px;
+  color: var(--ink-dim);
+  font-family: "Chakra Petch", "Trebuchet MS", sans-serif;
+  font-size: 0.76rem;
+  text-decoration: none;
+}
+
+.foot nav a:hover {
+  border-color: var(--border-hover);
+  color: var(--ink);
+}
+
+@media (max-width: 1024px) {
+  .filter-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 720px) {
+  .maps-shell {
+    padding: 0 1rem 2rem;
+  }
+
+  .stats-row {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .map-grid {
+    grid-template-columns: repeat(auto-fill, minmax(210px, 1fr));
+  }
+}
+
+@media (max-width: 600px) {
+  .filter-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .modal-hero {
+    flex-direction: column;
+  }
+
+  .modal-thumb {
+    width: 100%;
+  }
+
+  .modal-medals {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 480px) {
+  .controls-primary,
+  .results-bar {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .active-filters {
+    justify-content: start;
+  }
+
+  .map-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}

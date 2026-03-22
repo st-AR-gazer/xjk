@@ -1,6 +1,5 @@
 import express from "express";
 import helmet from "helmet";
-import rateLimit from "express-rate-limit";
 import morgan from "morgan";
 import cors from "cors";
 import path from "path";
@@ -19,9 +18,12 @@ import { createPublicRoutes } from "./src/routes/publicRoutes.js";
 import { createAdminRoutes } from "./src/routes/adminRoutes.js";
 import { createOpsAdminRoutes } from "./src/routes/opsAdminRoutes.js";
 import { UbisoftAuth, buildAbsoluteUrl } from "./src/auth/ubisoftAuth.js";
+import { acquireInstanceLock } from "./src/ops/instanceLock.js";
+import { startEventLoopLagMonitor } from "./src/ops/eventLoopLag.js";
 import {
   PORT,
   FRONTEND_DIR,
+  DATA_DIR,
   DB_FILE,
   ADMIN_TOKEN,
   TRACKER_PUBLIC_BASE_URL,
@@ -101,12 +103,70 @@ import {
   ALTERED_OPS_MONITOR_ENABLED,
   ALTERED_OPS_MONITOR_TICK_SECONDS,
   ALTERED_OPS_MONITOR_MAX_MAPS_PER_RUN,
+  ALTERED_MAP_COPY_BACKFILL_ENABLED,
+  ALTERED_MAP_COPY_BACKFILL_BATCH_SIZE,
+  ALTERED_MAP_COPY_MAX_CONCURRENT_DOWNLOADS,
+  ALTERED_MAP_COPY_REQUEST_TIMEOUT_MS,
 } from "./src/config.js";
 
-const db = createDatabase({ filePath: DB_FILE });
+const PROJECT_SOURCE_AUTO_SYNC_STARTUP_ENABLED =
+  String(process.env.ALTERED_PROJECT_SOURCE_AUTO_SYNC_STARTUP || "").trim() === "1";
+const MAP_COPY_AUTO_SYNC_STARTUP_ENABLED =
+  String(process.env.ALTERED_MAP_COPY_AUTO_SYNC_STARTUP || "").trim() === "1";
+
+const DEFAULT_PROJECT_CLUBS = [
+  {
+    hookKey: "altered-club",
+    clubId: 24231,
+    clubName: "Altered Nadeo",
+    sourceLabel: "altered-monitor",
+    enabled: true,
+    autoTrackNewMaps: true,
+  },
+  {
+    hookKey: "altered-nadeold",
+    clubId: 127644,
+    clubName: "Altered Nadeold",
+    sourceLabel: "altered-nadeold",
+    enabled: true,
+    autoTrackNewMaps: true,
+  },
+  {
+    hookKey: "altered-totd",
+    clubId: 42245,
+    clubName: "Altered TOTD",
+    sourceLabel: "altered-totd",
+    enabled: true,
+    autoTrackNewMaps: true,
+  },
+];
+
+const INSTANCE_LOCK_DISABLED = String(process.env.ALTERED_DISABLE_INSTANCE_LOCK || "").trim() === "1";
+if (!INSTANCE_LOCK_DISABLED) {
+  try {
+    acquireInstanceLock({
+      lockPath: `${DB_FILE}.lock`,
+      label: "altered-service",
+      metadata: {
+        port: PORT,
+        dbFile: DB_FILE,
+      },
+    });
+  } catch (error) {
+    console.error(
+      `Failed to acquire Altered instance lock for DB ${DB_FILE}: ${error?.message || error}`
+    );
+    process.exit(1);
+  }
+}
+
+const db = createDatabase({
+  filePath: DB_FILE,
+  busyTimeoutMs: Number(process.env.ALTERED_DB_BUSY_TIMEOUT_MS || 2000),
+});
 const repository = new AlteredRepository(db);
 const opsRepository = new OpsRepository(db);
-repository.ensureDefaultHookConfig();
+repository.ensureHookConfigs(DEFAULT_PROJECT_CLUBS);
 const allowlistBootstrap = repository.seedAdminAllowlistFromConfig({
   subjects: UBI_OAUTH_ALLOWED_SUBJECTS,
   usernames: UBI_OAUTH_ALLOWED_USERNAMES,
@@ -219,6 +279,13 @@ const alteredService = new AlteredService({
     knownAccountsRefreshSeconds: ALTERED_MAPPER_SYNC_KNOWN_ACCOUNTS_REFRESH_SECONDS,
     minRequestGapMs: 5000,
   },
+  mapCopyConfig: {
+    dataDir: DATA_DIR,
+    enabled: ALTERED_MAP_COPY_BACKFILL_ENABLED,
+    batchSize: ALTERED_MAP_COPY_BACKFILL_BATCH_SIZE,
+    maxConcurrentDownloads: ALTERED_MAP_COPY_MAX_CONCURRENT_DOWNLOADS,
+    requestTimeoutMs: ALTERED_MAP_COPY_REQUEST_TIMEOUT_MS,
+  },
   logger: console,
 });
 const opsService = new OpsAutomationService({
@@ -231,6 +298,20 @@ const opsService = new OpsAutomationService({
   },
   logger: console,
 });
+
+const EVENT_LOOP_WATCHDOG_DISABLED =
+  String(process.env.ALTERED_EVENT_LOOP_WATCHDOG_DISABLED || "").trim() === "1";
+if (!EVENT_LOOP_WATCHDOG_DISABLED) {
+  startEventLoopLagMonitor({
+    label: "altered-service",
+    intervalMs: Number(process.env.ALTERED_EVENT_LOOP_LAG_INTERVAL_MS || 1000),
+    warnMs: Number(process.env.ALTERED_EVENT_LOOP_LAG_WARN_MS || 2000),
+    fatalMs: Number(process.env.ALTERED_EVENT_LOOP_LAG_FATAL_MS || 30000),
+    fatalConsecutive: Number(process.env.ALTERED_EVENT_LOOP_LAG_FATAL_CONSECUTIVE || 1),
+    warmupMs: Number(process.env.ALTERED_EVENT_LOOP_LAG_WARMUP_MS || 60000),
+    logger: console,
+  });
+}
 
 const app = express();
 app.disable("x-powered-by");
@@ -285,20 +366,19 @@ app.use(
 app.use(morgan("combined"));
 app.use(express.json({ limit: "20mb" }));
 
-app.use(
-  "/api/",
-  rateLimit({
-    windowMs: 5 * 60 * 1000,
-    limit: 200,
-    standardHeaders: true,
-    legacyHeaders: false,
-  })
-);
-
 function getHeaderAdminToken(req) {
   const token =
     req.headers["x-admin-token"] ||
     req.headers.authorization?.replace(/^Bearer\s+/i, "") ||
+    "";
+  return String(token).trim();
+}
+
+function getInternalServiceToken(req) {
+  const token =
+    req.headers["x-aggregator-token"] ||
+    req.headers["x-internal-token"] ||
+    req.headers["x-service-token"] ||
     "";
   return String(token).trim();
 }
@@ -357,6 +437,17 @@ function isLocalRequest(req) {
   return isLoopbackAddress(remoteAddress);
 }
 
+function isTrustedServiceAdminRequest(req) {
+  const token = getInternalServiceToken(req);
+  if (!token || !isLocalRequest(req)) return false;
+  const allowedTokens = [
+    String(AGGREGATOR_TOKEN || "").trim(),
+    String(TRACKER_ADMIN_TOKEN || "").trim(),
+    String(ADMIN_TOKEN || "").trim(),
+  ].filter(Boolean);
+  return allowedTokens.includes(token);
+}
+
 function isOAuthFallbackOpen(req) {
   const oauthStatus = ubisoftAuth.getStatus();
   if (!UBI_OAUTH_ENABLED || oauthStatus.enabled) return false;
@@ -396,6 +487,15 @@ function requirePageAdmin(req, res, next) {
 }
 
 function requireApiAdmin(req, res, next) {
+  if (isTrustedServiceAdminRequest(req)) {
+    req.alteredAdmin = {
+      provider: "internal-service",
+      role: "service",
+      username: "aggregator",
+    };
+    return next();
+  }
+
   if (isOAuthEnforced()) {
     const session = ubisoftAuth.getSessionFromRequest(req);
     if (session) {
@@ -433,7 +533,15 @@ function requireApiAdmin(req, res, next) {
   return next();
 }
 
+function disableAdminApiCache(_req, res, next) {
+  res.setHeader("Cache-Control", "no-store, no-cache, must-revalidate");
+  res.setHeader("Pragma", "no-cache");
+  res.setHeader("Expires", "0");
+  next();
+}
+
 async function resolveLiveAuthContext(req) {
+  if (isTrustedServiceAdminRequest(req)) return null;
   if (!isOAuthEnforced()) return null;
 
   const session = ubisoftAuth.getSessionFromRequest(req);
@@ -508,6 +616,9 @@ app.get("/auth/ubisoft/callback", async (req, res) => {
 });
 
 app.get("/api/v1/admin/auth/status", (req, res) => {
+  res.setHeader("Cache-Control", "no-store, no-cache, must-revalidate");
+  res.setHeader("Pragma", "no-cache");
+  res.setHeader("Expires", "0");
   if (isOAuthEnforced()) {
     const session = ubisoftAuth.getSessionFromRequest(req);
     if (!session) {
@@ -635,12 +746,14 @@ app.post("/api/v1/admin/auth/allowlist/:adminUserId/active", requireApiAdmin, (r
   });
 });
 
-app.use("/api/v1/admin/ops", requireApiAdmin, createOpsAdminRoutes(opsService));
+app.use("/api/v1/admin/ops", disableAdminApiCache, requireApiAdmin, createOpsAdminRoutes(opsService));
 app.use(
   "/api/v1/admin",
+  disableAdminApiCache,
   requireApiAdmin,
   createAdminRoutes(alteredService, {
     resolveLiveAuthContext,
+    opsService,
   })
 );
 app.use(
@@ -663,11 +776,11 @@ app.get("/admin.html", requirePageAdmin, (_req, res) => {
 });
 
 app.get("/admin/monitoring", requirePageAdmin, (_req, res) => {
-  res.sendFile(path.join(FRONTEND_DIR, "admin-monitoring.html"));
+  res.redirect("/admin#advanced");
 });
 
 app.get("/admin/monitoring/", requirePageAdmin, (_req, res) => {
-  res.sendFile(path.join(FRONTEND_DIR, "admin-monitoring.html"));
+  res.redirect("/admin#advanced");
 });
 
 app.get("/admin-monitoring.html", requirePageAdmin, (_req, res) => {
@@ -680,6 +793,22 @@ app.get("/admin-login", (_req, res) => {
 
 app.get("/admin-login/", (_req, res) => {
   res.sendFile(path.join(FRONTEND_DIR, "admin-login.html"));
+});
+
+app.get(["/api", "/api/"], (_req, res) => {
+  res.sendFile(path.join(FRONTEND_DIR, "api", "index.html"));
+});
+
+app.get("/api/endpoints/:endpointKey", (_req, res) => {
+  res.sendFile(path.join(FRONTEND_DIR, "api", "endpoint.html"));
+});
+
+app.get("/favicon.ico", (_req, res) => {
+  res.redirect(308, "/favicon.svg");
+});
+
+app.get(["/season/:campaignSlug([a-z0-9-]+)", "/season/:campaignSlug([a-z0-9-]+)/"], (_req, res) => {
+  res.sendFile(path.join(FRONTEND_DIR, "season", "index.html"));
 });
 
 app.use(express.static(FRONTEND_DIR));
@@ -733,6 +862,9 @@ app.listen(PORT, "127.0.0.1", () => {
   console.log(
     `ALTERED_OPS monitor=${ALTERED_OPS_MONITOR_ENABLED ? "enabled" : "disabled"} tick=${ALTERED_OPS_MONITOR_TICK_SECONDS}s maxMapsPerRun=${ALTERED_OPS_MONITOR_MAX_MAPS_PER_RUN}`
   );
+  console.log(
+    `ALTERED_MAP_COPY enabled=${ALTERED_MAP_COPY_BACKFILL_ENABLED ? "enabled" : "disabled"} batch=${ALTERED_MAP_COPY_BACKFILL_BATCH_SIZE} concurrent=${ALTERED_MAP_COPY_MAX_CONCURRENT_DOWNLOADS} timeoutMs=${ALTERED_MAP_COPY_REQUEST_TIMEOUT_MS} dataDir=${DATA_DIR}`
+  );
   if (UBI_OAUTH_ENABLED && !authStatus.enabled) {
     console.warn(
       ALTERED_OAUTH_FALLBACK_LOCAL_ONLY
@@ -740,8 +872,49 @@ app.listen(PORT, "127.0.0.1", () => {
         : "UBI_OAUTH_ENABLED=1 but OAuth is incomplete. Admin access is blocked."
     );
   }
-  if (ALTERED_LIVE_MONITOR_ENABLED) {
+  const liveStatus = alteredService.getLiveMonitorStatus();
+  const effectiveLiveEnabled = Boolean(liveStatus?.monitor?.enabled);
+  console.log(
+    `ALTERED_LIVE effectiveMonitor=${effectiveLiveEnabled ? "enabled" : "disabled"} schedule=${liveStatus?.monitor?.scheduleMode || "unknown"} interval=${Number(liveStatus?.monitor?.intervalSeconds || 0)}s discovery=${liveStatus?.monitor?.discoveryEnabled ? "on" : "off"}`
+  );
+  const existingAlterationCount =
+    typeof repository.countAlterations === "function" ? repository.countAlterations() : 0;
+  if (existingAlterationCount <= 0) {
+    alteredService
+      .queueAlterationsSync({ reason: "startup", wait: true })
+      .then((syncResult) => {
+        if (syncResult?.ok && syncResult.summary) {
+          console.log(
+            `ALTERATIONS_SYNC campaigns=${syncResult.summary.campaigns_scanned} linked_campaigns=${syncResult.summary.campaigns_linked} links=${syncResult.summary.links_inserted} alterations=${syncResult.summary.alterations_touched} unused_deleted=${syncResult.summary.unused_deleted}`
+          );
+        } else if (syncResult?.error) {
+          console.warn(`[alterations-sync] startup sync failed: ${syncResult.error}`);
+        }
+      })
+      .catch((error) => {
+        console.warn(`[alterations-sync] startup sync failed: ${error?.message || error}`);
+      });
+  } else {
+    console.log(
+      `[alterations-sync] startup sync skipped; ${existingAlterationCount} alterations already present.`
+    );
+  }
+  if (MAP_COPY_AUTO_SYNC_STARTUP_ENABLED) {
+    alteredService.startMapLocalCopyBackfillOnBoot();
+  } else {
+    console.log(
+      "[altered-map-copy] auto-start backfill disabled; trigger local store backfill from the admin when needed."
+    );
+  }
+  if (effectiveLiveEnabled) {
     alteredService.startLiveMonitor();
+    alteredService
+      .runLiveMonitorCycleDetached({
+        reason: "startup-initial",
+      })
+      .catch((error) => {
+        console.warn(`[altered-live] startup sync failed: ${error?.message || error}`);
+      });
   }
   if (ALTERED_OPS_MONITOR_ENABLED) {
     opsService.startScheduler();
@@ -754,6 +927,16 @@ app.listen(PORT, "127.0.0.1", () => {
       console.warn(`[altered-mapper-sync] failed to start scheduler: ${error?.message || error}`);
     });
   }
+  if (PROJECT_SOURCE_AUTO_SYNC_STARTUP_ENABLED) {
+    alteredService.startProjectSourceSyncScheduler();
+    alteredService.runDueProjectSourceSyncs({ reason: "startup", fromTimeMs: Date.now() }).catch((error) => {
+      console.warn(`[altered-project-source] startup sync failed: ${error?.message || error}`);
+    });
+  } else {
+    console.log(
+      "[altered-project-source] auto-start sync disabled; trigger source syncs from the admin when needed."
+    );
+  }
   setInterval(() => {
     ubisoftAuth.cleanupExpired();
   }, 60 * 1000).unref();
@@ -762,6 +945,7 @@ app.listen(PORT, "127.0.0.1", () => {
 process.on("SIGINT", () => {
   alteredService.stopLiveMonitor();
   alteredService.stopMapperNameSyncScheduler().catch(() => {});
+  alteredService.stopProjectSourceSyncScheduler();
   opsService.stopScheduler();
   process.exit(0);
 });
@@ -769,6 +953,7 @@ process.on("SIGINT", () => {
 process.on("SIGTERM", () => {
   alteredService.stopLiveMonitor();
   alteredService.stopMapperNameSyncScheduler().catch(() => {});
+  alteredService.stopProjectSourceSyncScheduler();
   opsService.stopScheduler();
   process.exit(0);
 });

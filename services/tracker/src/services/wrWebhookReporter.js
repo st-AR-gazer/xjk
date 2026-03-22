@@ -14,16 +14,29 @@ function toInt(value, fallback = 0) {
   return Math.floor(parsed);
 }
 
+function normalizeAccountId(value) {
+  const accountId = toText(value).toLowerCase();
+  if (!accountId) return "";
+  if (/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/.test(accountId)) {
+    return accountId;
+  }
+  return "";
+}
+
 function normalizeEvent(event = {}) {
   const mapUid = toText(event.mapUid || event.uid || event.map_uid);
   if (!mapUid) return null;
   const mapName = toText(event.mapName || event.name || event.map_name) || mapUid;
   const holder = toText(event.holder || event.displayName || event.wrHolder) || "Unknown";
+  const accountId = normalizeAccountId(
+    event.accountId || event.account_id || event.wrAccountId || event.wr_account_id || holder
+  );
   const wrMs = Math.max(0, toInt(event.wrMs ?? event.wr_ms ?? event.recordTime, 0));
   const recordedAt = toText(event.at || event.recordedAt || event.timestamp) || new Date().toISOString();
   return {
     mapUid,
     mapName,
+    accountId: accountId || null,
     holder,
     wrMs,
     recordedAt,
@@ -36,12 +49,14 @@ class WrWebhookReporter {
     endpointUrl = "",
     secret = "",
     timeoutMs = 5000,
+    onHttpEvent = null,
     logger = console,
   } = {}) {
     this.enabled = Boolean(enabled);
     this.endpointUrl = normalizeEndpoint(endpointUrl);
     this.secret = toText(secret);
     this.timeoutMs = Math.max(1000, Number(timeoutMs) || 5000);
+    this.onHttpEvent = typeof onHttpEvent === "function" ? onHttpEvent : null;
     this.logger = logger;
   }
 
@@ -56,37 +71,97 @@ class WrWebhookReporter {
     };
   }
 
+  emitHttpEvent(sample = {}) {
+    if (typeof this.onHttpEvent !== "function") return;
+    try {
+      this.onHttpEvent(sample);
+    } catch {
+      // Ignore telemetry callback failures.
+    }
+  }
+
   async sendEvent(event, { run = null } = {}) {
     const payload = normalizeEvent(event);
     if (!payload) {
       return { ok: false, error: "Invalid event payload." };
     }
+    const startedAt = Date.now();
+    const target = this.endpointUrl || "";
+    let targetHost = "";
+    let targetPath = "/";
+    try {
+      const parsed = new URL(target);
+      targetHost = String(parsed.host || "").toLowerCase();
+      targetPath = `${parsed.pathname || "/"}${parsed.search || ""}`;
+    } catch {
+      targetHost = "";
+      targetPath = "/";
+    }
+    const requestBody = JSON.stringify({
+      ...payload,
+      source: "tracker",
+      provider: toText(run?.provider || ""),
+      runId: Number(run?.runId || 0) || null,
+    });
+    const requestBytes = Buffer.byteLength(requestBody, "utf8");
+
     try {
       const response = await fetch(this.endpointUrl, {
         method: "POST",
         headers: this.buildHeaders(),
-        body: JSON.stringify({
-          ...payload,
-          source: "tracker",
-          provider: toText(run?.provider || ""),
-          runId: Number(run?.runId || 0) || null,
-        }),
+        body: requestBody,
         signal: AbortSignal.timeout(this.timeoutMs),
       });
+      const responseText = await response.text();
+      const responseBytes = responseText ? Buffer.byteLength(responseText, "utf8") : 0;
+
+      this.emitHttpEvent({
+        direction: "outgoing",
+        component: "webhook",
+        service: "tracker",
+        method: "POST",
+        route: targetPath,
+        targetHost,
+        targetPath,
+        statusCode: Number(response.status || 0),
+        durationMs: Date.now() - startedAt,
+        bytesIn: requestBytes,
+        bytesOut: responseBytes,
+      });
+
       if (!response.ok) {
-        const text = await response.text();
         return {
           ok: false,
           status: response.status,
-          error: text || `Webhook request failed (${response.status}).`,
+          error: responseText || `Webhook request failed (${response.status}).`,
         };
       }
-      const data = await response.json().catch(() => null);
+      let data = null;
+      if (responseText) {
+        try {
+          data = JSON.parse(responseText);
+        } catch {
+          data = null;
+        }
+      }
       return {
         ok: true,
         data,
       };
     } catch (error) {
+      this.emitHttpEvent({
+        direction: "outgoing",
+        component: "webhook",
+        service: "tracker",
+        method: "POST",
+        route: targetPath,
+        targetHost,
+        targetPath,
+        statusCode: 0,
+        durationMs: Date.now() - startedAt,
+        bytesIn: requestBytes,
+        bytesOut: 0,
+      });
       return {
         ok: false,
         error: error?.message || String(error),

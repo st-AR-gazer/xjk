@@ -270,4 +270,42 @@ export const MIGRATIONS = [
   CREATE INDEX IF NOT EXISTS idx_club_members_last_synced
     ON club_members(club_id, last_synced_at DESC);
   `,
+  `
+  CREATE TABLE IF NOT EXISTS traffic_http_samples (
+    event_id INTEGER PRIMARY KEY REFERENCES aggregator_events(event_id) ON DELETE CASCADE,
+    project_key TEXT,
+    source_label TEXT,
+    direction TEXT NOT NULL,
+    service TEXT NOT NULL,
+    component TEXT NOT NULL,
+    method TEXT NOT NULL,
+    route TEXT NOT NULL,
+    target_host TEXT,
+    target_path TEXT NOT NULL,
+    status_code INTEGER NOT NULL DEFAULT 0,
+    status_group TEXT NOT NULL DEFAULT '2xx',
+    duration_ms REAL NOT NULL DEFAULT 0,
+    bytes_in INTEGER NOT NULL DEFAULT 0,
+    bytes_out INTEGER NOT NULL DEFAULT 0,
+    occurred_at TEXT NOT NULL,
+    is_nadeo_outgoing INTEGER NOT NULL DEFAULT 0,
+    is_internal_outgoing INTEGER NOT NULL DEFAULT 0
+  );
+  CREATE INDEX IF NOT EXISTS idx_traffic_http_samples_occurred
+    ON traffic_http_samples(occurred_at DESC, event_id DESC);
+  CREATE INDEX IF NOT EXISTS idx_traffic_http_samples_project_occurred
+    ON traffic_http_samples(project_key, occurred_at DESC, event_id DESC);
+  CREATE INDEX IF NOT EXISTS idx_traffic_http_samples_service_occurred
+    ON traffic_http_samples(service, occurred_at DESC, event_id DESC);
+  CREATE INDEX IF NOT EXISTS idx_traffic_http_samples_direction_occurred
+    ON traffic_http_samples(direction, occurred_at DESC, event_id DESC);
+  CREATE INDEX IF NOT EXISTS idx_traffic_http_samples_status_occurred
+    ON traffic_http_samples(status_code, occurred_at DESC, event_id DESC);
+  CREATE INDEX IF NOT EXISTS idx_traffic_http_samples_nadeo_occurred
+    ON traffic_http_samples(is_nadeo_outgoing, occurred_at DESC, event_id DESC);
+  `,
+  `
+  CREATE INDEX IF NOT EXISTS idx_aggregator_events_type_occurred
+    ON aggregator_events(event_type, occurred_at DESC, event_id DESC);
+  `,
 ];

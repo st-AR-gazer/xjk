@@ -54,6 +54,12 @@ http://aggregator.xjk.yt {
   reverse_proxy 127.0.0.1:3040
 }
 
+http://dash.xjk.yt {
+  import secure_headers
+  import favicon_redirect
+  reverse_proxy 127.0.0.1:3040
+}
+
 http://tracker-displayname.xjk.yt {
   import secure_headers
   redir https://trackers.xjk.yt/displayname{uri} 308

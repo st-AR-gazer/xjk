@@ -4,6 +4,62 @@ function normalizeBaseUrl(value) {
   return raw.endsWith("/") ? raw.slice(0, -1) : raw;
 }
 
+function normalizeDirection(value) {
+  const raw = String(value || "").trim().toLowerCase();
+  return raw === "incoming" ? "incoming" : "outgoing";
+}
+
+function normalizeMethod(value) {
+  const raw = String(value || "").trim().toUpperCase();
+  return (raw || "GET").slice(0, 12);
+}
+
+function normalizePath(value, fallback = "/") {
+  const raw = String(value || "").trim();
+  if (!raw) return fallback;
+  if (raw.startsWith("/")) return raw.slice(0, 300);
+  return `/${raw}`.slice(0, 300);
+}
+
+function normalizeHost(value) {
+  return String(value || "")
+    .trim()
+    .toLowerCase()
+    .slice(0, 160);
+}
+
+function normalizeStatusCode(value) {
+  const parsed = Number(value);
+  if (!Number.isFinite(parsed)) return 0;
+  return Math.max(0, Math.min(999, Math.floor(parsed)));
+}
+
+function normalizeBytes(value) {
+  const parsed = Number(value);
+  if (!Number.isFinite(parsed) || parsed < 0) return 0;
+  return Math.floor(parsed);
+}
+
+function normalizeDuration(value) {
+  const parsed = Number(value);
+  if (!Number.isFinite(parsed) || parsed < 0) return 0;
+  return Math.min(3_600_000, Math.round(parsed));
+}
+
+function parseUrlParts(value) {
+  const raw = String(value || "").trim();
+  if (!raw) return { host: "", path: "" };
+  try {
+    const parsed = new URL(raw);
+    return {
+      host: normalizeHost(parsed.host || parsed.hostname || ""),
+      path: normalizePath(`${parsed.pathname || "/"}${parsed.search || ""}`),
+    };
+  } catch {
+    return { host: "", path: "" };
+  }
+}
+
 class AggregatorReporter {
   constructor({
     enabled = false,
@@ -12,6 +68,7 @@ class AggregatorReporter {
     projectKey = "tracker-default",
     projectName = "Tracker Instance",
     sourceLabel = "tracker",
+    serviceName = "tracker",
     instanceId = "tracker-instance",
     instanceName = "Tracker Instance",
     timeoutMs = 5000,
@@ -23,10 +80,17 @@ class AggregatorReporter {
     this.projectKey = String(projectKey || "tracker-default").trim() || "tracker-default";
     this.projectName = String(projectName || "Tracker Instance").trim() || "Tracker Instance";
     this.sourceLabel = String(sourceLabel || "tracker").trim() || "tracker";
+    this.serviceName = String(serviceName || "tracker").trim() || "tracker";
     this.instanceId = String(instanceId || "tracker-instance").trim() || "tracker-instance";
     this.instanceName = String(instanceName || "Tracker Instance").trim() || "Tracker Instance";
     this.timeoutMs = Math.max(1000, Number(timeoutMs) || 5000);
     this.logger = logger;
+    this.baseHost = parseUrlParts(this.baseUrl).host;
+    this.trafficQueue = [];
+    this.trafficFlushTimer = null;
+    this.trafficMaxBatchSize = 80;
+    this.trafficMaxQueue = 1000;
+    this.trafficFlushIntervalMs = 1000;
   }
 
   get isReady() {
@@ -146,6 +210,99 @@ class AggregatorReporter {
     };
 
     return this.postIngest("tracker-run", payload);
+  }
+
+  scheduleTrafficFlush() {
+    if (this.trafficFlushTimer || !this.trafficQueue.length) return;
+    this.trafficFlushTimer = setTimeout(() => {
+      this.trafficFlushTimer = null;
+      this.flushTrafficQueue().catch((error) => {
+        this.logger.warn(`[tracker-aggregator] traffic flush failed: ${error?.message || error}`);
+      });
+    }, this.trafficFlushIntervalMs);
+    if (typeof this.trafficFlushTimer?.unref === "function") {
+      this.trafficFlushTimer.unref();
+    }
+  }
+
+  async flushTrafficQueue() {
+    if (!this.isReady || !this.trafficQueue.length) {
+      return { skipped: true, reason: "disabled-or-empty" };
+    }
+    const batch = this.trafficQueue.splice(0, this.trafficMaxBatchSize);
+    const result = await this.postIngest("traffic/batch", {
+      projectKey: this.projectKey,
+      projectName: this.projectName,
+      sourceLabel: this.sourceLabel,
+      service: this.serviceName,
+      samples: batch,
+    });
+    if (!result?.ok) {
+      this.trafficQueue = [...batch, ...this.trafficQueue].slice(0, this.trafficMaxQueue);
+    }
+    if (this.trafficQueue.length) {
+      this.scheduleTrafficFlush();
+    }
+    return result;
+  }
+
+  reportTraffic(sample = {}) {
+    if (!this.isReady) return { skipped: true, reason: "disabled-or-missing-url" };
+    const direction = normalizeDirection(sample.direction);
+    const method = normalizeMethod(sample.method);
+    const route = normalizePath(sample.route || sample.path || "/");
+    const urlParts = parseUrlParts(sample.url || sample.targetUrl || sample.target || "");
+    const targetHost = normalizeHost(sample.targetHost || urlParts.host || "");
+    const targetPath = normalizePath(sample.targetPath || urlParts.path || route);
+    const statusCode = normalizeStatusCode(sample.statusCode || sample.status);
+    const durationMs = normalizeDuration(sample.durationMs || sample.duration);
+    const bytesIn = normalizeBytes(sample.bytesIn || sample.requestBytes);
+    const bytesOut = normalizeBytes(sample.bytesOut || sample.responseBytes);
+    const service = String(sample.service || this.serviceName || "tracker").trim() || "tracker";
+    const component = String(sample.component || "http").trim() || "http";
+    const occurredDate = new Date(sample.occurredAt || Date.now());
+    const occurredAt = Number.isNaN(occurredDate.getTime())
+      ? new Date().toISOString()
+      : occurredDate.toISOString();
+
+    if (
+      direction === "outgoing" &&
+      targetHost &&
+      this.baseHost &&
+      targetHost === this.baseHost &&
+      targetPath.startsWith("/api/v1/ingest/traffic")
+    ) {
+      return { skipped: true, reason: "traffic-loop-guard" };
+    }
+
+    this.trafficQueue.push({
+      direction,
+      service,
+      component,
+      method,
+      route,
+      targetHost,
+      targetPath,
+      statusCode,
+      durationMs,
+      bytesIn,
+      bytesOut,
+      occurredAt,
+    });
+
+    if (this.trafficQueue.length > this.trafficMaxQueue) {
+      this.trafficQueue.splice(0, this.trafficQueue.length - this.trafficMaxQueue);
+    }
+
+    if (this.trafficQueue.length >= this.trafficMaxBatchSize) {
+      this.flushTrafficQueue().catch((error) => {
+        this.logger.warn(`[tracker-aggregator] traffic flush failed: ${error?.message || error}`);
+      });
+    } else {
+      this.scheduleTrafficFlush();
+    }
+
+    return { queued: true, queueSize: this.trafficQueue.length };
   }
 }
 

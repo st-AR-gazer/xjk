@@ -1,6 +1,5 @@
 ﻿import express from "express";
 import helmet from "helmet";
-import rateLimit from "express-rate-limit";
 import morgan from "morgan";
 import cors from "cors";
 import path from "path";
@@ -30,6 +29,7 @@ import {
 import { TrackmaniaOAuthClient } from "./src/services/trackmaniaOAuthClient.js";
 import { DisplayNameTrackerService, uniqueAccountIds } from "./src/services/displayNameTrackerService.js";
 
+let service = null;
 const oauthClient = new TrackmaniaOAuthClient({
   enabled: TRACKER_DISPLAYNAME_ENABLED,
   clientId: UBI_OAUTH_CLIENT_ID,
@@ -40,10 +40,17 @@ const oauthClient = new TrackmaniaOAuthClient({
   userAgent: TRACKER_DISPLAYNAME_USER_AGENT,
   requestTimeoutMs: TRACKER_DISPLAYNAME_REQUEST_TIMEOUT_MS,
   minRequestGapMs: TRACKER_DISPLAYNAME_MIN_REQUEST_GAP_MS,
+  onHttpEvent: (sample) => {
+    if (!service) return;
+    service.reportTraffic({
+      service: "tracker-displayname",
+      ...sample,
+    });
+  },
   logger: console,
 });
 
-const service = new DisplayNameTrackerService({
+service = new DisplayNameTrackerService({
   oauthClient,
   aggregatorBaseUrl: TRACKER_DISPLAYNAME_AGGREGATOR_BASE_URL,
   aggregatorToken: TRACKER_DISPLAYNAME_AGGREGATOR_TOKEN,
@@ -76,16 +83,25 @@ app.use(
 );
 app.use(morgan("combined"));
 app.use(express.json({ limit: "1mb" }));
-app.use(
-  "/api/",
-  rateLimit({
-    windowMs: 5 * 60 * 1000,
-    limit: 500,
-    standardHeaders: true,
-    legacyHeaders: false,
-  })
-);
-
+app.use((req, res, next) => {
+  const startedAt = Date.now();
+  const requestBytes = Number(req.headers["content-length"] || 0) || 0;
+  res.on("finish", () => {
+    service.reportTraffic({
+      direction: "incoming",
+      component: "express",
+      method: req.method,
+      route: req.path || "/",
+      targetHost: String(req.hostname || req.headers.host || "").replace(/:\d+$/, ""),
+      targetPath: req.originalUrl || req.url || req.path || "/",
+      statusCode: Number(res.statusCode || 0),
+      durationMs: Date.now() - startedAt,
+      bytesIn: Math.max(0, requestBytes),
+      bytesOut: Math.max(0, Number(res.getHeader("content-length") || 0) || 0),
+    });
+  });
+  next();
+});
 app.get("/health", (_req, res) => {
   res.type("text").send("ok");
 });
@@ -96,7 +112,8 @@ app.get("/api/v1/status", (_req, res) => {
 
 app.post("/api/v1/accounts/enqueue", (req, res) => {
   const accountIds = uniqueAccountIds(req.body?.accountIds || []);
-  const result = service.enqueueAccountIds(accountIds);
+  const front = Boolean(req.body?.front || req.body?.prioritize || req.body?.priority);
+  const result = service.enqueueAccountIds(accountIds, { front });
   return res.json({
     ...result,
     requested: accountIds.length,
@@ -109,6 +126,10 @@ app.post("/api/v1/sync/run-now", async (req, res) => {
     accountIds,
     reason: "manual-api",
     forceCandidates: Boolean(req.body?.forceCandidates),
+    prioritizeAccountIds:
+      req.body?.prioritizeAccountIds === undefined
+        ? true
+        : Boolean(req.body?.prioritizeAccountIds),
   });
   if (result?.error) return res.status(400).json(result);
   return res.json(result);
@@ -123,6 +144,7 @@ app.post("/api/v1/config", (req, res) => {
     staleAfterSeconds: payload.staleAfterSeconds,
     batchSize: payload.batchSize,
     maxAccountsPerCycle: payload.maxAccountsPerCycle,
+    minRequestGapMs: payload.minRequestGapMs,
   });
   return res.json(status);
 });

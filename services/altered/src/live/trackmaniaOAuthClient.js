@@ -1,3 +1,6 @@
+import { waitForGlobalNadeoSlot } from "../../../shared/nadeoGlobalThrottle.js";
+import { sanitizeResolvedDisplayName } from "../../../shared/displayNameResolution.js";
+
 function clampInt(value, { min = 0, max = Number.MAX_SAFE_INTEGER, fallback = min } = {}) {
   const parsed = Number(value);
   if (!Number.isFinite(parsed)) return fallback;
@@ -38,7 +41,9 @@ class TrackmaniaOAuthClient {
     scope = "clubs",
     userAgent = "altered project by ar, contact @ar___ on discord",
     requestTimeoutMs = 15000,
-    minRequestGapMs = 1800,
+    minRequestGapMs = 5000,
+    globalThrottleFile = "",
+    globalMinRequestGapMs = 0,
     logger = console,
   } = {}) {
     this.enabled = Boolean(enabled);
@@ -50,6 +55,13 @@ class TrackmaniaOAuthClient {
     this.userAgent = String(userAgent || "").trim() || "xjk-altered-monitor/1.0 (+https://xjk.yt)";
     this.requestTimeoutMs = Math.max(1000, Number(requestTimeoutMs) || 15000);
     this.minRequestGapMs = Math.max(0, Number(minRequestGapMs) || 0);
+    this.globalThrottleFile = String(
+      globalThrottleFile || process.env.NADEO_GLOBAL_THROTTLE_FILE || ""
+    ).trim();
+    this.globalMinRequestGapMs = Math.max(
+      0,
+      Number(globalMinRequestGapMs || process.env.NADEO_GLOBAL_MIN_REQUEST_GAP_MS || 0) || 0
+    );
     this.logger = logger;
 
     this.accessToken = "";
@@ -88,6 +100,14 @@ class TrackmaniaOAuthClient {
         await new Promise((resolve) => setTimeout(resolve, waitMs));
       }
       this.nextRequestAtMs = Date.now() + this.minRequestGapMs;
+    }
+    const sharedGapMs = Math.max(this.minRequestGapMs, this.globalMinRequestGapMs);
+    if (sharedGapMs > 0) {
+      await waitForGlobalNadeoSlot({
+        stateFile: this.globalThrottleFile,
+        minGapMs: sharedGapMs,
+        label: "altered-oauth",
+      });
     }
 
     const response = await fetch(url, {
@@ -173,7 +193,7 @@ class TrackmaniaOAuthClient {
     if (payload && typeof payload === "object" && !Array.isArray(payload)) {
       for (const [rawAccountId, rawDisplayName] of Object.entries(payload)) {
         const accountId = normalizeAccountId(rawAccountId);
-        const displayName = String(rawDisplayName || "").trim();
+        const displayName = sanitizeResolvedDisplayName(rawDisplayName, { accountId });
         if (!accountId || !displayName) continue;
         out.set(accountId, displayName);
       }
@@ -190,9 +210,10 @@ class TrackmaniaOAuthClient {
       const accountId = normalizeAccountId(
         row?.accountId ?? row?.account_id ?? row?.id ?? row?.account
       );
-      const displayName = String(
-        row?.displayName ?? row?.display_name ?? row?.name ?? row?.value ?? ""
-      ).trim();
+      const displayName = sanitizeResolvedDisplayName(
+        row?.displayName ?? row?.display_name ?? row?.name ?? row?.value ?? "",
+        { accountId }
+      );
       if (!accountId || !displayName) continue;
       out.set(accountId, displayName);
     }

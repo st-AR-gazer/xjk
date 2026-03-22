@@ -78,6 +78,55 @@ class TrackerEngine {
     }
   }
 
+  setConfig({
+    enabled,
+    tickSeconds,
+    batchSize,
+    maxCheckIntervalSeconds,
+    leaderboardTopN,
+  } = {}) {
+    const prevTickSeconds = this.tickSeconds;
+    const prevEnabled = this.enabled;
+
+    if (enabled !== undefined) {
+      this.enabled = Boolean(enabled);
+      this.state.enabled = this.enabled;
+    }
+    if (tickSeconds !== undefined && Number.isFinite(Number(tickSeconds))) {
+      this.tickSeconds = Math.max(3, Number(tickSeconds) || this.tickSeconds);
+      this.state.tickSeconds = this.tickSeconds;
+    }
+    if (batchSize !== undefined && Number.isFinite(Number(batchSize))) {
+      this.batchSize = Math.max(1, Number(batchSize) || this.batchSize);
+      this.state.batchSize = this.batchSize;
+    }
+    if (
+      maxCheckIntervalSeconds !== undefined &&
+      Number.isFinite(Number(maxCheckIntervalSeconds))
+    ) {
+      this.maxCheckIntervalSeconds = Math.max(
+        0,
+        Number(maxCheckIntervalSeconds) || this.maxCheckIntervalSeconds
+      );
+      this.state.maxCheckIntervalSeconds = this.maxCheckIntervalSeconds;
+    }
+    if (leaderboardTopN !== undefined && Number.isFinite(Number(leaderboardTopN))) {
+      this.leaderboardTopN = Math.max(1, Math.min(Number(leaderboardTopN) || this.leaderboardTopN, 1000));
+      this.state.leaderboardTopN = this.leaderboardTopN;
+    }
+
+    if (prevEnabled && !this.enabled) {
+      this.stop();
+    } else if (!prevEnabled && this.enabled) {
+      this.start();
+    } else if (this.enabled && this.timer && prevTickSeconds !== this.tickSeconds) {
+      this.stop();
+      this.start();
+    }
+
+    return this.getStatus();
+  }
+
   getStatus() {
     return {
       ...this.state,

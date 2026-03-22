@@ -1,4 +1,26 @@
+import {
+  hasResolvedDisplayName,
+  sanitizeResolvedDisplayName,
+} from "../../../shared/displayNameResolution.js";
+import {
+  deriveParserWarning,
+  parseCampaignStandardizedFields,
+} from "../services/mapNameStandardizer.js";
+
 const DEFAULT_HOOK_KEY = "altered-club";
+const ALTERATION_VALUE_SEPARATOR = "\u001f";
+const OVERSIZED_SIGNATURE_JSON_MAX_BYTES = 1_000_000;
+const OVERSIZED_SIGNATURE_FALLBACK_VERSION = "oversized-signature-fallback-v1";
+const EXCLUDE_NONCANONICAL_WEEKLY_SHORTS_SQL = `
+  AND NOT (
+    LOWER(COALESCE(json_extract(c.payload_json, '$.sourceKey'), json_extract(c.payload_json, '$.source_key'), '')) = 'weekly-shorts'
+    AND COALESCE(
+      json_extract(c.payload_json, '$.weeklyShorts.isCanonicalNadeoWeek'),
+      json_extract(c.payload_json, '$.weekly_shorts.isCanonicalNadeoWeek'),
+      0
+    ) = 0
+  )
+`;
 
 function clampInt(value, { min = 0, max = Number.MAX_SAFE_INTEGER, fallback = min } = {}) {
   if (value === undefined || value === null) return fallback;
@@ -8,8 +30,28 @@ function clampInt(value, { min = 0, max = Number.MAX_SAFE_INTEGER, fallback = mi
   return Math.max(min, Math.min(max, Math.floor(parsed)));
 }
 
+function normalizeCampaignSlotValue({ slot, order, position, fallbackSlot = 1, max = 999 } = {}) {
+  const safeFallback = clampInt(fallbackSlot, { min: 1, max, fallback: 1 });
+  const directSlot = clampInt(slot, { min: 1, max, fallback: 0 });
+  if (directSlot) return directSlot;
+  for (const rawValue of [order, position]) {
+    if (rawValue === undefined || rawValue === null || rawValue === "") continue;
+    const parsed = Number(rawValue);
+    if (!Number.isFinite(parsed)) continue;
+    return clampInt(parsed + 1, { min: 1, max, fallback: safeFallback });
+  }
+  return safeFallback;
+}
+
 function toText(value, fallback = "") {
   return String(value ?? fallback).trim();
+}
+
+function truncateText(value, maxLength = 255) {
+  const text = toText(value);
+  if (!text || text.length <= maxLength) return text;
+  if (maxLength <= 3) return text.slice(0, maxLength);
+  return `${text.slice(0, maxLength - 3)}...`;
 }
 
 function normalizeStatus(value, fallback = "live") {
@@ -48,6 +90,19 @@ function firstTruthy(values = []) {
   return "";
 }
 
+function uniqueTexts(values = []) {
+  const out = [];
+  const seen = new Set();
+  for (const value of Array.isArray(values) ? values : []) {
+    const text = toText(value);
+    const key = text.toLowerCase();
+    if (!key || seen.has(key)) continue;
+    seen.add(key);
+    out.push(text);
+  }
+  return out;
+}
+
 function boolFromAny(value) {
   if (typeof value === "boolean") return value;
   if (value === undefined || value === null || value === "") return false;
@@ -75,18 +130,77 @@ function uniqueBy(items, makeKey) {
   return out;
 }
 
+function slugifyText(value, fallback = "") {
+  const normalized = toText(value)
+    .normalize("NFKD")
+    .replace(/[^\x00-\x7F]/g, "")
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "");
+  return normalized || toText(fallback) || "item";
+}
+
+function splitGroupedValues(value, separator = ALTERATION_VALUE_SEPARATOR) {
+  return String(value || "")
+    .split(separator)
+    .map((item) => toText(item))
+    .filter(Boolean);
+}
+
+function extractRowAlterations(row = {}) {
+  const preset = Array.isArray(row?.alterations) ? row.alterations : [];
+  if (preset.length) {
+    return uniqueBy(
+      preset
+        .map((item) => ({
+          id: Number(item?.id || item?.alterationId || 0) || null,
+          name: toText(item?.name),
+          slug: slugifyText(item?.slug || item?.name, item?.name),
+        }))
+        .filter((item) => item.name),
+      (item) => item.slug
+    );
+  }
+
+  const ids = String(
+    row?.alterationIdsCsv ||
+      row?.alteration_ids_csv ||
+      row?.alterationIds ||
+      row?.alteration_ids ||
+      ""
+  )
+    .split(",")
+    .map((item) => clampInt(item, { min: 1, max: 2147483647, fallback: 0 }) || null);
+  const names = splitGroupedValues(
+    row?.alterationNamesCsv || row?.alteration_names_csv || row?.alterationNames || ""
+  );
+  const slugs = splitGroupedValues(
+    row?.alterationSlugsCsv || row?.alteration_slugs_csv || row?.alterationSlugs || ""
+  );
+  const total = Math.max(ids.length, names.length, slugs.length);
+  const out = [];
+  for (let index = 0; index < total; index += 1) {
+    const name = toText(names[index]);
+    if (!name) continue;
+    out.push({
+      id: ids[index] || null,
+      name,
+      slug: slugifyText(slugs[index] || name, name),
+    });
+  }
+  return uniqueBy(out, (item) => item.slug);
+}
+
 function toIso(value, fallbackIso = new Date().toISOString()) {
-  if (!value) return fallbackIso;
-  const dt = new Date(value);
-  if (Number.isNaN(dt.getTime())) return fallbackIso;
-  return dt.toISOString();
+  const epochMs = toEpochMs(value);
+  if (!Number.isFinite(epochMs) || epochMs <= 0) return fallbackIso;
+  return new Date(epochMs).toISOString();
 }
 
 function toNullableIso(value) {
-  if (value === undefined || value === null || value === "") return null;
-  const dt = new Date(value);
-  if (Number.isNaN(dt.getTime())) return null;
-  return dt.toISOString();
+  const epochMs = toEpochMs(value);
+  if (!Number.isFinite(epochMs) || epochMs <= 0) return null;
+  return new Date(epochMs).toISOString();
 }
 
 function toEpochMs(value) {
@@ -156,6 +270,27 @@ function parseJsonSafe(value, fallback = null) {
   }
 }
 
+function buildOversizedSignatureFallback({
+  assetTokenCount = 0,
+  printableTokenCount = 0,
+  signatureJsonLength = 0,
+} = {}) {
+  return {
+    version: OVERSIZED_SIGNATURE_FALLBACK_VERSION,
+    printableSegments: Number(printableTokenCount || 0),
+    assetTokenCount: Number(assetTokenCount || 0),
+    uniqueAssetTokenCount: 0,
+    oversized: true,
+    originalBytes: Number(signatureJsonLength || 0),
+    groups: {
+      modelTokens: [],
+      absolutePlacementTokens: [],
+      relativePlacementTokens: [],
+    },
+    tokens: [],
+  };
+}
+
 function normalizeCampaignStorageName(name, externalCampaignId = null) {
   const base = String(name || "").trim();
   if (!base) return "";
@@ -179,23 +314,42 @@ function rowToMap(row) {
     mapEnvironment: row.mapEnvironment || null,
     campaign: row.campaign || "Unassigned",
     campaignId: row.campaignId || null,
+    campaignExternalId: row.campaignExternalId || null,
+    campaignMapCount: Number(row.campaignMapCount || 0) || null,
     slot: Number(row.slot || 0),
+    author: row.author || "",
+    authorDisplayName: row.authorDisplayName || null,
+    submitter: row.submitter || "",
+    submitterDisplayName: row.submitterDisplayName || null,
     authorMs: Number(row.authorMs || 0),
     wrMs: Number(row.wrMs || 0),
     wrHolder: row.wrHolder || "-",
     wrUpdatedAt: row.wrUpdatedAt || null,
     playerCount: Number(row.playerCount || 0),
     playerCountUpdatedAt: row.playerCountUpdatedAt || null,
+    goldMs: Number(row.goldMs || 0),
+    silverMs: Number(row.silverMs || 0),
+    bronzeMs: Number(row.bronzeMs || 0),
+    laps: Number(row.laps || row.nbLaps || 1),
     tracked: Boolean(row.tracked),
     status: row.status || "live",
     checkFrequency: Number(row.checkFrequency || 0),
     lastCheckedAt: row.lastCheckedAt || null,
     mapCreatedAt: row.mapCreatedAt || null,
     mapUpdatedAt: row.mapUpdatedAt || null,
+    thumbnailUrl: row.thumbnailUrl || null,
+    downloadUrl: row.downloadUrl || null,
   };
 }
 
 function rowToNameCandidate(row) {
+  const mapNumber = Number(row.mapNumber || 0) || null;
+  const mapNumbers = parseJsonSafe(row.mapNumbersJson, []) || [];
+  const similarityDetails = parseJsonSafe(row.similarityDetailsJson, null);
+  const similarityCandidateMatches = (parseJsonSafe(row.similarityCandidateMatchesJson, []) || [])
+    .filter((entry) => entry && typeof entry === "object")
+    .slice(0, 5);
+  const parserPattern = row.parserPattern || null;
   return {
     mapUid: row.mapUid,
     originalName: row.originalName || "",
@@ -203,15 +357,22 @@ function rowToNameCandidate(row) {
     proposedName: row.proposedName || null,
     manualName: row.manualName || null,
     finalName: row.finalName || row.proposedName || row.sanitizedName || row.originalName || "",
-    parserPattern: row.parserPattern || null,
+    parserPattern,
     parserConfidence: Number(row.parserConfidence || 0),
     season: row.season || null,
     year: Number(row.year || 0) || null,
-    mapNumber: Number(row.mapNumber || 0) || null,
+    mapNumber,
+    mapNumbers: mapNumbers.length ? mapNumbers : mapNumber ? [mapNumber] : [],
+    alteration: row.alterationLabel || null,
     alterationMix: parseJsonSafe(row.alterationMixJson, []) || [],
     automationState: row.automationState || "unmatched",
     reviewState: row.reviewState || "pending",
     requiresRegex: Boolean(row.requiresRegex),
+    parserWarning: deriveParserWarning({
+      mapName: row.originalName || row.sanitizedName || "",
+      campaignName: row.campaign || "",
+      parserPattern,
+    }),
     reviewNote: row.reviewNote || null,
     sourceVersion: row.sourceVersion || null,
     campaign: row.campaign || "Unassigned",
@@ -219,8 +380,38 @@ function rowToNameCandidate(row) {
     slot: Number(row.slot || 0) || 0,
     tracked: Boolean(row.tracked),
     status: row.status || "live",
+    localFileStatus: row.localFileStatus || null,
+    localFilePath: row.localFilePath || null,
+    signatureStatus: row.signatureStatus || null,
+    signatureError: row.signatureError || null,
+    similarityStatus: row.similarityStatus || null,
+    similarityTopScore: Number(row.similarityTopScore || 0) || null,
+    similarityConfidence: Number(row.similarityConfidence || 0) || null,
+    similarityReferenceCampaignName: row.similarityReferenceCampaignName || null,
+    similarityReferenceSlot: Number(row.similarityReferenceSlot || 0) || null,
+    similarityCandidateMatches,
+    similarityMatchClassification: similarityDetails?.matchClassification || null,
+    similarityMatchWarning: similarityDetails?.matchWarning || null,
+    similarityCloseSlotCount: Number(similarityDetails?.closeSlotCount || 0) || 0,
+    similarityDetails,
     updatedAt: row.updatedAt || null,
     lastProcessedAt: row.lastProcessedAt || null,
+  };
+}
+
+function rowToMapLocalFileFix(row) {
+  return {
+    mapUid: row.mapUid,
+    relativePath: row.relativePath || null,
+    sourceFilePath: row.sourceFilePath || null,
+    fileSha256: row.fileSha256 || null,
+    fileSizeBytes: Number(row.fileSizeBytes || 0),
+    importedAt: row.importedAt || null,
+    verifiedAt: row.verifiedAt || null,
+    status: row.status || "missing",
+    note: row.note || null,
+    lastError: row.lastError || null,
+    updatedAt: row.updatedAt || null,
   };
 }
 
@@ -233,11 +424,127 @@ function inferSeasonFromName(value) {
   return "Other";
 }
 
+function inferSeasonWindowFromTimestamp(epochMs) {
+  if (!Number.isFinite(epochMs) || epochMs <= 0) return null;
+  const date = new Date(epochMs);
+  const month = date.getUTCMonth();
+  const year = date.getUTCFullYear();
+  let season = "Fall";
+  if (month <= 2) season = "Winter";
+  else if (month <= 5) season = "Spring";
+  else if (month <= 8) season = "Summer";
+  return {
+    season,
+    year,
+    label: `${season} ${year}`,
+    key: `${season.toLowerCase()}-${year}`,
+  };
+}
+
+function deriveCampaignOrdering(row) {
+  const payload = parseJsonSafe(row?.payloadJson, {}) || {};
+  const campaignPayload =
+    payload?.campaign && typeof payload.campaign === "object" ? payload.campaign : {};
+  const sortTimestampMs = firstTimestamp([
+    campaignPayload?.publicationTimestamp,
+    payload?.publicationTimestamp,
+    campaignPayload?.startTimestamp,
+    payload?.startTimestamp,
+    campaignPayload?.creationTimestamp,
+    payload?.creationTimestamp,
+    row?.startTimestamp,
+    row?.createdAt,
+    row?.updatedAt,
+  ]);
+  const seasonInfo = inferSeasonWindowFromTimestamp(sortTimestampMs);
+  return {
+    sortTimestampMs,
+    addedAt:
+      (sortTimestampMs ? new Date(sortTimestampMs).toISOString() : null) ||
+      toNullableIso(row?.createdAt) ||
+      toNullableIso(row?.updatedAt) ||
+      null,
+    seasonInfo,
+  };
+}
+
 function mapTrackingStatus({ tracked, status }) {
   if (tracked && String(status || "").toLowerCase() === "live") return "active";
   if (String(status || "").toLowerCase() === "paused") return "paused";
   if (tracked) return "active";
   return "idle";
+}
+
+function buildCampaignCatalogMetadata(row = {}) {
+  const campaignName = toText(row?.campaignName || row?.campaign_name || row?.name);
+  const parsed = parseCampaignStandardizedFields(campaignName, {
+    startTimestamp: row?.startTimestamp || row?.start_timestamp || null,
+  });
+  const linkedAlterations = extractRowAlterations(row);
+  const parsedAlterations =
+    Array.isArray(parsed?.alterationMix) && parsed.alterationMix.length
+      ? parsed.alterationMix
+      : [parsed?.alteration || ""];
+  const alterationNames = uniqueTexts([
+    ...linkedAlterations.map((item) => item?.name),
+    ...parsedAlterations,
+  ]);
+  const alterations = uniqueBy(
+    alterationNames.map((name, index) => {
+      const existing = linkedAlterations.find(
+        (item) => String(item?.name || "").toLowerCase() === name.toLowerCase()
+      );
+      return {
+        id: existing?.id || null,
+        name: existing?.name || name,
+        slug: slugifyText(existing?.slug || existing?.name || name, `alteration-${index + 1}`),
+      };
+    }),
+    (item) => item.slug
+  );
+
+  const ordering = deriveCampaignOrdering({
+    payloadJson: row?.payloadJson || row?.payload_json || null,
+    startTimestamp: row?.startTimestamp || row?.start_timestamp || null,
+    createdAt: row?.createdAt || row?.created_at || null,
+    updatedAt: row?.updatedAt || row?.updated_at || null,
+  });
+
+  let season = parsed?.season || null;
+  let seasonYear = Number(parsed?.year || 0) || null;
+  let seasonLabel = null;
+  let seasonKey = null;
+
+  if (parsed?.special) {
+    seasonLabel = parsed.special;
+    seasonKey = slugifyText(parsed.special, "special");
+  } else if (parsed?.season && parsed?.year) {
+    seasonLabel = `${parsed.season} ${parsed.year}`;
+    seasonKey = `${parsed.season.toLowerCase()}-${parsed.year}`;
+  } else if (parsed?.season) {
+    seasonLabel = parsed.season;
+    seasonKey = slugifyText(parsed.season, "season");
+  } else if (ordering.seasonInfo?.label) {
+    season = ordering.seasonInfo.season || null;
+    seasonYear = Number(ordering.seasonInfo.year || 0) || null;
+    seasonLabel = ordering.seasonInfo.label || null;
+    seasonKey = ordering.seasonInfo.key || null;
+  }
+
+  return {
+    parsedCampaign: parsed,
+    alterations,
+    primaryAlteration: alterations[0] || null,
+    season: season || null,
+    seasonYear,
+    seasonLabel,
+    seasonKey,
+    environment: parsed?.environment || null,
+    campaignType: parsed?.type || null,
+    isCatalog: Boolean(parsed?.season || parsed?.special || alterations.length),
+    sortTimestampMs: Number(ordering.sortTimestampMs || 0) || 0,
+    addedAt: ordering.addedAt || null,
+  };
 }
 
 class AlteredRepository {
@@ -261,6 +568,30 @@ class AlteredRepository {
       enabled: true,
       autoTrackNewMaps: true,
     });
+  }
+
+  ensureHookConfigs(configs = []) {
+    const list = Array.isArray(configs) ? configs : [];
+    const out = [];
+    for (const config of list) {
+      const hookKey = String(config?.hookKey || DEFAULT_HOOK_KEY).trim() || DEFAULT_HOOK_KEY;
+      const existing = this.getHookConfig(hookKey);
+      if (existing) {
+        out.push(existing);
+        continue;
+      }
+      const inserted = this.updateHookConfig({
+        hookKey,
+        clubId: config?.clubId,
+        clubName: config?.clubName,
+        sourceLabel: config?.sourceLabel,
+        enabled: config?.enabled === undefined ? true : Boolean(config.enabled),
+        autoTrackNewMaps:
+          config?.autoTrackNewMaps === undefined ? true : Boolean(config.autoTrackNewMaps),
+      });
+      if (inserted) out.push(inserted);
+    }
+    return out;
   }
 
   getHookConfig(hookKey = DEFAULT_HOOK_KEY) {
@@ -290,6 +621,39 @@ class AlteredRepository {
       enabled: Boolean(row.enabled),
       autoTrackNewMaps: Boolean(row.autoTrackNewMaps),
     };
+  }
+
+  listHookConfigs({ includeDisabled = true } = {}) {
+    const whereSql = includeDisabled ? "" : "WHERE enabled = 1";
+    const rows = this.db
+      .prepare(
+        `
+        SELECT
+          hook_key AS hookKey,
+          club_id AS clubId,
+          club_name AS clubName,
+          source_label AS sourceLabel,
+          enabled AS enabled,
+          auto_track_new_maps AS autoTrackNewMaps,
+          created_at AS createdAt,
+          updated_at AS updatedAt,
+          last_synced_at AS lastSyncedAt,
+          last_error AS lastError
+        FROM altered_hook_config
+        ${whereSql}
+        ORDER BY
+          CASE WHEN hook_key = ? THEN 0 ELSE 1 END,
+          enabled DESC,
+          updated_at DESC,
+          club_name COLLATE NOCASE ASC
+        `
+      )
+      .all(DEFAULT_HOOK_KEY);
+    return rows.map((row) => ({
+      ...row,
+      enabled: Boolean(row.enabled),
+      autoTrackNewMaps: Boolean(row.autoTrackNewMaps),
+    }));
   }
 
   updateHookConfig(options = {}) {
@@ -362,6 +726,170 @@ class AlteredRepository {
       );
 
     return this.getHookConfig(hookKey);
+  }
+
+  getProjectSource(sourceKey = "") {
+    const safeSourceKey = toText(sourceKey);
+    if (!safeSourceKey) return null;
+    const row = this.db
+      .prepare(
+        `
+        SELECT
+          source_key AS sourceKey,
+          source_type AS sourceType,
+          display_name AS displayName,
+          source_label AS sourceLabel,
+          enabled AS enabled,
+          last_synced_at AS lastSyncedAt,
+          last_error AS lastError,
+          summary_json AS summaryJson,
+          metadata_json AS metadataJson,
+          created_at AS createdAt,
+          updated_at AS updatedAt
+        FROM altered_project_sources
+        WHERE source_key = ?
+        LIMIT 1
+        `
+      )
+      .get(safeSourceKey);
+    if (!row) return null;
+
+    const summary = parseJsonSafe(row.summaryJson, {}) || {};
+    const metadata = parseJsonSafe(row.metadataJson, {}) || {};
+    let campaignCount = Number(summary.campaignCount || 0);
+    let mapCount = Number(summary.mapCount || 0);
+    let trackedCount = Number(summary.trackedCount || 0);
+    const campaignType = toText(metadata.campaignType);
+    if (campaignType) {
+      const aggregate = this.db
+        .prepare(
+          `
+          SELECT
+            COUNT(DISTINCT c.campaign_id) AS campaignCount,
+            COUNT(DISTINCT p.map_uid) AS mapCount,
+            SUM(CASE WHEN m.tracked = 1 THEN 1 ELSE 0 END) AS trackedCount
+          FROM altered_campaigns c
+          LEFT JOIN altered_map_positions p ON p.campaign_id = c.campaign_id
+          LEFT JOIN altered_maps m ON m.map_uid = p.map_uid
+          WHERE LOWER(COALESCE(c.campaign_type, '')) = LOWER(?)
+          `
+        )
+        .get(campaignType);
+      campaignCount = Number(aggregate?.campaignCount || campaignCount || 0);
+      mapCount = Number(aggregate?.mapCount || mapCount || 0);
+      trackedCount = Number(aggregate?.trackedCount || trackedCount || 0);
+    }
+
+    return {
+      sourceKey: row.sourceKey,
+      sourceType: row.sourceType || "special",
+      displayName: row.displayName || row.sourceKey,
+      sourceLabel: row.sourceLabel || row.sourceKey,
+      enabled: Boolean(row.enabled),
+      lastSyncedAt: row.lastSyncedAt || null,
+      lastError: row.lastError || null,
+      summary: summary && typeof summary === "object" ? summary : {},
+      metadata: metadata && typeof metadata === "object" ? metadata : {},
+      createdAt: row.createdAt || null,
+      updatedAt: row.updatedAt || null,
+      campaignCount,
+      mapCount,
+      trackedCount,
+    };
+  }
+
+  listProjectSources({ includeDisabled = true } = {}) {
+    const whereSql = includeDisabled ? "" : "WHERE enabled = 1";
+    const rows = this.db
+      .prepare(
+        `
+        SELECT source_key AS sourceKey
+        FROM altered_project_sources
+        ${whereSql}
+        ORDER BY enabled DESC, updated_at DESC, display_name COLLATE NOCASE ASC
+        `
+      )
+      .all();
+    return rows
+      .map((row) => this.getProjectSource(row.sourceKey))
+      .filter(Boolean);
+  }
+
+  upsertProjectSource({
+    sourceKey,
+    sourceType = "special",
+    displayName = "",
+    sourceLabel = "",
+    enabled = true,
+    lastSyncedAt = undefined,
+    lastError = undefined,
+    summary = undefined,
+    metadata = undefined,
+  } = {}) {
+    const safeSourceKey = toText(sourceKey);
+    if (!safeSourceKey) return null;
+    const existing = this.getProjectSource(safeSourceKey);
+    const now = new Date().toISOString();
+    const hasLastSyncedAt = Object.prototype.hasOwnProperty.call(arguments[0] || {}, "lastSyncedAt");
+    const hasLastError = Object.prototype.hasOwnProperty.call(arguments[0] || {}, "lastError");
+    const hasSummary = Object.prototype.hasOwnProperty.call(arguments[0] || {}, "summary");
+    const hasMetadata = Object.prototype.hasOwnProperty.call(arguments[0] || {}, "metadata");
+    const nextSummary = hasSummary ? serializeJson(summary || {}) : serializeJson(existing?.summary || {});
+    const nextMetadata = hasMetadata ? serializeJson(metadata || {}) : serializeJson(existing?.metadata || {});
+    const nextLastSyncedAt = hasLastSyncedAt
+      ? lastSyncedAt
+        ? toIso(lastSyncedAt, now)
+        : null
+      : existing?.lastSyncedAt || null;
+    const nextLastError = hasLastError
+      ? lastError
+        ? toText(lastError)
+        : null
+      : existing?.lastError || null;
+
+    this.db
+      .prepare(
+        `
+        INSERT INTO altered_project_sources (
+          source_key,
+          source_type,
+          display_name,
+          source_label,
+          enabled,
+          last_synced_at,
+          last_error,
+          summary_json,
+          metadata_json,
+          created_at,
+          updated_at
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        ON CONFLICT(source_key) DO UPDATE SET
+          source_type = excluded.source_type,
+          display_name = excluded.display_name,
+          source_label = excluded.source_label,
+          enabled = excluded.enabled,
+          last_synced_at = excluded.last_synced_at,
+          last_error = excluded.last_error,
+          summary_json = excluded.summary_json,
+          metadata_json = excluded.metadata_json,
+          updated_at = excluded.updated_at
+        `
+      )
+      .run(
+        safeSourceKey,
+        toText(sourceType) || "special",
+        toText(displayName) || existing?.displayName || safeSourceKey,
+        toText(sourceLabel) || existing?.sourceLabel || safeSourceKey,
+        enabled ? 1 : 0,
+        nextLastSyncedAt,
+        nextLastError,
+        nextSummary,
+        nextMetadata,
+        existing?.createdAt || now,
+        now
+      );
+
+    return this.getProjectSource(safeSourceKey);
   }
 
   getLiveMonitorConfig() {
@@ -1048,6 +1576,7 @@ class AlteredRepository {
   insertWrEvent({
     mapUid,
     mapName,
+    accountId,
     holder,
     wrMs,
     recordedAt,
@@ -1059,6 +1588,7 @@ class AlteredRepository {
     const safeRecordedAt = toIso(recordedAt, nowIso);
     const safeReceivedAt = toIso(receivedAt, nowIso);
     const safeMapName = toText(mapName);
+    const safeAccountId = normalizeAccountId(accountId || holder);
     const safeHolder = toText(holder);
     const safeWrMs = clampInt(wrMs, { min: 0, max: 2147483647, fallback: 0 });
 
@@ -1068,16 +1598,18 @@ class AlteredRepository {
         INSERT INTO altered_wr_events (
           map_uid,
           map_name,
+          account_id,
           holder,
           wr_ms,
           recorded_at,
           received_at
-        ) VALUES (?, ?, ?, ?, ?, ?)
+        ) VALUES (?, ?, ?, ?, ?, ?, ?)
         `
       )
       .run(
         safeMapUid,
         safeMapName,
+        safeAccountId || null,
         safeHolder,
         safeWrMs,
         safeRecordedAt,
@@ -1088,6 +1620,7 @@ class AlteredRepository {
       eventId: Number(result?.lastInsertRowid || 0),
       mapUid: safeMapUid,
       mapName: safeMapName,
+      accountId: safeAccountId || null,
       holder: safeHolder,
       wrMs: safeWrMs,
       recordedAt: safeRecordedAt,
@@ -1103,6 +1636,7 @@ class AlteredRepository {
           event_id AS eventId,
           map_uid AS mapUid,
           map_name AS mapName,
+          account_id AS accountId,
           holder AS holder,
           wr_ms AS wrMs,
           recorded_at AS recordedAt,
@@ -1118,6 +1652,7 @@ class AlteredRepository {
       eventId: Number(row.eventId || 0),
       mapUid: toText(row.mapUid),
       mapName: toText(row.mapName),
+      accountId: normalizeAccountId(row.accountId),
       holder: toText(row.holder),
       wrMs: Number(row.wrMs || 0),
       recordedAt: row.recordedAt || null,
@@ -1125,7 +1660,9 @@ class AlteredRepository {
     };
   }
 
-  getRecentWrEvents(limit = 10) {
+  getRecentWrEvents({ limit = 10, offset = 0 } = {}) {
+    const safeLimit = clampInt(limit, { min: 1, max: 500, fallback: 10 });
+    const safeOffset = clampInt(offset, { min: 0, max: 1000000, fallback: 0 });
     const rows = this.db
       .prepare(
         `
@@ -1133,6 +1670,7 @@ class AlteredRepository {
           event_id AS eventId,
           map_uid AS mapUid,
           map_name AS mapName,
+          account_id AS accountId,
           holder AS holder,
           wr_ms AS wrMs,
           recorded_at AS recordedAt,
@@ -1140,18 +1678,291 @@ class AlteredRepository {
         FROM altered_wr_events
         ORDER BY recorded_at DESC, event_id DESC
         LIMIT ?
+        OFFSET ?
         `
       )
-      .all(clampInt(limit, { min: 1, max: 500, fallback: 10 }));
+      .all(safeLimit, safeOffset);
     return rows.map((row) => ({
       eventId: Number(row.eventId || 0),
       mapUid: toText(row.mapUid),
       mapName: toText(row.mapName),
+      accountId: normalizeAccountId(row.accountId),
       holder: toText(row.holder),
       wrMs: Number(row.wrMs || 0),
       recordedAt: row.recordedAt || null,
       receivedAt: row.receivedAt || null,
     }));
+  }
+
+  getRecentWrEventsForMap({ mapUid, limit = 10, offset = 0 } = {}) {
+    const safeMapUid = toText(mapUid);
+    if (!safeMapUid) return [];
+    const safeLimit = clampInt(limit, { min: 1, max: 100, fallback: 10 });
+    const safeOffset = clampInt(offset, { min: 0, max: 1000000, fallback: 0 });
+    const rows = this.db
+      .prepare(
+        `
+        SELECT
+          event_id AS eventId,
+          map_uid AS mapUid,
+          map_name AS mapName,
+          account_id AS accountId,
+          holder AS holder,
+          wr_ms AS wrMs,
+          recorded_at AS recordedAt,
+          received_at AS receivedAt
+        FROM altered_wr_events
+        WHERE LOWER(map_uid) = LOWER(?)
+        ORDER BY recorded_at DESC, event_id DESC
+        LIMIT ?
+        OFFSET ?
+        `
+      )
+      .all(safeMapUid, safeLimit, safeOffset);
+    return rows.map((row) => ({
+      eventId: Number(row.eventId || 0),
+      mapUid: toText(row.mapUid),
+      mapName: toText(row.mapName),
+      accountId: normalizeAccountId(row.accountId),
+      holder: toText(row.holder),
+      wrMs: Number(row.wrMs || 0),
+      recordedAt: row.recordedAt || null,
+      receivedAt: row.receivedAt || null,
+    }));
+  }
+
+  recordApiRequest({
+    endpointKey,
+    requestPath,
+    method = "GET",
+    statusCode = 200,
+    mapUid = "",
+    origin = "",
+    clientHash = "",
+    userAgent = "",
+    durationMs = 0,
+    createdAt = null,
+  } = {}) {
+    const safeEndpointKey = toText(endpointKey);
+    const safeRequestPath = toText(requestPath);
+    if (!safeEndpointKey || !safeRequestPath) return null;
+
+    const safeMethod = truncateText(method || "GET", 12).toUpperCase();
+    const safeStatusCode = clampInt(statusCode, {
+      min: 100,
+      max: 599,
+      fallback: 200,
+    });
+    const safeMapUid = toText(mapUid) || null;
+    const safeOrigin = truncateText(origin, 320) || null;
+    const safeClientHash = truncateText(clientHash, 128) || null;
+    const safeUserAgent = truncateText(userAgent, 512) || null;
+    const safeDurationMs = clampInt(durationMs, {
+      min: 0,
+      max: 3600000,
+      fallback: 0,
+    });
+    const safeCreatedAt = toIso(createdAt, new Date().toISOString());
+
+    const result = this.db
+      .prepare(
+        `
+        INSERT INTO altered_api_requests (
+          endpoint_key,
+          request_path,
+          method,
+          status_code,
+          map_uid,
+          origin,
+          client_hash,
+          user_agent,
+          duration_ms,
+          created_at
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        `
+      )
+      .run(
+        safeEndpointKey,
+        safeRequestPath,
+        safeMethod,
+        safeStatusCode,
+        safeMapUid,
+        safeOrigin,
+        safeClientHash,
+        safeUserAgent,
+        safeDurationMs,
+        safeCreatedAt
+      );
+
+    return {
+      requestId: Number(result?.lastInsertRowid || 0),
+      endpointKey: safeEndpointKey,
+      requestPath: safeRequestPath,
+      method: safeMethod,
+      statusCode: safeStatusCode,
+      mapUid: safeMapUid,
+      origin: safeOrigin,
+      clientHash: safeClientHash,
+      userAgent: safeUserAgent,
+      durationMs: safeDurationMs,
+      createdAt: safeCreatedAt,
+    };
+  }
+
+  getApiUsageSummary({ days = 30, recentLimit = 20, topLimit = 8, originsLimit = 8 } = {}) {
+    const safeDays = clampInt(days, { min: 1, max: 365, fallback: 30 });
+    const safeRecentLimit = clampInt(recentLimit, { min: 1, max: 100, fallback: 20 });
+    const safeTopLimit = clampInt(topLimit, { min: 1, max: 25, fallback: 8 });
+    const safeOriginsLimit = clampInt(originsLimit, { min: 1, max: 25, fallback: 8 });
+    const now = Date.now();
+    const cutoff24h = new Date(now - 24 * 60 * 60 * 1000).toISOString();
+    const cutoff7d = new Date(now - 7 * 24 * 60 * 60 * 1000).toISOString();
+    const cutoffWindow = new Date(now - safeDays * 24 * 60 * 60 * 1000).toISOString();
+
+    const totals = this.db
+      .prepare(
+        `
+        SELECT
+          COUNT(*) AS totalRequests,
+          SUM(CASE WHEN created_at >= ? THEN 1 ELSE 0 END) AS requests24h,
+          SUM(CASE WHEN created_at >= ? THEN 1 ELSE 0 END) AS requests7d,
+          SUM(CASE WHEN created_at >= ? THEN 1 ELSE 0 END) AS requestsWindow,
+          SUM(CASE WHEN status_code >= 200 AND status_code < 400 THEN 1 ELSE 0 END) AS successCount,
+          SUM(CASE WHEN status_code >= 400 AND status_code < 500 THEN 1 ELSE 0 END) AS clientErrorCount,
+          SUM(CASE WHEN status_code >= 500 THEN 1 ELSE 0 END) AS serverErrorCount,
+          COUNT(DISTINCT CASE
+            WHEN created_at >= ? AND client_hash IS NOT NULL AND TRIM(client_hash) <> ''
+            THEN client_hash
+          END) AS uniqueClientsWindow
+        FROM altered_api_requests
+        `
+      )
+      .get(cutoff24h, cutoff7d, cutoffWindow, cutoffWindow);
+
+    const endpoints = this.db
+      .prepare(
+        `
+        SELECT
+          endpoint_key AS endpointKey,
+          MAX(request_path) AS requestPath,
+          COUNT(*) AS totalRequests,
+          SUM(CASE WHEN created_at >= ? THEN 1 ELSE 0 END) AS requests24h,
+          SUM(CASE WHEN created_at >= ? THEN 1 ELSE 0 END) AS requests7d,
+          SUM(CASE WHEN created_at >= ? THEN 1 ELSE 0 END) AS requestsWindow,
+          SUM(CASE WHEN status_code >= 500 THEN 1 ELSE 0 END) AS serverErrorCount,
+          AVG(duration_ms) AS avgDurationMs,
+          MAX(created_at) AS lastRequestedAt
+        FROM altered_api_requests
+        GROUP BY endpoint_key
+        ORDER BY requests7d DESC, totalRequests DESC, endpoint_key ASC
+        LIMIT ?
+        `
+      )
+      .all(cutoff24h, cutoff7d, cutoffWindow, safeTopLimit)
+      .map((row) => ({
+        endpointKey: toText(row.endpointKey),
+        requestPath: toText(row.requestPath),
+        totalRequests: Number(row.totalRequests || 0),
+        requests24h: Number(row.requests24h || 0),
+        requests7d: Number(row.requests7d || 0),
+        requestsWindow: Number(row.requestsWindow || 0),
+        serverErrorCount: Number(row.serverErrorCount || 0),
+        avgDurationMs: Number(Number(row.avgDurationMs || 0).toFixed(1)),
+        lastRequestedAt: row.lastRequestedAt || null,
+      }));
+
+    const origins = this.db
+      .prepare(
+        `
+        SELECT
+          COALESCE(NULLIF(TRIM(origin), ''), 'direct') AS originLabel,
+          COUNT(*) AS totalRequests,
+          MAX(created_at) AS lastRequestedAt
+        FROM altered_api_requests
+        WHERE created_at >= ?
+        GROUP BY COALESCE(NULLIF(TRIM(origin), ''), 'direct')
+        ORDER BY totalRequests DESC, lastRequestedAt DESC
+        LIMIT ?
+        `
+      )
+      .all(cutoffWindow, safeOriginsLimit)
+      .map((row) => ({
+        origin: toText(row.originLabel, "direct") || "direct",
+        totalRequests: Number(row.totalRequests || 0),
+        lastRequestedAt: row.lastRequestedAt || null,
+      }));
+
+    const timeline = this.db
+      .prepare(
+        `
+        SELECT
+          substr(created_at, 1, 10) AS day,
+          COUNT(*) AS totalRequests,
+          SUM(CASE WHEN status_code >= 500 THEN 1 ELSE 0 END) AS serverErrorCount
+        FROM altered_api_requests
+        WHERE created_at >= ?
+        GROUP BY substr(created_at, 1, 10)
+        ORDER BY day ASC
+        `
+      )
+      .all(cutoffWindow)
+      .map((row) => ({
+        day: toText(row.day),
+        totalRequests: Number(row.totalRequests || 0),
+        serverErrorCount: Number(row.serverErrorCount || 0),
+      }));
+
+    const recentRequests = this.db
+      .prepare(
+        `
+        SELECT
+          request_id AS requestId,
+          endpoint_key AS endpointKey,
+          request_path AS requestPath,
+          method AS method,
+          status_code AS statusCode,
+          map_uid AS mapUid,
+          origin AS origin,
+          user_agent AS userAgent,
+          duration_ms AS durationMs,
+          created_at AS createdAt
+        FROM altered_api_requests
+        ORDER BY request_id DESC
+        LIMIT ?
+        `
+      )
+      .all(safeRecentLimit)
+      .map((row) => ({
+        requestId: Number(row.requestId || 0),
+        endpointKey: toText(row.endpointKey),
+        requestPath: toText(row.requestPath),
+        method: toText(row.method),
+        statusCode: Number(row.statusCode || 0),
+        mapUid: toText(row.mapUid) || null,
+        origin: toText(row.origin) || null,
+        userAgent: toText(row.userAgent) || null,
+        durationMs: Number(row.durationMs || 0),
+        createdAt: row.createdAt || null,
+      }));
+
+    return {
+      generatedAt: new Date().toISOString(),
+      windowDays: safeDays,
+      totals: {
+        totalRequests: Number(totals?.totalRequests || 0),
+        requests24h: Number(totals?.requests24h || 0),
+        requests7d: Number(totals?.requests7d || 0),
+        requestsWindow: Number(totals?.requestsWindow || 0),
+        successCount: Number(totals?.successCount || 0),
+        clientErrorCount: Number(totals?.clientErrorCount || 0),
+        serverErrorCount: Number(totals?.serverErrorCount || 0),
+        uniqueClientsWindow: Number(totals?.uniqueClientsWindow || 0),
+      },
+      endpoints,
+      origins,
+      timeline,
+      recentRequests,
+    };
   }
 
   getRecentUpdateRequest(mapUid, withinMinutes = 60) {
@@ -1427,10 +2238,81 @@ class AlteredRepository {
           `
         )
         .get()?.lastRunAt || null;
+    const totalWrChanges =
+      this.db.prepare("SELECT COUNT(*) AS count FROM altered_wr_events").get()?.count || 0;
     return {
       totalMaps: Number(row?.totalMaps || 0),
       activelyTracked: Number(row?.activelyTracked || 0),
+      totalWrChanges: Number(totalWrChanges || 0),
       lastRunAt: latestSync,
+    };
+  }
+
+  getAlterationsMapFilters() {
+    const seasons = this.db
+      .prepare(
+        `
+        SELECT DISTINCT season
+        FROM altered_map_name_candidates
+        WHERE season IS NOT NULL AND TRIM(season) <> ''
+        ORDER BY
+          CASE LOWER(season)
+            WHEN 'winter' THEN 1
+            WHEN 'spring' THEN 2
+            WHEN 'summer' THEN 3
+            WHEN 'fall' THEN 4
+            ELSE 5
+          END,
+          season COLLATE NOCASE ASC
+        `
+      )
+      .all()
+      .map((row) => row.season)
+      .filter(Boolean);
+    const years = this.db
+      .prepare(
+        `
+        SELECT DISTINCT year
+        FROM altered_map_name_candidates
+        WHERE year IS NOT NULL
+        ORDER BY year DESC
+        `
+      )
+      .all()
+      .map((row) => Number(row.year || 0))
+      .filter(Boolean);
+    const environments = this.db
+      .prepare(
+        `
+        SELECT DISTINCT map_environment AS value
+        FROM altered_maps
+        WHERE map_environment IS NOT NULL AND TRIM(map_environment) <> ''
+        ORDER BY map_environment COLLATE NOCASE ASC
+        `
+      )
+      .all()
+      .map((row) => row.value)
+      .filter(Boolean);
+    const mapTypes = this.db
+      .prepare(
+        `
+        SELECT DISTINCT map_type AS value
+        FROM altered_maps
+        WHERE map_type IS NOT NULL AND TRIM(map_type) <> ''
+        ORDER BY map_type COLLATE NOCASE ASC
+        `
+      )
+      .all()
+      .map((row) => row.value)
+      .filter(Boolean);
+
+    return {
+      seasons,
+      years,
+      environments,
+      map_types: mapTypes,
+      statuses: ["active", "paused", "idle"],
+      wr_states: ["with_wr", "without_wr"],
     };
   }
 
@@ -1585,15 +2467,230 @@ class AlteredRepository {
     };
   }
 
-  listAlterationsMaps({ limit = 50000 } = {}) {
+  listAlterationsMaps({
+    limit = 50000,
+    offset = 0,
+    q = "",
+    sort = "name",
+    campaignIds = [],
+    status = "",
+    season = "",
+    year = null,
+    alterationSlugs = [],
+    alterationIds = [],
+    mapNumber = null,
+    environment = "",
+    mapType = "",
+    hasWr = undefined,
+  } = {}) {
+    const safeLimit = clampInt(limit, { min: 1, max: 100000, fallback: 50000 });
+    const safeOffset = clampInt(offset, { min: 0, max: 2000000, fallback: 0 });
+    const normalizedQuery = toText(q).toLowerCase();
+    const normalizedStatus = toText(status).toLowerCase();
+    const normalizedSeason = toText(season);
+    const normalizedEnvironment = toText(environment);
+    const normalizedMapType = toText(mapType);
+    const normalizedMapNumber = clampInt(mapNumber, {
+      min: 1,
+      max: 999,
+      fallback: 0,
+    });
+    const normalizedYear = clampInt(year, {
+      min: 1900,
+      max: 2500,
+      fallback: 0,
+    });
+    const normalizedCampaignIds = uniqueBy(
+      (Array.isArray(campaignIds) ? campaignIds : [campaignIds])
+        .flatMap((value) => String(value || "").split(","))
+        .map((value) => toText(value))
+        .filter((value) => /^\d+$/.test(value)),
+      (value) => value
+    );
+    const normalizedAlterationSlugs = uniqueBy(
+      (Array.isArray(alterationSlugs) ? alterationSlugs : [alterationSlugs])
+        .flatMap((value) => String(value || "").split(","))
+        .map((value) => slugifyText(value))
+        .filter(Boolean),
+      (value) => value
+    );
+    const normalizedAlterationIds = uniqueBy(
+      (Array.isArray(alterationIds) ? alterationIds : [alterationIds])
+        .flatMap((value) => String(value || "").split(","))
+        .map((value) => clampInt(value, { min: 1, max: 2147483647, fallback: 0 }))
+        .filter(Boolean),
+      (value) => value
+    );
+
+    const whereClauses = [];
+    const params = [];
+
+    if (normalizedCampaignIds.length) {
+      whereClauses.push(
+        `CAST(COALESCE(c.external_campaign_id, c.campaign_id) AS TEXT) IN (${normalizedCampaignIds
+          .map(() => "?")
+          .join(", ")})`
+      );
+      params.push(...normalizedCampaignIds);
+    }
+
+    if (normalizedQuery) {
+      const like = `%${normalizedQuery}%`;
+      whereClauses.push(
+        `(
+          LOWER(COALESCE(m.name, '')) LIKE ?
+          OR LOWER(COALESCE(m.author, '')) LIKE ?
+          OR LOWER(COALESCE(m.wr_holder, '')) LIKE ?
+          OR LOWER(COALESCE(m.map_uid, '')) LIKE ?
+          OR LOWER(COALESCE(c.name, '')) LIKE ?
+        )`
+      );
+      params.push(like, like, like, like, like);
+    }
+
+    if (normalizedStatus === "active") {
+      whereClauses.push("m.tracked = 1 AND LOWER(COALESCE(m.status, 'live')) != 'paused'");
+    } else if (normalizedStatus === "paused") {
+      whereClauses.push("LOWER(COALESCE(m.status, '')) = 'paused'");
+    } else if (normalizedStatus === "idle") {
+      whereClauses.push("m.tracked = 0");
+    }
+
+    if (normalizedSeason) {
+      whereClauses.push("LOWER(COALESCE(n.season, '')) = LOWER(?)");
+      params.push(normalizedSeason);
+    }
+
+    if (normalizedYear) {
+      whereClauses.push("n.year = ?");
+      params.push(normalizedYear);
+    }
+
+    if (normalizedMapNumber) {
+      whereClauses.push("n.map_number = ?");
+      params.push(normalizedMapNumber);
+    }
+
+    if (normalizedEnvironment) {
+      whereClauses.push("LOWER(COALESCE(m.map_environment, '')) = LOWER(?)");
+      params.push(normalizedEnvironment);
+    }
+
+    if (normalizedMapType) {
+      whereClauses.push("LOWER(COALESCE(m.map_type, '')) = LOWER(?)");
+      params.push(normalizedMapType);
+    }
+
+    if (hasWr === true) {
+      whereClauses.push("COALESCE(m.wr_ms, 0) > 0");
+    } else if (hasWr === false) {
+      whereClauses.push("COALESCE(m.wr_ms, 0) <= 0");
+    }
+
+    if (normalizedAlterationSlugs.length) {
+      whereClauses.push(
+        `EXISTS (
+          SELECT 1
+          FROM altered_campaign_alterations ca_filter
+          JOIN altered_alterations a_filter ON a_filter.alteration_id = ca_filter.alteration_id
+          WHERE ca_filter.campaign_id = c.campaign_id
+            AND a_filter.slug IN (${normalizedAlterationSlugs.map(() => "?").join(", ")})
+        )`
+      );
+      params.push(...normalizedAlterationSlugs);
+    }
+
+    if (normalizedAlterationIds.length) {
+      whereClauses.push(
+        `EXISTS (
+          SELECT 1
+          FROM altered_campaign_alterations ca_filter
+          WHERE ca_filter.campaign_id = c.campaign_id
+            AND ca_filter.alteration_id IN (${normalizedAlterationIds.map(() => "?").join(", ")})
+        )`
+      );
+      params.push(...normalizedAlterationIds);
+    }
+
+    let orderBy = "ORDER BY m.name COLLATE NOCASE ASC, m.map_uid ASC";
+    if (sort === "newest") {
+      orderBy = `ORDER BY
+        COALESCE(n.updated_at, m.map_updated_at, m.map_created_at, p.updated_at, c.updated_at, c.created_at, m.updated_at, m.created_at, '') DESC,
+        m.name COLLATE NOCASE ASC,
+        m.map_uid ASC`;
+    } else if (sort === "wr_ms") {
+      orderBy = `ORDER BY
+        CASE WHEN COALESCE(m.wr_ms, 0) > 0 THEN 0 ELSE 1 END ASC,
+        COALESCE(m.wr_ms, 2147483647) ASC,
+        m.name COLLATE NOCASE ASC,
+        m.map_uid ASC`;
+    } else if (sort === "author_time") {
+      orderBy = `ORDER BY
+        CASE WHEN COALESCE(m.author_time, 0) > 0 THEN 0 ELSE 1 END ASC,
+        COALESCE(m.author_time, 2147483647) ASC,
+        m.name COLLATE NOCASE ASC,
+        m.map_uid ASC`;
+    } else if (sort === "wr_updated_at" || sort === "latest_wr") {
+      orderBy = `ORDER BY
+        COALESCE(m.wr_updated_at, '') DESC,
+        COALESCE(m.wr_ms, 2147483647) ASC,
+        m.name COLLATE NOCASE ASC,
+        m.map_uid ASC`;
+    } else if (sort === "change_count" || sort === "most_changes") {
+      orderBy = `ORDER BY
+        COALESCE(wrc.wrChangeCount, 0) DESC,
+        COALESCE(m.wr_updated_at, '') DESC,
+        m.name COLLATE NOCASE ASC,
+        m.map_uid ASC`;
+    }
+
+    const joinSql = `
+      LEFT JOIN altered_map_positions p ON p.map_uid = m.map_uid
+      LEFT JOIN altered_campaigns c ON c.campaign_id = p.campaign_id
+      LEFT JOIN altered_map_name_candidates n ON n.map_uid = m.map_uid
+      LEFT JOIN (
+        SELECT
+          ca.campaign_id AS campaignId,
+          GROUP_CONCAT(CAST(a.alteration_id AS TEXT), ',') AS alterationIdsCsv,
+          GROUP_CONCAT(a.name, '${ALTERATION_VALUE_SEPARATOR}') AS alterationNamesCsv,
+          GROUP_CONCAT(COALESCE(a.slug, ''), '${ALTERATION_VALUE_SEPARATOR}') AS alterationSlugsCsv
+        FROM altered_campaign_alterations ca
+        JOIN altered_alterations a ON a.alteration_id = ca.alteration_id
+        GROUP BY ca.campaign_id
+      ) alt ON alt.campaignId = c.campaign_id
+      LEFT JOIN (
+        SELECT map_uid AS mapUid, COUNT(*) AS wrChangeCount
+        FROM altered_wr_events
+        GROUP BY map_uid
+      ) wrc ON wrc.mapUid = m.map_uid
+    `;
+    const whereSql = whereClauses.length ? `WHERE ${whereClauses.join(" AND ")}` : "";
+
+    const total = Number(
+      this.db
+        .prepare(
+          `
+          SELECT COUNT(*) AS total
+          FROM altered_maps m
+          ${joinSql}
+          ${whereSql}
+          `
+        )
+        .get(...params)?.total || 0
+    );
+
     const rows = this.db
       .prepare(
         `
         SELECT
           m.map_uid AS mapUid,
           m.name AS name,
+          m.map_type AS mapType,
+          m.map_style AS mapStyle,
+          m.map_environment AS mapEnvironment,
           m.author AS author,
           m.thumbnail_url AS thumbnailUrl,
+          m.download_url AS downloadUrl,
           m.player_count AS playerCount,
           m.author_time AS authorTime,
           m.gold_time AS goldTime,
@@ -1606,82 +2703,569 @@ class AlteredRepository {
           m.status AS status,
           c.campaign_id AS campaignDbId,
           c.external_campaign_id AS campaignExternalId,
-          c.name AS campaignName
+          c.name AS campaignName,
+          c.start_timestamp AS campaignStartTimestamp,
+          c.payload_json AS campaignPayloadJson,
+          c.created_at AS campaignCreatedAt,
+          c.updated_at AS campaignUpdatedAt,
+          p.slot AS slot,
+          n.season AS derivedSeason,
+          n.year AS derivedYear,
+          n.map_number AS derivedMapNumber,
+          n.map_numbers_json AS derivedMapNumbersJson,
+          n.alteration_label AS derivedAlterationLabel,
+          n.alteration_mix_json AS derivedAlterationMixJson,
+          alt.alterationIdsCsv AS alterationIdsCsv,
+          alt.alterationNamesCsv AS alterationNamesCsv,
+          alt.alterationSlugsCsv AS alterationSlugsCsv,
+          COALESCE(wrc.wrChangeCount, 0) AS wrChangeCount
         FROM altered_maps m
-        LEFT JOIN altered_map_positions p ON p.map_uid = m.map_uid
-        LEFT JOIN altered_campaigns c ON c.campaign_id = p.campaign_id
-        ORDER BY m.name COLLATE NOCASE ASC
+        ${joinSql}
+        ${whereSql}
+        ${orderBy}
         LIMIT ?
+        OFFSET ?
         `
       )
-      .all(Math.max(1, Math.min(Number(limit) || 50000, 100000)));
+      .all(...params, safeLimit, safeOffset);
 
-    return rows.map((row) => {
-      const campaignId =
-        row.campaignExternalId !== null && row.campaignExternalId !== undefined
-          ? String(row.campaignExternalId)
-          : row.campaignDbId !== null && row.campaignDbId !== undefined
-            ? String(row.campaignDbId)
-            : null;
-      return {
-        map_uid: row.mapUid,
-        name: row.name || row.mapUid,
-        author: row.author || "",
-        thumbnail_url: row.thumbnailUrl || null,
-        author_time: Number(row.authorTime || 0),
-        gold_time: Number(row.goldTime || 0),
-        silver_time: Number(row.silverTime || 0),
-        bronze_time: Number(row.bronzeTime || 0),
-        player_count: Number(row.playerCount || 0),
-        wr_ms: Number(row.wrMs || 0) || null,
-        wr_holder: row.wrHolder || null,
-        wr_updated_at: row.wrUpdatedAt || null,
-        tracking_status: mapTrackingStatus({
+    return {
+      total,
+      rows: rows.map((row) => {
+        const campaignId =
+          row.campaignExternalId !== null && row.campaignExternalId !== undefined
+            ? String(row.campaignExternalId)
+            : row.campaignDbId !== null && row.campaignDbId !== undefined
+              ? String(row.campaignDbId)
+              : null;
+        const campaignMeta = buildCampaignCatalogMetadata({
+          campaignName: row.campaignName,
+          startTimestamp: row.campaignStartTimestamp,
+          payloadJson: row.campaignPayloadJson,
+          createdAt: row.campaignCreatedAt,
+          updatedAt: row.campaignUpdatedAt,
+          alterationIdsCsv: row.alterationIdsCsv,
+          alterationNamesCsv: row.alterationNamesCsv,
+          alterationSlugsCsv: row.alterationSlugsCsv,
+        });
+        const derivedAlterationMix = parseJsonSafe(row.derivedAlterationMixJson, []) || [];
+        const mapAlterationNames = campaignMeta.alterations.length
+          ? campaignMeta.alterations.map((item) => item.name)
+          : uniqueTexts(
+              derivedAlterationMix.length ? derivedAlterationMix : [row.derivedAlterationLabel || ""]
+            );
+        const mapAlterations = mapAlterationNames.map((name) => {
+          const existing = campaignMeta.alterations.find(
+            (item) => String(item?.name || "").toLowerCase() === name.toLowerCase()
+          );
+          return {
+            id: existing?.id || null,
+            name: existing?.name || name,
+            slug: existing?.slug || slugifyText(name, name),
+          };
+        });
+
+        return {
+          map_uid: row.mapUid,
+          name: row.name || row.mapUid,
+          author: row.author || "",
+          thumbnail_url: row.thumbnailUrl || null,
+          download_url: row.downloadUrl || null,
+          map_type: row.mapType || null,
+          map_style: row.mapStyle || null,
+          map_environment: row.mapEnvironment || null,
+          author_time: Number(row.authorTime || 0),
+          gold_time: Number(row.goldTime || 0),
+          silver_time: Number(row.silverTime || 0),
+          bronze_time: Number(row.bronzeTime || 0),
+          player_count: Number(row.playerCount || 0),
+          wr_ms: Number(row.wrMs || 0) || null,
+          wr_holder: row.wrHolder || null,
+          wr_updated_at: row.wrUpdatedAt || null,
           tracked: Boolean(row.tracked),
           status: row.status || "live",
-        }),
-        check_count: 0,
-        change_count: 0,
-        campaign_id: campaignId,
-        campaign_name: row.campaignName || null,
-      };
-    });
+          tracking_status: mapTrackingStatus({
+            tracked: Boolean(row.tracked),
+            status: row.status || "live",
+          }),
+          check_count: 0,
+          change_count: Number(row.wrChangeCount || 0),
+          campaign_id: campaignId,
+          campaign_db_id: Number(row.campaignDbId || 0) || null,
+          campaign_external_id: Number(row.campaignExternalId || 0) || null,
+          campaign_name: row.campaignName || null,
+          campaign_sort_timestamp_ms: Number(campaignMeta.sortTimestampMs || 0) || 0,
+          campaign_added_at: campaignMeta.addedAt || null,
+          season: row.derivedSeason || campaignMeta.season || null,
+          year: Number(row.derivedYear || 0) || campaignMeta.seasonYear || null,
+          season_label: campaignMeta.seasonLabel || null,
+          season_key: campaignMeta.seasonKey || null,
+          map_number: Number(row.derivedMapNumber || 0) || null,
+          map_numbers: parseJsonSafe(row.derivedMapNumbersJson, []) || [],
+          alteration: row.derivedAlterationLabel || campaignMeta.primaryAlteration?.name || null,
+          alterations: mapAlterations,
+          campaign_alterations: campaignMeta.alterations,
+          slot: Number(row.slot || 0) || 0,
+        };
+      }),
+    };
   }
 
-  listAlterationsCampaigns({ limit = 3000 } = {}) {
+  listAlterationsCampaigns({
+    limit = 3000,
+    offset = 0,
+    catalogOnly = false,
+    linkedOnly = false,
+    alterationSlugs = [],
+    alterationIds = [],
+  } = {}) {
+    const safeLimit = clampInt(limit, { min: 1, max: 10000, fallback: 3000 });
+    const safeOffset = clampInt(offset, { min: 0, max: 2000000, fallback: 0 });
+    const normalizedAlterationSlugs = uniqueBy(
+      (Array.isArray(alterationSlugs) ? alterationSlugs : [alterationSlugs])
+        .flatMap((value) => String(value || "").split(","))
+        .map((value) => slugifyText(value))
+        .filter(Boolean),
+      (value) => value
+    );
+    const normalizedAlterationIds = uniqueBy(
+      (Array.isArray(alterationIds) ? alterationIds : [alterationIds])
+        .flatMap((value) => String(value || "").split(","))
+        .map((value) => clampInt(value, { min: 1, max: 2147483647, fallback: 0 }))
+        .filter(Boolean),
+      (value) => value
+    );
     const rows = this.db
       .prepare(
         `
         SELECT
+          c.club_id AS clubId,
           c.campaign_id AS campaignDbId,
           c.external_campaign_id AS campaignExternalId,
           c.name AS campaignName,
-          COUNT(m.map_uid) AS mapCount
+          c.start_timestamp AS startTimestamp,
+          c.payload_json AS payloadJson,
+          c.created_at AS createdAt,
+          c.updated_at AS updatedAt,
+          COUNT(m.map_uid) AS mapCount,
+          (
+            SELECT m2.thumbnail_url
+            FROM altered_map_positions p2
+            JOIN altered_maps m2 ON m2.map_uid = p2.map_uid
+            WHERE p2.campaign_id = c.campaign_id
+              AND m2.thumbnail_url IS NOT NULL
+              AND m2.thumbnail_url != ''
+            LIMIT 1
+          ) AS thumbnailUrl,
+          alt.alterationIdsCsv AS alterationIdsCsv,
+          alt.alterationNamesCsv AS alterationNamesCsv,
+          alt.alterationSlugsCsv AS alterationSlugsCsv
         FROM altered_campaigns c
         LEFT JOIN altered_map_positions p ON p.campaign_id = c.campaign_id
         LEFT JOIN altered_maps m ON m.map_uid = p.map_uid
+        LEFT JOIN (
+          SELECT
+            ca.campaign_id AS campaignId,
+            GROUP_CONCAT(CAST(a.alteration_id AS TEXT), ',') AS alterationIdsCsv,
+            GROUP_CONCAT(a.name, '${ALTERATION_VALUE_SEPARATOR}') AS alterationNamesCsv,
+            GROUP_CONCAT(COALESCE(a.slug, ''), '${ALTERATION_VALUE_SEPARATOR}') AS alterationSlugsCsv
+          FROM altered_campaign_alterations ca
+          JOIN altered_alterations a ON a.alteration_id = ca.alteration_id
+          GROUP BY ca.campaign_id
+        ) alt ON alt.campaignId = c.campaign_id
         GROUP BY c.campaign_id
-        ORDER BY c.name COLLATE NOCASE ASC
-        LIMIT ?
+        HAVING COUNT(m.map_uid) > 0
         `
       )
-      .all(Math.max(1, Math.min(Number(limit) || 3000, 10000)));
+      .all();
 
-    return rows
-      .map((row) => ({
+    const filtered = rows
+      .map((row) => {
+        const meta = buildCampaignCatalogMetadata({
+          campaignName: row.campaignName,
+          startTimestamp: row.startTimestamp,
+          payloadJson: row.payloadJson,
+          createdAt: row.createdAt,
+          updatedAt: row.updatedAt,
+          alterationIdsCsv: row.alterationIdsCsv,
+          alterationNamesCsv: row.alterationNamesCsv,
+          alterationSlugsCsv: row.alterationSlugsCsv,
+        });
+        return { row, meta };
+      })
+      .filter(({ meta }) => {
+        if (catalogOnly && !meta.isCatalog) return false;
+        if (linkedOnly && !meta.alterations.length) return false;
+        if (
+          normalizedAlterationSlugs.length &&
+          !meta.alterations.some((item) => normalizedAlterationSlugs.includes(item.slug))
+        ) {
+          return false;
+        }
+        if (
+          normalizedAlterationIds.length &&
+          !meta.alterations.some((item) => normalizedAlterationIds.includes(Number(item.id || 0)))
+        ) {
+          return false;
+        }
+        return true;
+      })
+      .sort((a, b) => {
+        const timeDiff = Number(b.meta.sortTimestampMs || 0) - Number(a.meta.sortTimestampMs || 0);
+        if (timeDiff !== 0) return timeDiff;
+        const clubDiff = Number(b.row.clubId || 0) - Number(a.row.clubId || 0);
+        if (clubDiff !== 0) return clubDiff;
+        return Number(b.row.campaignDbId || 0) - Number(a.row.campaignDbId || 0);
+      });
+
+    const total = filtered.length;
+    const campaigns = filtered
+      .slice(safeOffset, safeOffset + safeLimit)
+      .map(({ row, meta }) => ({
         id:
           row.campaignExternalId !== null && row.campaignExternalId !== undefined
             ? String(row.campaignExternalId)
             : String(row.campaignDbId),
+        campaign_db_id: Number(row.campaignDbId || 0) || null,
+        campaign_external_id: Number(row.campaignExternalId || 0) || null,
+        club_id: Number(row.clubId || 0) || null,
         name: row.campaignName || `Campaign ${row.campaignDbId}`,
-        season: inferSeasonFromName(row.campaignName),
+        display_name: meta.seasonLabel || row.campaignName || `Campaign ${row.campaignDbId}`,
+        season: meta.season || null,
+        season_year: meta.seasonYear || null,
+        season_label: meta.seasonLabel || null,
+        season_key: meta.seasonKey || null,
+        sort_timestamp_ms: Number(meta.sortTimestampMs || 0) || 0,
+        added_at: meta.addedAt || null,
         map_count: Number(row.mapCount || 0),
-      }))
-      .filter((campaign) => campaign.map_count > 0);
+        thumbnail_url: row.thumbnailUrl || null,
+        alteration: meta.primaryAlteration?.name || null,
+        alterations: meta.alterations,
+        primary_alteration: meta.primaryAlteration || null,
+        environment: meta.environment || null,
+        campaign_type: meta.campaignType || null,
+        is_catalog: meta.isCatalog,
+        has_alteration: meta.alterations.length > 0,
+      }));
+
+    return {
+      total,
+      rows: campaigns,
+    };
   }
 
-  listAlterationsUploadMaps({ limit = 5000 } = {}) {
+  upsertAlteration(name) {
+    const safeName = String(name || "").trim();
+    if (!safeName) return null;
+    const baseSlug = slugifyText(safeName, safeName);
+    const existingByName =
+      this.db
+        .prepare(
+          `
+          SELECT alteration_id AS id, name, slug
+          FROM altered_alterations
+          WHERE name = ?
+          LIMIT 1
+          `
+        )
+        .get(safeName) || null;
+    const existingBySlug =
+      this.db
+        .prepare(
+          `
+          SELECT alteration_id AS id, name, slug
+          FROM altered_alterations
+          WHERE slug = ?
+          LIMIT 1
+          `
+        )
+        .get(baseSlug) || null;
+    const existing = existingByName || existingBySlug;
+    const pickUniqueSlug = (desiredSlug, excludeId = 0) => {
+      let candidate = slugifyText(desiredSlug, safeName);
+      let suffix = 2;
+      while (true) {
+        const conflict =
+          this.db
+            .prepare(
+              `
+              SELECT alteration_id AS id
+              FROM altered_alterations
+              WHERE slug = ?
+              LIMIT 1
+              `
+            )
+            .get(candidate) || null;
+        if (!conflict || Number(conflict.id || 0) === Number(excludeId || 0)) {
+          return candidate;
+        }
+        candidate = `${slugifyText(desiredSlug, safeName)}-${suffix}`;
+        suffix += 1;
+      }
+    };
+    const now = new Date().toISOString();
+    if (existingBySlug && !existingByName) {
+      this.db
+        .prepare(
+          `
+          UPDATE altered_alterations
+          SET updated_at = ?
+          WHERE alteration_id = ?
+          `
+        )
+        .run(now, Number(existingBySlug.id || 0));
+      return {
+        id: Number(existingBySlug.id || 0),
+        name: existingBySlug.name,
+        slug: slugifyText(existingBySlug.slug || existingBySlug.name, existingBySlug.name),
+      };
+    }
+
+    const safeSlug = pickUniqueSlug(baseSlug, existing?.id || 0);
+    this.db
+      .prepare(
+        `INSERT INTO altered_alterations (name, slug, created_at, updated_at)
+         VALUES (?, ?, ?, ?)
+         ON CONFLICT(name) DO UPDATE SET
+           slug = COALESCE(NULLIF(excluded.slug, ''), altered_alterations.slug),
+           updated_at = excluded.updated_at`
+      )
+      .run(safeName, safeSlug, now, now);
+    const row = this.db
+      .prepare(`SELECT alteration_id AS id, name, slug FROM altered_alterations WHERE name = ?`)
+      .get(safeName);
+    return row
+      ? {
+          id: Number(row.id),
+          name: row.name,
+          slug: slugifyText(row.slug || row.name, row.name),
+        }
+      : null;
+  }
+
+  linkCampaignAlteration(campaignId, alterationId) {
+    this.db
+      .prepare(
+        `INSERT OR IGNORE INTO altered_campaign_alterations (campaign_id, alteration_id)
+         VALUES (?, ?)`
+      )
+      .run(Number(campaignId), Number(alterationId));
+  }
+
+  clearCampaignAlterations(campaignId) {
+    this.db
+      .prepare(`DELETE FROM altered_campaign_alterations WHERE campaign_id = ?`)
+      .run(Number(campaignId));
+  }
+
+  syncCampaignAlterationsById(campaignId) {
+    const safeCampaignId = clampInt(campaignId, {
+      min: 1,
+      max: 2147483647,
+      fallback: 0,
+    });
+    if (!safeCampaignId) {
+      return {
+        ok: false,
+        campaignId: null,
+        linked: 0,
+        alterations: [],
+      };
+    }
+
+    const campaign = this.db
+      .prepare(
+        `
+        SELECT
+          campaign_id AS campaignId,
+          name AS campaignName,
+          start_timestamp AS startTimestamp
+        FROM altered_campaigns
+        WHERE campaign_id = ?
+        LIMIT 1
+        `
+      )
+      .get(safeCampaignId);
+    if (!campaign) {
+      return {
+        ok: false,
+        campaignId: safeCampaignId,
+        linked: 0,
+        alterations: [],
+      };
+    }
+
+    const parsed = parseCampaignStandardizedFields(campaign.campaignName || "", {
+      startTimestamp: campaign.startTimestamp || null,
+    });
+    const alterationNames = uniqueTexts(
+      Array.isArray(parsed?.alterationMix) && parsed.alterationMix.length
+        ? parsed.alterationMix
+        : [parsed?.alteration || ""]
+    );
+
+    this.clearCampaignAlterations(safeCampaignId);
+
+    const linkedAlterations = [];
+    for (const alterationName of alterationNames) {
+      const alteration = this.upsertAlteration(alterationName);
+      if (!alteration?.id) continue;
+      this.linkCampaignAlteration(safeCampaignId, alteration.id);
+      linkedAlterations.push(alteration);
+    }
+
+    return {
+      ok: true,
+      campaignId: safeCampaignId,
+      linked: linkedAlterations.length,
+      alterations: linkedAlterations,
+      parsedCampaign: parsed,
+    };
+  }
+
+  deleteUnusedAlterations() {
+    const result = this.db
+      .prepare(
+        `
+        DELETE FROM altered_alterations
+        WHERE alteration_id NOT IN (
+          SELECT DISTINCT alteration_id
+          FROM altered_campaign_alterations
+        )
+        `
+      )
+      .run();
+    return Number(result?.changes || 0);
+  }
+
+  syncAllCampaignAlterations({ cleanupUnused = true } = {}) {
+    const campaignRows = this.db
+      .prepare(
+        `
+        SELECT campaign_id AS campaignId
+        FROM altered_campaigns
+        ORDER BY campaign_id ASC
+        `
+      )
+      .all();
+
+    const summary = {
+      campaigns_scanned: campaignRows.length,
+      campaigns_linked: 0,
+      links_inserted: 0,
+      alterations_touched: 0,
+      unused_deleted: 0,
+    };
+    const touchedAlterationIds = new Set();
+
+    try {
+      this.db.exec("BEGIN IMMEDIATE");
+      for (const row of campaignRows) {
+        const result = this.syncCampaignAlterationsById(row.campaignId);
+        if (!result?.ok) continue;
+        if (result.linked > 0) summary.campaigns_linked += 1;
+        summary.links_inserted += Number(result.linked || 0);
+        for (const alteration of result.alterations || []) {
+          if (alteration?.id) touchedAlterationIds.add(Number(alteration.id));
+        }
+      }
+      summary.alterations_touched = touchedAlterationIds.size;
+      if (cleanupUnused) {
+        summary.unused_deleted = this.deleteUnusedAlterations();
+      }
+      this.db.exec("COMMIT");
+    } catch (error) {
+      try {
+        this.db.exec("ROLLBACK");
+      } catch {}
+      throw error;
+    }
+
+    return summary;
+  }
+
+  countAlterations() {
+    return Number(
+      this.db.prepare("SELECT COUNT(*) AS count FROM altered_alterations").get()?.count || 0
+    );
+  }
+
+  listAlterations() {
+    return this.db
+      .prepare(
+        `SELECT
+           a.alteration_id AS alterationId,
+           a.name,
+           a.slug AS slug,
+           a.created_at AS createdAt,
+           COUNT(DISTINCT ca.campaign_id) AS campaignCount,
+           COALESCE(SUM(sub.mapCount), 0) AS mapCount
+         FROM altered_alterations a
+         LEFT JOIN altered_campaign_alterations ca ON ca.alteration_id = a.alteration_id
+         LEFT JOIN (
+           SELECT p.campaign_id, COUNT(p.map_uid) AS mapCount
+           FROM altered_map_positions p
+           JOIN altered_maps m ON m.map_uid = p.map_uid
+           GROUP BY p.campaign_id
+         ) sub ON sub.campaign_id = ca.campaign_id
+         GROUP BY a.alteration_id
+         ORDER BY campaignCount DESC, a.name ASC`
+      )
+      .all()
+      .map((row) => ({
+        id: Number(row.alterationId),
+        name: row.name,
+        slug: slugifyText(row.slug || row.name, row.name),
+        campaign_count: Number(row.campaignCount || 0),
+        map_count: Number(row.mapCount || 0),
+        created_at: row.createdAt,
+      }));
+  }
+
+  listCampaignsByAlteration(alterationId) {
+    return this.db
+      .prepare(
+        `SELECT
+           c.campaign_id AS campaignDbId,
+           c.external_campaign_id AS campaignExternalId,
+           c.name AS campaignName,
+           c.start_timestamp AS startTimestamp,
+           c.payload_json AS payloadJson,
+           c.created_at AS createdAt,
+           c.updated_at AS updatedAt,
+           COUNT(m.map_uid) AS mapCount,
+           (
+             SELECT m2.thumbnail_url
+             FROM altered_map_positions p2
+             JOIN altered_maps m2 ON m2.map_uid = p2.map_uid
+             WHERE p2.campaign_id = c.campaign_id
+               AND m2.thumbnail_url IS NOT NULL
+               AND m2.thumbnail_url != ''
+             LIMIT 1
+           ) AS thumbnailUrl
+         FROM altered_campaigns c
+         JOIN altered_campaign_alterations ca ON ca.campaign_id = c.campaign_id
+         LEFT JOIN altered_map_positions p ON p.campaign_id = c.campaign_id
+         LEFT JOIN altered_maps m ON m.map_uid = p.map_uid
+         WHERE ca.alteration_id = ?
+         GROUP BY c.campaign_id
+         HAVING COUNT(m.map_uid) > 0`
+      )
+      .all(Number(alterationId));
+  }
+
+  getAllCampaignAlterationLinks() {
+    return this.db
+      .prepare(
+        `SELECT campaign_id AS campaignId, alteration_id AS alterationId
+         FROM altered_campaign_alterations`
+      )
+      .all();
+  }
+
+  listAlterationsUploadMaps({ limit = 5000, offset = 0 } = {}) {
     const safeLimit = clampInt(limit, { min: 1, max: 100000, fallback: 5000 });
+    const safeOffset = clampInt(offset, { min: 0, max: 2000000, fallback: 0 });
     const rows = this.db
       .prepare(
         `
@@ -1707,9 +3291,10 @@ class AlteredRepository {
           um.slot ASC,
           um.map_uid ASC
         LIMIT ?
+        OFFSET ?
         `
       )
-      .all(safeLimit);
+      .all(safeLimit, safeOffset);
 
     return rows.map((row) => ({
       club_id: Number(row.clubId || 0),
@@ -1749,8 +3334,9 @@ class AlteredRepository {
     );
   }
 
-  listMostPlayedAlterationsMaps({ limit = 50 } = {}) {
+  listMostPlayedAlterationsMaps({ limit = 50, offset = 0 } = {}) {
     const safeLimit = clampInt(limit, { min: 1, max: 2000, fallback: 50 });
+    const safeOffset = clampInt(offset, { min: 0, max: 2000000, fallback: 0 });
     return this.db
       .prepare(
         `
@@ -1772,9 +3358,10 @@ class AlteredRepository {
         LEFT JOIN altered_campaigns c ON c.campaign_id = p.campaign_id
         ORDER BY m.player_count DESC, m.name COLLATE NOCASE ASC
         LIMIT ?
+        OFFSET ?
         `
       )
-      .all(safeLimit)
+      .all(safeLimit, safeOffset)
       .map((row) => ({
         map_uid: row.mapUid,
         map_name: row.mapName || row.mapUid,
@@ -1791,8 +3378,9 @@ class AlteredRepository {
       }));
   }
 
-  listWrLeaderboardOverall({ limit = 300 } = {}) {
+  listWrLeaderboardOverall({ limit = 300, offset = 0 } = {}) {
     const safeLimit = clampInt(limit, { min: 1, max: 5000, fallback: 300 });
+    const safeOffset = clampInt(offset, { min: 0, max: 2000000, fallback: 0 });
     return this.db
       .prepare(
         `
@@ -1805,14 +3393,41 @@ class AlteredRepository {
         GROUP BY TRIM(m.wr_holder)
         ORDER BY wrCount DESC, COALESCE(latestWrAt, '') DESC, player COLLATE NOCASE ASC
         LIMIT ?
+        OFFSET ?
         `
       )
-      .all(safeLimit)
+      .all(safeLimit, safeOffset)
       .map((row) => ({
         player: row.player,
         wr_count: Number(row.wrCount || 0),
         latest_wr_at: row.latestWrAt || null,
       }));
+  }
+
+  getWrLeaderboardSummary() {
+    const row = this.db
+      .prepare(
+        `
+        WITH grouped AS (
+          SELECT
+            TRIM(m.wr_holder) AS player,
+            COUNT(*) AS wrCount
+          FROM altered_maps m
+          WHERE m.wr_ms > 0 AND TRIM(COALESCE(m.wr_holder, '')) != ''
+          GROUP BY TRIM(m.wr_holder)
+        )
+        SELECT
+          COUNT(*) AS uniquePlayers,
+          COALESCE(SUM(wrCount), 0) AS totalWrs
+        FROM grouped
+        `
+      )
+      .get();
+
+    return {
+      unique_players: Number(row?.uniquePlayers || 0),
+      total_wrs: Number(row?.totalWrs || 0),
+    };
   }
 
   listWrLeaderboardByCampaign({ perBucketLimit = 10, maxRows = 4000 } = {}) {
@@ -1978,9 +3593,11 @@ class AlteredRepository {
       }));
   }
 
-  listMaps({ q = "", limit = 1200 } = {}) {
+  listMaps({ q = "", limit = 1200, offset = 0 } = {}) {
     const query = String(q || "").trim().toLowerCase();
     const pattern = `%${query}%`;
+    const safeLimit = Math.max(1, Math.min(Number(limit) || 1200, 50000));
+    const safeOffset = clampInt(offset, { min: 0, max: 2000000, fallback: 0 });
     const rows = this.db
       .prepare(
         `
@@ -2012,14 +3629,143 @@ class AlteredRepository {
         WHERE (? = '' OR LOWER(m.name) LIKE ? OR LOWER(m.map_uid) LIKE ?)
         ORDER BY COALESCE(c.name, 'Unassigned') COLLATE NOCASE ASC, COALESCE(p.slot, 9999) ASC, m.name COLLATE NOCASE ASC
         LIMIT ?
+        OFFSET ?
         `
       )
-      .all(query, pattern, pattern, Math.max(1, Math.min(Number(limit) || 1200, 50000)));
+      .all(query, pattern, pattern, safeLimit, safeOffset);
     return rows.map(rowToMap);
   }
 
-  getMapOptions() {
-    return this.listMaps({ limit: 25000 }).map((map) => ({
+  countMapsWorkspace({
+    q = "",
+    campaign = "",
+    tracked = undefined,
+    status = "",
+    staleState = "",
+  } = {}) {
+    const query = String(q || "").trim().toLowerCase();
+    const pattern = `%${query}%`;
+    const safeCampaign = String(campaign || "").trim();
+    const trackedFlag =
+      typeof tracked === "boolean" ? (tracked ? 1 : 0) : Number(tracked) === 1 ? 1 : Number(tracked) === 0 ? 0 : -1;
+    const safeStatus = String(status || "").trim().toLowerCase();
+    const safeStaleState = String(staleState || "").trim().toLowerCase();
+    const row = this.db
+      .prepare(
+        `
+        SELECT COUNT(*) AS count
+        FROM altered_maps m
+        LEFT JOIN altered_map_positions p ON p.map_uid = m.map_uid
+        LEFT JOIN altered_campaigns c ON c.campaign_id = p.campaign_id
+        WHERE (? = '' OR LOWER(m.name) LIKE ? OR LOWER(m.map_uid) LIKE ?)
+          AND (? = '' OR LOWER(COALESCE(c.name, 'Unassigned')) = LOWER(?))
+          AND (? = -1 OR m.tracked = ?)
+          AND (? = '' OR LOWER(COALESCE(m.status, 'live')) = ?)
+          AND (
+            ? = ''
+            OR (? = 'fresh' AND m.last_checked_at IS NOT NULL AND datetime(m.last_checked_at) > datetime('now', '-1 day'))
+            OR (? = 'stale' AND (m.last_checked_at IS NULL OR datetime(m.last_checked_at) <= datetime('now', '-1 day')))
+          )
+        `
+      )
+      .get(
+        query,
+        pattern,
+        pattern,
+        safeCampaign,
+        safeCampaign,
+        trackedFlag,
+        trackedFlag,
+        safeStatus,
+        safeStatus,
+        safeStaleState,
+        safeStaleState,
+        safeStaleState
+      );
+    return Number(row?.count || 0);
+  }
+
+  listMapsWorkspace({
+    q = "",
+    campaign = "",
+    tracked = undefined,
+    status = "",
+    staleState = "",
+    limit = 50,
+    offset = 0,
+  } = {}) {
+    const query = String(q || "").trim().toLowerCase();
+    const pattern = `%${query}%`;
+    const safeCampaign = String(campaign || "").trim();
+    const trackedFlag =
+      typeof tracked === "boolean" ? (tracked ? 1 : 0) : Number(tracked) === 1 ? 1 : Number(tracked) === 0 ? 0 : -1;
+    const safeStatus = String(status || "").trim().toLowerCase();
+    const safeStaleState = String(staleState || "").trim().toLowerCase();
+    const safeLimit = Math.max(1, Math.min(Number(limit) || 50, 500));
+    const safeOffset = clampInt(offset, { min: 0, max: 2000000, fallback: 0 });
+    const rows = this.db
+      .prepare(
+        `
+        SELECT
+          m.map_uid AS uid,
+          m.map_id AS mapId,
+          m.name AS name,
+          m.map_type AS mapType,
+          m.map_style AS mapStyle,
+          m.map_environment AS mapEnvironment,
+          c.name AS campaign,
+          c.campaign_id AS campaignId,
+          p.slot AS slot,
+          m.author_time AS authorMs,
+          m.player_count AS playerCount,
+          m.player_count_updated_at AS playerCountUpdatedAt,
+          m.wr_ms AS wrMs,
+          m.wr_holder AS wrHolder,
+          m.wr_updated_at AS wrUpdatedAt,
+          m.tracked AS tracked,
+          m.status AS status,
+          m.check_frequency AS checkFrequency,
+          m.last_checked_at AS lastCheckedAt,
+          m.map_created_at AS mapCreatedAt,
+          m.map_updated_at AS mapUpdatedAt
+        FROM altered_maps m
+        LEFT JOIN altered_map_positions p ON p.map_uid = m.map_uid
+        LEFT JOIN altered_campaigns c ON c.campaign_id = p.campaign_id
+        WHERE (? = '' OR LOWER(m.name) LIKE ? OR LOWER(m.map_uid) LIKE ?)
+          AND (? = '' OR LOWER(COALESCE(c.name, 'Unassigned')) = LOWER(?))
+          AND (? = -1 OR m.tracked = ?)
+          AND (? = '' OR LOWER(COALESCE(m.status, 'live')) = ?)
+          AND (
+            ? = ''
+            OR (? = 'fresh' AND m.last_checked_at IS NOT NULL AND datetime(m.last_checked_at) > datetime('now', '-1 day'))
+            OR (? = 'stale' AND (m.last_checked_at IS NULL OR datetime(m.last_checked_at) <= datetime('now', '-1 day')))
+          )
+        ORDER BY COALESCE(c.name, 'Unassigned') COLLATE NOCASE ASC, COALESCE(p.slot, 9999) ASC, m.name COLLATE NOCASE ASC
+        LIMIT ?
+        OFFSET ?
+        `
+      )
+      .all(
+        query,
+        pattern,
+        pattern,
+        safeCampaign,
+        safeCampaign,
+        trackedFlag,
+        trackedFlag,
+        safeStatus,
+        safeStatus,
+        safeStaleState,
+        safeStaleState,
+        safeStaleState,
+        safeLimit,
+        safeOffset
+      );
+    return rows.map(rowToMap);
+  }
+
+  getMapOptions({ limit = 25000, offset = 0 } = {}) {
+    return this.listMaps({ limit, offset }).map((map) => ({
       uid: map.uid,
       name: map.name,
       campaign: map.campaign,
@@ -2027,32 +3773,323 @@ class AlteredRepository {
     }));
   }
 
-  listMapsForNameStandardization({ q = "", limit = 60000 } = {}) {
-    const query = String(q || "").trim().toLowerCase();
-    const pattern = `%${query}%`;
-    return this.db
+  listMapsForCampaignNames({ campaignNames = [] } = {}) {
+    const safeCampaignNames = uniqueBy(
+      (Array.isArray(campaignNames) ? campaignNames : [campaignNames])
+        .map((value) => toText(value))
+        .filter(Boolean),
+      (value) => value.toLowerCase()
+    );
+    if (!safeCampaignNames.length) return [];
+    const placeholders = safeCampaignNames.map(() => "?").join(", ");
+    const rows = this.db
       .prepare(
         `
         SELECT
           m.map_uid AS mapUid,
           m.name AS name,
+          m.download_url AS downloadUrl,
           m.map_type AS mapType,
           m.map_style AS mapStyle,
           m.map_environment AS mapEnvironment,
-          m.author AS author,
-          m.submitter AS submitter,
-          c.name AS campaign,
           c.campaign_id AS campaignId,
+          c.name AS campaignName,
           p.slot AS slot
         FROM altered_maps m
-        LEFT JOIN altered_map_positions p ON p.map_uid = m.map_uid
-        LEFT JOIN altered_campaigns c ON c.campaign_id = p.campaign_id
-        WHERE (? = '' OR LOWER(m.name) LIKE ? OR LOWER(m.map_uid) LIKE ?)
-        ORDER BY COALESCE(c.name, 'Unassigned') COLLATE NOCASE ASC, COALESCE(p.slot, 9999) ASC, m.name COLLATE NOCASE ASC
-        LIMIT ?
+        JOIN altered_map_positions p ON p.map_uid = m.map_uid
+        JOIN altered_campaigns c ON c.campaign_id = p.campaign_id
+        WHERE c.name IN (${placeholders})
+        ORDER BY c.name COLLATE NOCASE ASC, p.slot ASC, m.name COLLATE NOCASE ASC, m.map_uid ASC
         `
       )
-      .all(query, pattern, pattern, Math.max(1, Math.min(Number(limit) || 60000, 120000)));
+      .all(...safeCampaignNames);
+    return rows.map((row) => ({
+      mapUid: row.mapUid,
+      uid: row.mapUid,
+      name: row.name || row.mapUid,
+      mapName: row.name || row.mapUid,
+      downloadUrl: row.downloadUrl || null,
+      mapType: row.mapType || null,
+      mapStyle: row.mapStyle || null,
+      mapEnvironment: row.mapEnvironment || null,
+      campaignId: Number(row.campaignId || 0) || null,
+      campaignName: row.campaignName || null,
+      campaign: row.campaignName || null,
+      slot: Number(row.slot || 0) || 0,
+    }));
+  }
+
+  listMapsForNameStandardization({
+    q = "",
+    limit = 60000,
+    mapUids = [],
+    clubId = null,
+    reviewState = "",
+    includePayload = true,
+  } = {}) {
+    const query = String(q || "").trim().toLowerCase();
+    const pattern = `%${query}%`;
+    const safeClubId = clampInt(clubId, { min: 1, max: 2147483647, fallback: 0 }) || null;
+    const safeMapUids = uniqueBy(
+      (Array.isArray(mapUids) ? mapUids : [])
+        .map((value) => toText(value))
+        .filter(Boolean),
+      (value) => value.toLowerCase()
+    );
+    const mapUidWhere = safeMapUids.length
+      ? `AND m.map_uid IN (${safeMapUids.map(() => "?").join(", ")})`
+      : "";
+    const clubWhere = safeClubId ? `AND c.club_id = ?` : "";
+    const normalizedReview = String(reviewState || "").trim().toLowerCase();
+    const reviewWhere = (normalizedReview === "pending" || normalizedReview === "approved" || normalizedReview === "ignored")
+      ? "AND nc.review_state = ?"
+      : "";
+    const reviewJoin = reviewWhere
+      ? "INNER JOIN altered_map_name_candidates nc ON nc.map_uid = m.map_uid"
+      : "";
+    const safeLimit = Math.max(1, Math.min(Number(limit) || 60000, 120000));
+    return this.db
+      .prepare(
+        includePayload
+          ? `
+            SELECT
+              m.map_uid AS mapUid,
+              m.map_id AS mapId,
+              m.name AS name,
+              m.map_type AS mapType,
+              m.map_style AS mapStyle,
+              m.map_environment AS mapEnvironment,
+              m.author AS author,
+              m.submitter AS submitter,
+              m.download_url AS downloadUrl,
+              m.payload_json AS payloadJson,
+              c.name AS campaign,
+              c.campaign_id AS campaignId,
+              c.external_campaign_id AS campaignExternalId,
+              campaign_counts.mapCount AS campaignMapCount,
+              c.start_timestamp AS campaignStartTimestamp,
+              c.payload_json AS campaignPayloadJson,
+              p.slot AS slot
+            FROM altered_maps m
+            LEFT JOIN altered_map_positions p ON p.map_uid = m.map_uid
+            LEFT JOIN altered_campaigns c ON c.campaign_id = p.campaign_id
+            ${reviewJoin}
+            LEFT JOIN (
+              SELECT p2.campaign_id AS campaignId, COUNT(*) AS mapCount
+              FROM altered_map_positions p2
+              GROUP BY p2.campaign_id
+            ) campaign_counts ON campaign_counts.campaignId = c.campaign_id
+            WHERE (? = '' OR LOWER(m.name) LIKE ? OR LOWER(m.map_uid) LIKE ?)
+              ${mapUidWhere}
+              ${clubWhere}
+              ${reviewWhere}
+              ${EXCLUDE_NONCANONICAL_WEEKLY_SHORTS_SQL}
+            ORDER BY COALESCE(c.name, 'Unassigned') COLLATE NOCASE ASC, COALESCE(p.slot, 9999) ASC, m.name COLLATE NOCASE ASC
+            LIMIT ?
+          `
+          : `
+            SELECT
+              m.map_uid AS mapUid,
+              m.map_id AS mapId,
+              m.name AS name,
+              m.map_type AS mapType,
+              m.map_style AS mapStyle,
+              m.map_environment AS mapEnvironment,
+              m.author AS author,
+              m.submitter AS submitter,
+              m.download_url AS downloadUrl,
+              NULL AS payloadJson,
+              c.name AS campaign,
+              c.campaign_id AS campaignId,
+              c.external_campaign_id AS campaignExternalId,
+              NULL AS campaignMapCount,
+              c.start_timestamp AS campaignStartTimestamp,
+              NULL AS campaignPayloadJson,
+              p.slot AS slot
+            FROM altered_maps m
+            LEFT JOIN altered_map_positions p ON p.map_uid = m.map_uid
+            LEFT JOIN altered_campaigns c ON c.campaign_id = p.campaign_id
+            ${reviewJoin}
+            WHERE (? = '' OR LOWER(m.name) LIKE ? OR LOWER(m.map_uid) LIKE ?)
+              ${mapUidWhere}
+              ${clubWhere}
+              ${reviewWhere}
+              ${EXCLUDE_NONCANONICAL_WEEKLY_SHORTS_SQL}
+            ORDER BY COALESCE(c.name, 'Unassigned') COLLATE NOCASE ASC, COALESCE(p.slot, 9999) ASC, m.name COLLATE NOCASE ASC
+            LIMIT ?
+          `
+      )
+      .all(
+        query,
+        pattern,
+        pattern,
+        ...safeMapUids,
+        ...(safeClubId ? [safeClubId] : []),
+        ...(reviewWhere ? [normalizedReview] : []),
+        safeLimit
+      )
+      .map((row) => ({
+        ...row,
+        payload: parseJsonSafe(row.payloadJson, null),
+        campaignPayload: parseJsonSafe(row.campaignPayloadJson, null),
+      }));
+  }
+
+  listMapsNeedingSimilarityRefresh({
+    q = "",
+    limit = 250,
+    mapUids = [],
+    clubId = null,
+    reviewState = "",
+    requiredAssignmentMethod = "",
+    includePayload = true,
+  } = {}) {
+    const query = String(q || "").trim().toLowerCase();
+    const pattern = `%${query}%`;
+    const requiredMethod = toText(requiredAssignmentMethod).toLowerCase();
+    const safeClubId = clampInt(clubId, { min: 1, max: 2147483647, fallback: 0 }) || null;
+    const safeMapUids = uniqueBy(
+      (Array.isArray(mapUids) ? mapUids : [])
+        .map((value) => toText(value))
+        .filter(Boolean),
+      (value) => value.toLowerCase()
+    );
+    const mapUidWhere = safeMapUids.length
+      ? `AND m.map_uid IN (${safeMapUids.map(() => "?").join(", ")})`
+      : "";
+    const clubWhere = safeClubId ? `AND c.club_id = ?` : "";
+    const normalizedReview = String(reviewState || "").trim().toLowerCase();
+    const reviewWhere = (normalizedReview === "pending" || normalizedReview === "approved" || normalizedReview === "ignored")
+      ? "AND nc.review_state = ?"
+      : "";
+    const reviewJoin = reviewWhere
+      ? "INNER JOIN altered_map_name_candidates nc ON nc.map_uid = m.map_uid"
+      : "";
+    const safeLimit = Math.max(1, Math.min(Number(limit) || 250, 120000));
+
+    return this.db
+      .prepare(
+        includePayload
+          ? `
+            SELECT
+              m.map_uid AS mapUid,
+              m.map_id AS mapId,
+              m.name AS name,
+              m.map_type AS mapType,
+              m.map_style AS mapStyle,
+              m.map_environment AS mapEnvironment,
+              m.author AS author,
+              m.submitter AS submitter,
+              m.download_url AS downloadUrl,
+              m.payload_json AS payloadJson,
+              c.name AS campaign,
+              c.campaign_id AS campaignId,
+              c.external_campaign_id AS campaignExternalId,
+              campaign_counts.mapCount AS campaignMapCount,
+              c.start_timestamp AS campaignStartTimestamp,
+              c.payload_json AS campaignPayloadJson,
+              p.slot AS slot,
+              sim.assignment_method AS similarityAssignmentMethod,
+              sim.updated_at AS similarityUpdatedAt
+            FROM altered_maps m
+            LEFT JOIN altered_map_positions p ON p.map_uid = m.map_uid
+            LEFT JOIN altered_campaigns c ON c.campaign_id = p.campaign_id
+            LEFT JOIN altered_map_number_similarity sim ON sim.map_uid = m.map_uid
+            ${reviewJoin}
+            LEFT JOIN (
+              SELECT p2.campaign_id AS campaignId, COUNT(*) AS mapCount
+              FROM altered_map_positions p2
+              GROUP BY p2.campaign_id
+            ) campaign_counts ON campaign_counts.campaignId = c.campaign_id
+            WHERE (? = '' OR LOWER(m.name) LIKE ? OR LOWER(m.map_uid) LIKE ?)
+              ${mapUidWhere}
+              ${clubWhere}
+              ${reviewWhere}
+              ${EXCLUDE_NONCANONICAL_WEEKLY_SHORTS_SQL}
+              AND (
+                sim.map_uid IS NULL
+                OR (? <> '' AND LOWER(COALESCE(sim.assignment_method, '')) <> ?)
+                OR json_extract(sim.candidate_matches_json, '$[0].weightedScore') IS NULL
+              )
+            ORDER BY
+              CASE
+                WHEN sim.map_uid IS NULL THEN 0
+                WHEN (? <> '' AND LOWER(COALESCE(sim.assignment_method, '')) <> ?) THEN 1
+                WHEN json_extract(sim.candidate_matches_json, '$[0].weightedScore') IS NULL THEN 2
+                ELSE 3
+              END ASC,
+              COALESCE(c.name, 'Unassigned') COLLATE NOCASE ASC,
+              COALESCE(p.slot, 9999) ASC,
+              m.name COLLATE NOCASE ASC
+            LIMIT ?
+          `
+          : `
+            SELECT
+              m.map_uid AS mapUid,
+              m.map_id AS mapId,
+              m.name AS name,
+              m.map_type AS mapType,
+              m.map_style AS mapStyle,
+              m.map_environment AS mapEnvironment,
+              m.author AS author,
+              m.submitter AS submitter,
+              m.download_url AS downloadUrl,
+              NULL AS payloadJson,
+              c.name AS campaign,
+              c.campaign_id AS campaignId,
+              c.external_campaign_id AS campaignExternalId,
+              NULL AS campaignMapCount,
+              c.start_timestamp AS campaignStartTimestamp,
+              NULL AS campaignPayloadJson,
+              p.slot AS slot,
+              sim.assignment_method AS similarityAssignmentMethod,
+              sim.updated_at AS similarityUpdatedAt
+            FROM altered_maps m
+            LEFT JOIN altered_map_positions p ON p.map_uid = m.map_uid
+            LEFT JOIN altered_campaigns c ON c.campaign_id = p.campaign_id
+            LEFT JOIN altered_map_number_similarity sim ON sim.map_uid = m.map_uid
+            ${reviewJoin}
+            WHERE (? = '' OR LOWER(m.name) LIKE ? OR LOWER(m.map_uid) LIKE ?)
+              ${mapUidWhere}
+              ${clubWhere}
+              ${reviewWhere}
+              ${EXCLUDE_NONCANONICAL_WEEKLY_SHORTS_SQL}
+              AND (
+                sim.map_uid IS NULL
+                OR (? <> '' AND LOWER(COALESCE(sim.assignment_method, '')) <> ?)
+                OR json_extract(sim.candidate_matches_json, '$[0].weightedScore') IS NULL
+              )
+            ORDER BY
+              CASE
+                WHEN sim.map_uid IS NULL THEN 0
+                WHEN (? <> '' AND LOWER(COALESCE(sim.assignment_method, '')) <> ?) THEN 1
+                WHEN json_extract(sim.candidate_matches_json, '$[0].weightedScore') IS NULL THEN 2
+                ELSE 3
+              END ASC,
+              COALESCE(c.name, 'Unassigned') COLLATE NOCASE ASC,
+              COALESCE(p.slot, 9999) ASC,
+              m.name COLLATE NOCASE ASC
+            LIMIT ?
+          `
+      )
+      .all(
+        query,
+        pattern,
+        pattern,
+        ...safeMapUids,
+        ...(safeClubId ? [safeClubId] : []),
+        ...(reviewWhere ? [normalizedReview] : []),
+        requiredMethod,
+        requiredMethod,
+        requiredMethod,
+        requiredMethod,
+        safeLimit
+      )
+      .map((row) => ({
+        ...row,
+        payload: parseJsonSafe(row.payloadJson, null),
+        campaignPayload: parseJsonSafe(row.campaignPayloadJson, null),
+      }));
   }
 
   upsertMapNameCandidates({ candidates = [] } = {}) {
@@ -2068,47 +4105,51 @@ class AlteredRepository {
     const now = new Date().toISOString();
     const upsertStmt = this.db.prepare(
       `
-      INSERT INTO altered_map_name_candidates (
-        map_uid,
-        original_name,
-        sanitized_name,
-        proposed_name,
-        parser_pattern,
-        parser_confidence,
-        season,
-        year,
-        map_number,
-        alteration_mix_json,
-        automation_state,
-        review_state,
-        manual_name,
-        review_note,
-        requires_regex,
-        source_version,
-        created_at,
-        updated_at,
-        last_processed_at
-      ) VALUES (
-        ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'pending', NULL, NULL, ?, ?, ?, ?, ?
-      )
-      ON CONFLICT(map_uid) DO UPDATE SET
-        original_name = excluded.original_name,
-        sanitized_name = excluded.sanitized_name,
-        proposed_name = excluded.proposed_name,
-        parser_pattern = excluded.parser_pattern,
-        parser_confidence = excluded.parser_confidence,
-        season = excluded.season,
-        year = excluded.year,
-        map_number = excluded.map_number,
-        alteration_mix_json = excluded.alteration_mix_json,
-        automation_state = excluded.automation_state,
-        requires_regex = excluded.requires_regex,
-        source_version = excluded.source_version,
-        updated_at = excluded.updated_at,
-        last_processed_at = excluded.last_processed_at,
-        review_state = altered_map_name_candidates.review_state,
-        manual_name = altered_map_name_candidates.manual_name,
-        review_note = altered_map_name_candidates.review_note
+        INSERT INTO altered_map_name_candidates (
+          map_uid,
+          original_name,
+          sanitized_name,
+          proposed_name,
+          parser_pattern,
+          parser_confidence,
+          season,
+          year,
+          map_number,
+          map_numbers_json,
+          alteration_label,
+          alteration_mix_json,
+          automation_state,
+          review_state,
+          manual_name,
+          review_note,
+          requires_regex,
+          source_version,
+          created_at,
+          updated_at,
+          last_processed_at
+        ) VALUES (
+          ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'pending', NULL, NULL, ?, ?, ?, ?, ?
+        )
+        ON CONFLICT(map_uid) DO UPDATE SET
+          original_name = excluded.original_name,
+          sanitized_name = excluded.sanitized_name,
+          proposed_name = excluded.proposed_name,
+          parser_pattern = excluded.parser_pattern,
+          parser_confidence = excluded.parser_confidence,
+          season = excluded.season,
+          year = excluded.year,
+          map_number = excluded.map_number,
+          map_numbers_json = excluded.map_numbers_json,
+          alteration_label = excluded.alteration_label,
+          alteration_mix_json = excluded.alteration_mix_json,
+          automation_state = excluded.automation_state,
+          requires_regex = excluded.requires_regex,
+          source_version = excluded.source_version,
+          updated_at = excluded.updated_at,
+          last_processed_at = excluded.last_processed_at,
+          review_state = altered_map_name_candidates.review_state,
+          manual_name = altered_map_name_candidates.manual_name,
+          review_note = altered_map_name_candidates.review_note
       `
     );
 
@@ -2125,7 +4166,7 @@ class AlteredRepository {
     let updated = 0;
 
     try {
-      this.db.exec("BEGIN");
+      this.db.exec("BEGIN IMMEDIATE");
       for (const candidate of list) {
         const mapUid = String(candidate?.mapUid || "").trim();
         if (!mapUid) continue;
@@ -2140,13 +4181,15 @@ class AlteredRepository {
             ? Number(candidate.parserConfidence)
             : 0,
           String(candidate?.season || "").trim() || null,
-          Number.isFinite(Number(candidate?.year)) ? Math.floor(Number(candidate.year)) : null,
-          Number.isFinite(Number(candidate?.mapNumber))
-            ? Math.floor(Number(candidate.mapNumber))
-            : null,
-          serializeJson(Array.isArray(candidate?.alterationMix) ? candidate.alterationMix : []),
-          String(candidate?.automationState || "").trim().toLowerCase() === "matched"
-            ? "matched"
+            Number.isFinite(Number(candidate?.year)) ? Math.floor(Number(candidate.year)) : null,
+            Number.isFinite(Number(candidate?.mapNumber))
+              ? Math.floor(Number(candidate.mapNumber))
+              : null,
+            serializeJson(Array.isArray(candidate?.mapNumbers) ? candidate.mapNumbers : []),
+            String(candidate?.alteration || "").trim() || null,
+            serializeJson(Array.isArray(candidate?.alterationMix) ? candidate.alterationMix : []),
+            String(candidate?.automationState || "").trim().toLowerCase() === "matched"
+              ? "matched"
             : "unmatched",
           candidate?.requiresRegex ? 1 : 0,
           String(candidate?.sourceVersion || "").trim() || "sorting-v3-lite",
@@ -2177,6 +4220,810 @@ class AlteredRepository {
     };
   }
 
+  deleteMapNameCandidates({ mapUids = [] } = {}) {
+    const safeMapUids = uniqueBy(
+      (Array.isArray(mapUids) ? mapUids : [])
+        .map((value) => toText(value))
+        .filter(Boolean),
+      (value) => value.toLowerCase()
+    );
+    if (!safeMapUids.length) {
+      return {
+        processed: 0,
+        deleted: 0,
+      };
+    }
+
+    const result = this.db
+      .prepare(
+        `
+        DELETE FROM altered_map_name_candidates
+        WHERE map_uid IN (${safeMapUids.map(() => "?").join(", ")})
+        `
+      )
+      .run(...safeMapUids);
+
+    return {
+      processed: safeMapUids.length,
+      deleted: Number(result?.changes || 0),
+    };
+  }
+
+  getMapLocalFiles({ mapUids = [] } = {}) {
+    const safeMapUids = uniqueBy(
+      (Array.isArray(mapUids) ? mapUids : [])
+        .map((value) => toText(value))
+        .filter(Boolean),
+      (value) => value.toLowerCase()
+    );
+    if (!safeMapUids.length) return [];
+    const placeholders = safeMapUids.map(() => "?").join(", ");
+    const rows = this.db
+      .prepare(
+        `
+        SELECT
+          map_uid AS mapUid,
+          relative_path AS relativePath,
+          download_url AS downloadUrl,
+          file_sha256 AS fileSha256,
+          file_size_bytes AS fileSizeBytes,
+          downloaded_at AS downloadedAt,
+          verified_at AS verifiedAt,
+          status AS status,
+          last_error AS lastError,
+          updated_at AS updatedAt
+        FROM altered_map_local_files
+        WHERE map_uid IN (${placeholders})
+        `
+      )
+      .all(...safeMapUids);
+    return rows.map((row) => ({
+      mapUid: row.mapUid,
+      relativePath: row.relativePath || null,
+      downloadUrl: row.downloadUrl || null,
+      fileSha256: row.fileSha256 || null,
+      fileSizeBytes: Number(row.fileSizeBytes || 0),
+      downloadedAt: row.downloadedAt || null,
+      verifiedAt: row.verifiedAt || null,
+      status: row.status || "missing",
+      lastError: row.lastError || null,
+      updatedAt: row.updatedAt || null,
+    }));
+  }
+
+  getMapLocalFileFixes({ mapUids = [] } = {}) {
+    const safeMapUids = uniqueBy(
+      (Array.isArray(mapUids) ? mapUids : [])
+        .map((value) => toText(value))
+        .filter(Boolean),
+      (value) => value.toLowerCase()
+    );
+    if (!safeMapUids.length) return [];
+    const placeholders = safeMapUids.map(() => "?").join(", ");
+    const rows = this.db
+      .prepare(
+        `
+        SELECT
+          map_uid AS mapUid,
+          relative_path AS relativePath,
+          source_file_path AS sourceFilePath,
+          file_sha256 AS fileSha256,
+          file_size_bytes AS fileSizeBytes,
+          imported_at AS importedAt,
+          verified_at AS verifiedAt,
+          status AS status,
+          note AS note,
+          last_error AS lastError,
+          updated_at AS updatedAt
+        FROM altered_map_local_file_fixes
+        WHERE map_uid IN (${placeholders})
+        `
+      )
+      .all(...safeMapUids);
+    return rows.map(rowToMapLocalFileFix);
+  }
+
+  upsertMapLocalFileFixes({ records = [] } = {}) {
+    const list = Array.isArray(records) ? records : [];
+    if (!list.length) {
+      return { processed: 0, inserted: 0, updated: 0 };
+    }
+
+    const now = new Date().toISOString();
+    const existsStmt = this.db.prepare(
+      `
+      SELECT map_uid AS mapUid
+      FROM altered_map_local_file_fixes
+      WHERE map_uid = ?
+      LIMIT 1
+      `
+    );
+    const upsertStmt = this.db.prepare(
+      `
+      INSERT INTO altered_map_local_file_fixes (
+        map_uid,
+        relative_path,
+        source_file_path,
+        file_sha256,
+        file_size_bytes,
+        imported_at,
+        verified_at,
+        status,
+        note,
+        last_error,
+        created_at,
+        updated_at
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      ON CONFLICT(map_uid) DO UPDATE SET
+        relative_path = excluded.relative_path,
+        source_file_path = excluded.source_file_path,
+        file_sha256 = excluded.file_sha256,
+        file_size_bytes = excluded.file_size_bytes,
+        imported_at = excluded.imported_at,
+        verified_at = excluded.verified_at,
+        status = excluded.status,
+        note = excluded.note,
+        last_error = excluded.last_error,
+        updated_at = excluded.updated_at
+      `
+    );
+
+    let inserted = 0;
+    let updated = 0;
+    try {
+      this.db.exec("BEGIN IMMEDIATE");
+      for (const record of list) {
+        const mapUid = toText(record?.mapUid);
+        if (!mapUid) continue;
+        const existed = Boolean(existsStmt.get(mapUid));
+        upsertStmt.run(
+          mapUid,
+          toText(record?.relativePath) || null,
+          toText(record?.sourceFilePath) || null,
+          toText(record?.fileSha256) || null,
+          Math.max(0, Number(record?.fileSizeBytes || 0) || 0),
+          toNullableIso(record?.importedAt) || null,
+          toNullableIso(record?.verifiedAt) || null,
+          ["ready", "missing", "error"].includes(String(record?.status || "").trim().toLowerCase())
+            ? String(record.status).trim().toLowerCase()
+            : "missing",
+          toText(record?.note) || null,
+          toText(record?.lastError) || null,
+          existed
+            ? (
+                this.db.prepare(
+                  `SELECT created_at AS createdAt FROM altered_map_local_file_fixes WHERE map_uid = ? LIMIT 1`
+                ).get(mapUid)?.createdAt || now
+              )
+            : now,
+          now
+        );
+        if (existed) updated += 1;
+        else inserted += 1;
+      }
+      this.db.exec("COMMIT");
+    } catch (error) {
+      try {
+        this.db.exec("ROLLBACK");
+      } catch {}
+      return {
+        error: error?.message || "Failed to upsert local map file fixes.",
+        processed: inserted + updated,
+        inserted,
+        updated,
+      };
+    }
+
+    return { processed: inserted + updated, inserted, updated };
+  }
+
+  upsertMapLocalFiles({ records = [] } = {}) {
+    const list = Array.isArray(records) ? records : [];
+    if (!list.length) {
+      return { processed: 0, inserted: 0, updated: 0 };
+    }
+
+    const now = new Date().toISOString();
+    const existsStmt = this.db.prepare(
+      `
+      SELECT map_uid AS mapUid
+      FROM altered_map_local_files
+      WHERE map_uid = ?
+      LIMIT 1
+      `
+    );
+    const upsertStmt = this.db.prepare(
+      `
+      INSERT INTO altered_map_local_files (
+        map_uid,
+        relative_path,
+        download_url,
+        file_sha256,
+        file_size_bytes,
+        downloaded_at,
+        verified_at,
+        status,
+        last_error,
+        updated_at
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      ON CONFLICT(map_uid) DO UPDATE SET
+        relative_path = excluded.relative_path,
+        download_url = excluded.download_url,
+        file_sha256 = excluded.file_sha256,
+        file_size_bytes = excluded.file_size_bytes,
+        downloaded_at = excluded.downloaded_at,
+        verified_at = excluded.verified_at,
+        status = excluded.status,
+        last_error = excluded.last_error,
+        updated_at = excluded.updated_at
+      `
+    );
+
+    let inserted = 0;
+    let updated = 0;
+    try {
+      this.db.exec("BEGIN IMMEDIATE");
+      for (const record of list) {
+        const mapUid = toText(record?.mapUid);
+        if (!mapUid) continue;
+        const existed = Boolean(existsStmt.get(mapUid));
+        upsertStmt.run(
+          mapUid,
+          toText(record?.relativePath) || null,
+          toText(record?.downloadUrl) || null,
+          toText(record?.fileSha256) || null,
+          Math.max(0, Number(record?.fileSizeBytes || 0) || 0),
+          toNullableIso(record?.downloadedAt) || null,
+          toNullableIso(record?.verifiedAt) || null,
+          ["ready", "missing", "error"].includes(String(record?.status || "").trim().toLowerCase())
+            ? String(record.status).trim().toLowerCase()
+            : "missing",
+          toText(record?.lastError) || null,
+          now
+        );
+        if (existed) updated += 1;
+        else inserted += 1;
+      }
+      this.db.exec("COMMIT");
+    } catch (error) {
+      try {
+        this.db.exec("ROLLBACK");
+      } catch {}
+      return {
+        error: error?.message || "Failed to upsert local map files.",
+        processed: inserted + updated,
+        inserted,
+        updated,
+      };
+    }
+
+    return { processed: inserted + updated, inserted, updated };
+  }
+
+  getMapLocalStoreSummary({ includeParserDiagnostics = false } = {}) {
+    const totalMaps = Number(
+      this.db.prepare("SELECT COUNT(*) AS count FROM altered_maps").get()?.count || 0
+    );
+
+    const localFileRows = this.db
+      .prepare(
+        `
+        SELECT
+          status,
+          COUNT(*) AS count,
+          SUM(COALESCE(file_size_bytes, 0)) AS totalBytes
+        FROM altered_map_local_files
+        GROUP BY status
+        `
+      )
+      .all();
+    const localFileCounts = new Map(
+      localFileRows.map((row) => [
+        toText(row?.status).toLowerCase(),
+        {
+          count: Number(row?.count || 0),
+          totalBytes: Number(row?.totalBytes || 0),
+        },
+      ])
+    );
+    const downloadedCount = Number(localFileCounts.get("ready")?.count || 0);
+    const explicitMissingCount = Number(localFileCounts.get("missing")?.count || 0);
+    const errorCount = Number(localFileCounts.get("error")?.count || 0);
+    const trackedLocalFileRows = [...localFileCounts.values()].reduce(
+      (sum, entry) => sum + Number(entry?.count || 0),
+      0
+    );
+    const missingCount = Math.max(0, totalMaps - trackedLocalFileRows) + explicitMissingCount;
+    const totalBytes = Number(localFileCounts.get("ready")?.totalBytes || 0);
+
+    const signatureRows = this.db
+      .prepare(
+        `
+        SELECT source_status AS sourceStatus, COUNT(*) AS count
+        FROM altered_map_content_signatures
+        GROUP BY source_status
+        `
+      )
+      .all();
+    const signatureCounts = new Map(
+      signatureRows.map((row) => [toText(row?.sourceStatus).toLowerCase(), Number(row?.count || 0)])
+    );
+    const signatureReadyCount = Number(signatureCounts.get("ready") || 0);
+    const signatureErrorCount = Number(signatureCounts.get("error") || 0);
+
+    const similarityReadyCount = Number(
+      this.db
+        .prepare(
+          `
+          SELECT COUNT(*) AS count
+          FROM altered_map_number_similarity
+          WHERE COALESCE(assigned_map_numbers_json, '[]') <> '[]'
+          `
+        )
+        .get()?.count || 0
+    );
+
+    let fallbackSignatureCount = 0;
+    let parserUnknownChunkCount = 0;
+    let parserChunk164A8Count = 0;
+    let parserInvalidStringLengthCount = 0;
+
+    if (includeParserDiagnostics) {
+      fallbackSignatureCount = Number(
+        this.db
+          .prepare(
+            `
+            SELECT COUNT(*) AS count
+            FROM altered_map_content_signatures
+            WHERE source_status = 'ready'
+              AND extraction_version = 'asset-token-jaccard-v1-fallback'
+            `
+          )
+          .get()?.count || 0
+      );
+      parserUnknownChunkCount = Number(
+        this.db
+          .prepare(
+            `
+            SELECT COUNT(*) AS count
+            FROM altered_map_content_signatures
+            WHERE source_status = 'ready'
+              AND COALESCE(source_error, '') LIKE '%Unknown unskippable chunk%'
+            `
+          )
+          .get()?.count || 0
+      );
+      parserChunk164A8Count = Number(
+        this.db
+          .prepare(
+            `
+            SELECT COUNT(*) AS count
+            FROM altered_map_content_signatures
+            WHERE source_status = 'ready'
+              AND COALESCE(source_error, '') LIKE '%0x000164A8%'
+            `
+          )
+          .get()?.count || 0
+      );
+      parserInvalidStringLengthCount = Number(
+        this.db
+          .prepare(
+            `
+            SELECT COUNT(*) AS count
+            FROM altered_map_content_signatures
+            WHERE source_status = 'ready'
+              AND COALESCE(source_error, '') LIKE '%Invalid string length%'
+            `
+          )
+          .get()?.count || 0
+      );
+    }
+
+    return {
+      totalMaps,
+      downloadedCount,
+      missingCount,
+      errorCount,
+      totalBytes,
+      signatureReadyCount,
+      signatureErrorCount,
+      fallbackSignatureCount,
+      parserUnknownChunkCount,
+      parserChunk164A8Count,
+      parserInvalidStringLengthCount,
+      similarityReadyCount,
+    };
+  }
+
+  listMapUidsForLocalFileStatus({ statuses = [], limit = 5000 } = {}) {
+    const safeStatuses = uniqueBy(
+      (Array.isArray(statuses) ? statuses : [statuses])
+        .map((value) => toText(value).toLowerCase())
+        .filter((value) => ["ready", "missing", "error"].includes(value)),
+      (value) => value
+    );
+    if (!safeStatuses.length) return [];
+    const placeholders = safeStatuses.map(() => "?").join(", ");
+    const rows = this.db
+      .prepare(
+        `
+        SELECT map_uid AS mapUid
+        FROM altered_map_local_files
+        WHERE status IN (${placeholders})
+        ORDER BY updated_at DESC, map_uid ASC
+        LIMIT ?
+        `
+      )
+      .all(...safeStatuses, Math.max(1, Math.min(Number(limit) || 5000, 50000)));
+    return rows.map((row) => toText(row.mapUid)).filter(Boolean);
+  }
+
+  listMapUidsNeedingLocalStoreBackfill({ limit = 5000 } = {}) {
+    const safeLimit = Math.max(1, Math.min(Number(limit) || 5000, 50000));
+    const rows = this.db
+      .prepare(
+        `
+        SELECT DISTINCT m.map_uid AS mapUid
+        FROM altered_maps m
+        LEFT JOIN altered_map_local_files lf ON lf.map_uid = m.map_uid
+        LEFT JOIN altered_map_content_signatures sig ON sig.map_uid = m.map_uid
+        WHERE lf.map_uid IS NULL
+          OR COALESCE(lf.status, 'missing') IN ('missing', 'error')
+          OR COALESCE(sig.source_status, 'missing') <> 'ready'
+        ORDER BY
+          COALESCE(m.updated_at, m.created_at, '') DESC,
+          m.map_uid ASC
+        LIMIT ?
+        `
+      )
+      .all(safeLimit);
+    return rows.map((row) => toText(row.mapUid)).filter(Boolean);
+  }
+
+  getMapContentSignatures({ mapUids = [] } = {}) {
+    const safeMapUids = uniqueBy(
+      (Array.isArray(mapUids) ? mapUids : [])
+        .map((value) => toText(value))
+        .filter(Boolean),
+      (value) => value.toLowerCase()
+    );
+    if (!safeMapUids.length) return [];
+    const placeholders = safeMapUids.map(() => "?").join(", ");
+    const rows = this.db
+      .prepare(
+        `
+        SELECT
+          map_uid AS mapUid,
+          extraction_version AS extractionVersion,
+          file_sha256 AS fileSha256,
+          download_url AS downloadUrl,
+          printable_token_count AS printableTokenCount,
+          asset_token_count AS assetTokenCount,
+          CASE
+            WHEN LENGTH(COALESCE(signature_json, '')) <= ?
+              THEN signature_json
+            ELSE NULL
+          END AS signatureJson,
+          LENGTH(COALESCE(signature_json, '')) AS signatureJsonLength,
+          source_status AS sourceStatus,
+          source_error AS sourceError,
+          extracted_at AS extractedAt,
+          updated_at AS updatedAt
+        FROM altered_map_content_signatures
+        WHERE map_uid IN (${placeholders})
+        `
+      )
+      .all(OVERSIZED_SIGNATURE_JSON_MAX_BYTES, ...safeMapUids);
+    return rows.map((row) => {
+      const signatureJsonLength = Number(row.signatureJsonLength || 0);
+      const oversizedSignature = signatureJsonLength > OVERSIZED_SIGNATURE_JSON_MAX_BYTES;
+      const signature = oversizedSignature
+        ? buildOversizedSignatureFallback({
+            assetTokenCount: row.assetTokenCount,
+            printableTokenCount: row.printableTokenCount,
+            signatureJsonLength,
+          })
+        : parseJsonSafe(row.signatureJson, null);
+      const oversizedMessage = oversizedSignature
+        ? `Stored signature JSON is ${signatureJsonLength} bytes; using lightweight fallback.`
+        : null;
+      return {
+        mapUid: row.mapUid,
+        extractionVersion: row.extractionVersion || null,
+        fileSha256: row.fileSha256 || null,
+        downloadUrl: row.downloadUrl || null,
+        printableTokenCount: Number(row.printableTokenCount || 0),
+        assetTokenCount: Number(row.assetTokenCount || 0),
+        signature,
+        sourceStatus: row.sourceStatus || "ready",
+        sourceError: oversizedMessage || row.sourceError || null,
+        extractedAt: row.extractedAt || null,
+        updatedAt: row.updatedAt || null,
+      };
+    });
+  }
+
+  upsertMapContentSignatures({ records = [] } = {}) {
+    const list = Array.isArray(records) ? records : [];
+    if (!list.length) {
+      return {
+        processed: 0,
+        inserted: 0,
+        updated: 0,
+      };
+    }
+
+    const now = new Date().toISOString();
+    const existsStmt = this.db.prepare(
+      `
+      SELECT map_uid AS mapUid
+      FROM altered_map_content_signatures
+      WHERE map_uid = ?
+      LIMIT 1
+      `
+    );
+    const upsertStmt = this.db.prepare(
+      `
+      INSERT INTO altered_map_content_signatures (
+        map_uid,
+        extraction_version,
+        file_sha256,
+        download_url,
+        printable_token_count,
+        asset_token_count,
+        signature_json,
+        source_status,
+        source_error,
+        extracted_at,
+        updated_at
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      ON CONFLICT(map_uid) DO UPDATE SET
+        extraction_version = excluded.extraction_version,
+        file_sha256 = excluded.file_sha256,
+        download_url = excluded.download_url,
+        printable_token_count = excluded.printable_token_count,
+        asset_token_count = excluded.asset_token_count,
+        signature_json = excluded.signature_json,
+        source_status = excluded.source_status,
+        source_error = excluded.source_error,
+        extracted_at = excluded.extracted_at,
+        updated_at = excluded.updated_at
+      `
+    );
+
+    let inserted = 0;
+    let updated = 0;
+    try {
+      this.db.exec("BEGIN IMMEDIATE");
+      for (const record of list) {
+        const mapUid = toText(record?.mapUid);
+        if (!mapUid) continue;
+        const existed = Boolean(existsStmt.get(mapUid));
+        upsertStmt.run(
+          mapUid,
+          toText(record?.extractionVersion, "asset-token-jaccard-v1"),
+          toText(record?.fileSha256) || null,
+          toText(record?.downloadUrl) || null,
+          Math.max(0, Number(record?.printableTokenCount || 0) || 0),
+          Math.max(0, Number(record?.assetTokenCount || 0) || 0),
+          serializeJson(record?.signature),
+          ["ready", "missing-download", "error"].includes(
+            String(record?.sourceStatus || "").trim().toLowerCase()
+          )
+            ? String(record.sourceStatus).trim().toLowerCase()
+            : "ready",
+          toText(record?.sourceError) || null,
+          toIso(record?.extractedAt, now),
+          now
+        );
+        if (existed) updated += 1;
+        else inserted += 1;
+      }
+      this.db.exec("COMMIT");
+    } catch (error) {
+      try {
+        this.db.exec("ROLLBACK");
+      } catch {}
+      return {
+        error: error?.message || "Failed to upsert map content signatures.",
+        processed: inserted + updated,
+        inserted,
+        updated,
+      };
+    }
+
+    return {
+      processed: inserted + updated,
+      inserted,
+      updated,
+    };
+  }
+
+  getMapNumberSimilarity({ mapUids = [] } = {}) {
+    const safeMapUids = uniqueBy(
+      (Array.isArray(mapUids) ? mapUids : [])
+        .map((value) => toText(value))
+        .filter(Boolean),
+      (value) => value.toLowerCase()
+    );
+    if (!safeMapUids.length) return [];
+    const placeholders = safeMapUids.map(() => "?").join(", ");
+    const rows = this.db
+      .prepare(
+        `
+        SELECT
+          map_uid AS mapUid,
+          family_key AS familyKey,
+          reference_campaign_id AS referenceCampaignId,
+          reference_campaign_name AS referenceCampaignName,
+          primary_reference_map_uid AS primaryReferenceMapUid,
+          primary_reference_slot AS primaryReferenceSlot,
+          assigned_map_numbers_json AS assignedMapNumbersJson,
+          top_score AS topScore,
+          second_score AS secondScore,
+          confidence AS confidence,
+          assignment_method AS assignmentMethod,
+          candidate_matches_json AS candidateMatchesJson,
+          details_json AS detailsJson,
+          updated_at AS updatedAt
+        FROM altered_map_number_similarity
+        WHERE map_uid IN (${placeholders})
+        `
+      )
+      .all(...safeMapUids);
+    return rows.map((row) => ({
+      mapUid: row.mapUid,
+      familyKey: row.familyKey || null,
+      referenceCampaignId: Number(row.referenceCampaignId || 0) || null,
+      referenceCampaignName: row.referenceCampaignName || null,
+      primaryReferenceMapUid: row.primaryReferenceMapUid || null,
+      primaryReferenceSlot: Number(row.primaryReferenceSlot || 0) || null,
+      assignedMapNumbers: parseJsonSafe(row.assignedMapNumbersJson, []) || [],
+      topScore: Number(row.topScore || 0),
+      secondScore: Number(row.secondScore || 0),
+      confidence: Number(row.confidence || 0),
+      assignmentMethod: row.assignmentMethod || "asset-token-jaccard-v1",
+      candidateMatches: parseJsonSafe(row.candidateMatchesJson, []) || [],
+      details: parseJsonSafe(row.detailsJson, null),
+      updatedAt: row.updatedAt || null,
+    }));
+  }
+
+  upsertMapNumberSimilarity({ records = [] } = {}) {
+    const list = Array.isArray(records) ? records : [];
+    if (!list.length) {
+      return {
+        processed: 0,
+        inserted: 0,
+        updated: 0,
+      };
+    }
+
+    const now = new Date().toISOString();
+    const existsStmt = this.db.prepare(
+      `
+      SELECT map_uid AS mapUid
+      FROM altered_map_number_similarity
+      WHERE map_uid = ?
+      LIMIT 1
+      `
+    );
+    const upsertStmt = this.db.prepare(
+      `
+      INSERT INTO altered_map_number_similarity (
+        map_uid,
+        family_key,
+        reference_campaign_id,
+        reference_campaign_name,
+        primary_reference_map_uid,
+        primary_reference_slot,
+        assigned_map_numbers_json,
+        top_score,
+        second_score,
+        confidence,
+        assignment_method,
+        candidate_matches_json,
+        details_json,
+        updated_at
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      ON CONFLICT(map_uid) DO UPDATE SET
+        family_key = excluded.family_key,
+        reference_campaign_id = excluded.reference_campaign_id,
+        reference_campaign_name = excluded.reference_campaign_name,
+        primary_reference_map_uid = excluded.primary_reference_map_uid,
+        primary_reference_slot = excluded.primary_reference_slot,
+        assigned_map_numbers_json = excluded.assigned_map_numbers_json,
+        top_score = excluded.top_score,
+        second_score = excluded.second_score,
+        confidence = excluded.confidence,
+        assignment_method = excluded.assignment_method,
+        candidate_matches_json = excluded.candidate_matches_json,
+        details_json = excluded.details_json,
+        updated_at = excluded.updated_at
+      `
+    );
+
+    let inserted = 0;
+    let updated = 0;
+    try {
+      this.db.exec("BEGIN IMMEDIATE");
+      for (const record of list) {
+        const mapUid = toText(record?.mapUid);
+        if (!mapUid) continue;
+        const existed = Boolean(existsStmt.get(mapUid));
+        upsertStmt.run(
+          mapUid,
+          toText(record?.familyKey) || null,
+          clampInt(record?.referenceCampaignId, { min: 1, max: 2147483647, fallback: 0 }) || null,
+          toText(record?.referenceCampaignName) || null,
+          toText(record?.primaryReferenceMapUid) || null,
+          clampInt(record?.primaryReferenceSlot, { min: 1, max: 999, fallback: 0 }) || null,
+          serializeJson(Array.isArray(record?.assignedMapNumbers) ? record.assignedMapNumbers : []),
+          Number.isFinite(Number(record?.topScore)) ? Number(record.topScore) : 0,
+          Number.isFinite(Number(record?.secondScore)) ? Number(record.secondScore) : 0,
+          Number.isFinite(Number(record?.confidence)) ? Number(record.confidence) : 0,
+          toText(record?.assignmentMethod, "asset-token-jaccard-v1"),
+          serializeJson(Array.isArray(record?.candidateMatches) ? record.candidateMatches : []),
+          serializeJson(record?.details),
+          now
+        );
+        if (existed) updated += 1;
+        else inserted += 1;
+      }
+      this.db.exec("COMMIT");
+    } catch (error) {
+      try {
+        this.db.exec("ROLLBACK");
+      } catch {}
+      return {
+        error: error?.message || "Failed to upsert map-number similarity results.",
+        processed: inserted + updated,
+        inserted,
+        updated,
+      };
+    }
+
+    return {
+      processed: inserted + updated,
+      inserted,
+      updated,
+    };
+  }
+
+  bulkApproveMapNameCandidates({ mapUids = [], reviewNote = "" } = {}) {
+    const safeMapUids = uniqueBy(
+      (Array.isArray(mapUids) ? mapUids : [])
+        .map((value) => toText(value))
+        .filter(Boolean),
+      (value) => value.toLowerCase()
+    );
+    if (!safeMapUids.length) {
+      return { processed: 0, approved: 0 };
+    }
+    const now = new Date().toISOString();
+    const placeholders = safeMapUids.map(() => "?").join(", ");
+    const result = this.db
+      .prepare(
+        `
+        UPDATE altered_map_name_candidates
+        SET
+          review_state = 'approved',
+          review_note = CASE
+            WHEN COALESCE(TRIM(?), '') <> '' THEN ?
+            ELSE review_note
+          END,
+          updated_at = ?
+        WHERE map_uid IN (${placeholders})
+          AND review_state = 'pending'
+        `
+      )
+      .run(toText(reviewNote), toText(reviewNote) || null, now, ...safeMapUids);
+    return {
+      processed: safeMapUids.length,
+      approved: Number(result?.changes || 0),
+    };
+  }
+
   getMapNameCandidateSummary() {
     const row = this.db
       .prepare(
@@ -2186,11 +5033,30 @@ class AlteredRepository {
           SUM(CASE WHEN automation_state = 'matched' THEN 1 ELSE 0 END) AS matched,
           SUM(CASE WHEN automation_state = 'unmatched' THEN 1 ELSE 0 END) AS unmatched,
           SUM(CASE WHEN review_state = 'pending' THEN 1 ELSE 0 END) AS pending,
+          SUM(
+            CASE
+              WHEN review_state = 'pending' AND (
+                automation_state = 'unmatched'
+                OR requires_regex = 1
+                OR COALESCE(json_extract(sim.details_json, '$.manualReviewRequired'), 0) = 1
+                OR COALESCE(json_extract(sim.details_json, '$.hasAmbiguousCloseSlots'), 0) = 1
+                OR COALESCE(json_extract(sim.details_json, '$.closeSlotCount'), 0) > 1
+                OR LOWER(COALESCE(json_extract(sim.details_json, '$.matchClassification'), '')) IN ('ambiguous-close-slots', 'fallback-manual-review')
+              ) THEN 1
+              ELSE 0
+            END
+          ) AS pendingManualReview,
+          SUM(CASE WHEN review_state = 'pending' AND automation_state = 'matched' THEN 1 ELSE 0 END) AS pendingMatched,
           SUM(CASE WHEN review_state = 'approved' THEN 1 ELSE 0 END) AS approved,
           SUM(CASE WHEN review_state = 'ignored' THEN 1 ELSE 0 END) AS ignored,
           SUM(CASE WHEN requires_regex = 1 THEN 1 ELSE 0 END) AS requiresRegex,
           SUM(CASE WHEN COALESCE(TRIM(manual_name), '') <> '' THEN 1 ELSE 0 END) AS manualNamed
         FROM altered_map_name_candidates
+        LEFT JOIN altered_map_positions p ON p.map_uid = altered_map_name_candidates.map_uid
+        LEFT JOIN altered_campaigns c ON c.campaign_id = p.campaign_id
+        LEFT JOIN altered_map_number_similarity sim ON sim.map_uid = altered_map_name_candidates.map_uid
+        WHERE 1 = 1
+          ${EXCLUDE_NONCANONICAL_WEEKLY_SHORTS_SQL}
         `
       )
       .get();
@@ -2200,6 +5066,8 @@ class AlteredRepository {
       matched: Number(row?.matched || 0),
       unmatched: Number(row?.unmatched || 0),
       pending: Number(row?.pending || 0),
+      pendingManualReview: Number(row?.pendingManualReview || 0),
+      pendingMatched: Number(row?.pendingMatched || 0),
       approved: Number(row?.approved || 0),
       ignored: Number(row?.ignored || 0),
       requiresRegex: Number(row?.requiresRegex || 0),
@@ -2267,6 +5135,8 @@ class AlteredRepository {
           n.season AS season,
           n.year AS year,
           n.map_number AS mapNumber,
+          n.map_numbers_json AS mapNumbersJson,
+          n.alteration_label AS alterationLabel,
           n.alteration_mix_json AS alterationMixJson,
           n.automation_state AS automationState,
           n.review_state AS reviewState,
@@ -2279,12 +5149,31 @@ class AlteredRepository {
           c.campaign_id AS campaignId,
           p.slot AS slot,
           m.tracked AS tracked,
-          m.status AS status
+          m.status AS status,
+          lf.status AS localFileStatus,
+          lf.relative_path AS localFilePath,
+          sig.source_status AS signatureStatus,
+          sig.source_error AS signatureError,
+          CASE
+            WHEN sim.map_uid IS NOT NULL AND COALESCE(sim.assigned_map_numbers_json, '[]') <> '[]' THEN 'matched'
+            WHEN sim.map_uid IS NOT NULL THEN 'scanned'
+            ELSE 'missing'
+          END AS similarityStatus,
+          sim.top_score AS similarityTopScore,
+          sim.confidence AS similarityConfidence,
+          sim.reference_campaign_name AS similarityReferenceCampaignName,
+          sim.primary_reference_slot AS similarityReferenceSlot,
+          sim.candidate_matches_json AS similarityCandidateMatchesJson,
+          sim.details_json AS similarityDetailsJson
         FROM altered_map_name_candidates n
         LEFT JOIN altered_maps m ON m.map_uid = n.map_uid
         LEFT JOIN altered_map_positions p ON p.map_uid = n.map_uid
         LEFT JOIN altered_campaigns c ON c.campaign_id = p.campaign_id
+        LEFT JOIN altered_map_local_files lf ON lf.map_uid = n.map_uid
+        LEFT JOIN altered_map_content_signatures sig ON sig.map_uid = n.map_uid
+        LEFT JOIN altered_map_number_similarity sim ON sim.map_uid = n.map_uid
         ${whereSql}
+        ${EXCLUDE_NONCANONICAL_WEEKLY_SHORTS_SQL}
         ORDER BY
           CASE n.review_state
             WHEN 'pending' THEN 0
@@ -2309,6 +5198,58 @@ class AlteredRepository {
     return rows.map(rowToNameCandidate);
   }
 
+  countMapNameCandidates({
+    q = "",
+    automationState = "",
+    reviewState = "",
+    requiresRegex = undefined,
+  } = {}) {
+    const where = ["1 = 1"];
+    const params = [];
+
+    const query = String(q || "").trim().toLowerCase();
+    if (query) {
+      const pattern = `%${query}%`;
+      where.push(
+        `(LOWER(n.map_uid) LIKE ? OR LOWER(n.original_name) LIKE ? OR LOWER(COALESCE(n.proposed_name, '')) LIKE ? OR LOWER(COALESCE(n.manual_name, '')) LIKE ? OR LOWER(COALESCE(c.name, '')) LIKE ?)`
+      );
+      params.push(pattern, pattern, pattern, pattern, pattern);
+    }
+
+    const normalizedAutomation = String(automationState || "").trim().toLowerCase();
+    if (normalizedAutomation === "matched" || normalizedAutomation === "unmatched") {
+      where.push(`n.automation_state = ?`);
+      params.push(normalizedAutomation);
+    }
+
+    const normalizedReview = String(reviewState || "").trim().toLowerCase();
+    if (normalizedReview === "pending" || normalizedReview === "approved" || normalizedReview === "ignored") {
+      where.push(`n.review_state = ?`);
+      params.push(normalizedReview);
+    }
+
+    if (requiresRegex === true || requiresRegex === false) {
+      where.push(`n.requires_regex = ?`);
+      params.push(requiresRegex ? 1 : 0);
+    }
+
+    const row = this.db
+      .prepare(
+        `
+        SELECT COUNT(*) AS cnt
+        FROM altered_map_name_candidates n
+        LEFT JOIN altered_map_positions p ON p.map_uid = n.map_uid
+        LEFT JOIN altered_campaigns c ON c.campaign_id = p.campaign_id
+        LEFT JOIN altered_map_number_similarity sim ON sim.map_uid = n.map_uid
+        WHERE ${where.join(" AND ")}
+          ${EXCLUDE_NONCANONICAL_WEEKLY_SHORTS_SQL}
+        `
+      )
+      .get(...params);
+
+    return Number(row?.cnt || 0);
+  }
+
   getMapNameCandidate(mapUid) {
     const uid = String(mapUid || "").trim();
     if (!uid) return null;
@@ -2327,6 +5268,8 @@ class AlteredRepository {
           n.season AS season,
           n.year AS year,
           n.map_number AS mapNumber,
+          n.map_numbers_json AS mapNumbersJson,
+          n.alteration_label AS alterationLabel,
           n.alteration_mix_json AS alterationMixJson,
           n.automation_state AS automationState,
           n.review_state AS reviewState,
@@ -2339,11 +5282,29 @@ class AlteredRepository {
           c.campaign_id AS campaignId,
           p.slot AS slot,
           m.tracked AS tracked,
-          m.status AS status
+          m.status AS status,
+          lf.status AS localFileStatus,
+          lf.relative_path AS localFilePath,
+          sig.source_status AS signatureStatus,
+          sig.source_error AS signatureError,
+          CASE
+            WHEN sim.map_uid IS NOT NULL AND COALESCE(sim.assigned_map_numbers_json, '[]') <> '[]' THEN 'matched'
+            WHEN sim.map_uid IS NOT NULL THEN 'scanned'
+            ELSE 'missing'
+          END AS similarityStatus,
+          sim.top_score AS similarityTopScore,
+          sim.confidence AS similarityConfidence,
+          sim.reference_campaign_name AS similarityReferenceCampaignName,
+          sim.primary_reference_slot AS similarityReferenceSlot,
+          sim.candidate_matches_json AS similarityCandidateMatchesJson,
+          sim.details_json AS similarityDetailsJson
         FROM altered_map_name_candidates n
         LEFT JOIN altered_maps m ON m.map_uid = n.map_uid
         LEFT JOIN altered_map_positions p ON p.map_uid = n.map_uid
         LEFT JOIN altered_campaigns c ON c.campaign_id = p.campaign_id
+        LEFT JOIN altered_map_local_files lf ON lf.map_uid = n.map_uid
+        LEFT JOIN altered_map_content_signatures sig ON sig.map_uid = n.map_uid
+        LEFT JOIN altered_map_number_similarity sim ON sim.map_uid = n.map_uid
         WHERE LOWER(n.map_uid) = LOWER(?)
         LIMIT 1
         `
@@ -2426,14 +5387,20 @@ class AlteredRepository {
           m.map_environment AS mapEnvironment,
           c.name AS campaign,
           c.campaign_id AS campaignId,
+          c.external_campaign_id AS campaignExternalId,
+          campaign_counts.mapCount AS campaignMapCount,
           p.slot AS slot,
           m.author AS author,
+          m.author_display_name AS authorDisplayName,
           m.submitter AS submitter,
+          m.submitter_display_name AS submitterDisplayName,
           m.author_time AS authorMs,
           m.gold_time AS goldMs,
           m.silver_time AS silverMs,
           m.bronze_time AS bronzeMs,
           m.nb_laps AS laps,
+          m.thumbnail_url AS thumbnailUrl,
+          m.download_url AS downloadUrl,
           m.player_count AS playerCount,
           m.player_count_updated_at AS playerCountUpdatedAt,
           m.wr_ms AS wrMs,
@@ -2445,12 +5412,32 @@ class AlteredRepository {
           m.last_checked_at AS lastCheckedAt,
           m.map_created_at AS mapCreatedAt,
           m.map_updated_at AS mapUpdatedAt,
-          m.payload_json AS payloadJson
-        FROM altered_maps m
-        LEFT JOIN altered_map_positions p ON p.map_uid = m.map_uid
-        LEFT JOIN altered_campaigns c ON c.campaign_id = p.campaign_id
-        WHERE LOWER(m.map_uid) = LOWER(?)
-        LIMIT 1
+          m.payload_json AS payloadJson,
+          c.payload_json AS campaignPayloadJson,
+          n.original_name AS derivedOriginalName,
+          n.sanitized_name AS derivedSanitizedName,
+          n.proposed_name AS derivedProposedName,
+          n.manual_name AS derivedManualName,
+          n.season AS derivedSeason,
+          n.year AS derivedYear,
+          n.map_number AS derivedMapNumber,
+          n.alteration_mix_json AS derivedAlterationMixJson,
+          n.parser_pattern AS derivedParserPattern,
+          n.parser_confidence AS derivedParserConfidence,
+          n.source_version AS derivedSourceVersion,
+          n.map_numbers_json AS derivedMapNumbersJson,
+          n.alteration_label AS derivedAlterationLabel
+          FROM altered_maps m
+          LEFT JOIN altered_map_positions p ON p.map_uid = m.map_uid
+          LEFT JOIN altered_campaigns c ON c.campaign_id = p.campaign_id
+          LEFT JOIN (
+            SELECT p2.campaign_id AS campaignId, COUNT(*) AS mapCount
+            FROM altered_map_positions p2
+            GROUP BY p2.campaign_id
+          ) campaign_counts ON campaign_counts.campaignId = c.campaign_id
+          LEFT JOIN altered_map_name_candidates n ON n.map_uid = m.map_uid
+          WHERE LOWER(m.map_uid) = LOWER(?)
+          LIMIT 1
         `
       )
       .get(uid);
@@ -2460,13 +5447,26 @@ class AlteredRepository {
       exists: true,
       map: {
         ...rowToMap(row),
-        author: row.author || "",
-        submitter: row.submitter || "",
-        goldMs: Number(row.goldMs || 0),
-        silverMs: Number(row.silverMs || 0),
-        bronzeMs: Number(row.bronzeMs || 0),
-        laps: Number(row.laps || 1),
         payload: parseJsonSafe(row.payloadJson, null),
+        campaignPayload: parseJsonSafe(row.campaignPayloadJson, null),
+        derivedNameCandidate:
+          row.derivedOriginalName || row.derivedSanitizedName || row.derivedProposedName
+            ? {
+                originalName: row.derivedOriginalName || null,
+                sanitizedName: row.derivedSanitizedName || null,
+                proposedName: row.derivedProposedName || null,
+                manualName: row.derivedManualName || null,
+                season: row.derivedSeason || null,
+                year: Number(row.derivedYear || 0) || null,
+                mapNumber: Number(row.derivedMapNumber || 0) || null,
+                mapNumbers: parseJsonSafe(row.derivedMapNumbersJson, []) || [],
+                alteration: row.derivedAlterationLabel || null,
+                alterationMix: parseJsonSafe(row.derivedAlterationMixJson, []) || [],
+                parserPattern: row.derivedParserPattern || null,
+                parserConfidence: Number(row.derivedParserConfidence || 0),
+                sourceVersion: row.derivedSourceVersion || null,
+              }
+            : null,
       },
     };
   }
@@ -2542,7 +5542,7 @@ class AlteredRepository {
       this.db.exec("BEGIN");
       for (const accountId of normalizedAccountIds) {
         const existing = selectStmt.get(accountId);
-        const displayName = String(namesMap[accountId] || "").trim();
+        const displayName = sanitizeResolvedDisplayName(namesMap[accountId], { accountId });
         const hasDisplayName = Boolean(displayName);
         if (hasDisplayName) namesResolved += 1;
 
@@ -2589,7 +5589,9 @@ class AlteredRepository {
     )
       .map(([rawAccountId, rawDisplayName]) => ({
         accountId: normalizeAccountId(rawAccountId),
-        displayName: String(rawDisplayName || "").trim(),
+        displayName: sanitizeResolvedDisplayName(rawDisplayName, {
+          accountId: normalizeAccountId(rawAccountId),
+        }),
       }))
       .filter((entry) => entry.accountId && entry.displayName);
     if (!entries.length) return { updated: 0 };
@@ -2612,6 +5614,27 @@ class AlteredRepository {
       WHERE LOWER(COALESCE(submitter, '')) = ?
       `
     );
+    const updateWrHolderStmt = this.db.prepare(
+      `
+      UPDATE altered_maps
+      SET
+        wr_holder = ?,
+        updated_at = ?
+      WHERE
+        LOWER(COALESCE(wr_holder, '')) = ?
+        AND COALESCE(wr_holder, '') <> ?
+      `
+    );
+    const updateWrEventHolderStmt = this.db.prepare(
+      `
+      UPDATE altered_wr_events
+      SET holder = ?
+      WHERE
+        LOWER(COALESCE(account_id, '')) = ?
+        AND LOWER(COALESCE(holder, '')) = ?
+        AND COALESCE(holder, '') <> ?
+      `
+    );
 
     let updated = 0;
     const now = new Date().toISOString();
@@ -2622,13 +5645,30 @@ class AlteredRepository {
         updated += Number(authorResult?.changes || 0);
         const submitterResult = updateSubmitterStmt.run(entry.displayName, now, entry.accountId);
         updated += Number(submitterResult?.changes || 0);
+        const wrHolderResult = updateWrHolderStmt.run(
+          entry.displayName,
+          now,
+          entry.accountId,
+          entry.displayName
+        );
+        updated += Number(wrHolderResult?.changes || 0);
+        const wrEventHolderResult = updateWrEventHolderStmt.run(
+          entry.displayName,
+          entry.accountId,
+          entry.accountId,
+          entry.displayName
+        );
+        updated += Number(wrEventHolderResult?.changes || 0);
       }
       this.db.exec("COMMIT");
     } catch (error) {
       try {
         this.db.exec("ROLLBACK");
       } catch {}
-      return { error: error?.message || "Failed to apply mapper display names to maps.", updated };
+      return {
+        error: error?.message || "Failed to apply resolved display names to altered storage.",
+        updated,
+      };
     }
 
     return { updated };
@@ -2758,27 +5798,44 @@ class AlteredRepository {
   }
 
   getMapperAccountStats() {
-    const row =
-      this.db
-        .prepare(
-          `
-          SELECT
-            COUNT(*) AS totalAccounts,
-            SUM(CASE WHEN COALESCE(NULLIF(TRIM(latest_display_name), ''), '') = '' THEN 1 ELSE 0 END) AS unresolvedAccounts,
-            SUM(CASE WHEN last_resolved_at IS NULL THEN 1 ELSE 0 END) AS neverResolvedAccounts,
-            MAX(last_resolved_at) AS latestResolvedAt,
-            MIN(last_resolved_at) AS oldestResolvedAt
-          FROM altered_mapper_accounts
-          `
-        )
-        .get() || {};
+    const rows = this.db
+      .prepare(
+        `
+        SELECT
+          account_id AS accountId,
+          latest_display_name AS latestDisplayName,
+          last_resolved_at AS lastResolvedAt
+        FROM altered_mapper_accounts
+        `
+      )
+      .all();
+
+    let unresolvedAccounts = 0;
+    let neverResolvedAccounts = 0;
+    let latestResolvedAtMs = 0;
+    let oldestResolvedAtMs = 0;
+    for (const row of rows) {
+      const accountId = normalizeAccountId(row?.accountId);
+      const hasDisplayName = hasResolvedDisplayName(row?.latestDisplayName, { accountId });
+      if (!hasDisplayName) unresolvedAccounts += 1;
+      const resolvedAt = toNullableIso(row?.lastResolvedAt) || null;
+      if (!resolvedAt) {
+        neverResolvedAccounts += 1;
+        continue;
+      }
+      const resolvedAtMs = Date.parse(resolvedAt);
+      if (!Number.isFinite(resolvedAtMs)) continue;
+      latestResolvedAtMs = Math.max(latestResolvedAtMs, resolvedAtMs);
+      oldestResolvedAtMs =
+        oldestResolvedAtMs > 0 ? Math.min(oldestResolvedAtMs, resolvedAtMs) : resolvedAtMs;
+    }
 
     return {
-      totalAccounts: Number(row.totalAccounts || 0),
-      unresolvedAccounts: Number(row.unresolvedAccounts || 0),
-      neverResolvedAccounts: Number(row.neverResolvedAccounts || 0),
-      latestResolvedAt: toNullableIso(row.latestResolvedAt) || null,
-      oldestResolvedAt: toNullableIso(row.oldestResolvedAt) || null,
+      totalAccounts: Number(rows.length || 0),
+      unresolvedAccounts,
+      neverResolvedAccounts,
+      latestResolvedAt: latestResolvedAtMs > 0 ? new Date(latestResolvedAtMs).toISOString() : null,
+      oldestResolvedAt: oldestResolvedAtMs > 0 ? new Date(oldestResolvedAtMs).toISOString() : null,
     };
   }
 
@@ -2796,20 +5853,15 @@ class AlteredRepository {
       (accountId) => accountId
     );
     const params = [];
-    const whereParts = [];
+    let whereClause = "";
     if (filteredAccountIds.length) {
       const placeholders = filteredAccountIds.map(() => "?").join(", ");
-      whereParts.push(`account_id IN (${placeholders})`);
+      whereClause = `WHERE account_id IN (${placeholders})`;
       params.push(...filteredAccountIds);
     }
-    if (safeMinResolvedAgeSeconds > 0) {
-      whereParts.push(
-        "(last_resolved_at IS NULL OR datetime(last_resolved_at) <= datetime('now', ?))"
-      );
-      params.push(`-${safeMinResolvedAgeSeconds} seconds`);
-    }
-    const whereClause = whereParts.length ? `WHERE ${whereParts.join(" AND ")}` : "";
 
+    const staleBeforeMs =
+      safeMinResolvedAgeSeconds > 0 ? Date.now() - safeMinResolvedAgeSeconds * 1000 : 0;
     const rows = this.db
       .prepare(
         `
@@ -2818,27 +5870,46 @@ class AlteredRepository {
           latest_display_name AS latestDisplayName,
           last_resolved_at AS lastResolvedAt,
           last_resolution_error AS lastResolutionError,
-          updated_at AS updatedAt
+          updated_at AS updatedAt,
+          first_seen_at AS firstSeenAt
         FROM altered_mapper_accounts
         ${whereClause}
-        ORDER BY
-          CASE WHEN COALESCE(NULLIF(TRIM(latest_display_name), ''), '') = '' THEN 0 ELSE 1 END ASC,
-          COALESCE(last_resolved_at, updated_at, first_seen_at, '') ASC,
-          account_id ASC
-        LIMIT ?
         `
       )
-      .all(...params, safeLimit);
+      .all(...params);
 
     return rows
       .map((row) => ({
         accountId: normalizeAccountId(row.accountId),
-        latestDisplayName: String(row.latestDisplayName || "").trim() || null,
+        latestDisplayName:
+          sanitizeResolvedDisplayName(row.latestDisplayName, {
+            accountId: normalizeAccountId(row.accountId),
+          }) || null,
         lastResolvedAt: toNullableIso(row.lastResolvedAt) || null,
         lastResolutionError: String(row.lastResolutionError || "").trim() || null,
         updatedAt: toNullableIso(row.updatedAt) || null,
+        firstSeenAt: toNullableIso(row.firstSeenAt) || null,
       }))
-      .filter((row) => row.accountId);
+      .filter((row) => {
+        if (!row.accountId) return false;
+        if (!safeMinResolvedAgeSeconds) return true;
+        if (!row.latestDisplayName) return true;
+        const resolvedAtMs = Date.parse(String(row.lastResolvedAt || ""));
+        return !Number.isFinite(resolvedAtMs) || resolvedAtMs <= staleBeforeMs;
+      })
+      .sort((a, b) => {
+        const aResolved = a.latestDisplayName ? 1 : 0;
+        const bResolved = b.latestDisplayName ? 1 : 0;
+        if (aResolved !== bResolved) return aResolved - bResolved;
+        const aSeenAt =
+          Date.parse(String(a.lastResolvedAt || a.updatedAt || a.firstSeenAt || "")) || 0;
+        const bSeenAt =
+          Date.parse(String(b.lastResolvedAt || b.updatedAt || b.firstSeenAt || "")) || 0;
+        if (aSeenAt !== bSeenAt) return aSeenAt - bSeenAt;
+        return String(a.accountId || "").localeCompare(String(b.accountId || ""));
+      })
+      .slice(0, safeLimit)
+      .map(({ firstSeenAt, ...row }) => row);
   }
 
   upsertCampaign({
@@ -2854,7 +5925,7 @@ class AlteredRepository {
     leaderboardGroupUid = "",
     payload = null,
   }) {
-    const club = clampInt(clubId, { min: 1, max: 2147483647, fallback: 0 });
+    const club = clampInt(clubId, { min: 0, max: 2147483647, fallback: 0 });
     const name = String(campaignName || "").trim();
     const externalId = clampInt(externalCampaignId, {
       min: 1,
@@ -2862,7 +5933,7 @@ class AlteredRepository {
       fallback: 0,
     });
     const normalizedExternalId = externalId || null;
-    if (!club || !name) return null;
+    if ((!Number.isFinite(club) && club !== 0) || !name) return null;
 
     const now = new Date().toISOString();
     const normalizedActivityId = clampInt(activityId, {
@@ -3119,6 +6190,7 @@ class AlteredRepository {
     }
 
     if (campaignPk) {
+      this.syncCampaignAlterationsById(campaignPk);
       return (
         this.db
           .prepare(
@@ -3243,19 +6315,93 @@ class AlteredRepository {
   getHookStatus(hookKey = DEFAULT_HOOK_KEY) {
     const hook = this.getHookConfig(hookKey);
     if (!hook) return null;
-    const mapCount =
-      this.db.prepare("SELECT COUNT(*) AS count FROM altered_maps").get()?.count || 0;
-    const trackedCount =
-      this.db
-        .prepare("SELECT COUNT(*) AS count FROM altered_maps WHERE tracked = 1")
-        .get()?.count || 0;
+    let mapCount = 0;
+    let trackedCount = 0;
+    let campaignCount = 0;
+    if (hookKey === DEFAULT_HOOK_KEY) {
+      mapCount = this.db.prepare("SELECT COUNT(*) AS count FROM altered_maps").get()?.count || 0;
+      trackedCount =
+        this.db
+          .prepare("SELECT COUNT(*) AS count FROM altered_maps WHERE tracked = 1")
+          .get()?.count || 0;
+      campaignCount =
+        this.db.prepare("SELECT COUNT(*) AS count FROM altered_campaigns").get()?.count || 0;
+    } else {
+      campaignCount =
+        this.db
+          .prepare("SELECT COUNT(*) AS count FROM altered_campaigns WHERE club_id = ?")
+          .get(hook.clubId)?.count || 0;
+      mapCount =
+        this.db
+          .prepare(
+            `
+            SELECT COUNT(DISTINCT p.map_uid) AS count
+            FROM altered_map_positions p
+            JOIN altered_campaigns c ON c.campaign_id = p.campaign_id
+            WHERE c.club_id = ?
+            `
+          )
+          .get(hook.clubId)?.count || 0;
+      trackedCount =
+        this.db
+          .prepare(
+            `
+            SELECT COUNT(DISTINCT m.map_uid) AS count
+            FROM altered_maps m
+            JOIN altered_map_positions p ON p.map_uid = m.map_uid
+            JOIN altered_campaigns c ON c.campaign_id = p.campaign_id
+            WHERE c.club_id = ? AND m.tracked = 1
+            `
+          )
+          .get(hook.clubId)?.count || 0;
+    }
     const latestRun = this.listHookRuns(1, hookKey)[0] || null;
     return {
       ...hook,
       mapCount: Number(mapCount),
       trackedCount: Number(trackedCount),
+      campaignCount: Number(campaignCount),
       latestRun,
     };
+  }
+
+  listHookStatuses({ includeDisabled = true } = {}) {
+    return this.listHookConfigs({ includeDisabled }).map((hook) => {
+      const campaignCount =
+        this.db
+          .prepare("SELECT COUNT(*) AS count FROM altered_campaigns WHERE club_id = ?")
+          .get(hook.clubId)?.count || 0;
+      const mapCount =
+        this.db
+          .prepare(
+            `
+            SELECT COUNT(DISTINCT p.map_uid) AS count
+            FROM altered_map_positions p
+            JOIN altered_campaigns c ON c.campaign_id = p.campaign_id
+            WHERE c.club_id = ?
+            `
+          )
+          .get(hook.clubId)?.count || 0;
+      const trackedCount =
+        this.db
+          .prepare(
+            `
+            SELECT COUNT(DISTINCT m.map_uid) AS count
+            FROM altered_maps m
+            JOIN altered_map_positions p ON p.map_uid = m.map_uid
+            JOIN altered_campaigns c ON c.campaign_id = p.campaign_id
+            WHERE c.club_id = ? AND m.tracked = 1
+            `
+          )
+          .get(hook.clubId)?.count || 0;
+      return {
+        ...hook,
+        mapCount: Number(mapCount),
+        trackedCount: Number(trackedCount),
+        campaignCount: Number(campaignCount),
+        latestRun: this.listHookRuns(1, hook.hookKey)[0] || null,
+      };
+    });
   }
 
   getKnownCampaignExternalIds({ clubId, campaignExternalIds = [] } = {}) {
@@ -3470,10 +6616,12 @@ class AlteredRepository {
                 if (!mapUid) return null;
                 return {
                   mapUid,
-                  slot: clampInt(map?.slot ?? map?.order ?? index + 1, {
-                    min: 1,
+                  slot: normalizeCampaignSlotValue({
+                    slot: map?.slot,
+                    order: map?.order,
+                    position: map?.position,
+                    fallbackSlot: index + 1,
                     max: 100000,
-                    fallback: index + 1,
                   }),
                   mapName: firstTruthy([map?.name, map?.title, mapUid]),
                   authorAccountId: normalizeLooseId(
@@ -3824,8 +6972,25 @@ class AlteredRepository {
           tracked AS tracked,
           status AS status,
           check_frequency AS checkFrequency,
-          last_checked_at AS lastCheckedAt
-        FROM altered_maps
+          last_checked_at AS lastCheckedAt,
+          pos.campaignName AS campaignName,
+          pos.slot AS slot,
+          pos.clubId AS clubId
+        FROM altered_maps m
+        LEFT JOIN (
+          SELECT
+            p.map_uid AS mapUid,
+            p.slot AS slot,
+            c.name AS campaignName,
+            c.club_id AS clubId
+          FROM altered_map_positions p
+          JOIN altered_campaigns c ON c.campaign_id = p.campaign_id
+          WHERE p.rowid IN (
+            SELECT MAX(p2.rowid)
+            FROM altered_map_positions p2
+            GROUP BY p2.map_uid
+          )
+        ) pos ON pos.mapUid = m.map_uid
         WHERE map_uid IN (${placeholders})
         `
       )
@@ -3836,7 +7001,388 @@ class AlteredRepository {
       status: normalizeStatus(row.status, row.tracked ? "live" : "paused"),
       checkFrequency: Number(row.checkFrequency || 21600),
       wrMs: Number(row.wrMs || 0),
+      campaignName: String(row.campaignName || "").trim() || null,
+      slot: Number(row.slot || 0),
+      clubId: Number(row.clubId || 0) || null,
     }));
+  }
+
+  ingestProjectSourceSnapshot({
+    sourceKey = "",
+    sourceType = "special",
+    displayName = "",
+    sourceLabel = "",
+    campaignType = "",
+    clubId = 0,
+    campaigns = [],
+    note = "",
+    trackedDefault = true,
+  } = {}) {
+    const startedAt = new Date().toISOString();
+    const safeSourceKey = toText(sourceKey);
+    const safeCampaignType = toText(campaignType).toLowerCase() || null;
+    const safeClubId = clampInt(clubId, { min: 0, max: 2147483647, fallback: 0 });
+    const safeDisplayName = toText(displayName) || safeSourceKey || "Project Source";
+    const safeSourceLabel = toText(sourceLabel) || safeSourceKey || "project-source";
+    const payloadCampaigns = Array.isArray(campaigns) ? campaigns : [];
+    if (!safeSourceKey) {
+      return { error: "sourceKey is required for source sync." };
+    }
+    if (!payloadCampaigns.length) {
+      return { error: "campaigns[] is required for source sync." };
+    }
+
+    const counters = {
+      campaignsSeen: 0,
+      mapsSeen: 0,
+      mapsInserted: 0,
+      mapsUpdated: 0,
+      mapsLinked: 0,
+    };
+    const touchedMapUids = new Set();
+
+    this.upsertProjectSource({
+      sourceKey: safeSourceKey,
+      sourceType: sourceType || "special",
+      displayName: safeDisplayName,
+      sourceLabel: safeSourceLabel,
+      enabled: true,
+      lastError: null,
+      metadata: {
+        campaignType: safeCampaignType,
+        storageClubId: safeClubId,
+      },
+    });
+
+    try {
+      this.db.exec("BEGIN IMMEDIATE");
+      for (const campaign of payloadCampaigns) {
+        const campaignName = toText(campaign?.name || campaign?.campaignName);
+        if (!campaignName) continue;
+        const campaignPayload = {
+          ...(campaign?.raw && typeof campaign.raw === "object" ? campaign.raw : campaign?.payload && typeof campaign.payload === "object" ? campaign.payload : campaign),
+          sourceKey: safeSourceKey,
+          sourceLabel: safeSourceLabel,
+          sourceType: sourceType || "special",
+          campaignType: safeCampaignType,
+        };
+        const campaignRow = this.upsertCampaign({
+          clubId: safeClubId,
+          campaignName,
+          externalCampaignId:
+            campaign?.externalCampaignId ??
+            campaign?.campaignId ??
+            campaign?.campaign_id ??
+            campaign?.id,
+          activityId: campaign?.activityId ?? campaign?.activity_id ?? campaign?.activity?.id,
+          activityType: campaign?.activityType ?? campaign?.activity_type ?? campaign?.activity?.type,
+          campaignType:
+            safeCampaignType ||
+            campaign?.campaignType ||
+            campaign?.campaign_type ||
+            campaign?.type,
+          startTimestamp:
+            campaign?.startTimestamp ??
+            campaign?.startDate ??
+            campaign?.start_date ??
+            campaign?.startsAt,
+          endTimestamp:
+            campaign?.endTimestamp ??
+            campaign?.endDate ??
+            campaign?.end_date ??
+            campaign?.endsAt,
+          published: campaign?.published ?? campaign?.isPublished ?? true,
+          leaderboardGroupUid:
+            campaign?.leaderboardGroupUid ??
+            campaign?.leaderboard_group_uid ??
+            campaign?.leaderboardUid,
+          payload: campaignPayload,
+        });
+        const campaignPk = Number(campaignRow?.campaignId || 0);
+        if (!campaignPk) continue;
+        counters.campaignsSeen += 1;
+
+        const maps = Array.isArray(campaign?.maps) ? campaign.maps : [];
+        for (let index = 0; index < maps.length; index += 1) {
+          const map = maps[index] || {};
+          const mapUid = toText(map.uid || map.mapUid || map.map_uid);
+          if (!mapUid) continue;
+          counters.mapsSeen += 1;
+          touchedMapUids.add(mapUid);
+
+          const existing = this.db
+            .prepare(
+              `
+              SELECT
+                tracked,
+                status,
+                check_frequency AS checkFrequency,
+                wr_ms AS wrMs,
+                wr_holder AS wrHolder,
+                player_count AS playerCount
+              FROM altered_maps
+              WHERE map_uid = ?
+              LIMIT 1
+              `
+            )
+            .get(mapUid);
+          const now = new Date().toISOString();
+          const payloadTracked = typeof map.tracked === "boolean" ? map.tracked : null;
+          const tracked = payloadTracked === null ? Boolean(existing ? existing.tracked : trackedDefault) : payloadTracked;
+          const status = normalizeStatus(
+            map.status,
+            tracked ? existing?.status || "live" : existing ? existing.status || "paused" : "paused"
+          );
+          const checkFrequency = clampInt(map.checkFrequency ?? map.check_frequency, {
+            min: 120,
+            max: 604800,
+            fallback: clampInt(existing?.checkFrequency, {
+              min: 120,
+              max: 604800,
+              fallback: 21600,
+            }),
+          });
+          const wrMs = clampInt(map.wrMs ?? map.wrTime ?? map.wr_time, {
+            min: 0,
+            max: 2147483647,
+            fallback: clampInt(existing?.wrMs, { min: 0, max: 2147483647, fallback: 0 }),
+          });
+          const wrHolder =
+            toText(map.wrHolder ?? map.wrDisplayName ?? map.wr_display_name ?? existing?.wrHolder) || null;
+          const playerCount = clampInt(
+            map.playerCount ??
+              map.player_count ??
+              map.nbPlayers ??
+              map.nb_players ??
+              map.playCount ??
+              map.play_count ??
+              map.playersCount ??
+              map.players_count,
+            {
+              min: 0,
+              max: 2147483647,
+              fallback: clampInt(existing?.playerCount, {
+                min: 0,
+                max: 2147483647,
+                fallback: 0,
+              }),
+            }
+          );
+          const mapPayload = {
+            ...(map?.raw && typeof map.raw === "object" ? map.raw : map?.payload && typeof map.payload === "object" ? map.payload : map),
+            sourceKey: safeSourceKey,
+            sourceLabel: safeSourceLabel,
+            sourceType: sourceType || "special",
+            campaignType: safeCampaignType,
+          };
+
+          this.db
+            .prepare(
+              `
+              INSERT INTO altered_maps (
+                map_uid, map_id, name, map_type, map_style, map_environment, author, author_display_name, submitter, submitter_display_name,
+                author_time, gold_time, silver_time, bronze_time, nb_laps,
+                thumbnail_url, download_url, player_count, player_count_updated_at, wr_ms, wr_holder, wr_updated_at,
+                tracked, status, check_frequency, last_checked_at,
+                map_created_at, map_updated_at, payload_json, monitor_updated_at,
+                created_at, updated_at, last_synced_at
+              ) VALUES (
+                ?, ?, ?, ?, ?, ?, ?, ?, ?, ?,
+                ?, ?, ?, ?, ?,
+                ?, ?, ?, ?, ?, ?, ?,
+                ?, ?, ?, ?,
+                ?, ?, ?, ?,
+                ?, ?, ?
+              )
+              ON CONFLICT(map_uid) DO UPDATE SET
+                map_id = excluded.map_id,
+                name = excluded.name,
+                map_type = excluded.map_type,
+                map_style = excluded.map_style,
+                map_environment = excluded.map_environment,
+                author = excluded.author,
+                author_display_name = COALESCE(NULLIF(excluded.author_display_name, ''), altered_maps.author_display_name),
+                submitter = excluded.submitter,
+                submitter_display_name = COALESCE(NULLIF(excluded.submitter_display_name, ''), altered_maps.submitter_display_name),
+                author_time = excluded.author_time,
+                gold_time = excluded.gold_time,
+                silver_time = excluded.silver_time,
+                bronze_time = excluded.bronze_time,
+                nb_laps = excluded.nb_laps,
+                thumbnail_url = excluded.thumbnail_url,
+                download_url = excluded.download_url,
+                player_count = excluded.player_count,
+                player_count_updated_at = excluded.player_count_updated_at,
+                wr_ms = excluded.wr_ms,
+                wr_holder = excluded.wr_holder,
+                wr_updated_at = excluded.wr_updated_at,
+                tracked = excluded.tracked,
+                status = excluded.status,
+                check_frequency = excluded.check_frequency,
+                last_checked_at = COALESCE(excluded.last_checked_at, altered_maps.last_checked_at),
+                map_created_at = COALESCE(excluded.map_created_at, altered_maps.map_created_at),
+                map_updated_at = COALESCE(excluded.map_updated_at, altered_maps.map_updated_at),
+                payload_json = COALESCE(excluded.payload_json, altered_maps.payload_json),
+                monitor_updated_at = excluded.monitor_updated_at,
+                updated_at = excluded.updated_at,
+                last_synced_at = excluded.last_synced_at
+              `
+            )
+            .run(
+              mapUid,
+              toText(map.mapId || map.map_id || map.id, `map-${mapUid.toLowerCase()}`),
+              toText(map.name || map.title, mapUid) || mapUid,
+              toText(map.mapType ?? map.map_type ?? map.type) || null,
+              toText(map.mapStyle ?? map.map_style ?? map.style) || null,
+              toText(map.mapEnvironment ?? map.map_environment ?? map.environment ?? map.mood) || null,
+              toText(map.author),
+              toText(
+                map.authorDisplayName ??
+                  map.author_display_name ??
+                  map.authorName ??
+                  map.author_name
+              ),
+              toText(map.submitter),
+              toText(
+                map.submitterDisplayName ??
+                  map.submitter_display_name ??
+                  map.submitterName ??
+                  map.submitter_name
+              ),
+              clampInt(map.authorMs ?? map.authorTime ?? map.author_time, {
+                min: 0,
+                max: 2147483647,
+                fallback: 0,
+              }),
+              clampInt(map.goldMs ?? map.goldTime ?? map.gold_time, {
+                min: 0,
+                max: 2147483647,
+                fallback: 0,
+              }),
+              clampInt(map.silverMs ?? map.silverTime ?? map.silver_time, {
+                min: 0,
+                max: 2147483647,
+                fallback: 0,
+              }),
+              clampInt(map.bronzeMs ?? map.bronzeTime ?? map.bronze_time, {
+                min: 0,
+                max: 2147483647,
+                fallback: 0,
+              }),
+              clampInt(map.nbLaps ?? map.nb_laps, {
+                min: 1,
+                max: 64,
+                fallback: 1,
+              }),
+              toText(map.thumbnailUrl ?? map.thumbnail_url),
+              toText(map.downloadUrl ?? map.download_url),
+              playerCount,
+              now,
+              wrMs,
+              wrHolder,
+              wrMs > 0 ? now : null,
+              tracked ? 1 : 0,
+              status,
+              checkFrequency,
+              map.lastCheckedAt || map.last_checked_at || null,
+              toNullableIso(
+                map.mapCreatedAt ??
+                  map.map_created_at ??
+                  map.createdAt ??
+                  map.created_at ??
+                  map.uploadTimestamp
+              ),
+              toNullableIso(
+                map.mapUpdatedAt ??
+                  map.map_updated_at ??
+                  map.updatedAt ??
+                  map.updated_at ??
+                  map.updateTimestamp
+              ),
+              serializeJson(mapPayload),
+              now,
+              now,
+              now,
+              now
+            );
+
+          if (existing) counters.mapsUpdated += 1;
+          else counters.mapsInserted += 1;
+
+          const slot = normalizeCampaignSlotValue({
+            slot: map.slot,
+            order: map.order,
+            position: map.position ?? map?.payload?.campaignMap?.position,
+            fallbackSlot: index + 1,
+            max: 999,
+          });
+          const oldPosition = this.db
+            .prepare(
+              `
+              SELECT campaign_id AS campaignId, slot
+              FROM altered_map_positions
+              WHERE map_uid = ?
+              LIMIT 1
+              `
+            )
+            .get(mapUid);
+          const changedPosition =
+            !oldPosition ||
+            Number(oldPosition.campaignId || 0) !== campaignPk ||
+            Number(oldPosition.slot || 0) !== slot;
+
+          this.db
+            .prepare(
+              `
+              INSERT INTO altered_map_positions (map_uid, campaign_id, slot, updated_at)
+              VALUES (?, ?, ?, ?)
+              ON CONFLICT(map_uid) DO UPDATE SET
+                campaign_id = excluded.campaign_id,
+                slot = excluded.slot,
+                updated_at = excluded.updated_at
+              `
+            )
+            .run(mapUid, campaignPk, slot, now);
+          if (changedPosition) counters.mapsLinked += 1;
+        }
+      }
+
+      this.db.exec("COMMIT");
+    } catch (error) {
+      try {
+        this.db.exec("ROLLBACK");
+      } catch {}
+      const finishedAt = new Date().toISOString();
+      const message = error?.message || "Project source sync failed.";
+      this.recordSyncRun({
+        hookKey: `source:${safeSourceKey}`,
+        startedAt,
+        finishedAt,
+        ...counters,
+        status: "error",
+        note: message,
+      });
+      return {
+        error: message,
+        ...counters,
+      };
+    }
+
+    const finishedAt = new Date().toISOString();
+    this.recordSyncRun({
+      hookKey: `source:${safeSourceKey}`,
+      startedAt,
+      finishedAt,
+      ...counters,
+      status: "ok",
+      note: toText(note) || safeSourceLabel,
+    });
+
+    return {
+      source: this.getProjectSource(safeSourceKey),
+      mapsForTracker: this.getMapsForTracker([...touchedMapUids]),
+      ...counters,
+    };
   }
 
   ingestHookSnapshot({
@@ -4142,10 +7688,12 @@ class AlteredRepository {
           if (existing) counters.mapsUpdated += 1;
           else counters.mapsInserted += 1;
 
-          const slot = clampInt(map.slot ?? map.order ?? index + 1, {
-            min: 1,
+          const slot = normalizeCampaignSlotValue({
+            slot: map.slot,
+            order: map.order,
+            position: map.position ?? map?.payload?.campaignMap?.position,
+            fallbackSlot: index + 1,
             max: 999,
-            fallback: index + 1,
           });
           const oldPosition = this.db
             .prepare(

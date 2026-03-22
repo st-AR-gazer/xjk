@@ -18,6 +18,91 @@ function esc(str) {
   return el.innerHTML;
 }
 
+const ACCOUNT_ID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+const displayNameRefresh = {
+  timer: null,
+  attempts: 0,
+  key: "",
+};
+
+function looksLikeAccountId(value) {
+  return ACCOUNT_ID_RE.test(String(value || "").trim());
+}
+
+function collectPendingDisplayNameAccountIds(payload = null) {
+  const wr = payload?.wr || {};
+  const scopedRows = []
+    .concat(Array.isArray(wr.overall) ? wr.overall : [])
+    .concat(
+      Array.isArray(wr.by_season)
+        ? wr.by_season.flatMap((bucket) => (Array.isArray(bucket?.players) ? bucket.players : []))
+        : []
+    )
+    .concat(
+      Array.isArray(wr.by_campaign)
+        ? wr.by_campaign.flatMap((bucket) => (Array.isArray(bucket?.players) ? bucket.players : []))
+        : []
+    )
+    .concat(
+      Array.isArray(wr.by_slot)
+        ? wr.by_slot.flatMap((bucket) => (Array.isArray(bucket?.players) ? bucket.players : []))
+        : []
+    );
+
+  const out = [];
+  const seen = new Set();
+  for (const row of scopedRows) {
+    const accountId =
+      [row?.account_id, row?.accountId, row?.player, row?.display_name, row?.displayName]
+        .map((value) => String(value || "").trim().toLowerCase())
+        .find((value) => looksLikeAccountId(value)) || "";
+    const playerText =
+      [row?.player, row?.display_name, row?.displayName]
+        .map((value) => String(value || "").trim())
+        .find((value) => looksLikeAccountId(value)) || "";
+    const pending = Boolean(row?.displayNamePending) || Boolean(accountId && playerText);
+    if (!pending || !accountId || seen.has(accountId)) continue;
+    seen.add(accountId);
+    out.push(accountId);
+  }
+  return out;
+}
+
+function clearDisplayNameRefresh({ reset = true } = {}) {
+  if (displayNameRefresh.timer) {
+    clearTimeout(displayNameRefresh.timer);
+    displayNameRefresh.timer = null;
+  }
+  if (reset) {
+    displayNameRefresh.attempts = 0;
+    displayNameRefresh.key = "";
+  }
+}
+
+function schedulePendingDisplayNameRefresh(accountIds = []) {
+  const pendingAccountIds = [...new Set((Array.isArray(accountIds) ? accountIds : []).filter(Boolean))];
+  if (!pendingAccountIds.length) {
+    clearDisplayNameRefresh({ reset: true });
+    return;
+  }
+
+  const refreshKey = pendingAccountIds.join(",");
+  if (displayNameRefresh.key !== refreshKey) {
+    clearDisplayNameRefresh({ reset: false });
+    displayNameRefresh.key = refreshKey;
+    displayNameRefresh.attempts = 0;
+  }
+  if (displayNameRefresh.timer || displayNameRefresh.attempts >= 6) return;
+
+  const delaysMs = [4000, 8000, 12000, 20000, 30000, 45000];
+  const delayMs = delaysMs[Math.min(displayNameRefresh.attempts, delaysMs.length - 1)];
+  displayNameRefresh.attempts += 1;
+  displayNameRefresh.timer = setTimeout(() => {
+    displayNameRefresh.timer = null;
+    loadData({ silent: true, resetDisplayNameRefresh: false });
+  }, delayMs);
+}
+
 const TM_FORMAT_CODE_REGEX = /\$([0-9a-f]{1,3}|[gimnostuwz<>]|[hlp](\[[^\]]+\])?)/gi;
 
 function cleanTmText(value, fallback = "") {
@@ -44,6 +129,8 @@ const state = {
   playerScope: "overall",
   selectedBucket: "",
   medalType: "author",
+  page: 1,
+  pageSize: 25,
 };
 
 const $loading = document.getElementById("loading-state");
@@ -65,6 +152,11 @@ const $medalWrap = document.getElementById("medal-wrap");
 const $medalBody = document.getElementById("medal-body");
 const $medalEmpty = document.getElementById("medal-empty");
 const $medalCountLabel = document.getElementById("medal-count-label");
+const $pager = document.getElementById("pager");
+const $pageInfo = document.getElementById("page-info");
+const $pagePrev = document.getElementById("page-prev");
+const $pageNext = document.getElementById("page-next");
+const $pageSize = document.getElementById("page-size");
 
 function setStat(id, value) {
   const el = document.getElementById(id);
@@ -73,6 +165,7 @@ function setStat(id, value) {
 
 function renderStats() {
   const summary = state.payload?.summary || {};
+  const coverage = summary?.leaderboard_coverage || {};
   const overall = Array.isArray(state.payload?.wr?.overall) ? state.payload.wr.overall : [];
   const topCount = overall.length ? Math.max(...overall.map((item) => Number(item.wr_count || 0))) : 0;
 
@@ -86,6 +179,67 @@ function renderStats() {
   );
   setStat("stat-top-count", topCount || "\u2014");
   setStat("stat-maps", Number(summary.total_maps || 0));
+  setStat(
+    "stat-maps-wr-known",
+    `${Number(coverage.maps_with_known_wr || 0)} / ${Number(coverage.total_maps || summary.total_maps || 0)}`
+  );
+  setStat(
+    "stat-maps-fuller-lb",
+    `${Number(coverage.maps_with_extended_leaderboard || 0)} / ${Number(coverage.total_maps || summary.total_maps || 0)}`
+  );
+}
+
+function renderCoverageBars() {
+  const summary = state.payload?.summary || {};
+  const coverage = summary?.leaderboard_coverage || {};
+  const totalMaps = Number(coverage.total_maps || summary.total_maps || 0);
+  const rows = [
+    {
+      label: "WR Known",
+      value: Number(coverage.maps_with_known_wr || 0),
+      pct: Number(coverage.wr_coverage_pct || 0),
+      tone: "is-known",
+    },
+    {
+      label: "Any Leaderboard Rows",
+      value: Number(coverage.maps_with_leaderboard_rows || 0),
+      pct: Number(coverage.leaderboard_coverage_pct || 0),
+      tone: "is-any",
+    },
+    {
+      label: "Fuller Leaderboard",
+      value: Number(coverage.maps_with_extended_leaderboard || 0),
+      pct: Number(coverage.extended_coverage_pct || 0),
+      tone: "is-fuller",
+    },
+  ];
+
+  const metaEl = document.getElementById("coverage-card-meta");
+  if (metaEl) {
+    metaEl.textContent =
+      totalMaps > 0
+        ? `${Number(coverage.leaderboard_rows_stored || 0)} rows stored`
+        : "No tracker data";
+  }
+
+  const barsEl = document.getElementById("coverage-bars");
+  if (!barsEl) return;
+  barsEl.innerHTML = rows
+    .map((row) => {
+      const pct = Math.max(0, Math.min(100, Number(row.pct || 0)));
+      return `
+        <div class="coverage-bar-row">
+          <div class="coverage-bar-head">
+            <span class="coverage-bar-label">${esc(row.label)}</span>
+            <span class="coverage-bar-value">${esc(`${row.value} / ${totalMaps} (${pct.toFixed(1)}%)`)}</span>
+          </div>
+          <div class="coverage-bar-track">
+            <span class="coverage-bar-fill ${row.tone}" style="width:${pct.toFixed(2)}%"></span>
+          </div>
+        </div>
+      `;
+    })
+    .join("");
 }
 
 function getScopeBuckets(scope) {
@@ -99,7 +253,8 @@ function getScopeBuckets(scope) {
 function normalizePlayerRows(rows = []) {
   return rows.map((row, idx) => ({
     rank: Number(row.rank || idx + 1),
-    player: String(row.player || "Unknown"),
+    player: String(row.display_name || row.displayName || row.player || "Unknown"),
+    accountId: String(row.account_id || row.accountId || ""),
     wrCount: Number(row.wr_count || 0),
     latestWr: row.latest_wr_at || null,
   }));
@@ -159,7 +314,11 @@ function renderPlayersTable() {
 
   if (state.searchQuery) {
     const q = state.searchQuery.toLowerCase();
-    rows = rows.filter((row) => cleanTmText(row.player, "").toLowerCase().includes(q));
+    rows = rows.filter((row) => {
+      const player = cleanTmText(row.player, "").toLowerCase();
+      const account = String(row.accountId || "").toLowerCase();
+      return player.includes(q) || account.includes(q);
+    });
   }
 
   rows.sort((a, b) => {
@@ -175,28 +334,47 @@ function renderPlayersTable() {
   if (!rows.length) {
     $tableWrap.hidden = true;
     $empty.hidden = false;
+    if ($pager) $pager.hidden = true;
     return;
   }
 
   $empty.hidden = true;
   $tableWrap.hidden = false;
+  const safePageSize = Math.max(1, Number(state.pageSize || 25));
+  const totalRows = rows.length;
+  const totalPages = Math.max(1, Math.ceil(totalRows / safePageSize));
+  if (state.page > totalPages) state.page = totalPages;
+  if (state.page < 1) state.page = 1;
 
-  $tbody.innerHTML = rows
+  const start = (state.page - 1) * safePageSize;
+  const pageRows = rows.slice(start, start + safePageSize);
+
+  $tbody.innerHTML = pageRows
     .map((row, idx) => {
-      const rank = idx + 1;
+      const rank = start + idx + 1;
       let rankClass = "rank-default";
       if (rank === 1) rankClass = "rank-1";
       else if (rank === 2) rankClass = "rank-2";
       else if (rank === 3) rankClass = "rank-3";
+      const displayName = cleanTmText(row.player, "Unknown");
 
       return `<tr>
         <td class="col-rank"><span class="rank-badge ${rankClass}">${rank}</span></td>
-        <td><span class="player-name">${esc(cleanTmText(row.player, "Unknown"))}</span></td>
+        <td>
+          <span class="player-name">${esc(displayName)}</span>
+        </td>
         <td class="col-count"><span class="wr-count">${row.wrCount}</span></td>
         <td class="col-latest"><span class="latest-wr">${relTime(row.latestWr)}</span></td>
       </tr>`;
     })
     .join("");
+
+  if ($pager && $pageInfo && $pagePrev && $pageNext) {
+    $pager.hidden = false;
+    $pageInfo.textContent = `Page ${state.page} of ${totalPages} - ${totalRows} players`;
+    $pagePrev.disabled = state.page <= 1;
+    $pageNext.disabled = state.page >= totalPages;
+  }
 }
 
 function renderMostPlayedMaps() {
@@ -277,37 +455,51 @@ function renderMedalLeaderboards() {
 
 function renderAll() {
   renderStats();
+  renderCoverageBars();
   renderBucketSelect();
   renderPlayersTable();
   renderMostPlayedMaps();
   renderMedalLeaderboards();
 }
 
-async function loadData() {
-  $loading.hidden = false;
-  $tableWrap.hidden = true;
-  $empty.hidden = true;
-  $error.hidden = true;
+async function loadData({ silent = false, resetDisplayNameRefresh = true } = {}) {
+  if (resetDisplayNameRefresh) {
+    clearDisplayNameRefresh({ reset: true });
+  }
+  if (!silent) {
+    $loading.hidden = false;
+    $tableWrap.hidden = true;
+    $empty.hidden = true;
+    $error.hidden = true;
+  }
 
   try {
     state.payload = await fetchJson(
       "/api/v1/alterations/leaderboards?limit=80&overallLimit=5000&perBucketLimit=12"
     );
     renderAll();
-    $loading.hidden = true;
+    schedulePendingDisplayNameRefresh(collectPendingDisplayNameAccountIds(state.payload));
+    if (!silent) {
+      $loading.hidden = true;
+    }
   } catch {
-    $loading.hidden = true;
-    $error.hidden = false;
+    if (!silent) {
+      $loading.hidden = true;
+      $error.hidden = false;
+    }
+    schedulePendingDisplayNameRefresh(collectPendingDisplayNameAccountIds(state.payload));
   }
 }
 
 $search.addEventListener("input", (event) => {
   state.searchQuery = String(event.target.value || "");
+  state.page = 1;
   renderPlayersTable();
 });
 
 $sort.addEventListener("change", (event) => {
   state.sortField = String(event.target.value || "count");
+  state.page = 1;
   renderPlayersTable();
 });
 
@@ -315,11 +507,13 @@ $scope.addEventListener("change", (event) => {
   state.playerScope = String(event.target.value || "overall");
   const buckets = getScopeBuckets(state.playerScope);
   state.selectedBucket = buckets.length ? buckets[0].bucket : "";
+  state.page = 1;
   renderAll();
 });
 
 $bucket.addEventListener("change", (event) => {
   state.selectedBucket = String(event.target.value || "");
+  state.page = 1;
   renderPlayersTable();
   $playersTitle.textContent = getPlayerScopeTitle();
 });
@@ -328,5 +522,30 @@ $medalSelect.addEventListener("change", (event) => {
   state.medalType = String(event.target.value || "author");
   renderMedalLeaderboards();
 });
+
+if ($pagePrev) {
+  $pagePrev.addEventListener("click", () => {
+    if (state.page > 1) {
+      state.page -= 1;
+      renderPlayersTable();
+    }
+  });
+}
+
+if ($pageNext) {
+  $pageNext.addEventListener("click", () => {
+    state.page += 1;
+    renderPlayersTable();
+  });
+}
+
+if ($pageSize) {
+  $pageSize.addEventListener("change", (event) => {
+    const parsed = Number(event.target.value || 25);
+    state.pageSize = Number.isFinite(parsed) && parsed > 0 ? parsed : 25;
+    state.page = 1;
+    renderPlayersTable();
+  });
+}
 
 loadData();

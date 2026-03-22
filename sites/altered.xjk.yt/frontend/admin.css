@@ -606,6 +606,103 @@ h3 {
   color: var(--bad);
   background: rgba(17, 102, 221, 0.12);
 }
+
+.status-neutral {
+  border-color: rgba(190, 205, 255, 0.25);
+  color: var(--ink-soft);
+  background: rgba(255, 255, 255, 0.04);
+}
+
+.status-info {
+  border-color: rgba(34, 153, 238, 0.42);
+  color: #9bdcff;
+  background: rgba(34, 153, 238, 0.12);
+}
+
+.status-good {
+  border-color: rgba(51, 255, 255, 0.45);
+  color: var(--ok);
+  background: rgba(51, 255, 255, 0.13);
+}
+
+.status-warn {
+  border-color: rgba(34, 204, 238, 0.45);
+  color: #6fe7ff;
+  background: rgba(34, 204, 238, 0.12);
+}
+
+.status-bad {
+  border-color: rgba(17, 102, 221, 0.5);
+  color: #87a8ff;
+  background: rgba(17, 102, 221, 0.14);
+}
+
+.status-pill-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.34rem;
+  align-items: center;
+}
+
+.admin-status-grid {
+  display: grid;
+  gap: 0.42rem;
+  grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+}
+
+.admin-status-grid-compact {
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+}
+
+.admin-status-card {
+  border: 1px solid rgba(190, 205, 255, 0.16);
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.03);
+  padding: 0.42rem 0.5rem;
+  display: grid;
+  gap: 0.14rem;
+}
+
+.admin-status-card.is-good {
+  border-color: rgba(51, 255, 255, 0.24);
+  background: linear-gradient(135deg, rgba(51, 255, 255, 0.08), rgba(255, 255, 255, 0.03));
+}
+
+.admin-status-card.is-warn {
+  border-color: rgba(34, 204, 238, 0.24);
+  background: linear-gradient(135deg, rgba(34, 204, 238, 0.08), rgba(255, 255, 255, 0.03));
+}
+
+.admin-status-card.is-bad {
+  border-color: rgba(17, 102, 221, 0.28);
+  background: linear-gradient(135deg, rgba(17, 102, 221, 0.09), rgba(255, 255, 255, 0.03));
+}
+
+.admin-status-card.is-info {
+  border-color: rgba(34, 153, 238, 0.24);
+  background: linear-gradient(135deg, rgba(34, 153, 238, 0.08), rgba(255, 255, 255, 0.03));
+}
+
+.admin-status-label {
+  color: var(--ink-soft);
+  font-size: 0.68rem;
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+  font-family: "Chakra Petch", "Trebuchet MS", sans-serif;
+}
+
+.admin-status-value {
+  color: var(--ink);
+  font-size: 0.92rem;
+  line-height: 1.2;
+  font-weight: 600;
+  word-break: break-word;
+}
+
+.admin-detail-line {
+  margin: 0;
+}
+
 .admin-grid {
   margin-top: 0.78rem;
   display: grid;
@@ -789,6 +886,94 @@ h3 {
   border-radius: 8px;
   padding: 0.42rem 0.52rem;
   font-size: 0.87rem;
+  color: var(--ink-soft);
+}
+
+.ops-log li.ops-entry {
+  border-left: 0;
+  border: 1px solid rgba(190, 205, 255, 0.14);
+  border-radius: 10px;
+  padding: 0.5rem 0.56rem;
+  display: grid;
+  gap: 0.38rem;
+  color: var(--ink);
+}
+
+.ops-entry-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 0.55rem;
+}
+
+.ops-entry-title {
+  margin: 0;
+  font-size: 0.9rem;
+  line-height: 1.2;
+  color: var(--ink);
+}
+
+.ops-entry-subtitle {
+  display: block;
+  margin-top: 0.14rem;
+  color: var(--ink-soft);
+  font-size: 0.76rem;
+  line-height: 1.2;
+}
+
+.ops-entry-pills {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 0.28rem;
+}
+
+.ops-entry-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.36rem 0.55rem;
+  color: var(--ink-soft);
+  font-size: 0.76rem;
+}
+
+.ops-entry-meta span {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.18rem;
+}
+
+.ops-entry-detail {
+  color: var(--ink);
+  font-size: 0.82rem;
+  line-height: 1.35;
+}
+
+.ops-entry-detail.muted {
+  color: var(--ink-soft);
+}
+
+.ops-entry-code {
+  font-family: "Chakra Petch", "Trebuchet MS", sans-serif;
+  letter-spacing: 0.02em;
+  word-break: break-all;
+}
+
+.ops-entry.is-changed {
+  border-color: rgba(51, 255, 255, 0.24);
+  box-shadow: inset 0 0 0 1px rgba(51, 255, 255, 0.08);
+}
+
+.ops-entry.is-error {
+  border-color: rgba(17, 102, 221, 0.28);
+  box-shadow: inset 0 0 0 1px rgba(17, 102, 221, 0.08);
+}
+
+.ops-entry.is-running {
+  border-color: rgba(34, 204, 238, 0.24);
+  box-shadow: inset 0 0 0 1px rgba(34, 204, 238, 0.08);
+}
+
+.ops-entry.is-empty {
   color: var(--ink-soft);
 }
 .toast-stack {
