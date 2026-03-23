@@ -64,5 +64,16 @@
     "output": "JSON verdict",
     "link": "Map-Validation-Checker/",
     "tone": "cool"
+  },
+  {
+    "id": "underwater-converter",
+    "name": "Underwater Map Converter",
+    "description": "Convert any Trackmania 2020 map into an underwater variant with automatic environment detection and water carrier placement.",
+    "category": "Map Conversion",
+    "status": "live",
+    "input": ".Map.Gbx",
+    "output": "Underwater .Map.Gbx / Zip",
+    "link": "Underwater-Map-Converter/",
+    "tone": "cool"
   }
 ]

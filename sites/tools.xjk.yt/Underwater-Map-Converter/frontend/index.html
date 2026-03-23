@@ -1,0 +1,82 @@
+<!doctype html>
+<html lang="en" data-tool-id="underwater-converter">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>xjk / tools / underwater map converter</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@500;600;700&family=Manrope:wght@400;500;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="styles.css" />
+  <link rel="stylesheet" href="../../shared/tool-theme.css" />
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+</head>
+<body>
+  <div class="bg-grid" aria-hidden="true"></div>
+  <div class="bg-sweep bg-sweep-warm" aria-hidden="true"></div>
+  <div class="bg-sweep bg-sweep-cool" aria-hidden="true"></div>
+
+  <main class="shell">
+    <section class="hero">
+      <p class="eyebrow">Map Conversion</p>
+      <h1>Underwater Map Converter</h1>
+      <p class="lead">
+        Upload a <code>.Map.Gbx</code> and convert it into an underwater variant.
+        Supports all environments with automatic carrier detection.
+      </p>
+    </section>
+
+    <section id="drop" class="dropcard" tabindex="0" aria-label="Map upload">
+      <input id="file" type="file" accept=".gbx,.Map.Gbx" />
+      <p class="card-title">Map Input</p>
+      <p class="card-copy">Drop <code>.Map.Gbx</code> here or click to browse.</p>
+      <p id="fileName" class="card-meta">No map selected</p>
+    </section>
+
+    <section class="options panel" aria-label="Conversion options">
+      <h2>Options</h2>
+
+      <div class="option-group">
+        <label class="option-label" for="variant">Variant</label>
+        <select id="variant" class="option-select">
+          <option value="both">Both (normal + meshless)</option>
+          <option value="normal">Normal</option>
+          <option value="meshless" selected>Meshless</option>
+        </select>
+        <p class="option-hint">Normal keeps water meshes visible. Meshless removes visual water geometry.</p>
+      </div>
+
+      <div class="option-group">
+        <label class="option-label" for="coverage">Coverage</label>
+        <select id="coverage" class="option-select">
+          <option value="full-stack" selected>Full stack</option>
+          <option value="one-layer">One layer</option>
+        </select>
+        <p class="option-hint">Full stack fills the entire vertical range. One layer places a single water sheet.</p>
+      </div>
+
+      <div class="option-group">
+        <label class="option-label" for="suffix">Output suffix</label>
+        <input id="suffix" type="text" class="option-input" value="Underwater" maxlength="64" />
+        <p class="option-hint">Appended to the map name in the output file.</p>
+      </div>
+    </section>
+
+    <section class="action-row">
+      <button id="go" class="go" disabled>Convert Map</button>
+    </section>
+
+    <div id="status" class="status" role="status" aria-live="polite"></div>
+    <div id="error" class="error" role="alert"></div>
+  </main>
+
+  <div id="overlay" class="overlay hidden" aria-live="polite" aria-busy="true">
+    <div class="loader" aria-hidden="true"></div>
+    <p id="overlayText" class="overlay-title">Uploading...</p>
+    <p id="progressText" class="overlay-copy muted small"></p>
+  </div>
+
+  <script src="../../shared/tool-theme.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>

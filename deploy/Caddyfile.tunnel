@@ -172,6 +172,12 @@ http://tools.xjk.yt {
     reverse_proxy 127.0.0.1:3016
   }
 
+  @underwaterExact path /Underwater-Map-Converter
+  redir @underwaterExact /Underwater-Map-Converter/ 308
+  handle_path /Underwater-Map-Converter/* {
+    reverse_proxy 127.0.0.1:3017
+  }
+
   handle {
     reverse_proxy 127.0.0.1:3010
   }

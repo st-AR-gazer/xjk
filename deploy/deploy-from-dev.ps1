@@ -279,20 +279,12 @@ try {
 
     $escapedRepoPath = $RemoteRepoPath.Replace("'", "''")
     $escapedArchiveName = $remoteArchiveName.Replace("'", "''")
-    $extractScript = @"
-$repoPath = '$escapedRepoPath'
-$archivePath = Join-Path \$HOME '$escapedArchiveName'
-
-if (!(Test-Path \$repoPath)) {
-  throw "Repo path does not exist: \$repoPath"
-}
-if (!(Test-Path \$archivePath)) {
-  throw "Uploaded archive not found: \$archivePath"
-}
-
-Expand-Archive -Path \$archivePath -DestinationPath \$repoPath -Force
-Remove-Item -Path \$archivePath -Force -ErrorAction SilentlyContinue
-"@
+    $extractScript = "`$repoPath = '$escapedRepoPath'" + "`n" +
+      "`$archivePath = Join-Path `$HOME '$escapedArchiveName'" + "`n" +
+      "if (!(Test-Path `$repoPath)) { throw `"Repo path does not exist: `$repoPath`" }" + "`n" +
+      "if (!(Test-Path `$archivePath)) { throw `"Uploaded archive not found: `$archivePath`" }" + "`n" +
+      "Expand-Archive -Path `$archivePath -DestinationPath `$repoPath -Force" + "`n" +
+      "Remove-Item -Path `$archivePath -Force -ErrorAction SilentlyContinue"
     Write-Host "Extracting workspace archive on $Server"
     Invoke-RemotePowerShell -SshExe $sshPath -Target $Server -Script $extractScript
   } else {
@@ -300,29 +292,20 @@ Remove-Item -Path \$archivePath -Force -ErrorAction SilentlyContinue
   }
 
   $applyScript = "$RemoteRepoPath\deploy\server\apply-update.ps1"
-  $remoteParts = @(
-    "powershell -NoProfile -ExecutionPolicy Bypass",
-    "-File `"$applyScript`"",
-    "-RepoPath `"$RemoteRepoPath`"",
-    "-SkipGit",
-    "-CaddyConfigPath `"$CaddyConfigPath`""
-  )
+  $applyArgs = "-RepoPath '$RemoteRepoPath' -SkipGit -CaddyConfigPath '$CaddyConfigPath'"
 
   if ($SkipInstall) {
-    $remoteParts += "-SkipInstall"
+    $applyArgs += " -SkipInstall"
   }
 
   if ($ForceInstall) {
-    $remoteParts += "-ForceInstall"
+    $applyArgs += " -ForceInstall"
   }
 
-  $remoteCmd = $remoteParts -join " "
+  $remoteApplyScript = "& '$applyScript' $applyArgs"
 
   Write-Host "Running remote deployment on $Server"
-  Invoke-Native -FilePath $sshPath -ArgumentList @(
-    $Server,
-    $remoteCmd
-  ) -Label "remote apply-update"
+  Invoke-RemotePowerShell -SshExe $sshPath -Target $Server -Script $remoteApplyScript
 } finally {
   if (Test-Path $archivePath) {
     Remove-Item -Path $archivePath -Force -ErrorAction SilentlyContinue

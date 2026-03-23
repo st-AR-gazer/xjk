@@ -461,6 +461,20 @@ module.exports = {
         TOOL_PATH: path.join(toolsDomainRoot, "Map-Validation-Checker", "tools", "MapValidationChecker.exe"),
       },
     },
+    {
+      name: "xjk-tools-underwater",
+      cwd: path.join(toolsDomainRoot, "Underwater-Map-Converter", "backend"),
+      script: "server.js",
+      interpreter: "node",
+      env: {
+        NODE_ENV: "production",
+        PORT: "3017",
+        FRONTEND_DIR: path.join(toolsDomainRoot, "Underwater-Map-Converter", "frontend"),
+        UPLOAD_DIR: path.join(toolsDomainRoot, "Underwater-Map-Converter", "data", "uploads"),
+        OUTPUT_DIR: path.join(toolsDomainRoot, "Underwater-Map-Converter", "data", "processed"),
+        TOOL_PATH: path.join(toolsDomainRoot, "Underwater-Map-Converter", "tools", "UnderwaterMapConverter.exe"),
+      },
+    },
   ],
 };
 
