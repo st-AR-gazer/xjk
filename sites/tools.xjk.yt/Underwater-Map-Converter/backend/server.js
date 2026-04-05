@@ -115,6 +115,7 @@ const upload = multer({
 
 const app = express();
 app.disable("x-powered-by");
+app.set("trust proxy", 1);
 
 app.use(helmet({ crossOriginResourcePolicy: false }));
 app.use(morgan("combined"));
@@ -186,7 +187,7 @@ app.post("/api/convert", upload.single("map"), async (req, res) => {
 
     const outputFiles = await fsp.readdir(workDir);
     const produced = outputFiles.filter(
-      (f) => f !== path.basename(workInputPath) && f.toLowerCase().endsWith(".map.gbx")
+      (f) => f !== path.basename(workInputPath) && f.toLowerCase().endsWith(".gbx")
     );
 
     if (produced.length === 0) {
