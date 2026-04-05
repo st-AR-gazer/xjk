@@ -128,6 +128,7 @@
     .tools { border-left: 6px solid var(--accent-a); }
     .plugins { border-left: 6px solid var(--accent-d); }
     .learn { border-left: 6px solid var(--accent-b); }
+    .archive { border-left: 6px solid var(--accent-f); }
     .altered { border-left: 6px solid var(--accent-c); }
     .trackers { border-left: 6px solid var(--accent-e); }
     .aggregator {
@@ -243,6 +244,12 @@
         <span class="host">learn.xjk.yt</span>
       </a>
 
+      <a class="card archive" data-link="archive" href="https://archive.xjk.yt/" target="_blank" rel="noopener noreferrer">
+        <h2>Archive Hub</h2>
+        <p>Archived Nadeo releases grouped by game, with downloadable files and structured notes.</p>
+        <span class="host">archive.xjk.yt</span>
+      </a>
+
       <a class="card altered" data-link="altered" href="https://altered.xjk.yt/" target="_blank" rel="noopener noreferrer">
         <h2>Altered Hub</h2>
         <p>Altered-related projects and experiments grouped under one dedicated subdomain.</p>
@@ -281,26 +288,38 @@
     (function configureHubLinks() {
       const host = window.location.hostname.toLowerCase();
       const port = window.location.port || "80";
-      const isLoopbackPathMode = host === "localhost" || host === "127.0.0.1" || host === "xjk.localhost";
       const isLocalSubdomainMode = host.endsWith(".localhost");
-      const isLocalMode = isLoopbackPathMode || isLocalSubdomainMode;
+      const isLocalPathMode = host === "localhost" || host === "127.0.0.1";
+      const isLocalMode = isLocalPathMode || isLocalSubdomainMode;
 
       const links = {
         tools: "https://tools.xjk.yt/",
         plugins: "https://plugins.xjk.yt/",
         learn: "https://learn.xjk.yt/",
+        archive: "https://archive.xjk.yt/",
         altered: "https://altered.xjk.yt/",
         trackers: "https://trackers.xjk.yt/",
         aggregator: "https://aggregator.xjk.yt/",
       };
 
-      if (isLocalMode) {
+      if (isLocalSubdomainMode) {
         links.tools = `http://tools.localhost:${port}/`;
         links.plugins = `http://plugins.localhost:${port}/`;
         links.learn = `http://learn.localhost:${port}/`;
+        links.archive = `http://archive.localhost:${port}/`;
         links.altered = `http://altered.localhost:${port}/`;
         links.trackers = `http://trackers.localhost:${port}/`;
         links.aggregator = `http://aggregator.localhost:${port}/`;
+      }
+
+      if (isLocalPathMode) {
+        links.tools = `http://localhost:${port}/tools/`;
+        links.plugins = `http://localhost:${port}/plugins/`;
+        links.learn = `http://localhost:${port}/learn/`;
+        links.archive = `http://localhost:${port}/archive/`;
+        links.altered = `http://localhost:${port}/altered/`;
+        links.trackers = `http://localhost:${port}/trackers/`;
+        links.aggregator = `http://localhost:${port}/aggregator/`;
       }
 
       document.querySelectorAll("[data-link]").forEach((node) => {

@@ -86,16 +86,5 @@
     "output": "Formatted gradient string",
     "link": "Colorizer/",
     "tone": "warm"
-  },
-  {
-    "id": "archive-hub",
-    "name": "TrackMania Archive Hub",
-    "description": "Browse archived TrackMania / ManiaPlanet builds grouped by game and download files in one place.",
-    "category": "Archive",
-    "status": "live",
-    "input": "N/A",
-    "output": "Links / Downloads",
-    "link": "Archive-Hub/",
-    "tone": "cool"
   }
 ]
