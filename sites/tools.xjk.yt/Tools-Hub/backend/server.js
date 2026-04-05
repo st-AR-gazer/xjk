@@ -20,6 +20,10 @@ const DATA_DIR = process.env.DATA_DIR || path.join(__dirname, "..", "data");
 const TOOLS_FILE = process.env.TOOLS_FILE || path.join(DATA_DIR, "tools.json");
 const SHARED_DIR = process.env.SHARED_DIR || path.join(__dirname, "..", "..", "shared");
 const COLORIZER_DIR = process.env.COLORIZER_DIR || path.join(__dirname, "..", "..", "Colorizer", "frontend");
+const ARCHIVE_HUB_DIR =
+  process.env.ARCHIVE_HUB_DIR || path.join(__dirname, "..", "..", "Archive-Hub", "frontend");
+const ARCHIVE_FILES_DIR =
+  process.env.ARCHIVE_FILES_DIR || path.join(__dirname, "..", "..", "Archive-Hub", "files");
 
 const DEFAULT_TOOLS = [
   {
@@ -172,6 +176,9 @@ app.get("/health", (_req, res) => {
 app.use("/shared", express.static(SHARED_DIR));
 app.get(/^\/Colorizer$/, (_req, res) => res.redirect(308, "/Colorizer/"));
 app.use("/Colorizer", express.static(COLORIZER_DIR));
+app.get(/^\/Archive-Hub$/, (_req, res) => res.redirect(308, "/Archive-Hub/"));
+app.use("/Archive-Hub/files", express.static(ARCHIVE_FILES_DIR));
+app.use("/Archive-Hub", express.static(ARCHIVE_HUB_DIR));
 app.use(express.static(FRONTEND_DIR));
 
 app.get("/", (_req, res) => {

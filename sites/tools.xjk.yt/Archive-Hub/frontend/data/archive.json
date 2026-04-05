@@ -1,0 +1,95 @@
+{
+  "games": [
+    {
+      "id": "tm-original",
+      "franchise": "TrackMania",
+      "name": "TrackMania (Original)",
+      "years": "2003",
+      "platforms": ["Windows"],
+      "description": "The original TrackMania release.",
+      "builds": []
+    },
+    {
+      "id": "tm-sunrise",
+      "franchise": "TrackMania",
+      "name": "TrackMania Sunrise",
+      "years": "2005",
+      "platforms": ["Windows"],
+      "description": "TrackMania Sunrise and Sunrise eXtreme-era builds.",
+      "builds": []
+    },
+    {
+      "id": "tm-nations-eswc",
+      "franchise": "TrackMania",
+      "name": "TrackMania Nations ESWC",
+      "years": "2006",
+      "platforms": ["Windows"],
+      "description": "The ESWC release and related patches.",
+      "builds": []
+    },
+    {
+      "id": "tm-united",
+      "franchise": "TrackMania",
+      "name": "TrackMania United",
+      "years": "2006",
+      "platforms": ["Windows"],
+      "description": "TrackMania United (retail/digital) installers and updates.",
+      "builds": []
+    },
+    {
+      "id": "tm-forever",
+      "franchise": "TrackMania",
+      "name": "TrackMania Forever (Nations / United)",
+      "years": "2008",
+      "platforms": ["Windows"],
+      "description": "Nations Forever and United Forever builds.",
+      "builds": []
+    },
+    {
+      "id": "tm2",
+      "franchise": "TrackMania² / ManiaPlanet",
+      "name": "TrackMania² (Canyon / Stadium / Valley / Lagoon)",
+      "years": "2011–2017",
+      "platforms": ["Windows"],
+      "description": "ManiaPlanet-era TrackMania² titles and updates.",
+      "builds": []
+    },
+    {
+      "id": "tm-turbo",
+      "franchise": "TrackMania",
+      "name": "TrackMania Turbo",
+      "years": "2016",
+      "platforms": ["Windows", "PS4", "Xbox One"],
+      "description": "TrackMania Turbo releases and patches.",
+      "builds": []
+    },
+    {
+      "id": "tm-2020",
+      "franchise": "TrackMania",
+      "name": "Trackmania (2020)",
+      "years": "2020–",
+      "platforms": ["Windows", "PS4/PS5", "Xbox One/Series", "Cloud"],
+      "description": "Trackmania 2020 builds, tools, and data snapshots.",
+      "builds": []
+    },
+    {
+      "id": "shootmania-storm",
+      "franchise": "ShootMania / ManiaPlanet",
+      "name": "ShootMania Storm",
+      "years": "2013",
+      "platforms": ["Windows"],
+      "description": "ShootMania Storm builds and updates.",
+      "builds": []
+    },
+    {
+      "id": "questmania",
+      "franchise": "QuestMania / ManiaPlanet",
+      "name": "QuestMania",
+      "years": "2011",
+      "platforms": ["Windows"],
+      "description": "QuestMania builds and updates.",
+      "builds": []
+    }
+  ]
+}
+

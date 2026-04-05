@@ -1,0 +1,404 @@
+:root {
+  --bg-0: #060912;
+  --bg-1: #11182a;
+  --ink: #edf3ff;
+  --ink-soft: #afbdd7;
+  --panel: rgba(13, 20, 34, 0.84);
+  --line: rgba(226, 236, 255, 0.14);
+  --line-strong: rgba(226, 236, 255, 0.22);
+  --ok: #4af0a8;
+  --warn: #ffd27a;
+  --danger: #ff6a6a;
+  --btn-ink: #031018;
+
+  --cool: var(--tool-cool, #59d2ff);
+  --warm: var(--tool-warm, #ff7a32);
+}
+
+* { box-sizing: border-box; }
+
+html,
+body {
+  margin: 0;
+  min-height: 100%;
+  color: var(--ink);
+  font-family: "Manrope", "Segoe UI", sans-serif;
+}
+
+code {
+  font-family: ui-monospace, "SFMono-Regular", Menlo, Monaco, Consolas, "Liberation Mono", monospace;
+  font-size: 0.95em;
+  color: rgba(255, 255, 255, 0.9);
+}
+
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  border: 0;
+}
+
+.bg-grid {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  opacity: 0.22;
+  background-image:
+    linear-gradient(rgba(255, 255, 255, 0.05) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255, 255, 255, 0.05) 1px, transparent 1px);
+  background-size: 38px 38px;
+}
+
+.bg-sweep {
+  position: fixed;
+  pointer-events: none;
+  filter: blur(10px);
+}
+
+.bg-sweep-warm {
+  width: 84vw;
+  height: 38vh;
+  left: -12vw;
+  top: -13vh;
+  transform: rotate(-8deg);
+  background: linear-gradient(90deg, rgba(255, 122, 50, 0.28), rgba(0, 0, 0, 0));
+}
+
+.bg-sweep-cool {
+  width: 74vw;
+  height: 38vh;
+  right: -18vw;
+  top: 22vh;
+  transform: rotate(11deg);
+  background: linear-gradient(90deg, rgba(0, 0, 0, 0), rgba(89, 210, 255, 0.22));
+}
+
+.shell {
+  position: relative;
+  width: min(1120px, calc(100% - 2.6rem));
+  margin: 2.2rem auto;
+  padding: 2.1rem 2rem;
+  border-radius: 26px;
+  border: 1px solid var(--line);
+  background: rgba(10, 16, 28, 0.5);
+  box-shadow:
+    0 22px 58px rgba(0, 0, 0, 0.34),
+    inset 0 0 0 1px rgba(255, 255, 255, 0.03);
+  overflow: hidden;
+}
+
+.hero {
+  background: linear-gradient(160deg, rgba(13, 20, 34, 0.88), rgba(8, 12, 22, 0.66));
+}
+
+.topline {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.eyebrow {
+  margin: 0;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: var(--warm);
+}
+
+.build-note {
+  margin: 0;
+  font-size: 0.88rem;
+  color: var(--ink-soft);
+}
+
+.hero h1 {
+  margin: 1rem 0 0.7rem;
+  font-family: "Chakra Petch", "Segoe UI", sans-serif;
+  font-size: clamp(2.2rem, 3.2vw, 3rem);
+  letter-spacing: 0.02em;
+}
+
+.lead {
+  margin: 0 0 1.4rem;
+  color: rgba(237, 243, 255, 0.9);
+  max-width: 70ch;
+  line-height: 1.5;
+}
+
+.controls {
+  display: flex;
+  gap: 1rem;
+  align-items: stretch;
+  flex-wrap: wrap;
+}
+
+.search {
+  flex: 1 1 320px;
+  min-width: min(100%, 320px);
+}
+
+.search input {
+  width: 100%;
+  padding: 0.95rem 1rem;
+  border-radius: 14px;
+  border: 1px solid var(--line-strong);
+  background: rgba(7, 11, 20, 0.72);
+  color: var(--ink);
+  font-size: 1rem;
+  outline: none;
+}
+
+.search input:focus {
+  border-color: rgba(89, 210, 255, 0.55);
+  box-shadow: 0 0 0 3px rgba(89, 210, 255, 0.14);
+}
+
+.stats {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(90px, 1fr));
+  gap: 0.75rem;
+  flex: 0 1 360px;
+  min-width: min(100%, 340px);
+}
+
+.stat {
+  border: 1px solid rgba(226, 236, 255, 0.1);
+  border-radius: 14px;
+  padding: 0.8rem 0.9rem;
+  background: rgba(7, 11, 20, 0.56);
+}
+
+.stat-label {
+  display: block;
+  font-size: 0.82rem;
+  color: var(--ink-soft);
+  margin-bottom: 0.25rem;
+}
+
+.stat strong {
+  font-family: "Chakra Petch", "Segoe UI", sans-serif;
+  font-size: 1.3rem;
+}
+
+.panel {
+  background: var(--panel);
+}
+
+.section-head {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 1rem;
+  padding-bottom: 1.2rem;
+  border-bottom: 1px solid rgba(226, 236, 255, 0.08);
+}
+
+.section-head h2 {
+  margin: 0;
+  font-family: "Chakra Petch", "Segoe UI", sans-serif;
+  letter-spacing: 0.03em;
+}
+
+.muted {
+  margin: 0.45rem 0 0;
+  color: var(--ink-soft);
+}
+
+.catalog {
+  padding-top: 1.2rem;
+  display: grid;
+  gap: 0.9rem;
+}
+
+.group-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 1rem;
+  margin: 1.2rem 0 0.65rem;
+}
+
+.group-head h3 {
+  margin: 0;
+  font-family: "Chakra Petch", "Segoe UI", sans-serif;
+  letter-spacing: 0.02em;
+  color: rgba(255, 255, 255, 0.92);
+}
+
+.group-head .count {
+  color: var(--ink-soft);
+  font-size: 0.9rem;
+}
+
+.game {
+  border: 1px solid rgba(226, 236, 255, 0.1);
+  border-radius: 18px;
+  background: rgba(6, 9, 18, 0.34);
+  overflow: hidden;
+}
+
+.game summary {
+  cursor: pointer;
+  list-style: none;
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 1rem 1.1rem;
+}
+
+.game summary::-webkit-details-marker { display: none; }
+
+.game-title {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  min-width: 0;
+}
+
+.game-title strong {
+  font-family: "Chakra Petch", "Segoe UI", sans-serif;
+  font-size: 1.1rem;
+}
+
+.game-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem 0.75rem;
+  color: var(--ink-soft);
+  font-size: 0.92rem;
+}
+
+.pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.25rem 0.6rem;
+  border-radius: 999px;
+  border: 1px solid rgba(226, 236, 255, 0.14);
+  background: rgba(0, 0, 0, 0.22);
+  font-size: 0.86rem;
+  color: rgba(237, 243, 255, 0.92);
+  white-space: nowrap;
+}
+
+.pill-builds { border-color: rgba(89, 210, 255, 0.24); }
+.pill-files { border-color: rgba(255, 122, 50, 0.22); }
+
+.game-body {
+  padding: 0 1.1rem 1.2rem;
+  border-top: 1px solid rgba(226, 236, 255, 0.08);
+}
+
+.game-desc {
+  margin: 1rem 0 0.9rem;
+  color: rgba(237, 243, 255, 0.86);
+  line-height: 1.5;
+}
+
+.builds {
+  display: grid;
+  gap: 0.65rem;
+}
+
+.build {
+  border: 1px solid rgba(226, 236, 255, 0.08);
+  border-radius: 14px;
+  padding: 0.85rem 0.9rem;
+  background: rgba(7, 11, 20, 0.42);
+}
+
+.build-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-bottom: 0.5rem;
+}
+
+.build-head strong {
+  font-family: "Chakra Petch", "Segoe UI", sans-serif;
+  letter-spacing: 0.01em;
+}
+
+.build-meta {
+  color: var(--ink-soft);
+  font-size: 0.9rem;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem 0.75rem;
+}
+
+.links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem 0.6rem;
+  margin-top: 0.65rem;
+}
+
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.4rem;
+  padding: 0.55rem 0.85rem;
+  border-radius: 12px;
+  border: 1px solid rgba(226, 236, 255, 0.14);
+  background: rgba(255, 255, 255, 0.06);
+  color: rgba(237, 243, 255, 0.92);
+  text-decoration: none;
+  font-weight: 600;
+  font-size: 0.92rem;
+}
+
+.btn:hover {
+  border-color: rgba(89, 210, 255, 0.45);
+  background: rgba(89, 210, 255, 0.08);
+}
+
+.btn-primary {
+  background: linear-gradient(110deg, rgba(89, 210, 255, 0.92), rgba(255, 122, 50, 0.92));
+  border-color: rgba(0, 0, 0, 0);
+  color: rgba(3, 16, 24, 0.96);
+}
+
+.btn-primary:hover {
+  filter: brightness(1.04);
+}
+
+.empty-state {
+  padding: 1.3rem 1rem;
+  border-radius: 16px;
+  border: 1px dashed rgba(226, 236, 255, 0.18);
+  color: var(--ink-soft);
+  background: rgba(7, 11, 20, 0.34);
+  text-align: center;
+}
+
+.foot {
+  padding: 1.3rem 1.6rem;
+}
+
+@media (max-width: 720px) {
+  .shell {
+    padding: 1.7rem 1.3rem;
+    width: min(1120px, calc(100% - 1.6rem));
+  }
+
+  .stats {
+    grid-template-columns: 1fr 1fr 1fr;
+    flex: 1 1 auto;
+  }
+
+  .game summary {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+}
+

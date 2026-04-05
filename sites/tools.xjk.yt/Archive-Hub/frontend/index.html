@@ -1,0 +1,75 @@
+<!doctype html>
+<html lang="en" data-tool-id="archive-hub">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>xjk / archive hub</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@500;600;700&family=Manrope:wght@400;500;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="styles.css" />
+  <link rel="stylesheet" href="../../shared/tool-theme.css" />
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+</head>
+<body>
+  <div class="bg-grid" aria-hidden="true"></div>
+  <div class="bg-sweep bg-sweep-warm" aria-hidden="true"></div>
+  <div class="bg-sweep bg-sweep-cool" aria-hidden="true"></div>
+
+  <header class="shell hero">
+    <div class="topline">
+      <p class="eyebrow">Nadeo Archive</p>
+      <p class="build-note">Updated <span id="buildDate"></span></p>
+    </div>
+
+    <h1>TrackMania Archive Hub</h1>
+    <p class="lead">
+      A simple index of archived TrackMania / ManiaPlanet releases grouped by game.
+      Add builds by editing <code>data/archive.json</code> and dropping files into <code>/Archive-Hub/files</code>.
+    </p>
+
+    <div class="controls" aria-label="Archive filters">
+      <label class="search">
+        <span class="sr-only">Search</span>
+        <input id="search" type="search" placeholder="Search games, versions, notes…" autocomplete="off" />
+      </label>
+
+      <div class="stats" aria-label="Archive stats">
+        <div class="stat">
+          <span class="stat-label">Games</span>
+          <strong id="statGames">0</strong>
+        </div>
+        <div class="stat">
+          <span class="stat-label">Builds</span>
+          <strong id="statBuilds">0</strong>
+        </div>
+        <div class="stat">
+          <span class="stat-label">Files</span>
+          <strong id="statFiles">0</strong>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <main class="shell panel">
+    <section class="section-head">
+      <div>
+        <h2>Catalog</h2>
+        <p class="muted">Click a game to view builds and downloads.</p>
+      </div>
+    </section>
+
+    <div id="catalog" class="catalog" aria-live="polite"></div>
+  </main>
+
+  <footer class="shell foot">
+    <p class="muted">
+      Only host files you are allowed to distribute. This hub is meant for personal/team archiving and quick access.
+    </p>
+  </footer>
+
+  <script src="../../shared/tool-theme.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>
+
