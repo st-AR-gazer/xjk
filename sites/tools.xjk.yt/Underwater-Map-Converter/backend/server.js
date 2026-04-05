@@ -58,12 +58,13 @@ function sanitizeDownloadName(name) {
   return String(name || "download.bin").replace(/["\\/\r\n]+/g, "_");
 }
 
-function runTool(args) {
+function runTool(args, { cwd } = {}) {
   return new Promise((resolve, reject) => {
     if (!TOOL_PATH) return reject(new Error("TOOL_PATH is not set."));
     if (!fs.existsSync(TOOL_PATH)) return reject(new Error(`Tool not found at: ${TOOL_PATH}`));
 
     const child = spawn(TOOL_PATH, args, {
+      cwd,
       windowsHide: true,
       stdio: ["ignore", "pipe", "pipe"],
     });
@@ -178,7 +179,7 @@ app.post("/api/convert", upload.single("map"), async (req, res) => {
       "--coverage", coverage,
     ];
 
-    const { stdout, stderr } = await runTool(toolArgs);
+    const { stdout, stderr } = await runTool(toolArgs, { cwd: workDir });
 
     if (stdout?.trim()) console.log(`tool stdout (${requestId}):\n${stdout}`);
     if (stderr?.trim()) console.warn(`tool stderr (${requestId}):\n${stderr}`);
