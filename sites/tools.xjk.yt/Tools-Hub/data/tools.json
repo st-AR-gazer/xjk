@@ -75,5 +75,16 @@
     "output": "Underwater .Map.Gbx / Zip",
     "link": "Underwater-Map-Converter/",
     "tone": "cool"
+  },
+  {
+    "id": "colorizer",
+    "name": "TM Gradient Color Formatter",
+    "description": "Format Trackmania text with per-letter gradient color codes (supports custom palettes & presets).",
+    "category": "Text",
+    "status": "live",
+    "input": "Text + 2–7 colors",
+    "output": "Formatted gradient string",
+    "link": "Colorizer/",
+    "tone": "warm"
   }
 ]

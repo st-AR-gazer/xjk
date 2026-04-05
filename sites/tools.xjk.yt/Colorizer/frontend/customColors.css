@@ -1,0 +1,159 @@
+.modal, .color-card {
+    transition: transform 0.5s ease;
+}
+
+.modal {
+    position: relative;
+    z-index: 2;
+}
+
+.color-card {
+    position: absolute;
+    top: 50%;
+    right: 0;
+    transform: translate(100%, -50%);
+    z-index: 1;
+    width: 330px;
+    
+    padding: 0px 20px 20px 20px;
+    border-radius: 8px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
+
+    background-color: rgba(30, 30, 30, 0.5);
+
+    max-height: 80%;
+    overflow-y: auto;
+}
+
+.color-card-content {
+    max-height: 100%;
+    overflow-y: auto;
+}
+
+.modal-active {
+    transform: translateX(-100px);
+}
+
+.color-card-active {
+    transform: translate(0%, -50%);
+    z-index: 30;
+}
+
+
+@media (max-width: 903px) {
+    .color-card {
+        position: fixed;
+        top: auto;
+        bottom: 0;
+        left: 20vw;
+        transform: translateY(100%);
+        width: 60vw;
+        border-radius: 0;
+    }
+
+    .color-card-active {
+        transform: translateY(0);
+    }
+
+    .modal-active {
+        transform: translateY(-50px);
+    }
+}
+
+/* Option card */
+.options-card {
+    position: absolute;
+    top: 50%;
+    left: 0;
+    transform: translate(-100%, -50%);
+    transition: transform 0.5s ease;
+    z-index: 1;
+    width: 330px;
+    
+    padding: 0px 20px 20px 20px;
+    border-radius: 8px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
+
+    background-color: rgba(30, 30, 30, 0.5);
+
+    max-height: 80%;
+    overflow-y: auto;
+}
+
+.options-card-active {
+    transform: translate(0%, -50%);
+    z-index: 30;
+}
+
+.modal-options-active {
+    transform: translateX(100px);
+}
+
+@media (max-width: 903px) {
+    .options-card {
+        position: fixed;
+        top: auto;
+        bottom: 0;
+        left: 0;
+        right: 0;
+        transform: translateY(100%);
+        width: auto;
+        border-radius: 0;
+    }
+
+    .options-card-active {
+        transform: translateY(0);
+    }
+
+    .modal-options-active {
+        transform: translateY(-50px);
+    }
+}
+
+.btn-group {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 5px;
+}
+
+.btn-group input[type="radio"] {
+    display: none;
+}
+
+.btn-group label {
+    display: inline-block;
+    padding: 5px 10px;
+    background-color: #333;
+    color: #ccc;
+    font-size: 0.8em;
+    border: 1px solid #444;
+    border-radius: 20px;
+    cursor: pointer;
+    transition: background-color 0.3s, border-color 0.3s, color 0.3s;
+}
+
+.btn-group input[type="radio"]:checked + label {
+    background-color: #007bff;
+    color: white;
+    border-color: #0056b3;
+}
+
+
+
+
+
+.presets-panel {
+    visibility: hidden;
+    opacity: 0;
+    transition: visibility 0s linear 0.5s, opacity 0.5s linear;
+}
+
+.presets-panel.show {
+    visibility: visible;
+    opacity: 1;
+    transition-delay: 0s;
+}
+
+.preset-btn {
+    transition: opacity 0.5s ease 0.5s;
+}

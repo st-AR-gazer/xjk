@@ -19,6 +19,7 @@ const FRONTEND_DIR = process.env.FRONTEND_DIR || path.join(__dirname, "..", "fro
 const DATA_DIR = process.env.DATA_DIR || path.join(__dirname, "..", "data");
 const TOOLS_FILE = process.env.TOOLS_FILE || path.join(DATA_DIR, "tools.json");
 const SHARED_DIR = process.env.SHARED_DIR || path.join(__dirname, "..", "..", "shared");
+const COLORIZER_DIR = process.env.COLORIZER_DIR || path.join(__dirname, "..", "..", "Colorizer", "frontend");
 
 const DEFAULT_TOOLS = [
   {
@@ -169,6 +170,8 @@ app.get("/health", (_req, res) => {
 });
 
 app.use("/shared", express.static(SHARED_DIR));
+app.get(/^\/Colorizer$/, (_req, res) => res.redirect(308, "/Colorizer/"));
+app.use("/Colorizer", express.static(COLORIZER_DIR));
 app.use(express.static(FRONTEND_DIR));
 
 app.get("/", (_req, res) => {
