@@ -22,15 +22,17 @@
       <h1>Underwater Map Converter</h1>
       <p class="lead">
         Upload a <code>.Map.Gbx</code> and convert it into an underwater variant.
-        Supports all environments with automatic carrier detection.
+        Only supports non-Stadium environments and vistas, with automatic carrier detection.
       </p>
     </section>
 
     <section id="drop" class="dropcard" tabindex="0" aria-label="Map upload">
-      <input id="file" type="file" accept=".gbx,.Map.Gbx" />
+      <input id="file" type="file" accept=".gbx,.Map.Gbx" multiple />
       <p class="card-title">Map Input</p>
-      <p class="card-copy">Drop <code>.Map.Gbx</code> here or click to browse.</p>
-      <p id="fileName" class="card-meta">No map selected</p>
+      <p class="card-copy">Drop one or more <code>.Map.Gbx</code>/<code>.Gbx</code> files here or click to browse.</p>
+      <p class="card-copy">Compatible with non-Stadium environments and vistas only.</p>
+      <p class="card-copy">Batch conversions download a zip (includes an <code>errors.json</code> report).</p>
+      <p id="fileName" class="card-meta">No maps selected</p>
     </section>
 
     <section class="options panel" aria-label="Conversion options">
@@ -63,7 +65,7 @@
     </section>
 
     <section class="action-row">
-      <button id="go" class="go" disabled>Convert Map</button>
+      <button id="go" class="go" disabled>Convert Maps</button>
     </section>
 
     <div id="status" class="status" role="status" aria-live="polite"></div>

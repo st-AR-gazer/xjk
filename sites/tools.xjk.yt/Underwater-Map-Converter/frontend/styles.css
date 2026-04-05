@@ -119,6 +119,17 @@ body {
   font-family: "Manrope", sans-serif; font-size: 0.95rem;
 }
 
+.option-select {
+  color-scheme: dark;
+  background-color: #101a29;
+}
+
+.option-select option,
+.option-select optgroup {
+  background: #0a1520;
+  color: var(--ink);
+}
+
 .option-select:focus, .option-input:focus {
   outline: 2px solid rgba(62, 200, 232, 0.6); outline-offset: 1px;
 }

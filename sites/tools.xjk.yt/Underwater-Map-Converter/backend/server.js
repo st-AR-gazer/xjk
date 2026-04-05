@@ -25,8 +25,13 @@ const OUTPUT_DIR = process.env.OUTPUT_DIR || path.join(process.cwd(), "..", "dat
 const FRONTEND_DIR = process.env.FRONTEND_DIR || path.join(__dirname, "..", "frontend");
 
 const MAX_FILE_MB = Number(process.env.MAX_FILE_MB || 64);
+const MAX_FILE_COUNT = Number(process.env.MAX_FILE_COUNT || 25);
 const TOOL_TIMEOUT_MS = Number(process.env.TOOL_TIMEOUT_MS || 300000);
 const KEEP_FILES = String(process.env.KEEP_FILES || "false").toLowerCase() === "true";
+
+const JOBS_DIR = process.env.JOBS_DIR || path.join(process.cwd(), "..", "data", "jobs");
+const JOB_TTL_MS = Number(process.env.JOB_TTL_MS || 6 * 60 * 60 * 1000);
+const JOB_CLEANUP_INTERVAL_MS = Number(process.env.JOB_CLEANUP_INTERVAL_MS || 30 * 60 * 1000);
 
 function safeMkdir(dir) {
   if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
@@ -34,6 +39,13 @@ function safeMkdir(dir) {
 
 safeMkdir(UPLOAD_DIR);
 safeMkdir(OUTPUT_DIR);
+safeMkdir(JOBS_DIR);
+
+function stripMapExtension(fileName) {
+  return String(fileName || "")
+    .replace(/\.map(?:\(\d+\))?\.gbx$/i, "")
+    .replace(/\.gbx$/i, "");
+}
 
 function isAllowedMapFilename(filename) {
   const lower = filename.toLowerCase();
@@ -48,9 +60,7 @@ function pickStoredExtension(originalName) {
 }
 
 function makeDownloadName(originalName, suffix) {
-  const base = originalName
-    .replace(/\.map\.gbx$/i, "")
-    .replace(/\.gbx$/i, "");
+  const base = stripMapExtension(originalName);
   return `${base}-${suffix}.Map.Gbx`;
 }
 
@@ -102,15 +112,39 @@ const storage = multer.diskStorage({
   },
 });
 
-const upload = multer({
+function registerRejectedFile(req, file, reason) {
+  if (!req.rejectedFiles) req.rejectedFiles = [];
+  req.rejectedFiles.push({
+    name: file.originalname,
+    reason: String(reason || "Rejected."),
+  });
+}
+
+function strictMapFileFilter(_req, file, cb) {
+  if (!isAllowedMapFilename(file.originalname)) {
+    return cb(new Error("Unsupported file type. Please upload a .Map.Gbx or .Gbx file."));
+  }
+  cb(null, true);
+}
+
+function lenientMapFileFilter(req, file, cb) {
+  if (!isAllowedMapFilename(file.originalname)) {
+    registerRejectedFile(req, file, "Unsupported file type.");
+    return cb(null, false);
+  }
+  cb(null, true);
+}
+
+const uploadSingle = multer({
   storage,
   limits: { fileSize: MAX_FILE_MB * 1024 * 1024 },
-  fileFilter: (_req, file, cb) => {
-    if (!isAllowedMapFilename(file.originalname)) {
-      return cb(new Error("Unsupported file type. Please upload a .Map.Gbx file."));
-    }
-    cb(null, true);
-  },
+  fileFilter: strictMapFileFilter,
+});
+
+const uploadBatch = multer({
+  storage,
+  limits: { fileSize: MAX_FILE_MB * 1024 * 1024, files: MAX_FILE_COUNT },
+  fileFilter: lenientMapFileFilter,
 });
 
 const app = express();
@@ -128,17 +162,23 @@ app.get("/", (_req, res) => {
 
 app.get("/health", (_req, res) => res.type("text").send("ok"));
 
-app.use(
-  "/api/",
-  rateLimit({
-    windowMs: 5 * 60 * 1000,
-    limit: 30,
-    standardHeaders: true,
-    legacyHeaders: false,
-  })
-);
+const convertLimiter = rateLimit({
+  windowMs: 5 * 60 * 1000,
+  limit: 30,
+  standardHeaders: true,
+  legacyHeaders: false,
+});
 
-app.post("/api/convert", upload.single("map"), async (req, res) => {
+const statusLimiter = rateLimit({
+  windowMs: 5 * 60 * 1000,
+  limit: 600,
+  standardHeaders: true,
+  legacyHeaders: false,
+});
+
+const activeJobs = new Map();
+
+app.post("/api/convert", convertLimiter, uploadSingle.single("map"), async (req, res) => {
   const uploaded = req.file;
   if (!uploaded) return res.status(400).json({ error: "No file uploaded." });
 
@@ -221,7 +261,7 @@ app.post("/api/convert", upload.single("map"), async (req, res) => {
     }));
 
     const zipBuffer = await buildZipBuffer(zipEntries);
-    const baseName = uploaded.originalname.replace(/\.map\.gbx$/i, "").replace(/\.gbx$/i, "");
+    const baseName = stripMapExtension(uploaded.originalname);
     const zipName = `${baseName}-${suffix}.zip`;
 
     res.setHeader("Content-Type", "application/zip");
@@ -235,6 +275,371 @@ app.post("/api/convert", upload.single("map"), async (req, res) => {
     await cleanup();
     res.status(500).json({ error: String(err?.message || err) });
   }
+});
+
+function isUuidLike(value) {
+  return /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(String(value || ""));
+}
+
+function ensureUniqueZipEntryName(name, usedNames) {
+  const safe = sanitizeDownloadName(name);
+  if (!usedNames.has(safe)) {
+    usedNames.add(safe);
+    return safe;
+  }
+
+  const ext = path.extname(safe);
+  const base = safe.slice(0, safe.length - ext.length);
+  for (let i = 2; i < 1000; i++) {
+    const candidate = `${base}-${i}${ext}`;
+    if (!usedNames.has(candidate)) {
+      usedNames.add(candidate);
+      return candidate;
+    }
+  }
+
+  const fallback = `${base}-${randomUUID().slice(0, 8)}${ext}`;
+  usedNames.add(fallback);
+  return fallback;
+}
+
+function inferOutputVariantLabel(fileName) {
+  const lower = String(fileName || "").toLowerCase();
+  if (lower.includes("meshless")) return "Meshless";
+  if (lower.includes("normal")) return "Normal";
+  return null;
+}
+
+function makeBatchOutputName(originalName, suffix, variantRequest, outputFileName, outputIndex, outputCount) {
+  const base = stripMapExtension(originalName).trim() || "map";
+  const safeSuffix = String(suffix || "Underwater").trim() || "Underwater";
+
+  let label = null;
+  if (variantRequest === "both") {
+    label = inferOutputVariantLabel(outputFileName);
+    if (!label) label = outputCount > 1 ? `Output${outputIndex + 1}` : "Output";
+  }
+
+  const labelPart = label ? `-${label}` : "";
+  return `${base}-${safeSuffix}${labelPart}.Map.Gbx`;
+}
+
+async function moveFile(sourcePath, destPath) {
+  await fsp.mkdir(path.dirname(destPath), { recursive: true });
+  try {
+    await fsp.rename(sourcePath, destPath);
+  } catch {
+    await fsp.copyFile(sourcePath, destPath);
+    await fsp.unlink(sourcePath);
+  }
+}
+
+async function writeJobStatus(jobDir, status) {
+  const out = {
+    ...status,
+    updatedAt: new Date().toISOString(),
+  };
+  await fsp.writeFile(path.join(jobDir, "status.json"), JSON.stringify(out, null, 2), "utf8");
+  return out;
+}
+
+async function readJobStatus(jobDir) {
+  const raw = await fsp.readFile(path.join(jobDir, "status.json"), "utf8");
+  return JSON.parse(raw);
+}
+
+function queueJob(jobDir, status) {
+  if (activeJobs.has(status.id)) return;
+
+  const promise = processBatchJob(jobDir, status)
+    .catch((err) => {
+      console.error(`Batch job failed (${status.id}):`, err);
+    })
+    .finally(() => {
+      activeJobs.delete(status.id);
+    });
+
+  activeJobs.set(status.id, promise);
+}
+
+async function processBatchJob(jobDir, status) {
+  const inputsDir = path.join(jobDir, "inputs");
+  const workRoot = path.join(jobDir, "work");
+  safeMkdir(workRoot);
+
+  status.state = "processing";
+  status = await writeJobStatus(jobDir, status);
+
+  const zipEntries = [];
+  const usedNames = new Set();
+  const errors = [];
+
+  for (const rejected of status.rejectedFiles || []) {
+    errors.push({
+      name: rejected?.name,
+      reason: rejected?.reason,
+    });
+  }
+
+  for (const file of status.files) {
+    file.status = "processing";
+    file.outputs = [];
+    file.error = null;
+    status = await writeJobStatus(jobDir, status);
+
+    const itemWorkDir = path.join(workRoot, file.id);
+    safeMkdir(itemWorkDir);
+
+    const inputPath = path.join(inputsDir, file.storedName);
+    const toolArgs = [
+      "make-underwater-map",
+      inputPath,
+      status.options.suffix,
+      "--variant",
+      status.options.variant,
+      "--coverage",
+      status.options.coverage,
+    ];
+
+    try {
+      const { stdout, stderr } = await runTool(toolArgs, { cwd: itemWorkDir });
+      if (stdout?.trim()) console.log(`tool stdout (${status.id}/${file.id}):\n${stdout}`);
+      if (stderr?.trim()) console.warn(`tool stderr (${status.id}/${file.id}):\n${stderr}`);
+
+      const outputFiles = await fsp.readdir(itemWorkDir);
+      const produced = outputFiles.filter((f) => f.toLowerCase().endsWith(".gbx"));
+
+      if (produced.length === 0) {
+        throw new Error("Conversion produced no output maps.");
+      }
+
+      produced.sort((a, b) => a.localeCompare(b));
+
+      produced.forEach((producedFile, index) => {
+        const entryName = makeBatchOutputName(
+          file.originalName,
+          status.options.suffix,
+          status.options.variant,
+          producedFile,
+          index,
+          produced.length
+        );
+        const zipName = ensureUniqueZipEntryName(entryName, usedNames);
+        zipEntries.push({
+          name: zipName,
+          path: path.join(itemWorkDir, producedFile),
+        });
+        file.outputs.push(zipName);
+      });
+
+      file.status = "done";
+      status.counts.ok += 1;
+    } catch (err) {
+      file.status = "error";
+      file.error = String(err?.message || err);
+      errors.push({
+        name: file.originalName,
+        reason: file.error,
+      });
+      status.counts.failed += 1;
+    } finally {
+      status.counts.done += 1;
+      status = await writeJobStatus(jobDir, status);
+    }
+  }
+
+  const errorsPath = path.join(jobDir, "errors.json");
+  const errorsReport = {
+    generatedAt: new Date().toISOString(),
+    options: status.options,
+    counts: status.counts,
+    errors,
+  };
+  await fsp.writeFile(errorsPath, JSON.stringify(errorsReport, null, 2), "utf8");
+  zipEntries.push({ name: "errors.json", path: errorsPath });
+
+  const hasAnyMaps = zipEntries.some((e) => e.name.toLowerCase().endsWith(".gbx"));
+  const zipBuffer = await buildZipBuffer(zipEntries);
+  const zipPath = path.join(jobDir, "result.zip");
+  await fsp.writeFile(zipPath, zipBuffer);
+
+  status.state = "done";
+  if (!hasAnyMaps) {
+    status.message = "No maps were converted successfully.";
+  } else if (status.message) {
+    delete status.message;
+  }
+  status.zip = {
+    name: `underwater-${sanitizeDownloadName(status.options.suffix)}-${status.id.slice(0, 8)}.zip`,
+    path: "result.zip",
+    bytes: zipBuffer.length,
+  };
+  status = await writeJobStatus(jobDir, status);
+
+  if (!KEEP_FILES) {
+    try { await fsp.rm(inputsDir, { recursive: true, force: true }); } catch {}
+    try { await fsp.rm(workRoot, { recursive: true, force: true }); } catch {}
+    try { await fsp.unlink(errorsPath); } catch {}
+  }
+}
+
+async function cleanupOldJobs() {
+  const now = Date.now();
+  let entries = [];
+  try {
+    entries = await fsp.readdir(JOBS_DIR, { withFileTypes: true });
+  } catch {
+    return;
+  }
+
+  await Promise.all(
+    entries
+      .filter((e) => e.isDirectory())
+      .map(async (entry) => {
+        const jobId = entry.name;
+        if (!isUuidLike(jobId)) return;
+        if (activeJobs.has(jobId)) return;
+
+        const jobDir = path.join(JOBS_DIR, jobId);
+        let stat = null;
+        try {
+          stat = await fsp.stat(jobDir);
+        } catch {
+          return;
+        }
+
+        if (stat && now - stat.mtimeMs > JOB_TTL_MS) {
+          await fsp.rm(jobDir, { recursive: true, force: true });
+        }
+      })
+  );
+}
+
+if (!KEEP_FILES) {
+  cleanupOldJobs().catch((err) => console.warn("Job cleanup failed:", err));
+  setInterval(() => {
+    cleanupOldJobs().catch((err) => console.warn("Job cleanup failed:", err));
+  }, JOB_CLEANUP_INTERVAL_MS).unref();
+}
+
+app.post("/api/convert-batch", convertLimiter, uploadBatch.array("maps", MAX_FILE_COUNT), async (req, res) => {
+  const uploadedFiles = Array.isArray(req.files) ? req.files : [];
+  const rejectedFiles = Array.isArray(req.rejectedFiles) ? req.rejectedFiles : [];
+
+  const variant = String(req.body?.variant || "both").toLowerCase();
+  const coverage = String(req.body?.coverage || "full-stack").toLowerCase();
+  const suffix = String(req.body?.suffix || "Underwater").replace(/[^a-zA-Z0-9_-]/g, "").slice(0, 64) || "Underwater";
+
+  const validVariants = ["normal", "meshless", "both"];
+  const validCoverages = ["one-layer", "full-stack"];
+
+  if (!validVariants.includes(variant)) {
+    return res.status(400).json({ error: `Invalid variant. Use: ${validVariants.join(", ")}` });
+  }
+  if (!validCoverages.includes(coverage)) {
+    return res.status(400).json({ error: `Invalid coverage. Use: ${validCoverages.join(", ")}` });
+  }
+
+  if (uploadedFiles.length === 0) {
+    const message = rejectedFiles.length > 0 ? "No valid map files uploaded." : "No files uploaded.";
+    return res.status(400).json({ error: message, rejected: rejectedFiles });
+  }
+
+  const jobId = randomUUID();
+  const jobDir = path.join(JOBS_DIR, jobId);
+  const inputsDir = path.join(jobDir, "inputs");
+  safeMkdir(inputsDir);
+
+  const files = [];
+  for (const file of uploadedFiles) {
+    const destPath = path.join(inputsDir, file.filename);
+    await moveFile(file.path, destPath);
+    files.push({
+      id: randomUUID(),
+      originalName: file.originalname,
+      storedName: file.filename,
+      status: "queued",
+      outputs: [],
+      error: null,
+    });
+  }
+
+  let status = {
+    id: jobId,
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString(),
+    state: "queued",
+    options: { variant, coverage, suffix },
+    counts: {
+      total: files.length + rejectedFiles.length,
+      accepted: files.length,
+      rejected: rejectedFiles.length,
+      done: 0,
+      ok: 0,
+      failed: 0,
+    },
+    files,
+    rejectedFiles,
+    zip: null,
+  };
+
+  status = await writeJobStatus(jobDir, status);
+  queueJob(jobDir, status);
+
+  res.status(202).json({
+    jobId,
+    statusUrl: `/api/batch/${jobId}/status`,
+    downloadUrl: `/api/batch/${jobId}/download`,
+  });
+});
+
+app.get("/api/batch/:id/status", statusLimiter, async (req, res) => {
+  const jobId = req.params.id;
+  if (!isUuidLike(jobId)) return res.status(400).json({ error: "Invalid job id." });
+
+  const jobDir = path.join(JOBS_DIR, jobId);
+  try {
+    const status = await readJobStatus(jobDir);
+    res.setHeader("Cache-Control", "no-store");
+    res.json(status);
+  } catch {
+    res.status(404).json({ error: "Job not found." });
+  }
+});
+
+app.get("/api/batch/:id/download", statusLimiter, async (req, res) => {
+  const jobId = req.params.id;
+  if (!isUuidLike(jobId)) return res.status(400).json({ error: "Invalid job id." });
+
+  const jobDir = path.join(JOBS_DIR, jobId);
+  let status = null;
+  try {
+    status = await readJobStatus(jobDir);
+  } catch {
+    return res.status(404).json({ error: "Job not found." });
+  }
+
+  if (status.state !== "done" || !status.zip?.path) {
+    return res.status(409).json({ error: "Job not finished yet.", state: status.state, counts: status.counts });
+  }
+
+  const zipPath = path.join(jobDir, status.zip.path);
+  try {
+    await fsp.access(zipPath);
+  } catch {
+    return res.status(404).json({ error: "Zip not found." });
+  }
+
+  res.setHeader("Content-Type", "application/zip");
+  res.setHeader("Content-Disposition", `attachment; filename="${sanitizeDownloadName(status.zip.name)}"`);
+
+  const rs = fs.createReadStream(zipPath);
+  rs.on("error", (err) => {
+    console.error("ReadStream error:", err);
+    if (!res.headersSent) res.status(500);
+    res.end("Failed to read zip file.");
+  });
+  rs.pipe(res);
 });
 
 // ── Minimal zip builder ────────────────────────────────────────────
