@@ -1,0 +1,22 @@
+#bg-poly-video {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%) scale(2.65);
+  width: auto;
+  height: auto;
+  min-width: 100%;
+  min-height: 100%;
+  object-fit: none;
+  object-position: center;
+  opacity: 0.14;
+  z-index: -4;
+  pointer-events: none;
+  filter: grayscale(.18) saturate(1.25) hue-rotate(168deg) brightness(.58) blur(.6px);
+  mix-blend-mode: screen;
+}
+
+body>*:not(#bg-poly-video) {
+  position: relative;
+  z-index: 1;
+}

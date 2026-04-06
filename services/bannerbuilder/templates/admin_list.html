@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="utf-8">
+  <title>Banner Builder Admin</title>
+
+  <meta name="csrf-token" content="{{ csrf_token() }}">
+
+  <link rel="icon" href="../favicon.ico" sizes="any">
+  <link rel="shortcut icon" href="../favicon.ico">
+
+  <link rel="stylesheet" href="../static/css/admin.css">
+  <link rel="stylesheet" href="../static/css/bg-video.css">
+  <link rel="stylesheet" href="../static/css/admin-chart.css">
+
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js" defer></script>
+  <script defer src="../static/js/admin-chart.js"></script>
+  <script defer src="../static/js/admin.js"></script>
+  <script defer src="../static/js/bg-video.js"></script>
+</head>
+
+<body>
+
+  <div class="admin-wrapper">
+
+    <header class="page-header">
+      <h1>Banner Builder Admin</h1>
+      <form method="post" action="logout" style="margin:0">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <button class="btn btn-secondary" type="submit">Logout</button>
+      </form>
+    </header>
+
+    {% with msgs = get_flashed_messages(with_categories=true) %}
+      {% if msgs %}
+        {% for cat,msg in msgs %}
+          <div class="flash {{cat}}">{{msg}}</div>
+        {% endfor %}
+      {% endif %}
+    {% endwith %}
+
+    <div class="tabs">
+      <button class="tab-btn active" data-target="images">Images</button>
+      <button class="tab-btn" data-target="stats">Statistics</button>
+      <button class="tab-btn" data-target="logs">Logs</button>
+      <button class="tab-btn" data-target="abuse">Abuse</button>
+    </div>
+
+    <div id="images" class="tab-pane active">
+      {% if files %}
+      <div class="img-toolbar">
+        <label style="display:flex;align-items:center;gap:.3rem;font-size:.85rem">
+          <input id="master-checkbox" type="checkbox"> all
+        </label>
+        <span id="sel-count" class="sel-counter"></span>
+        <button id="refresh-btn" class="btn btn-secondary" onclick="location.reload()">Refresh</button>
+        <button id="delete-btn" class="btn btn-danger">Delete selected</button>
+      </div>
+
+      <div class="image-grid">
+        {% for f in files %}
+        <div class="card" data-name="{{ f.name }}">
+
+          <label class="chk-wrap"><input type="checkbox" value="{{ f.name }}"></label>
+
+          <div class="thumb" data-url="https://download.dashmap.live/{{ USER }}/{{ f.name }}">
+            <img loading="lazy" src="https://download.dashmap.live/{{ USER }}/{{ f.name }}" alt="{{ f.name }}">
+          </div>
+
+          <div class="actions">
+            <button class="copy-btn" data-type="name" data-value="{{ f.name }}" title="Copy filename">📋</button>
+            <button class="copy-btn" data-type="date" data-value="{{ f.mtime or '' }}"
+              title="Copy upload date">🕒</button>
+            <button class="copy-btn" data-type="url" data-value="https://download.dashmap.live/{{ USER }}/{{ f.name }}"
+              title="Copy URL">📎</button>
+            <a class="open-new" title="Open in new tab" target="_blank"
+              href="https://download.dashmap.live/{{ USER }}/{{ f.name }}">↗︎</a>
+          </div>
+
+          <div class="meta">
+            <div class="meta-row">
+              {% if f.mtime %}
+                <span class="fdate">{{ f.mtime_disp }}</span>
+              {% endif %}
+              {% if f.age is not none %}
+                <span class="fage">{{ f.age }} d&nbsp;ago</span>
+              {% endif %}
+            </div>
+
+            <div class="meta-row">
+              <span class="fname" title="{{ f.name }}">{{ f.name }}</span>
+              {% if f.ip %}<span class="fip" title="Uploader IP">{{ f.ip }}</span>{% endif %}
+            </div>
+          </div>
+
+        </div>
+        {% endfor %}
+      </div>
+      {% else %}
+      <p>No <code>banners_*</code> files found on Dashmap.</p>
+      {% endif %}
+    </div>
+
+    <div id="stats" class="tab-pane">
+      <div class="stats-layout">
+        <div class="stats">
+          <div class="stat">
+            <h3>Uploads</h3>
+            <p>{{ counters.uploads }}</p>
+          </div>
+          <div class="stat">
+            <h3>Deletions</h3>
+            <p>{{ counters.deletions }}</p>
+          </div>
+          <div class="stat">
+            <h3>Errors</h3>
+            <p>{{ counters.errors }}</p>
+          </div>
+          <div class="stat">
+            <h3>Success&nbsp;%</h3>
+            <p>{{ counters.success_pct }}%</p>
+          </div>
+          <div class="stat">
+            <h3>Avg&nbsp;/ day</h3>
+            <p>{{ counters.avg_uploads_7d }}</p>
+          </div>
+        </div>
+
+        <div class="chart-area">
+          <div class="chart-toggle">
+            <button class="toggle-btn active" data-type="line">Line</button>
+            <button class="toggle-btn" data-type="bar">Bar</button>
+            <button class="toggle-btn" data-type="pie">Pie</button>
+          </div>
+
+          <canvas id="stats-chart" data-series='{{ chart|tojson|safe }}'
+            data-total='{{ counters|tojson|safe }}'></canvas>
+        </div>
+      </div>
+    </div>
+
+    <div id="logs" class="tab-pane">
+      <div id="log-box">Select “Logs” to load the latest entries…</div>
+    </div>
+
+    <div id="abuse" class="tab-pane">
+      <div class="abuse-controls">
+        <label>Look-back:
+          <input id="abuse-days" type="range" min="1" max="90" value="30">
+          <span id="abuse-days-label">30</span> days
+        </label>
+      </div>
+      <table class="abuse-table">
+        <thead>
+          <tr>
+            <th>IP Address</th>
+            <th>Creations</th>
+          </tr>
+        </thead>
+        <tbody id="abuse-tbody"></tbody>
+      </table>
+    </div>
+
+  </div>
+
+  <script>
+    window.addEventListener("DOMContentLoaded", () => {
+      setTimeout(() => {
+        document.querySelectorAll(".flash").forEach(el => {
+          el.classList.add("hide");
+          el.addEventListener("animationend", () => el.remove(), { once: true });
+        });
+      }, 5000);
+    });
+  </script>
+
+</body>
+
+</html>
