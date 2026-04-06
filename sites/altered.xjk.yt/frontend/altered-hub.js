@@ -1,23 +1,33 @@
+const alteredUrl = window.__alteredUrl || ((value) => value);
+
 function configureLocalLinks() {
   const host = window.location.hostname.toLowerCase();
   const port = window.location.port || "80";
-  const isLocal =
-    host === "localhost" ||
-    host === "127.0.0.1" ||
-    host === "xjk.localhost" ||
-    host.endsWith(".localhost");
+  const isLoopbackHost = host === "localhost" || host === "127.0.0.1";
+  const isSubdomainLocal = host === "xjk.localhost" || host.endsWith(".localhost");
+  const isLocal = isLoopbackHost || isSubdomainLocal;
 
   if (!isLocal) return;
 
-  const localTargets = {
-    main: `http://xjk.localhost:${port}/`,
-    tools: `http://tools.localhost:${port}/`,
-    plugins: `http://plugins.localhost:${port}/`,
-    learn: `http://learn.localhost:${port}/`,
-    altered: `http://altered.localhost:${port}/`,
-    tracker: `http://trackers.localhost:${port}/leaderboard/`,
-    trackers: `http://trackers.localhost:${port}/`,
-  };
+  const localTargets = isLoopbackHost
+    ? {
+        main: `http://localhost:${port}/`,
+        tools: `http://localhost:${port}/tools/`,
+        plugins: `http://localhost:${port}/plugins/`,
+        learn: `http://localhost:${port}/learn/`,
+        altered: alteredUrl("/"),
+        tracker: `http://localhost:${port}/trackers/leaderboard/`,
+        trackers: `http://localhost:${port}/trackers/`,
+      }
+    : {
+        main: `http://xjk.localhost:${port}/`,
+        tools: `http://tools.localhost:${port}/`,
+        plugins: `http://plugins.localhost:${port}/`,
+        learn: `http://learn.localhost:${port}/`,
+        altered: `http://altered.localhost:${port}/`,
+        tracker: `http://trackers.localhost:${port}/leaderboard/`,
+        trackers: `http://trackers.localhost:${port}/`,
+      };
 
   document.querySelectorAll("[data-link]").forEach((node) => {
     const key = node.getAttribute("data-link");
@@ -108,10 +118,10 @@ function initSeasonDropdown() {
 
 const SEASON_ORDER = ["winter", "spring", "summer", "fall"];
 const SEASON_BG = {
-  winter: "/bannerbuilder/assets/backgrounds/Winter.png",
-  spring: "/bannerbuilder/assets/backgrounds/Spring.png",
-  summer: "/bannerbuilder/assets/backgrounds/Summer.png",
-  fall: "/bannerbuilder/assets/backgrounds/Fall.png",
+  winter: alteredUrl("/bannerbuilder/assets/backgrounds/Winter.png"),
+  spring: alteredUrl("/bannerbuilder/assets/backgrounds/Spring.png"),
+  summer: alteredUrl("/bannerbuilder/assets/backgrounds/Summer.png"),
+  fall: alteredUrl("/bannerbuilder/assets/backgrounds/Fall.png"),
 };
 
 const NONSTANDARD_SEASONS = [
@@ -127,7 +137,7 @@ let _seasonDataPromise = null;
 
 function fetchSeasonData() {
   if (_seasonDataPromise) return _seasonDataPromise;
-  _seasonDataPromise = fetch("/api/v1/alterations/campaigns?limit=5000&offset=0&catalog_only=1")
+  _seasonDataPromise = fetch(alteredUrl("/api/v1/alterations/campaigns?limit=5000&offset=0&catalog_only=1"))
     .then((res) => {
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       return res.json();
@@ -217,7 +227,7 @@ async function populateSeasonNav() {
     html += `<div class="season-nav-year">
       <span class="season-nav-year-label">${year}</span>
       <div class="season-nav-year-items">
-        ${items.map((i) => `<a class="season-nav-item" href="/season/?s=${i.key}">${i.label}</a>`).join("")}
+        ${items.map((i) => `<a class="season-nav-item" href="${alteredUrl(`/season/?s=${i.key}`)}">${i.label}</a>`).join("")}
       </div>
     </div>`;
   }
@@ -226,7 +236,7 @@ async function populateSeasonNav() {
     html += `<div class="season-nav-year">
       <span class="season-nav-year-label">Other</span>
       <div class="season-nav-year-items">
-        ${nonstandard.map((i) => `<a class="season-nav-item" href="/season/?s=${i.key}">${i.label}</a>`).join("")}
+        ${nonstandard.map((i) => `<a class="season-nav-item" href="${alteredUrl(`/season/?s=${i.key}`)}">${i.label}</a>`).join("")}
       </div>
     </div>`;
   }
@@ -246,7 +256,7 @@ async function populateSeasonRibbon() {
   ribbon.innerHTML = recent
     .map((item) => {
       const bg = SEASON_BG[item.season] || SEASON_BG.winter;
-      return `<a href="/season/?s=${item.key}" class="ribbon-panel">
+      return `<a href="${alteredUrl(`/season/?s=${item.key}`)}" class="ribbon-panel">
         <img src="${bg}" alt="" />
         <span class="ribbon-label">${item.label}</span>
       </a>`;
@@ -263,13 +273,14 @@ async function populateCurrentSeasonCard() {
   const latest = sorted.find((s) => !s.nonstandard);
   if (!latest) return;
 
-  card.href = `/season/?s=${latest.key}`;
+  card.href = alteredUrl(`/season/?s=${latest.key}`);
   title.textContent = latest.label;
 }
 
 /* ── Boot ── */
 
 configureLocalLinks();
+window.__rewriteAlteredUrls?.();
 initScrollReveal();
 initSiteNav();
 initMobileNav();

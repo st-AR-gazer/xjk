@@ -4,6 +4,7 @@ const API = {
   maps: "/api/v1/alterations/maps",
   mapDetail: "/api/v1/public/maps",
 };
+const alteredUrl = window.__alteredUrl || ((value) => value);
 
 const PAGE_SIZE = 48;
 const NADEO_FMT_RE = /\$([0-9a-fA-F]{1,3}|[gimnostuwzGIMNOSTUWZ<>]|[hlpHLP](\[[^\]]+\])?)/g;
@@ -88,7 +89,7 @@ function relTime(iso) {
 }
 
 function fetchJson(url) {
-  return fetch(url, { cache: "no-store" }).then((res) => {
+  return fetch(alteredUrl(url), { cache: "no-store" }).then((res) => {
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
     return res.json();
   });

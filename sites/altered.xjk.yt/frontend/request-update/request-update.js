@@ -4,6 +4,7 @@ function esc(str) {
   el.textContent = str;
   return el.innerHTML;
 }
+const alteredUrl = window.__alteredUrl || ((value) => value);
 
 const NADEO_FMT_RE = /\$([0-9a-fA-F]{1,3}|[gimnostuwzGIMNOSTUWZ<>]|[hlpHLP](\[[^\]]+\])?)/g;
 function stripFmt(v) { return String(v ?? "").replace(NADEO_FMT_RE, ""); }
@@ -23,7 +24,7 @@ function relTime(iso) {
 }
 
 async function fetchJson(url) {
-  const res = await fetch(url);
+  const res = await fetch(alteredUrl(url));
   if (!res.ok) throw new Error(`HTTP ${res.status}`);
   return res.json();
 }
@@ -256,7 +257,7 @@ async function submitForMap(map) {
   showStatus(`Submitting request for "${map.name}"...`, "pending");
 
   try {
-    const res = await fetch("/api/v1/request-update", {
+    const res = await fetch(alteredUrl("/api/v1/request-update"), {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ uid: map.uid, name: map.name, reason: "" }),

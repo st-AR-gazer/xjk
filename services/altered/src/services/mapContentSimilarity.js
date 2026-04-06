@@ -18,14 +18,42 @@ const FINAL_ABSOLUTE_WEIGHT = 0.44;
 const FINAL_RELATIVE_WEIGHT = 0.26;
 const FINAL_WEIGHTED_PLACEMENT_WEIGHT = 0.22;
 const FINAL_MODEL_WEIGHT = 0.08;
+const FINAL_NAME_WEIGHT = NAME_SUPPORT_WEIGHT;
+const FINAL_REGEX_WEIGHT = 0;
 const WEIGHTED_PLACEMENT_ABSOLUTE_WEIGHT = 0.68;
 const WEIGHTED_PLACEMENT_RELATIVE_WEIGHT = 0.32;
 const WEIGHTED_RELATIONAL_FALLBACK_THRESHOLD = 0.01;
 const RELATIONAL_FALLBACK_RELATIVE_WEIGHT = 0.82;
 const RELATIONAL_FALLBACK_MODEL_WEIGHT = 0.14;
 const RELATIONAL_FALLBACK_ABSOLUTE_WEIGHT = 0.04;
+const RELATIONAL_FALLBACK_NAME_WEIGHT = NAME_SUPPORT_WEIGHT;
 const COMPONENT_SIGNIFICANCE_FLOOR = 0.001;
 const INSIGNIFICANT_WEIGHT_FACTOR = 0.05;
+const DEFAULT_SIMILARITY_WEIGHT_PROFILE = Object.freeze({
+  final: Object.freeze({
+    absolute: FINAL_ABSOLUTE_WEIGHT * 100,
+    relative: FINAL_RELATIVE_WEIGHT * 100,
+    weightedPlacement: FINAL_WEIGHTED_PLACEMENT_WEIGHT * 100,
+    model: FINAL_MODEL_WEIGHT * 100,
+    name: FINAL_NAME_WEIGHT * 100,
+    regex: FINAL_REGEX_WEIGHT * 100,
+  }),
+  weightedPlacement: Object.freeze({
+    absolute: WEIGHTED_PLACEMENT_ABSOLUTE_WEIGHT * 100,
+    relative: WEIGHTED_PLACEMENT_RELATIVE_WEIGHT * 100,
+  }),
+  relationalFallback: Object.freeze({
+    relative: RELATIONAL_FALLBACK_RELATIVE_WEIGHT * 100,
+    model: RELATIONAL_FALLBACK_MODEL_WEIGHT * 100,
+    absolute: RELATIONAL_FALLBACK_ABSOLUTE_WEIGHT * 100,
+    name: RELATIONAL_FALLBACK_NAME_WEIGHT * 100,
+  }),
+  nameSupport: 0,
+  regexOnly: false,
+  regexOverwriteWeights: false,
+  selectedRegexPresets: Object.freeze([]),
+  customRegexPatterns: Object.freeze([]),
+});
 
 const ASSET_HINT_PATTERN =
   /(road|tech|platform|checkpoint|check|start|finish|curve|slope|grass|dirt|ice|sign|screen|support|deco|wall|tube|tree|forest|cliff|arch|bridge|decal|gate|pillar|ramp|booster|reactor|turbo|jump|loop|hill|podium|stadium|track|zone|spawn|connector|tunnel|deadend|transition|terrain|shore|river|lake|torch|flag|cross|goal|tube|pipe|open|straight|tilt|hill|terrain|void|cliff|wood|plastic|magnet|bump|floor|ground)/i;
@@ -122,6 +150,200 @@ function clampNumber(value, { min = 0, max = Number.MAX_SAFE_INTEGER, fallback =
   return Math.max(min, Math.min(max, parsed));
 }
 
+function normalizeTextList(value = [], { splitPattern = /[\r\n,;]+/ } = {}) {
+  const rawValues = Array.isArray(value) ? value : typeof value === "string" ? value.split(splitPattern) : [];
+  return [...new Set(rawValues.map((item) => toText(item)).filter(Boolean))];
+}
+
+function cloneSimilarityWeightProfile(profile = DEFAULT_SIMILARITY_WEIGHT_PROFILE) {
+  const safeProfile = profile && typeof profile === "object" ? profile : DEFAULT_SIMILARITY_WEIGHT_PROFILE;
+  return {
+    final: {
+      absolute: clampNumber(
+        safeProfile?.final?.absolute,
+        { min: 0, max: 100, fallback: DEFAULT_SIMILARITY_WEIGHT_PROFILE.final.absolute }
+      ),
+      relative: clampNumber(
+        safeProfile?.final?.relative,
+        { min: 0, max: 100, fallback: DEFAULT_SIMILARITY_WEIGHT_PROFILE.final.relative }
+      ),
+      weightedPlacement: clampNumber(
+        safeProfile?.final?.weightedPlacement,
+        { min: 0, max: 100, fallback: DEFAULT_SIMILARITY_WEIGHT_PROFILE.final.weightedPlacement }
+      ),
+      model: clampNumber(
+        safeProfile?.final?.model,
+        { min: 0, max: 100, fallback: DEFAULT_SIMILARITY_WEIGHT_PROFILE.final.model }
+      ),
+      name: clampNumber(
+        safeProfile?.final?.name,
+        { min: 0, max: 100, fallback: DEFAULT_SIMILARITY_WEIGHT_PROFILE.final.name }
+      ),
+      regex: clampNumber(
+        safeProfile?.final?.regex,
+        { min: 0, max: 100, fallback: DEFAULT_SIMILARITY_WEIGHT_PROFILE.final.regex }
+      ),
+    },
+    weightedPlacement: {
+      absolute: clampNumber(
+        safeProfile?.weightedPlacement?.absolute,
+        { min: 0, max: 100, fallback: DEFAULT_SIMILARITY_WEIGHT_PROFILE.weightedPlacement.absolute }
+      ),
+      relative: clampNumber(
+        safeProfile?.weightedPlacement?.relative,
+        { min: 0, max: 100, fallback: DEFAULT_SIMILARITY_WEIGHT_PROFILE.weightedPlacement.relative }
+      ),
+    },
+    relationalFallback: {
+      relative: clampNumber(
+        safeProfile?.relationalFallback?.relative,
+        { min: 0, max: 100, fallback: DEFAULT_SIMILARITY_WEIGHT_PROFILE.relationalFallback.relative }
+      ),
+      model: clampNumber(
+        safeProfile?.relationalFallback?.model,
+        { min: 0, max: 100, fallback: DEFAULT_SIMILARITY_WEIGHT_PROFILE.relationalFallback.model }
+      ),
+      absolute: clampNumber(
+        safeProfile?.relationalFallback?.absolute,
+        { min: 0, max: 100, fallback: DEFAULT_SIMILARITY_WEIGHT_PROFILE.relationalFallback.absolute }
+      ),
+      name: clampNumber(
+        safeProfile?.relationalFallback?.name,
+        { min: 0, max: 100, fallback: DEFAULT_SIMILARITY_WEIGHT_PROFILE.relationalFallback.name }
+      ),
+    },
+    nameSupport: clampNumber(
+      safeProfile?.nameSupport,
+      { min: 0, max: 100, fallback: DEFAULT_SIMILARITY_WEIGHT_PROFILE.nameSupport }
+    ),
+    regexOnly: Boolean(safeProfile?.regexOnly),
+    regexOverwriteWeights: Boolean(safeProfile?.regexOverwriteWeights),
+    selectedRegexPresets: normalizeTextList(safeProfile?.selectedRegexPresets),
+    customRegexPatterns: normalizeTextList(safeProfile?.customRegexPatterns),
+  };
+}
+
+function buildSimilarityWeightProfile(
+  profile = null,
+  { baseProfile = DEFAULT_SIMILARITY_WEIGHT_PROFILE } = {}
+) {
+  const base = cloneSimilarityWeightProfile(baseProfile);
+  const safeProfile = profile && typeof profile === "object" ? profile : {};
+  const final = safeProfile?.final && typeof safeProfile.final === "object" ? safeProfile.final : {};
+  const weightedPlacement =
+    safeProfile?.weightedPlacement && typeof safeProfile.weightedPlacement === "object"
+      ? safeProfile.weightedPlacement
+      : {};
+  const relationalFallback =
+    safeProfile?.relationalFallback && typeof safeProfile.relationalFallback === "object"
+      ? safeProfile.relationalFallback
+      : {};
+  const regexOverwriteWeights =
+    safeProfile.regexOverwriteWeights ?? safeProfile.overwriteWeights ?? base.regexOverwriteWeights;
+  return cloneSimilarityWeightProfile({
+    final: {
+      absolute: final.absolute ?? safeProfile.finalAbsolute ?? base.final.absolute,
+      relative: final.relative ?? safeProfile.finalRelative ?? base.final.relative,
+      weightedPlacement:
+        final.weightedPlacement ??
+        safeProfile.finalWeightedPlacement ??
+        base.final.weightedPlacement,
+      model: final.model ?? safeProfile.finalModel ?? base.final.model,
+      name:
+        final.name ??
+        safeProfile.finalName ??
+        safeProfile.nameSupport ??
+        base.final.name,
+      regex: regexOverwriteWeights
+        ? final.regex ?? safeProfile.finalRegex ?? base.final.regex
+        : 0,
+    },
+    weightedPlacement: {
+      absolute:
+        weightedPlacement.absolute ??
+        safeProfile.weightedPlacementAbsolute ??
+        base.weightedPlacement.absolute,
+      relative:
+        weightedPlacement.relative ??
+        safeProfile.weightedPlacementRelative ??
+        base.weightedPlacement.relative,
+    },
+    relationalFallback: {
+      relative:
+        relationalFallback.relative ??
+        safeProfile.relationalFallbackRelative ??
+        base.relationalFallback.relative,
+      model:
+        relationalFallback.model ??
+        safeProfile.relationalFallbackModel ??
+        base.relationalFallback.model,
+      absolute:
+        relationalFallback.absolute ??
+        safeProfile.relationalFallbackAbsolute ??
+        base.relationalFallback.absolute,
+      name:
+        relationalFallback.name ??
+        safeProfile.relationalFallbackName ??
+        safeProfile.nameSupport ??
+        base.relationalFallback.name,
+    },
+    nameSupport: safeProfile.nameSupport ?? base.nameSupport,
+    regexOnly: safeProfile.regexOnly ?? safeProfile.preferRegexOnly ?? base.regexOnly,
+    regexOverwriteWeights,
+    selectedRegexPresets: safeProfile.selectedRegexPresets ?? safeProfile.regexPresets ?? base.selectedRegexPresets,
+    customRegexPatterns: safeProfile.customRegexPatterns ?? safeProfile.regexPatterns ?? base.customRegexPatterns,
+  });
+}
+
+function normalizeSimilarityWeightGroup(group = {}, fallbackGroup = {}) {
+  const safeGroup = group && typeof group === "object" ? group : {};
+  const safeFallbackGroup =
+    fallbackGroup && typeof fallbackGroup === "object" ? fallbackGroup : {};
+  const entries = Object.keys(safeFallbackGroup).map((key) => [
+    key,
+    clampNumber(safeGroup?.[key], { min: 0, max: 100, fallback: safeFallbackGroup[key] || 0 }),
+  ]);
+  const sum = entries.reduce((total, [, value]) => total + Number(value || 0), 0);
+  if (sum <= 0) {
+    const fallbackSum = Object.values(safeFallbackGroup).reduce(
+      (total, value) => total + Number(value || 0),
+      0
+    );
+    const normalizer = fallbackSum > 0 ? fallbackSum : 1;
+    return Object.fromEntries(
+      Object.entries(safeFallbackGroup).map(([key, value]) => [key, Number(value || 0) / normalizer])
+    );
+  }
+  return Object.fromEntries(entries.map(([key, value]) => [key, Number(value || 0) / sum]));
+}
+
+function buildNormalizedSimilarityWeightProfile(
+  profile = null,
+  { baseProfile = DEFAULT_SIMILARITY_WEIGHT_PROFILE } = {}
+) {
+  const raw = buildSimilarityWeightProfile(profile, { baseProfile });
+  return {
+    final: normalizeSimilarityWeightGroup(raw.final, DEFAULT_SIMILARITY_WEIGHT_PROFILE.final),
+    weightedPlacement: normalizeSimilarityWeightGroup(
+      raw.weightedPlacement,
+      DEFAULT_SIMILARITY_WEIGHT_PROFILE.weightedPlacement
+    ),
+    relationalFallback: normalizeSimilarityWeightGroup(
+      raw.relationalFallback,
+      DEFAULT_SIMILARITY_WEIGHT_PROFILE.relationalFallback
+    ),
+    nameSupport: 0,
+    regexOnly: Boolean(raw.regexOnly),
+    regexOverwriteWeights: Boolean(raw.regexOverwriteWeights),
+    selectedRegexPresets: normalizeTextList(raw.selectedRegexPresets),
+    customRegexPatterns: normalizeTextList(raw.customRegexPatterns),
+  };
+}
+
+function similarityWeightProfileFingerprint(profile = null) {
+  return JSON.stringify(buildSimilarityWeightProfile(profile));
+}
+
 function normalizeMapNumbers(values = []) {
   return [...new Set((Array.isArray(values) ? values : [])
     .map((value) => Number(value))
@@ -137,6 +359,20 @@ function normalizeSelectedCandidateMapUids(values = []) {
       .filter(Boolean)
       .map((value) => value.toLowerCase())
   )];
+}
+
+function resolveRegexMapNumbers({ targetName = "", targetMapNumbers = [], targetParserPattern = "" } = {}) {
+  const explicitMapNumbers = normalizeMapNumbers(targetMapNumbers);
+  const parserPattern = toText(targetParserPattern).toLowerCase();
+  if (
+    explicitMapNumbers.length > 0 &&
+    parserPattern &&
+    !parserPattern.startsWith(CONTENT_SIMILARITY_PATTERN.toLowerCase())
+  ) {
+    return explicitMapNumbers;
+  }
+  const parsed = parseCampaignStandardizedFields(targetName);
+  return normalizeMapNumbers(parsed?.mapNumbers || (parsed?.mapNumber ? [parsed.mapNumber] : []));
 }
 
 function normalizeCandidateAutomation(candidate = {}) {
@@ -781,7 +1017,13 @@ function adaptiveWeightedSum(components) {
 function computeContentSimilarity(
   targetSignature,
   referenceSource = [],
-  { targetName = "", includeNameSupport = true } = {}
+  {
+    targetName = "",
+    targetMapNumbers = [],
+    targetParserPattern = "",
+    includeNameSupport = true,
+    weightProfile = null,
+  } = {}
 ) {
   const context = normalizeReferenceContext(referenceSource);
   const list = Array.isArray(context?.entries) ? context.entries : [];
@@ -817,6 +1059,14 @@ function computeContentSimilarity(
   const targetUsesFallbackSignature =
     toText(targetSignature?.version) !== CONTENT_SIGNATURE_VERSION;
   const effectiveIncludeNameSupport = includeNameSupport || targetUsesFallbackSignature;
+  const effectiveWeightProfile = buildSimilarityWeightProfile(weightProfile);
+  const normalizedWeightProfile = buildNormalizedSimilarityWeightProfile(effectiveWeightProfile);
+  const regexMapNumbers = resolveRegexMapNumbers({
+    targetName,
+    targetMapNumbers,
+    targetParserPattern,
+  });
+  const hasRegexMapNumbers = regexMapNumbers.length > 0;
   const modelDocFrequency = activeDocFrequency?.modelTokens || new Map();
   const absoluteDocFrequency = activeDocFrequency?.absolutePlacementTokens || new Map();
   const relativeDocFrequency = activeDocFrequency?.relativePlacementTokens || new Map();
@@ -871,39 +1121,53 @@ function computeContentSimilarity(
               "weightedRelativePlacementTokens"
             )
           : relativeScore;
+      const nameScore = effectiveIncludeNameSupport
+        ? computeNameSimilarity(targetName, entry?.mapName || "")
+        : 0;
+      const regexScore =
+        hasRegexMapNumbers && regexMapNumbers.includes(Number(entry?.slot || 0) || 0) ? 1 : 0;
       const weightedScore =
-        weightedAbsoluteScore * WEIGHTED_PLACEMENT_ABSOLUTE_WEIGHT +
-        weightedRelativeScore * WEIGHTED_PLACEMENT_RELATIVE_WEIGHT;
+        weightedAbsoluteScore * normalizedWeightProfile.weightedPlacement.absolute +
+        weightedRelativeScore * normalizedWeightProfile.weightedPlacement.relative;
       const useWeightedRelationalFallback =
         weightedScore < WEIGHTED_RELATIONAL_FALLBACK_THRESHOLD;
       const relationalFallbackScore = adaptiveWeightedSum([
-        { score: weightedRelativeScore, weight: RELATIONAL_FALLBACK_RELATIVE_WEIGHT },
-        { score: modelScore, weight: RELATIONAL_FALLBACK_MODEL_WEIGHT },
-        { score: weightedAbsoluteScore, weight: RELATIONAL_FALLBACK_ABSOLUTE_WEIGHT },
+        {
+          score: weightedRelativeScore,
+          weight: normalizedWeightProfile.relationalFallback.relative,
+        },
+        { score: modelScore, weight: normalizedWeightProfile.relationalFallback.model },
+        {
+          score: weightedAbsoluteScore,
+          weight: normalizedWeightProfile.relationalFallback.absolute,
+        },
+        {
+          score: nameScore,
+          weight: normalizedWeightProfile.relationalFallback.name,
+        },
       ]);
       const contentScore = useWeightedRelationalFallback
         ? relationalFallbackScore
         : adaptiveWeightedSum([
-            { score: absoluteScore, weight: FINAL_ABSOLUTE_WEIGHT },
-            { score: relativeScore, weight: FINAL_RELATIVE_WEIGHT },
-            { score: weightedScore, weight: FINAL_WEIGHTED_PLACEMENT_WEIGHT },
-            { score: modelScore, weight: FINAL_MODEL_WEIGHT },
+            { score: absoluteScore, weight: normalizedWeightProfile.final.absolute },
+            { score: relativeScore, weight: normalizedWeightProfile.final.relative },
+            {
+              score: weightedScore,
+              weight: normalizedWeightProfile.final.weightedPlacement,
+            },
+            { score: modelScore, weight: normalizedWeightProfile.final.model },
+            { score: nameScore, weight: normalizedWeightProfile.final.name },
+            { score: regexScore, weight: normalizedWeightProfile.final.regex },
           ]);
-      const nameScore = effectiveIncludeNameSupport
-        ? computeNameSimilarity(targetName, entry?.mapName || "")
-        : 0;
+      const effectiveScore =
+        effectiveWeightProfile.regexOverwriteWeights && hasRegexMapNumbers ? regexScore : contentScore;
       const fallbackReviewScore =
         nameScore * 0.86 +
         modelScore * 0.1 +
         Math.max(relativeScore, weightedRelativeScore) * 0.04;
       const score = targetUsesFallbackSignature
         ? Math.max(nameScore, fallbackReviewScore)
-        : effectiveIncludeNameSupport
-          ? Math.max(
-              contentScore,
-              contentScore * (1 - NAME_SUPPORT_WEIGHT) + nameScore * NAME_SUPPORT_WEIGHT
-            )
-          : contentScore;
+        : effectiveScore;
       return {
         mapUid: toText(entry?.mapUid),
         slot: Number(entry?.slot || 0) || null,
@@ -921,6 +1185,7 @@ function computeContentSimilarity(
         fallbackReviewScore,
         useWeightedRelationalFallback,
         nameScore,
+        regexScore,
         score,
       };
     })
@@ -986,6 +1251,7 @@ function computeContentSimilarity(
       fallbackReviewScore: Number(entry.fallbackReviewScore.toFixed(6)),
       usedWeightedRelationalFallback: Boolean(entry.useWeightedRelationalFallback),
       nameScore: Number(entry.nameScore.toFixed(6)),
+      regexScore: Number(entry.regexScore.toFixed(6)),
       distanceFromTop: Number(Math.max(0, topScore - Number(entry.score || 0)).toFixed(6)),
       isCloseMatch: Number(entry.score || 0) >= Number(disposition.closeMatchThreshold || 0),
       score: Number(entry.score.toFixed(6)),
@@ -1042,11 +1308,16 @@ function computeContentSimilarity(
       structuredReferenceMapCount: structuredEntries.length,
       usedStructuredReferences: useStructuredEntries,
       closestMapName: candidateMatches[0]?.mapName || null,
+      weightProfile: {
+        raw: effectiveWeightProfile,
+        normalized: normalizedWeightProfile,
+        fingerprint: similarityWeightProfileFingerprint(effectiveWeightProfile),
+      },
     },
   };
 }
 
-function mergeSimilarityIntoCandidate(candidate = {}, similarity = null) {
+function mergeSimilarityIntoCandidate(candidate = {}, similarity = null, { regexOnly = false } = {}) {
   const baseMapNumbers = normalizeMapNumbers(candidate?.mapNumbers);
   const similarityMapNumbers = normalizeMapNumbers(similarity?.mapNumbers);
   const hasManualSelection = Boolean(similarity?.details?.manualSelection);
@@ -1055,6 +1326,7 @@ function mergeSimilarityIntoCandidate(candidate = {}, similarity = null) {
     !hasManualSelection &&
     baseMapNumbers.length > 0 &&
     (isTraining || baseMapNumbers.length > 1);
+  const forceRegexOnly = Boolean(regexOnly);
   let finalMapNumbers = baseMapNumbers;
   let parserPattern = toText(candidate?.parserPattern) || null;
   let parserConfidence = clampNumber(candidate?.parserConfidence, {
@@ -1065,7 +1337,7 @@ function mergeSimilarityIntoCandidate(candidate = {}, similarity = null) {
   let sourceVersion = toText(candidate?.sourceVersion, CONTENT_SIGNATURE_VERSION);
   let requiresRegex = Boolean(candidate?.requiresRegex);
 
-  if (similarityMapNumbers.length > 0 && !preferRegex) {
+  if (similarityMapNumbers.length > 0 && !preferRegex && !forceRegexOnly) {
     if (!baseMapNumbers.length) {
       finalMapNumbers = similarityMapNumbers;
       parserPattern = CONTENT_SIMILARITY_PATTERN;
@@ -1203,6 +1475,9 @@ export {
   ASSET_FALLBACK_SIGNATURE_VERSION,
   CONTENT_SIGNATURE_VERSION,
   CONTENT_SIMILARITY_PATTERN,
+  DEFAULT_SIMILARITY_WEIGHT_PROFILE,
+  buildSimilarityWeightProfile,
+  buildNormalizedSimilarityWeightProfile,
   buildContentSimilarityReferenceContext,
   buildCampaignFamily,
   computeContentSimilarity,
@@ -1213,4 +1488,5 @@ export {
   mergeSimilarityIntoCandidate,
   normalizeMapNumbers,
   normalizeCandidateAutomation,
+  similarityWeightProfileFingerprint,
 };

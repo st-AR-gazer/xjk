@@ -30,6 +30,43 @@ function parseIntegerValues(value) {
     .map((item) => Math.floor(item));
 }
 
+function parseStringValues(value, { splitPattern = /[\r\n,;]+/ } = {}) {
+  const rawValues = Array.isArray(value) ? value : typeof value === "string" ? value.split(splitPattern) : [];
+  return [...new Set(rawValues.map((item) => String(item || "").trim()).filter(Boolean))];
+}
+
+function parseSimilarityWeightProfile(value) {
+  const raw = value && typeof value === "object" ? value : {};
+  return {
+    final: raw.final && typeof raw.final === "object" ? raw.final : {},
+    weightedPlacement:
+      raw.weightedPlacement && typeof raw.weightedPlacement === "object"
+        ? raw.weightedPlacement
+        : {},
+    relationalFallback:
+      raw.relationalFallback && typeof raw.relationalFallback === "object"
+        ? raw.relationalFallback
+        : {},
+    nameSupport: raw.nameSupport,
+    regexOnly:
+      parseOptionalBoolean(raw.regexOnly ?? raw.preferRegexOnly ?? raw.onlyAcceptRegex) === undefined
+        ? undefined
+        : Boolean(parseOptionalBoolean(raw.regexOnly ?? raw.preferRegexOnly ?? raw.onlyAcceptRegex)),
+    regexOverwriteWeights:
+      parseOptionalBoolean(raw.regexOverwriteWeights ?? raw.overwriteWeights) === undefined
+        ? undefined
+        : Boolean(parseOptionalBoolean(raw.regexOverwriteWeights ?? raw.overwriteWeights)),
+    selectedRegexPresets: parseStringValues(raw.selectedRegexPresets ?? raw.regexPresets),
+    customRegexPatterns: parseStringValues(raw.customRegexPatterns ?? raw.regexPatterns),
+  };
+}
+
+function parseOptionalClubId(value) {
+  if (value === undefined) return undefined;
+  if (value === null || value === "") return null;
+  return clampInt(value, { min: 1, max: 2147483647, fallback: 0 }) || null;
+}
+
 function clampInt(value, { min = 0, max = Number.MAX_SAFE_INTEGER, fallback = min } = {}) {
   const parsed = Number(value);
   if (!Number.isFinite(parsed)) return fallback;
@@ -44,18 +81,10 @@ function resolveNamingSimilarityClubId({
   requestedMapUids = [],
   requestedClubId = undefined,
   query = "",
-  sourceKey = "",
-  service,
 } = {}) {
   if (requestedMapUids.length || toText(query)) return requestedClubId;
   if (requestedClubId !== undefined) return requestedClubId;
-
-  const normalizedSourceKey = toText(sourceKey).toLowerCase();
-  if (!normalizedSourceKey) {
-    return null;
-  }
-
-  return service.getPrimaryProjectClubId();
+  return null;
 }
 
 function normalizeIso(value) {
@@ -96,6 +125,9 @@ function buildCompatibilityReport(service) {
     namingSimilarityBackfillCancel: true,
     namingCandidateDetail: true,
     namingSimilaritySelection: true,
+    namingSimilarityWeights: true,
+    similarityWeightRules: true,
+    similarityWeightCampaignOverrides: true,
   };
   const notes = [];
   for (const [tableName, exists] of Object.entries(requiredTables)) {
@@ -1456,7 +1488,87 @@ function createAdminRoutes(service, { resolveLiveAuthContext = null, opsService 
       });
     }
 
+    if (view === "weights") {
+      const payload = service.getSimilarityWeightWorkspace();
+      const scopedRules = Array.isArray(payload.scopedRules) ? payload.scopedRules : [];
+      const campaignOverrides = Array.isArray(payload.campaignOverrides) ? payload.campaignOverrides : [];
+      return res.json({
+        generatedAt: payload.generatedAt || new Date().toISOString(),
+        view,
+        page: 1,
+        pageSize,
+        total: scopedRules.length + campaignOverrides.length,
+        pageCount: 1,
+        hasMore: false,
+        defaults: payload.defaults || parseSimilarityWeightProfile({}),
+        scopedRules,
+        campaignOverrides,
+        alterations: Array.isArray(payload.alterations) ? payload.alterations : [],
+        alterationRegexLibrary:
+          payload.alterationRegexLibrary && typeof payload.alterationRegexLibrary === "object"
+            ? payload.alterationRegexLibrary
+            : {},
+        alterationRegexBehavior:
+          payload.alterationRegexBehavior && typeof payload.alterationRegexBehavior === "object"
+            ? payload.alterationRegexBehavior
+            : {},
+      });
+    }
+
     return res.status(400).json({ error: "Unsupported workspace view." });
+  });
+
+  router.post("/similarity-weight-rules", (req, res) => {
+    const body = req.body || {};
+    const result = service.updateSimilarityWeightRule({
+      ruleId: body.ruleId,
+      sourceKey: body.sourceKey,
+      season: body.season,
+      seasonYear: body.seasonYear,
+      environment: body.environment,
+      alterationSlug: body.alterationSlug,
+      weights: parseSimilarityWeightProfile(body.weights ?? body.weightProfile ?? body.profile ?? body),
+    });
+    if (result?.error) return res.status(400).json(result);
+    return res.json({
+      ...result,
+      workspace: service.getSimilarityWeightWorkspace(),
+    });
+  });
+
+  router.post("/similarity-weight-rules/:ruleId/delete", (req, res) => {
+    const result = service.deleteSimilarityWeightRule({
+      ruleId: req.params.ruleId,
+    });
+    if (result?.error) return res.status(400).json(result);
+    return res.json({
+      ...result,
+      workspace: service.getSimilarityWeightWorkspace(),
+    });
+  });
+
+  router.post("/similarity-weight-campaign-overrides", (req, res) => {
+    const body = req.body || {};
+    const result = service.updateSimilarityCampaignWeightOverride({
+      campaignId: body.campaignId,
+      weights: parseSimilarityWeightProfile(body.weights ?? body.weightProfile ?? body.profile ?? body),
+    });
+    if (result?.error) return res.status(400).json(result);
+    return res.json({
+      ...result,
+      workspace: service.getSimilarityWeightWorkspace(),
+    });
+  });
+
+  router.post("/similarity-weight-campaign-overrides/:campaignId/delete", (req, res) => {
+    const result = service.deleteSimilarityCampaignWeightOverride({
+      campaignId: req.params.campaignId,
+    });
+    if (result?.error) return res.status(400).json(result);
+    return res.json({
+      ...result,
+      workspace: service.getSimilarityWeightWorkspace(),
+    });
   });
 
   router.get("/operations/feed", async (req, res) => {
@@ -1579,7 +1691,7 @@ function createAdminRoutes(service, { resolveLiveAuthContext = null, opsService 
     const mapperNameSync = context.liveStatus?.mapperNameSync || {};
     return res.json({
       generatedAt: context.generatedAt,
-      legacyMonitoringUrl: "/admin-monitoring.html",
+      legacyMonitoringUrl: "/admin/monitoring/",
       sections: {
         club: {
           available: true,
@@ -1934,8 +2046,9 @@ function createAdminRoutes(service, { resolveLiveAuthContext = null, opsService 
   router.post("/naming/similarity/backfill/start", (req, res) => {
     const body = req.body || {};
     const requestedMapUids = parseAccountIds(body.mapUids ?? body.map_uids ?? body.uids);
-    const requestedClubId = body.clubId !== undefined ? Number(body.clubId) : undefined;
+    const requestedClubId = parseOptionalClubId(body.clubId);
     const sourceKey = body.sourceKey ?? body.source_key;
+    const campaignName = body.campaignName ?? body.campaign_name ?? "";
     const result = service.startNamingSimilarityBackfill({
       q: body.q,
       limit: body.limit !== undefined ? Number(body.limit) : 120000,
@@ -1948,6 +2061,7 @@ function createAdminRoutes(service, { resolveLiveAuthContext = null, opsService 
         service,
       }),
       sourceKey,
+      campaignName,
       reviewState: body.reviewState ?? body.review_state ?? "",
       force: Boolean(parseOptionalBoolean(body.force)),
       rescanAll: Boolean(parseOptionalBoolean(body.rescanAll ?? body.rescan_all)),
@@ -1963,8 +2077,9 @@ function createAdminRoutes(service, { resolveLiveAuthContext = null, opsService 
   router.post("/naming/similarity/backfill", async (req, res) => {
     const body = req.body || {};
     const requestedMapUids = parseAccountIds(body.mapUids ?? body.map_uids ?? body.uids);
-    const requestedClubId = body.clubId !== undefined ? Number(body.clubId) : undefined;
+    const requestedClubId = parseOptionalClubId(body.clubId);
     const sourceKey = body.sourceKey ?? body.source_key;
+    const campaignName = body.campaignName ?? body.campaign_name ?? "";
     const result = await service.assignStoredMapNumbersBySimilarity({
       q: body.q,
       limit: body.limit !== undefined ? Number(body.limit) : 120000,
@@ -1977,6 +2092,7 @@ function createAdminRoutes(service, { resolveLiveAuthContext = null, opsService 
         service,
       }),
       sourceKey,
+      campaignName,
       force: Boolean(parseOptionalBoolean(body.force)),
       rescanAll: Boolean(parseOptionalBoolean(body.rescanAll ?? body.rescan_all)),
       persistCandidates:
@@ -2051,6 +2167,18 @@ function createAdminRoutes(service, { resolveLiveAuthContext = null, opsService 
       mapNumbers: parseIntegerValues(body.mapNumbers ?? body.map_numbers),
       reviewState: body.reviewState,
       reviewNote: body.reviewNote,
+    });
+    if (result?.error) return res.status(400).json(result);
+    return res.json(result);
+  });
+
+  router.post("/naming/candidates/:mapUid/similarity-weights", async (req, res) => {
+    const body = req.body || {};
+    const result = await service.updateMapNameCandidateSimilarityWeights({
+      mapUid: req.params.mapUid,
+      scope: body.scope,
+      weights: parseSimilarityWeightProfile(body.weights ?? body.weightProfile ?? body.profile ?? body),
+      reset: Boolean(parseOptionalBoolean(body.reset)),
     });
     if (result?.error) return res.status(400).json(result);
     return res.json(result);

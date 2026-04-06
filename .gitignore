@@ -21,6 +21,7 @@ deploy/local/.local-pids.json
 **/*token-cache*.json
 **/diagnostics*.txt
 **/targeted-diagnostics*.txt
+.aie*
 
 # Build artifacts
 **/dist/

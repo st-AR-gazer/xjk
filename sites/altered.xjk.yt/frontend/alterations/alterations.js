@@ -5,6 +5,7 @@ const API = {
   maps: "/api/v1/alterations/maps",
   mapDetail: "/api/v1/public/maps",
 };
+const alteredUrl = window.__alteredUrl || ((value) => value);
 
 const state = {
   stats: null,
@@ -81,7 +82,7 @@ function relTime(iso) {
 }
 
 function fetchJson(url) {
-  return fetch(url, { cache: "no-store" }).then((res) => {
+  return fetch(alteredUrl(url), { cache: "no-store" }).then((res) => {
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
     return res.json();
   });

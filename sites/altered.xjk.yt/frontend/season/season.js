@@ -1,8 +1,14 @@
+const alteredUrl = window.__alteredUrl || ((value) => value);
+const alteredPrefix = window.__alteredLocalPrefix || "";
+const currentPathname =
+  alteredPrefix && window.location.pathname.startsWith(`${alteredPrefix}/`)
+    ? window.location.pathname.slice(alteredPrefix.length) || "/"
+    : window.location.pathname;
 const SEASON_BACKGROUNDS = {
-  winter: "/bannerbuilder/assets/backgrounds/Winter.png",
-  spring: "/bannerbuilder/assets/backgrounds/Spring.png",
-  summer: "/bannerbuilder/assets/backgrounds/Summer.png",
-  fall:   "/bannerbuilder/assets/backgrounds/Fall.png",
+  winter: alteredUrl("/bannerbuilder/assets/backgrounds/Winter.png"),
+  spring: alteredUrl("/bannerbuilder/assets/backgrounds/Spring.png"),
+  summer: alteredUrl("/bannerbuilder/assets/backgrounds/Summer.png"),
+  fall: alteredUrl("/bannerbuilder/assets/backgrounds/Fall.png"),
 };
 const NONSTANDARD_SEASON_INFO = {
   training:             { label: "Training",           test: (n) => n.startsWith("training") },
@@ -15,7 +21,7 @@ const NONSTANDARD_SEASON_INFO = {
 const ACCOUNT_ID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 function parseSeasonParam() {
   const params = new URLSearchParams(window.location.search);
-  const pathMatch = window.location.pathname.match(/^\/season\/((winter|spring|summer|fall)-\d{4})\/?$/i);
+  const pathMatch = currentPathname.match(/^\/season\/((winter|spring|summer|fall)-\d{4})\/?$/i);
   const raw = (
     params.get("s") ||
     pathMatch?.[1] ||
@@ -24,7 +30,7 @@ function parseSeasonParam() {
   if (!raw) return null;
 
   if (raw === "winter-2020") {
-    window.location.replace("/season/?s=training");
+    window.location.replace(alteredUrl("/season/?s=training"));
     return { redirecting: true };
   }
 
@@ -56,7 +62,7 @@ function slugify(name) {
   return (name || "").toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
 }
 function parseCampaignSlug() {
-  const m = window.location.pathname.match(/^\/season\/([^/?#]+)/);
+  const m = currentPathname.match(/^\/season\/([^/?#]+)/);
   return m ? decodeURIComponent(m[1]).toLowerCase() : "";
 }
 const campaignSlug = parseCampaignSlug();
@@ -434,7 +440,7 @@ async function loadData({ silent = false, resetDisplayNameRefresh = true } = {})
 
   let campaigns = [];
   try {
-    campaigns = await fetchPagedCollection("/api/v1/alterations/campaigns", "campaigns", {
+    campaigns = await fetchPagedCollection(alteredUrl("/api/v1/alterations/campaigns"), "campaigns", {
       limit: 500,
       maxPages: 50,
       params: { catalog_only: 1 },
@@ -477,7 +483,7 @@ async function loadData({ silent = false, resetDisplayNameRefresh = true } = {})
 
     try {
       const id = String(activeCampaign.id || "").trim();
-      allMaps = await fetchPagedCollection("/api/v1/alterations/maps", "maps", {
+      allMaps = await fetchPagedCollection(alteredUrl("/api/v1/alterations/maps"), "maps", {
         limit: 1200,
         maxPages: 25,
         params: id ? { campaignIds: id } : {},
@@ -508,7 +514,7 @@ $sortSelect.addEventListener("change", (e) => {
 if (seasonInfo?.redirecting) {
   /* page is navigating away */
 } else if (!seasonInfo) {
-  window.location.replace("/alterations/");
+  window.location.replace(alteredUrl("/alterations/"));
 } else {
   setupHero();
   loadData();

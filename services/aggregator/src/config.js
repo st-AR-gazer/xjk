@@ -32,7 +32,7 @@ function normalizeBaseUrl(value) {
 }
 
 const PORT = Math.max(1, Number(process.env.PORT || 3140));
-const DATA_DIR = process.env.DATA_DIR || path.join(__dirname, "..", "data");
+const DATA_DIR = process.env.DATA_DIR || path.join(__dirname, "..", "..", "..", "sites", "altered.xjk.yt", "data");
 const DB_FILE = process.env.DB_FILE || path.join(DATA_DIR, "tracker-aggregator.sqlite");
 const FRONTEND_DIR =
   process.env.FRONTEND_DIR ||

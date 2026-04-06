@@ -22,12 +22,16 @@ import {
   sanitizeMapName,
   shouldExcludeFromNamingReview,
   classifyNamingSimilaritySource,
+  listKnownAlterationRegexLibrary,
+  listKnownAlterationRegexBehavior,
 } from "./mapNameStandardizer.js";
 import {
   ASSET_FALLBACK_SIGNATURE_VERSION,
   CONTENT_SIGNATURE_VERSION,
   CONTENT_SIMILARITY_PATTERN,
+  DEFAULT_SIMILARITY_WEIGHT_PROFILE,
   applySimilaritySelectionToMatches,
+  buildSimilarityWeightProfile,
   buildContentSimilarityReferenceContext,
   buildCampaignFamily,
   computeContentSimilarity,
@@ -36,6 +40,7 @@ import {
   extractGbxContentSignature,
   mergeSimilarityIntoCandidate,
   normalizeMapNumbers,
+  similarityWeightProfileFingerprint,
 } from "./mapContentSimilarity.js";
 import { parseGbxMapLayouts } from "./gbxMapLayoutParser.js";
 import { buildMapViewerDiffPayload } from "./mapViewerDiff.js";
@@ -260,11 +265,16 @@ function getDefaultWeeklyShortsImportRoots() {
   );
 }
 
-function similarityNeedsRefresh(similarity = null) {
+function similarityNeedsRefresh(similarity = null, { expectedWeightFingerprint = "" } = {}) {
   if (!similarity) return true;
   if (toText(similarity?.assignmentMethod) !== CONTENT_SIGNATURE_VERSION) return true;
   const candidateMatches = Array.isArray(similarity?.candidateMatches) ? similarity.candidateMatches : [];
-  return candidateMatches.some((match) => !Number.isFinite(Number(match?.weightedScore)));
+  if (candidateMatches.some((match) => !Number.isFinite(Number(match?.weightedScore)))) return true;
+  const storedWeightFingerprint = toText(
+    similarity?.details?.weightProfile?.fingerprint ||
+      similarity?.details?.weightProfileFingerprint
+  );
+  return Boolean(toText(expectedWeightFingerprint)) && storedWeightFingerprint !== toText(expectedWeightFingerprint);
 }
 
 function clampInt(value, { min = 0, max = Number.MAX_SAFE_INTEGER, fallback = min } = {}) {
@@ -276,6 +286,159 @@ function clampInt(value, { min = 0, max = Number.MAX_SAFE_INTEGER, fallback = mi
 function normalizeOptionalClubId(value) {
   if (value === undefined || value === null || value === "") return null;
   return clampInt(value, { min: 1, max: 2147483647, fallback: 0 }) || null;
+}
+
+function buildSimilarityWeightOverrideMaps({
+  mapOverrides = [],
+  campaignOverrides = [],
+} = {}) {
+  return {
+    mapOverrideByUid: new Map(
+      (Array.isArray(mapOverrides) ? mapOverrides : [])
+        .filter((item) => toText(item?.mapUid))
+        .map((item) => [toText(item.mapUid).toLowerCase(), item])
+    ),
+    campaignOverrideById: new Map(
+      (Array.isArray(campaignOverrides) ? campaignOverrides : [])
+        .filter((item) => Number(item?.campaignId || 0) > 0)
+        .map((item) => [Number(item.campaignId), item])
+    ),
+  };
+}
+
+function resolveRecommendedAlterationRegexProfile(alterationSlugs = []) {
+  const behavior = listKnownAlterationRegexBehavior();
+  let recommended = null;
+  normalizeUniqueStrings(
+    (Array.isArray(alterationSlugs) ? alterationSlugs : [alterationSlugs])
+      .map((value) => toText(value).toLowerCase())
+      .filter(Boolean)
+  ).forEach((slug) => {
+    const profile = behavior?.[slug]?.recommendedProfile;
+    if (!profile || typeof profile !== "object") return;
+    recommended = buildSimilarityWeightProfile(profile, {
+      baseProfile: recommended || DEFAULT_SIMILARITY_WEIGHT_PROFILE,
+    });
+  });
+  return recommended ? buildSimilarityWeightProfile(recommended) : null;
+}
+
+function resolveActiveSimilarityWeightProfile(
+  { mapUid = "", campaignId = null } = {},
+  {
+    mapOverrideByUid = new Map(),
+    campaignOverrideById = new Map(),
+    scopedRules = [],
+    targetContext = null,
+  } = {}
+) {
+  const normalizedMapUid = toText(mapUid).toLowerCase();
+  const normalizedCampaignId = clampInt(campaignId, { min: 1, max: 2147483647, fallback: 0 }) || null;
+  const normalizedTarget = normalizeSimilarityWeightTargetContext(targetContext);
+  const mapOverride = normalizedMapUid ? mapOverrideByUid.get(normalizedMapUid) || null : null;
+  const campaignOverride =
+    normalizedCampaignId && campaignOverrideById instanceof Map
+      ? campaignOverrideById.get(normalizedCampaignId) || null
+      : null;
+  const recommendedAlterationWeights = resolveRecommendedAlterationRegexProfile(
+    normalizedTarget.alterationSlugs
+  );
+  let scopedWeights = buildSimilarityWeightProfile(recommendedAlterationWeights, {
+    baseProfile: DEFAULT_SIMILARITY_WEIGHT_PROFILE,
+  });
+  const matchedRules = resolveMatchingSimilarityWeightRules(normalizedTarget, scopedRules);
+  for (const rule of matchedRules) {
+    scopedWeights = buildSimilarityWeightProfile(rule.weights, {
+      baseProfile: scopedWeights,
+    });
+  }
+  const campaignWeights = campaignOverride?.weights
+    ? buildSimilarityWeightProfile(campaignOverride.weights, { baseProfile: scopedWeights })
+    : scopedWeights;
+  const effectiveWeights = mapOverride?.weights
+    ? buildSimilarityWeightProfile(mapOverride.weights, { baseProfile: campaignWeights })
+    : campaignWeights;
+  return {
+    defaults: buildSimilarityWeightProfile(DEFAULT_SIMILARITY_WEIGHT_PROFILE),
+    matchedRules,
+    scopedWeights,
+    campaignOverride,
+    mapOverride,
+    recommendedAlterationWeights,
+    effectiveWeights,
+    fingerprint: similarityWeightProfileFingerprint(effectiveWeights),
+    activeScope: mapOverride ? "map" : campaignOverride ? "campaign" : matchedRules.length ? "rule" : "default",
+  };
+}
+
+function normalizeSimilarityWeightTargetContext(targetContext = null) {
+  const safeTarget = targetContext && typeof targetContext === "object" ? targetContext : {};
+  return {
+    sourceKey: toText(safeTarget.sourceKey).toLowerCase() || "",
+    season: toText(safeTarget.season) || "",
+    seasonYear: clampInt(safeTarget.seasonYear, { min: 1900, max: 3000, fallback: 0 }) || null,
+    environment: toText(safeTarget.environment) || "",
+    alterationSlugs: normalizeUniqueStrings(
+      (Array.isArray(safeTarget.alterationSlugs) ? safeTarget.alterationSlugs : [safeTarget.alterationSlug])
+        .map((value) => toText(value).toLowerCase())
+        .filter(Boolean)
+    ),
+  };
+}
+
+function similarityWeightRuleSpecificity(rule = {}) {
+  return (
+    (toText(rule?.sourceKey) ? 4 : 0) +
+    (toText(rule?.season) ? 4 : 0) +
+    (Number(rule?.seasonYear || 0) ? 4 : 0) +
+    (toText(rule?.environment) ? 5 : 0) +
+    (toText(rule?.alterationSlug) ? 6 : 0)
+  );
+}
+
+function similarityWeightRuleMatches(targetContext = null, rule = {}) {
+  const safeTarget = normalizeSimilarityWeightTargetContext(targetContext);
+  const sourceKey = toText(rule?.sourceKey).toLowerCase();
+  const season = toText(rule?.season);
+  const seasonYear = clampInt(rule?.seasonYear, { min: 1900, max: 3000, fallback: 0 }) || null;
+  const environment = toText(rule?.environment);
+  const alterationSlug = toText(rule?.alterationSlug).toLowerCase();
+  if (sourceKey && sourceKey !== safeTarget.sourceKey) return false;
+  if (season && season.toLowerCase() !== safeTarget.season.toLowerCase()) return false;
+  if (seasonYear && seasonYear !== Number(safeTarget.seasonYear || 0)) return false;
+  if (environment && environment.toLowerCase() !== safeTarget.environment.toLowerCase()) return false;
+  if (alterationSlug && !safeTarget.alterationSlugs.includes(alterationSlug)) return false;
+  return true;
+}
+
+function resolveMatchingSimilarityWeightRules(targetContext = null, rules = []) {
+  return (Array.isArray(rules) ? rules : [])
+    .filter((rule) => Boolean(rule?.enabled) && similarityWeightRuleMatches(targetContext, rule))
+    .sort((left, right) => {
+      const specificityDiff =
+        similarityWeightRuleSpecificity(left) - similarityWeightRuleSpecificity(right);
+      if (specificityDiff !== 0) return specificityDiff;
+      const updatedDiff =
+        Date.parse(String(left?.updatedAt || "")) - Date.parse(String(right?.updatedAt || ""));
+      if (updatedDiff !== 0) return updatedDiff;
+      return Number(left?.ruleId || 0) - Number(right?.ruleId || 0);
+    });
+}
+
+function buildSimilarityWeightTargetContext({
+  sourceKey = "",
+  season = "",
+  seasonYear = null,
+  environment = "",
+  alterationSlugs = [],
+} = {}) {
+  return normalizeSimilarityWeightTargetContext({
+    sourceKey,
+    season,
+    seasonYear,
+    environment,
+    alterationSlugs,
+  });
 }
 
 function parseOptionalBoolean(value) {
@@ -2416,6 +2579,14 @@ class AlteredService {
     const now = new Date().toISOString();
     const previous = this.liveMonitor.progress || {};
     const replaceCounters = Boolean(partial.replaceCounters);
+    const phaseChanged =
+      partial.phase !== undefined &&
+      partial.phase !== null &&
+      partial.phase !== previous.phase;
+    const hasCurrentMapFields =
+      Object.prototype.hasOwnProperty.call(partial, "currentMapUid") ||
+      Object.prototype.hasOwnProperty.call(partial, "currentMapName") ||
+      Object.prototype.hasOwnProperty.call(partial, "currentMaps");
     const nextCounters = replaceCounters
       ? { ...(partial.counters || {}) }
       : {
@@ -2431,6 +2602,38 @@ class AlteredService {
     delete next.replaceCounters;
     if (next.percent !== undefined && next.percent !== null) {
       next.percent = clampInt(next.percent, { min: 0, max: 100, fallback: 0 });
+    }
+    if (phaseChanged && !hasCurrentMapFields) {
+      next.currentMapUid = null;
+      next.currentMapName = "";
+      next.currentMaps = [];
+    }
+    if (Object.prototype.hasOwnProperty.call(partial, "currentMapUid")) {
+      next.currentMapUid = toText(partial.currentMapUid) || null;
+    } else if (next.currentMapUid !== undefined && next.currentMapUid !== null) {
+      next.currentMapUid = toText(next.currentMapUid) || null;
+    }
+    if (Object.prototype.hasOwnProperty.call(partial, "currentMapName")) {
+      next.currentMapName = toText(partial.currentMapName) || "";
+    } else if (next.currentMapName !== undefined && next.currentMapName !== null) {
+      next.currentMapName = toText(next.currentMapName) || "";
+    }
+    if (Object.prototype.hasOwnProperty.call(partial, "currentMaps")) {
+      next.currentMaps = Array.isArray(partial.currentMaps)
+        ? partial.currentMaps
+            .map((entry) => {
+              const mapUid = toText(entry?.mapUid);
+              const mapName = toText(entry?.mapName || mapUid);
+              if (!mapUid && !mapName) return null;
+              return {
+                mapUid: mapUid || null,
+                mapName: mapName || mapUid || "Unknown map",
+              };
+            })
+            .filter(Boolean)
+        : [];
+    } else if (!Array.isArray(next.currentMaps)) {
+      next.currentMaps = [];
     }
     this.liveMonitor.progress = next;
     return next;
@@ -2458,7 +2661,13 @@ class AlteredService {
     return new Date(fromTimeMs + this.liveMonitor.discoveryIntervalSeconds * 1000).toISOString();
   }
 
-  _runLiveJobInWorker({ job = "", reason = "job-worker", authContext = null, timeoutMs = null } = {}) {
+  _runLiveJobInWorker({
+    job = "",
+    reason = "job-worker",
+    authContext = null,
+    timeoutMs = null,
+    onProgress = null,
+  } = {}) {
     const safeJob = toText(job).toLowerCase();
     const safeReason = toText(reason) || "job-worker";
     const safeTimeoutMs = clampInt(timeoutMs, {
@@ -2490,34 +2699,52 @@ class AlteredService {
       }
 
       let settled = false;
+      let timer = null;
       const finish = (payload) => {
         if (settled) return;
         settled = true;
+        if (timer) {
+          clearTimeout(timer);
+          timer = null;
+        }
         try {
           worker.terminate();
         } catch {}
         resolve(payload);
       };
 
-      const timer = setTimeout(() => {
-        finish({
-          ok: false,
-          job: safeJob,
-          reason: safeReason,
-          error: `Live job worker timed out after ${safeTimeoutMs}ms.`,
-        });
-      }, safeTimeoutMs);
-      timer.unref?.();
+      const armTimer = () => {
+        if (timer) clearTimeout(timer);
+        timer = setTimeout(() => {
+          finish({
+            ok: false,
+            job: safeJob,
+            reason: safeReason,
+            error: `Live job worker stopped reporting progress for ${safeTimeoutMs}ms.`,
+          });
+        }, safeTimeoutMs);
+        timer.unref?.();
+      };
+      armTimer();
 
       worker.on("message", (message) => {
         if (!message || typeof message !== "object") return;
+        if (message.type === "progress") {
+          armTimer();
+          try {
+            if (typeof onProgress === "function") onProgress(message);
+          } catch (error) {
+            this.logger?.warn?.(
+              `[altered-live] failed to relay worker progress: ${error?.message || error}`
+            );
+          }
+          return;
+        }
         if (message.type !== "complete") return;
-        clearTimeout(timer);
         finish(message);
       });
 
       worker.on("error", (error) => {
-        clearTimeout(timer);
         finish({
           ok: false,
           job: safeJob,
@@ -2528,7 +2755,6 @@ class AlteredService {
 
       worker.on("exit", (code) => {
         if (settled) return;
-        clearTimeout(timer);
         finish({
           ok: false,
           job: safeJob,
@@ -2589,6 +2815,24 @@ class AlteredService {
         reason,
         authContext,
         timeoutMs: Number(process.env.ALTERED_LIVE_JOB_WORKER_TIMEOUT_MS || 45 * 60 * 1000),
+        onProgress: (message) => {
+          const workerProgress =
+            message?.progress && typeof message.progress === "object"
+              ? message.progress
+              : message?.liveStatus?.monitor?.progress && typeof message.liveStatus.monitor.progress === "object"
+                ? message.liveStatus.monitor.progress
+                : null;
+          if (!workerProgress) return;
+          const forwardedProgress = { ...workerProgress };
+          delete forwardedProgress.runId;
+          delete forwardedProgress.reason;
+          this.updateLiveProgress({
+            runId,
+            reason,
+            startedAt: forwardedProgress.startedAt || startedAt,
+            ...forwardedProgress,
+          });
+        },
       });
 
       const finishedAt = jobResult.finishedAt || new Date().toISOString();
@@ -2701,6 +2945,23 @@ class AlteredService {
         reason,
         authContext,
         timeoutMs: Number(process.env.ALTERED_LIVE_JOB_WORKER_TIMEOUT_MS || 45 * 60 * 1000),
+        onProgress: (message) => {
+          const workerProgress =
+            message?.progress && typeof message.progress === "object"
+              ? message.progress
+              : message?.liveStatus?.monitor?.progress && typeof message.liveStatus.monitor.progress === "object"
+                ? message.liveStatus.monitor.progress
+                : null;
+          if (!workerProgress) return;
+          const forwardedProgress = { ...workerProgress };
+          delete forwardedProgress.runId;
+          delete forwardedProgress.reason;
+          this.updateLiveProgress({
+            reason,
+            startedAt: forwardedProgress.startedAt || startedAt,
+            ...forwardedProgress,
+          });
+        },
       });
 
       const finishedAt = jobResult.finishedAt || new Date().toISOString();
@@ -3095,18 +3356,84 @@ class AlteredService {
       alterationSlugs,
       alterationIds,
     });
+    const resolvedCampaigns = campaigns.map((campaign) => {
+      const sortTimestampMs = Number(campaign?.sort_timestamp_ms || campaign?.sortTimestampMs || 0) || 0;
+      return {
+        ...campaign,
+        source_classification:
+          toText(campaign?.source_key || campaign?.sourceKey).toLowerCase() ||
+          classifyNamingSimilaritySource({
+            campaign: campaign?.name,
+            clubId: campaign?.club_id || campaign?.clubId || null,
+            campaignStartTimestamp: sortTimestampMs > 0 ? new Date(sortTimestampMs).toISOString() : null,
+          }),
+      };
+    });
     return {
-      campaigns,
-      count: campaigns.length,
+      campaigns: resolvedCampaigns,
+      count: resolvedCampaigns.length,
       total,
       paging: {
         limit: safeLimit,
         offset: safeOffset,
         total,
-        has_more: safeOffset + campaigns.length < total,
-        next_offset: safeOffset + campaigns.length < total ? safeOffset + campaigns.length : null,
+        has_more: safeOffset + resolvedCampaigns.length < total,
+        next_offset:
+          safeOffset + resolvedCampaigns.length < total ? safeOffset + resolvedCampaigns.length : null,
       },
     };
+  }
+
+  getSimilarityWeightRules() {
+    return this.repository.listSimilarityWeightRules();
+  }
+
+  getSimilarityWeightWorkspace() {
+    return {
+      generatedAt: new Date().toISOString(),
+      defaults: buildSimilarityWeightProfile(DEFAULT_SIMILARITY_WEIGHT_PROFILE),
+      scopedRules: this.repository.listSimilarityWeightRules(),
+      campaignOverrides: this.repository.listSimilarityCampaignWeightOverrides(),
+      alterations: this.repository.listAlterations(),
+      alterationRegexLibrary: listKnownAlterationRegexLibrary(),
+      alterationRegexBehavior: listKnownAlterationRegexBehavior(),
+    };
+  }
+
+  updateSimilarityWeightRule({
+    ruleId = null,
+    sourceKey = null,
+    season = null,
+    seasonYear = null,
+    environment = null,
+    alterationSlug = null,
+    weights = null,
+  } = {}) {
+    return this.repository.upsertSimilarityWeightRule({
+      ruleId,
+      sourceKey,
+      season,
+      seasonYear,
+      environment,
+      alterationSlug,
+      weights,
+      enabled: true,
+    });
+  }
+
+  deleteSimilarityWeightRule({ ruleId } = {}) {
+    return this.repository.deleteSimilarityWeightRule({ ruleId });
+  }
+
+  updateSimilarityCampaignWeightOverride({ campaignId, weights = null } = {}) {
+    return this.repository.upsertSimilarityCampaignWeightOverride({
+      campaignId,
+      weights,
+    });
+  }
+
+  deleteSimilarityCampaignWeightOverride({ campaignId } = {}) {
+    return this.repository.deleteSimilarityCampaignWeightOverride({ campaignId });
   }
 
   syncAlterations() {
@@ -4643,6 +4970,7 @@ class AlteredService {
     mapUids = [],
     clubId = null,
     sourceKey = "",
+    campaignName = "",
     reviewState = "",
     rescanAll = false,
   } = {}) {
@@ -4662,6 +4990,7 @@ class AlteredService {
           : safeLimit,
       mapUids: requestedMapUids,
       clubId: effectiveClubId,
+      campaignName,
       reviewState,
       includePayload: false,
     });
@@ -4673,6 +5002,7 @@ class AlteredService {
             mapUids: requestedMapUids,
             requiredAssignmentMethod: CONTENT_SIGNATURE_VERSION,
             clubId: effectiveClubId,
+            campaignName,
             reviewState,
             includePayload: false,
           })
@@ -4840,7 +5170,14 @@ class AlteredService {
   refreshNamingSimilarityBackfillExternalState() {
     if (this.namingSimilarityBackfill.mode !== "external") {
       const recovered = this.recoverNamingSimilarityBackfillExternalState();
-      if (!recovered) return null;
+      if (!recovered) {
+        if (this.namingSimilarityBackfill.running && !this.namingSimilarityBackfill.currentPromise) {
+          this.namingSimilarityBackfill.running = false;
+          this.namingSimilarityBackfill.currentRunId = null;
+          this.namingSimilarityBackfill.currentReason = null;
+        }
+        return null;
+      }
     }
     const progress = this.readNamingSimilarityBackfillExternalProgress();
     const workerPid = Number(progress?.workerPid || this.namingSimilarityBackfill.childPid || 0) || null;
@@ -5328,6 +5665,7 @@ class AlteredService {
     mapUids = [],
     clubId = null,
     sourceKey = "",
+    campaignName = "",
     reviewState = "",
     force = false,
     rescanAll = false,
@@ -5410,6 +5748,7 @@ class AlteredService {
       mapUids,
       clubId,
       sourceKey,
+      campaignName,
       reviewState,
       rescanAll,
     });
@@ -5466,6 +5805,7 @@ class AlteredService {
       return {
         ok: true,
         started: false,
+        emptySelection: true,
         status: this.getNamingSimilarityBackfillStatus(),
       };
     }
@@ -5512,6 +5852,7 @@ class AlteredService {
           limit,
           mapUids,
           clubId,
+          campaignName,
           force,
           rescanAll,
           persistCandidates,
@@ -6320,6 +6661,7 @@ class AlteredService {
     mapUids = [],
     clubId = null,
     sourceKey = "",
+    campaignName = "",
     force = false,
     rescanAll = false,
     persistCandidates = true,
@@ -6384,6 +6726,7 @@ class AlteredService {
           : safeLimit,
       mapUids,
       clubId: effectiveClubId,
+      campaignName,
       includePayload: false,
     });
     const prioritizedSourceMaps =
@@ -6394,6 +6737,7 @@ class AlteredService {
             mapUids,
             requiredAssignmentMethod: CONTENT_SIGNATURE_VERSION,
             clubId: effectiveClubId,
+            campaignName,
             includePayload: false,
           })
         : [];
@@ -6439,6 +6783,15 @@ class AlteredService {
         missingReferenceFamilies: [],
       };
     }
+    const similarityWeightOverrides = buildSimilarityWeightOverrideMaps({
+      mapOverrides: this.repository.getSimilarityMapWeightOverrides({
+        mapUids: normalizedMaps.map((map) => map.mapUid),
+      }),
+      campaignOverrides: this.repository.getSimilarityCampaignWeightOverrides({
+        campaignIds: normalizedMaps.map((map) => map.campaignId),
+      }),
+    });
+    const similarityWeightRules = this.repository.listSimilarityWeightRules();
     reportProgress({
       status: "running",
       stage: "loading-references",
@@ -6510,6 +6863,11 @@ class AlteredService {
       offset: 0,
       catalogOnly: true,
     });
+    const campaignCatalogById = new Map(
+      (Array.isArray(referenceCatalog?.rows) ? referenceCatalog.rows : [])
+        .filter((campaign) => Number(campaign?.campaign_db_id || 0) > 0)
+        .map((campaign) => [Number(campaign.campaign_db_id), campaign])
+    );
     const canonicalReferenceCampaignByFamily = new Map();
     const availableReferenceFamilies = new Set();
     for (const campaign of Array.isArray(referenceCatalog?.rows) ? referenceCatalog.rows : []) {
@@ -6886,6 +7244,32 @@ class AlteredService {
 
       for (let index = 0; index < batchMaps.length; index += 1) {
         const map = batchMaps[index];
+        const targetCampaignMeta =
+          Number(map?.campaignId || 0) > 0
+            ? campaignCatalogById.get(Number(map.campaignId)) || null
+            : null;
+        const targetWeightContext = buildSimilarityWeightTargetContext({
+          sourceKey:
+            toText(targetCampaignMeta?.source_classification || targetCampaignMeta?.source_key).toLowerCase() ||
+            classifyNamingSimilaritySource(map),
+          season: targetCampaignMeta?.season || null,
+          seasonYear: Number(targetCampaignMeta?.season_year || 0) || null,
+          environment: targetCampaignMeta?.environment || map?.mapEnvironment || map?.environment || "",
+          alterationSlugs: Array.isArray(targetCampaignMeta?.alterations)
+            ? targetCampaignMeta.alterations.map((item) => item?.slug)
+            : [],
+        });
+        const activeWeightProfile = resolveActiveSimilarityWeightProfile(
+          {
+            mapUid: map.mapUid,
+            campaignId: map.campaignId,
+          },
+          {
+            ...similarityWeightOverrides,
+            scopedRules: similarityWeightRules,
+            targetContext: targetWeightContext,
+          }
+        );
         const family = buildCampaignFamily(map.campaignName);
         const familyKey = toText(family.key);
         const normalizedFamilyKey = normalizeReferenceFamilyKey(familyKey);
@@ -6969,10 +7353,15 @@ class AlteredService {
             }
           : computeContentSimilarity(targetSignature, activeReferenceContext, {
               targetName: map.name,
+              targetMapNumbers: Array.isArray(baseCandidate?.mapNumbers) ? baseCandidate.mapNumbers : [],
+              targetParserPattern: baseCandidate?.parserPattern || "",
               includeNameSupport,
+              weightProfile: activeWeightProfile.effectiveWeights,
             });
         const existingSimilarity = existingSimilarityByUid.get(map.mapUid.toLowerCase()) || null;
-        if (similarityNeedsRefresh(existingSimilarity)) refreshedSimilarityRecords += 1;
+        if (similarityNeedsRefresh(existingSimilarity, {
+          expectedWeightFingerprint: activeWeightProfile.fingerprint,
+        })) refreshedSimilarityRecords += 1;
         if (
           existingSimilarity &&
           toText(existingSimilarity?.assignmentMethod) &&
@@ -7025,7 +7414,9 @@ class AlteredService {
               ),
             }
           : computedSimilarity;
-        const mergedCandidateBase = mergeSimilarityIntoCandidate(baseCandidate, similarity);
+        const mergedCandidateBase = mergeSimilarityIntoCandidate(baseCandidate, similarity, {
+          regexOnly: Boolean(activeWeightProfile?.effectiveWeights?.regexOnly),
+        });
         const mergedCandidate = hasManualSimilaritySelection
           ? {
               ...mergedCandidateBase,
@@ -7094,6 +7485,29 @@ class AlteredService {
             fallbackReferenceMapUids,
             diagnosticWarnings,
             includeNameSupport,
+            weightProfile: {
+              ...(
+                similarity?.details?.weightProfile &&
+                typeof similarity.details.weightProfile === "object"
+                  ? similarity.details.weightProfile
+                  : {}
+              ),
+              raw: buildSimilarityWeightProfile(activeWeightProfile.effectiveWeights),
+              fingerprint: activeWeightProfile.fingerprint,
+              activeScope: activeWeightProfile.activeScope,
+              hasCampaignOverride: Boolean(activeWeightProfile.campaignOverride),
+              hasMapOverride: Boolean(activeWeightProfile.mapOverride),
+              matchedRules: activeWeightProfile.matchedRules.map((rule) => ({
+                ruleId: rule.ruleId,
+                sourceKey: rule.sourceKey,
+                season: rule.season,
+                seasonYear: rule.seasonYear,
+                alterationSlug: rule.alterationSlug,
+              })),
+              campaignOverrideUpdatedAt: activeWeightProfile.campaignOverride?.updatedAt || null,
+              mapOverrideUpdatedAt: activeWeightProfile.mapOverride?.updatedAt || null,
+            },
+            weightProfileFingerprint: activeWeightProfile.fingerprint,
           },
         });
         pushRecentMap({
@@ -7301,6 +7715,8 @@ class AlteredService {
     if (!mapInfo?.exists || !mapInfo.map) {
       return { error: "Map not found." };
     }
+    const campaignId = Number(mapInfo.map.campaignId || 0) || null;
+    const freshNameCandidate = buildMapNameCandidate(mapInfo.map);
 
     let storedCandidate =
       this.repository.getMapNameCandidate(mapUid) ||
@@ -7324,7 +7740,33 @@ class AlteredService {
     let similarity = this.repository.getMapNumberSimilarity({ mapUids: [mapUid] })[0] || null;
     const signature = this.repository.getMapContentSignatures({ mapUids: [mapUid] })[0] || null;
     const localFile = this.getPreferredMapLocalFiles({ mapUids: [mapUid] })[0] || null;
-    const staleSimilarity = similarityNeedsRefresh(similarity);
+    const similarityWeightRules = this.repository.listSimilarityWeightRules();
+    const detailWeightContext = buildSimilarityWeightTargetContext({
+      sourceKey: classifyNamingSimilaritySource(mapInfo.map),
+      season: freshNameCandidate?.season || null,
+      seasonYear: Number(freshNameCandidate?.year || 0) || null,
+      environment: mapInfo.map?.mapEnvironment || mapInfo.map?.environment || "",
+      alterationSlugs: Array.isArray(freshNameCandidate?.alterationMix)
+        ? freshNameCandidate.alterationMix
+        : [freshNameCandidate?.alteration],
+    });
+    const similarityWeightOverrides = buildSimilarityWeightOverrideMaps({
+      mapOverrides: this.repository.getSimilarityMapWeightOverrides({ mapUids: [mapUid] }),
+      campaignOverrides: this.repository.getSimilarityCampaignWeightOverrides({
+        campaignIds: campaignId ? [campaignId] : [],
+      }),
+    });
+    const activeSimilarityWeights = resolveActiveSimilarityWeightProfile(
+      { mapUid, campaignId },
+      {
+        ...similarityWeightOverrides,
+        scopedRules: similarityWeightRules,
+        targetContext: detailWeightContext,
+      }
+    );
+    const staleSimilarity = similarityNeedsRefresh(similarity, {
+      expectedWeightFingerprint: activeSimilarityWeights.fingerprint,
+    });
 
     if (staleSimilarity) {
       try {
@@ -7344,13 +7786,18 @@ class AlteredService {
       }
     }
 
-    const freshNameCandidate = buildMapNameCandidate(mapInfo.map);
-    const freshCandidate = mergeSimilarityIntoCandidate(freshNameCandidate, similarity
-      ? {
-          ...similarity,
-          mapNumbers: similarity.assignedMapNumbers,
-        }
-      : null);
+    const freshCandidate = mergeSimilarityIntoCandidate(
+      freshNameCandidate,
+      similarity
+        ? {
+            ...similarity,
+            mapNumbers: similarity.assignedMapNumbers,
+          }
+        : null,
+      {
+        regexOnly: Boolean(activeSimilarityWeights?.effectiveWeights?.regexOnly),
+      }
+    );
     const autoApproval = evaluateSimilarityAutoApproval({
       similarity,
       signatureStatus: signature?.sourceStatus || "",
@@ -7371,7 +7818,7 @@ class AlteredService {
       storedNumbers !== freshNumbers ||
       String(storedCandidate?.automationState || "") !== String(freshCandidate?.automationState || "") ||
       Number(storedCandidate?.mapNumber || 0) !== Number(freshCandidate?.mapNumber || 0) ||
-      similarityNeedsRefresh(similarity);
+      staleSimilarity;
 
     return {
       ok: true,
@@ -7379,6 +7826,7 @@ class AlteredService {
         mapUid: resolveMapUid(mapInfo.map),
         name: mapInfo.map.name || "",
         campaign: resolveMapCampaignName(mapInfo.map) || "Unassigned",
+        campaignId,
         slot: resolveMapSlot(mapInfo.map) || null,
         downloadUrl: resolveMapDownloadUrl(mapInfo.map) || null,
       },
@@ -7387,6 +7835,16 @@ class AlteredService {
       freshNameCandidate,
       freshCandidate,
       similarity,
+      similarityWeights: {
+        defaults: activeSimilarityWeights.defaults,
+        matchedRules: activeSimilarityWeights.matchedRules,
+        campaignOverride: activeSimilarityWeights.campaignOverride,
+        mapOverride: activeSimilarityWeights.mapOverride,
+        recommendedAlterationWeights: activeSimilarityWeights.recommendedAlterationWeights,
+        effective: activeSimilarityWeights.effectiveWeights,
+        activeScope: activeSimilarityWeights.activeScope,
+        fingerprint: activeSimilarityWeights.fingerprint,
+      },
       signature: signature
         ? {
             ...signature,
@@ -7753,6 +8211,78 @@ class AlteredService {
     };
   }
 
+  async updateMapNameCandidateSimilarityWeights({
+    mapUid,
+    scope = "map",
+    weights = null,
+    reset = false,
+  } = {}) {
+    const uid = toText(mapUid);
+    if (!uid) return { error: "mapUid is required." };
+
+    const mapInfo = this.repository.getMapInfo(uid);
+    if (!mapInfo?.exists || !mapInfo.map) {
+      return { error: "Map not found." };
+    }
+
+    const normalizedScope = toText(scope).toLowerCase();
+    if (normalizedScope !== "map" && normalizedScope !== "campaign") {
+      return { error: "scope must be 'map' or 'campaign'." };
+    }
+
+    const campaignId = Number(mapInfo.map.campaignId || 0) || null;
+    if (normalizedScope === "campaign" && !campaignId) {
+      return { error: "This map is not assigned to a campaign yet." };
+    }
+
+    const safeWeights = buildSimilarityWeightProfile(weights);
+    let updateResult = null;
+    if (reset) {
+      updateResult =
+        normalizedScope === "campaign"
+          ? this.repository.deleteSimilarityCampaignWeightOverride({ campaignId })
+          : this.repository.deleteSimilarityMapWeightOverride({ mapUid: uid });
+    } else {
+      updateResult =
+        normalizedScope === "campaign"
+          ? this.repository.upsertSimilarityCampaignWeightOverride({
+              campaignId,
+              weights: safeWeights,
+            })
+          : this.repository.upsertSimilarityMapWeightOverride({
+              mapUid: uid,
+              campaignId,
+              weights: safeWeights,
+            });
+    }
+    if (updateResult?.error) return updateResult;
+
+    const recomputedSimilarity = await this.assignStoredMapNumbersBySimilarity({
+      mapUids: [uid],
+      limit: 1,
+      force: true,
+      persistCandidates: true,
+    });
+    if (recomputedSimilarity?.error || recomputedSimilarity?.ok === false) {
+      return {
+        error:
+          recomputedSimilarity?.error ||
+          recomputedSimilarity?.candidateUpsert?.error ||
+          recomputedSimilarity?.similarityUpsert?.error ||
+          "Similarity recompute failed after saving weights.",
+      };
+    }
+
+    return {
+      ok: true,
+      scope: normalizedScope,
+      reset: Boolean(reset),
+      weights: safeWeights,
+      update: updateResult,
+      detail: await this.getMapNameStandardizationCandidateDetail(uid),
+    };
+  }
+
   updateMapNameStandardizationCandidateReview({
     mapUid,
     reviewState = undefined,
@@ -7906,6 +8436,20 @@ class AlteredService {
         mapsSynced += part.length;
         chunksSynced = index + 1;
         if (typeof onChunk === "function") {
+          const chunkMaps = part
+            .map((map) => {
+              const mapUid = resolveMapUid(map);
+              const mapName =
+                toText(map?.name || map?.mapName || map?.title || mapUid) || mapUid;
+              if (!mapUid && !mapName) return null;
+              return {
+                mapUid: mapUid || null,
+                mapName: mapName || mapUid || "Unknown map",
+              };
+            })
+            .filter(Boolean);
+          const firstMap = chunkMaps[0] || null;
+          const lastMap = chunkMaps[chunkMaps.length - 1] || null;
           onChunk({
             index: index + 1,
             total: chunks.length,
@@ -7915,6 +8459,13 @@ class AlteredService {
             targetLabel: target.label,
             targetIndex: targetIndex + 1,
             targetTotal: targets.length,
+            currentMapUid: firstMap?.mapUid || null,
+            currentMapName: firstMap?.mapName || "",
+            currentMaps: chunkMaps.slice(0, 6),
+            currentChunkFirstMapUid: firstMap?.mapUid || null,
+            currentChunkFirstMapName: firstMap?.mapName || "",
+            currentChunkLastMapUid: lastMap?.mapUid || null,
+            currentChunkLastMapName: lastMap?.mapName || "",
           });
         }
       }
@@ -9902,18 +10453,30 @@ class AlteredService {
     const relayClubSnapshot =
       relayClubSnapshotOption === undefined ? true : Boolean(relayClubSnapshotOption);
     const snapshotCampaigns = Array.isArray(snapshot?.campaigns) ? snapshot.campaigns : [];
-    const snapshotMaps = snapshotCampaigns.reduce((sum, campaign) => {
+    const snapshotUploadBuckets = Array.isArray(snapshot?.uploadBuckets) ? snapshot.uploadBuckets : [];
+    const snapshotCampaignMaps = snapshotCampaigns.reduce((sum, campaign) => {
       const count = Array.isArray(campaign?.maps) ? campaign.maps.length : 0;
       return sum + count;
     }, 0);
+    const snapshotUploadMaps = snapshotUploadBuckets.reduce((sum, bucket) => {
+      const count = Array.isArray(bucket?.maps) ? bucket.maps.length : 0;
+      return sum + count;
+    }, 0);
+    const snapshotMaps = snapshotCampaignMaps + snapshotUploadMaps;
     if (onProgress) {
       onProgress({
         phase: "sync-snapshot",
         percent: 78,
-        message: `Storing fetched club snapshot in altered database (${snapshotCampaigns.length} campaigns, ${snapshotMaps} maps).`,
+        message:
+          `Storing fetched club snapshot in altered database (` +
+          `${snapshotCampaigns.length} campaigns, ${snapshotCampaignMaps} campaign maps, ` +
+          `${snapshotUploadBuckets.length} upload buckets, ${snapshotUploadMaps} upload maps).`,
         counters: {
           campaignsToStore: snapshotCampaigns.length,
           mapsToStore: snapshotMaps,
+          campaignMapsToStore: snapshotCampaignMaps,
+          uploadBucketsToStore: snapshotUploadBuckets.length,
+          uploadMapsToStore: snapshotUploadMaps,
         },
       });
     }
@@ -9926,9 +10489,14 @@ class AlteredService {
 
     const touchedMapUids = Array.from(
       new Set(
-        snapshotCampaigns.flatMap((campaign) =>
-          asArray(campaign?.maps).map((map) => toText(map?.uid || map?.mapUid || map?.map_uid))
-        )
+        [
+          ...snapshotCampaigns.flatMap((campaign) =>
+            asArray(campaign?.maps).map((map) => toText(map?.uid || map?.mapUid || map?.map_uid))
+          ),
+          ...snapshotUploadBuckets.flatMap((bucket) =>
+            asArray(bucket?.maps).map((map) => toText(map?.uid || map?.mapUid || map?.map_uid))
+          ),
+        ]
       )
     ).filter(Boolean);
     const automaticNaming = await this.runAutomaticNamingAssignments({
@@ -10034,11 +10602,15 @@ class AlteredService {
         counters: {
           campaignsToStore: snapshotCampaigns.length,
           mapsToStore: snapshotMaps,
+          uploadBucketsToStore: snapshotUploadBuckets.length,
+          uploadMapsToStore: snapshotUploadMaps,
           campaignsStored: Number(result.campaignsSeen || 0),
           mapsStored: Number(result.mapsSeen || 0),
           mapsInserted: Number(result.mapsInserted || 0),
           mapsUpdated: Number(result.mapsUpdated || 0),
           mapsLinked: Number(result.mapsLinked || 0),
+          uploadBucketsStored: Number(result.uploadBucketsSeen || 0),
+          uploadMapsStored: Number(result.uploadMapsSeen || 0),
           trackerTargetsTotal: Number(trackerSync.targetCount || 0),
           trackerChunksTotal: Number(trackerSync.chunkCount || 0),
           trackerChunksSynced: Number(trackerSync.chunkCount || 0),
@@ -11533,6 +12105,32 @@ class AlteredService {
 
   async fetchLiveClubStructure(options = {}) {
     const onProgress = typeof options.onProgress === "function" ? options.onProgress : null;
+    const knownMapNameCache = new Map();
+    const resolveProgressMapName = (map = {}) => {
+      const mapUid = toText(map?.uid || map?.mapUid || map?.map_uid);
+      let mapName = toText(map?.name || map?.mapName || map?.title);
+      if ((!mapName || (mapUid && mapName === mapUid)) && mapUid) {
+        const cacheKey = mapUid.toLowerCase();
+        if (knownMapNameCache.has(cacheKey)) {
+          const cachedName = toText(knownMapNameCache.get(cacheKey));
+          if (cachedName) mapName = cachedName;
+        } else if (typeof this.repository?.getMapInfo === "function") {
+          const known = this.repository.getMapInfo(mapUid);
+          const knownName = toText(known?.map?.name || known?.map?.mapName || "");
+          knownMapNameCache.set(cacheKey, knownName || "");
+          if (knownName) mapName = knownName;
+        }
+      }
+      return {
+        mapUid: mapUid || null,
+        mapName: mapName || mapUid || "Unknown map",
+      };
+    };
+    const buildProgressMapPreview = (maps = []) =>
+      (Array.isArray(maps) ? maps : [])
+        .slice(0, 6)
+        .map((map) => resolveProgressMapName(map))
+        .filter((entry) => entry.mapUid || entry.mapName);
     const report = (partial) => {
       if (onProgress) onProgress(partial);
     };
@@ -11826,6 +12424,9 @@ class AlteredService {
             ? 35 + Math.floor((campaignsProcessed / descriptors.length) * 23)
             : 58,
         message: `Loaded campaign details (${campaignsProcessed}/${descriptors.length}).`,
+        currentMapUid: maps.length > 0 ? resolveProgressMapName(maps[0]).mapUid : null,
+        currentMapName: maps.length > 0 ? resolveProgressMapName(maps[0]).mapName : "",
+        currentMaps: buildProgressMapPreview(maps),
         counters: {
           campaignsSeen: descriptors.length,
           campaignsProcessed,
@@ -11873,11 +12474,17 @@ class AlteredService {
           requestedCount,
           firstUid,
           lastUid,
+          currentMapUid,
+          currentMapName,
+          currentMaps,
         }) => {
           report({
             phase: "fetch-map-details",
             percent: 59 + Math.floor((index / Math.max(total, 1)) * 19),
             message: `Fetched map metadata chunks (${index}/${total}).`,
+            currentMapUid: toText(currentMapUid) || null,
+            currentMapName: toText(currentMapName) || "",
+            currentMaps: buildProgressMapPreview(currentMaps),
             counters: {
               mapDetailChunksTotal: total,
               mapDetailChunksLoaded: index,
@@ -12009,6 +12616,7 @@ class AlteredService {
         name: fetched.club.name,
       },
       campaigns: fetched.campaigns,
+      uploadBuckets: fetched.uploadBuckets,
       sourceLabel: options.sourceLabel || "altered-live-monitor",
       note: noteSuffix || `live-club-${fetched.club.id}`,
     };
@@ -12877,7 +13485,7 @@ class AlteredService {
       }
 
       let sync = null;
-      if (enrichedCampaigns.length > 0) {
+      if (enrichedCampaigns.length > 0 || uploadBuckets.length > 0) {
         sync = await this.syncHookSnapshot(
           {
             club: {
@@ -12885,6 +13493,7 @@ class AlteredService {
               name: clubName,
             },
             campaigns: enrichedCampaigns,
+            uploadBuckets,
             sourceLabel: "altered-live-discovery",
             note: `live-discovery:${reason}`,
           },

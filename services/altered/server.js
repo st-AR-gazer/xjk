@@ -60,6 +60,7 @@ import {
   ALTERED_SESSION_TTL_SECONDS,
   ALTERED_OAUTH_STATE_TTL_SECONDS,
   ALTERED_OAUTH_FALLBACK_LOCAL_ONLY,
+  ALTERED_DEV_LOCAL_OPEN,
   ALTERED_LIVE_MONITOR_ENABLED,
   ALTERED_LIVE_MONITOR_INTERVAL_SECONDS,
   ALTERED_LIVE_MONITOR_SCHEDULE_MODE,
@@ -449,6 +450,7 @@ function isTrustedServiceAdminRequest(req) {
 }
 
 function isOAuthFallbackOpen(req) {
+  if (ALTERED_DEV_LOCAL_OPEN && isLocalRequest(req)) return true;
   const oauthStatus = ubisoftAuth.getStatus();
   if (!UBI_OAUTH_ENABLED || oauthStatus.enabled) return false;
   if (!ALTERED_OAUTH_FALLBACK_LOCAL_ONLY) return false;
@@ -461,6 +463,7 @@ function isOAuthRequiredButUnavailable(req) {
 }
 
 function requirePageAdmin(req, res, next) {
+  if (ALTERED_DEV_LOCAL_OPEN && isLocalRequest(req)) return next();
   if (isOAuthEnforced()) {
     const session = ubisoftAuth.getSessionFromRequest(req);
     if (session) return next();
@@ -495,6 +498,8 @@ function requireApiAdmin(req, res, next) {
     };
     return next();
   }
+
+  if (ALTERED_DEV_LOCAL_OPEN && isLocalRequest(req)) return next();
 
   if (isOAuthEnforced()) {
     const session = ubisoftAuth.getSessionFromRequest(req);
@@ -619,6 +624,13 @@ app.get("/api/v1/admin/auth/status", (req, res) => {
   res.setHeader("Cache-Control", "no-store, no-cache, must-revalidate");
   res.setHeader("Pragma", "no-cache");
   res.setHeader("Expires", "0");
+  if (ALTERED_DEV_LOCAL_OPEN && isLocalRequest(req)) {
+    return res.status(200).json({
+      authenticated: true,
+      provider: "dev-local-open",
+      warning: "ALTERED_DEV_LOCAL_OPEN is enabled. Admin auth is bypassed for local requests.",
+    });
+  }
   if (isOAuthEnforced()) {
     const session = ubisoftAuth.getSessionFromRequest(req);
     if (!session) {
@@ -762,37 +774,50 @@ app.use(
     wrWebhookSecret: ALTERED_WR_WEBHOOK_SECRET,
   })
 );
+const ADMIN_FRONTEND_DIR = path.join(FRONTEND_DIR, "admin");
 
 app.get("/admin", requirePageAdmin, (_req, res) => {
-  res.sendFile(path.join(FRONTEND_DIR, "admin.html"));
+  res.sendFile(path.join(ADMIN_FRONTEND_DIR, "index.html"));
 });
 
 app.get("/admin/", requirePageAdmin, (_req, res) => {
-  res.sendFile(path.join(FRONTEND_DIR, "admin.html"));
+  res.sendFile(path.join(ADMIN_FRONTEND_DIR, "index.html"));
 });
 
-app.get("/admin.html", requirePageAdmin, (_req, res) => {
-  res.sendFile(path.join(FRONTEND_DIR, "admin.html"));
+app.get("/admin.html", (_req, res) => {
+  res.redirect(308, "/admin/");
 });
 
 app.get("/admin/monitoring", requirePageAdmin, (_req, res) => {
-  res.redirect("/admin#advanced");
+  res.sendFile(path.join(ADMIN_FRONTEND_DIR, "monitoring", "index.html"));
 });
 
 app.get("/admin/monitoring/", requirePageAdmin, (_req, res) => {
-  res.redirect("/admin#advanced");
+  res.sendFile(path.join(ADMIN_FRONTEND_DIR, "monitoring", "index.html"));
 });
 
-app.get("/admin-monitoring.html", requirePageAdmin, (_req, res) => {
-  res.sendFile(path.join(FRONTEND_DIR, "admin-monitoring.html"));
+app.get("/admin-monitoring.html", (_req, res) => {
+  res.redirect(308, "/admin/monitoring/");
+});
+
+app.get("/admin/login", (_req, res) => {
+  res.sendFile(path.join(ADMIN_FRONTEND_DIR, "login", "index.html"));
+});
+
+app.get("/admin/login/", (_req, res) => {
+  res.sendFile(path.join(ADMIN_FRONTEND_DIR, "login", "index.html"));
 });
 
 app.get("/admin-login", (_req, res) => {
-  res.sendFile(path.join(FRONTEND_DIR, "admin-login.html"));
+  res.redirect(308, "/admin/login/");
 });
 
 app.get("/admin-login/", (_req, res) => {
-  res.sendFile(path.join(FRONTEND_DIR, "admin-login.html"));
+  res.redirect(308, "/admin/login/");
+});
+
+app.get("/admin-login.html", (_req, res) => {
+  res.redirect(308, "/admin/login/");
 });
 
 app.get(["/api", "/api/"], (_req, res) => {
@@ -852,6 +877,9 @@ app.listen(PORT, "127.0.0.1", () => {
   console.log(
     `ALTERED_OAUTH_FALLBACK_LOCAL_ONLY=${ALTERED_OAUTH_FALLBACK_LOCAL_ONLY ? "1" : "0"}`
   );
+  if (ALTERED_DEV_LOCAL_OPEN) {
+    console.log("ALTERED_DEV_LOCAL_OPEN=1 — admin auth bypassed for local requests");
+  }
   console.log(
     `ALTERED_LIVE monitor=${ALTERED_LIVE_MONITOR_ENABLED ? "enabled" : "disabled"} schedule=${ALTERED_LIVE_MONITOR_SCHEDULE_MODE} dailyUtc=${ALTERED_LIVE_MONITOR_DAILY_HOUR_UTC}:${String(ALTERED_LIVE_MONITOR_DAILY_MINUTE_UTC).padStart(2, "0")} club=${ALTERED_LIVE_CLUB_ID} pageSize=${ALTERED_LIVE_ACTIVITY_PAGE_SIZE} activeOnly=${ALTERED_LIVE_ACTIVITY_ACTIVE_ONLY} fetchMapDetails=${ALTERED_LIVE_FETCH_MAP_DETAILS}`
   );

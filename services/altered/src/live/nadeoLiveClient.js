@@ -515,6 +515,21 @@ class NadeoLiveClient {
         results.push(...payload.mapList);
       }
       if (typeof onChunk === "function") {
+        const chunkMaps = Array.isArray(payload?.mapList)
+          ? payload.mapList
+              .slice(0, 6)
+              .map((map) => {
+                const mapUid = String(map?.uid || map?.mapUid || map?.map_uid || "").trim();
+                const mapName = String(map?.name || map?.title || map?.mapName || mapUid || "").trim();
+                if (!mapUid && !mapName) return null;
+                return {
+                  mapUid: mapUid || null,
+                  mapName: mapName || mapUid || "Unknown map",
+                };
+              })
+              .filter(Boolean)
+          : [];
+        const firstMap = chunkMaps[0] || null;
         onChunk({
           index: index + 1,
           total: chunks.length,
@@ -523,6 +538,9 @@ class NadeoLiveClient {
           firstUid: part[0] || "",
           lastUid: part[part.length - 1] || "",
           loadedCount: results.length,
+          currentMapUid: firstMap?.mapUid || null,
+          currentMapName: firstMap?.mapName || "",
+          currentMaps: chunkMaps,
         });
       }
     }

@@ -108,6 +108,23 @@ function post(message) {
   parentPort.postMessage(message);
 }
 
+function attachProgressRelay(service, { job = "", reason = "" } = {}) {
+  if (!service || typeof service.updateLiveProgress !== "function") return service;
+  const originalUpdateLiveProgress = service.updateLiveProgress.bind(service);
+  service.updateLiveProgress = (partial = {}) => {
+    const progress = originalUpdateLiveProgress(partial);
+    post({
+      type: "progress",
+      job,
+      reason,
+      progress,
+      liveStatus: typeof service.getLiveMonitorStatus === "function" ? service.getLiveMonitorStatus() : null,
+    });
+    return progress;
+  };
+  return service;
+}
+
 function createService() {
   const db = createDatabase({ filePath: DB_FILE });
   const repository = new AlteredRepository(db);
@@ -256,7 +273,7 @@ async function main() {
   }
 
   try {
-    const service = createService();
+    const service = attachProgressRelay(createService(), { job, reason });
     const result =
       job === "discovery"
         ? await service.runLiveDiscoveryCycle({ reason, authContext })
@@ -305,4 +322,3 @@ main().catch((error) => {
     error: error?.message || String(error || "Live job worker crashed."),
   });
 });
-

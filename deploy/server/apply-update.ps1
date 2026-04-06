@@ -176,6 +176,19 @@ foreach ($dir in $backendDirs) {
   }
 }
 
+$bannerBuilderDir = Join-Path $RepoPath "services/bannerbuilder"
+$bannerBuilderRuntime = Join-Path $bannerBuilderDir "python-runtime\python.exe"
+if ((-not $SkipInstall -or $ForceInstall) -and (Test-Path $bannerBuilderDir) -and -not (Test-Path $bannerBuilderRuntime)) {
+  Write-Host "Installing Python dependencies in $bannerBuilderDir"
+  Invoke-NativeWithOutput -FilePath "python" -ArgumentList @(
+    "-m",
+    "pip",
+    "install",
+    "-r",
+    (Join-Path $bannerBuilderDir "requirements.txt")
+  ) -Label "python dependency install"
+}
+
 if ([string]::IsNullOrWhiteSpace($env:APPDATA)) {
   $env:APPDATA = Join-Path $env:USERPROFILE "AppData\Roaming"
 }
@@ -317,6 +330,7 @@ Write-Host "Reloading PM2 apps"
 # Guard against stale/orphan listeners that leave critical apps stopped.
 Ensure-Pm2AppHealthyOnPort -Pm2Exe $pm2Path -AppName "xjk-tracker-hub" -Port 3031 -HealthPath "/api/v1/tracker/status"
 Ensure-Pm2AppHealthyOnPort -Pm2Exe $pm2Path -AppName "xjk-aggregator-hub" -Port 3040 -HealthPath "/health" -ForceRestart
+Ensure-Pm2AppHealthyOnPort -Pm2Exe $pm2Path -AppName "xjk-bannerbuilder" -Port 3050 -HealthPath "/health"
 
 & $pm2Path save
 

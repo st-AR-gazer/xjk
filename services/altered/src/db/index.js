@@ -56,6 +56,7 @@ function ensureCompatibilityColumns(db) {
     "external_campaign_id",
     "external_campaign_id INTEGER"
   );
+  ensureColumn(db, "altered_campaigns", "upload_bucket_id", "upload_bucket_id INTEGER");
   ensureColumn(db, "altered_campaigns", "activity_id", "activity_id INTEGER");
   ensureColumn(db, "altered_campaigns", "activity_type", "activity_type TEXT");
   ensureColumn(db, "altered_campaigns", "campaign_type", "campaign_type TEXT");
@@ -164,11 +165,20 @@ function ensureCompatibilityColumns(db) {
     "alteration_label TEXT"
   );
   ensureColumn(db, "altered_alterations", "slug", "slug TEXT");
+  ensureColumn(
+    db,
+    "altered_similarity_weight_rules",
+    "environment",
+    "environment TEXT"
+  );
 }
 
 function ensureCompatibilityIndexes(db) {
   db.exec(
     "CREATE INDEX IF NOT EXISTS idx_altered_campaigns_external_id ON altered_campaigns(club_id, external_campaign_id);"
+  );
+  db.exec(
+    "CREATE UNIQUE INDEX IF NOT EXISTS idx_altered_campaigns_upload_bucket ON altered_campaigns(club_id, upload_bucket_id);"
   );
   db.exec(
     "CREATE INDEX IF NOT EXISTS idx_altered_club_members_role ON altered_club_members(club_id, role, status);"

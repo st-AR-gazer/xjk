@@ -6,6 +6,7 @@ import {
   deriveParserWarning,
   parseCampaignStandardizedFields,
 } from "../services/mapNameStandardizer.js";
+import { buildSimilarityWeightProfile } from "../services/mapContentSimilarity.js";
 
 const DEFAULT_HOOK_KEY = "altered-club";
 const ALTERATION_VALUE_SEPARATOR = "\u001f";
@@ -411,6 +412,30 @@ function rowToMapLocalFileFix(row) {
     status: row.status || "missing",
     note: row.note || null,
     lastError: row.lastError || null,
+    updatedAt: row.updatedAt || null,
+  };
+}
+
+function rowToSimilarityWeightOverride(row = {}) {
+  return {
+    mapUid: toText(row.mapUid) || null,
+    campaignId: Number(row.campaignId || 0) || null,
+    weights: buildSimilarityWeightProfile(parseJsonSafe(row.weightsJson, null)),
+    updatedAt: row.updatedAt || null,
+  };
+}
+
+function rowToSimilarityWeightRule(row = {}) {
+  return {
+    ruleId: Number(row.ruleId || 0) || null,
+    sourceKey: toText(row.sourceKey).toLowerCase() || null,
+    season: toText(row.season) || null,
+    seasonYear: Number(row.seasonYear || 0) || null,
+    environment: toText(row.environment) || null,
+    alterationSlug: slugifyText(row.alterationSlug || "", "") || null,
+    weights: buildSimilarityWeightProfile(parseJsonSafe(row.weightsJson, null)),
+    enabled: Boolean(Number(row.enabled || 0)),
+    createdAt: row.createdAt || null,
     updatedAt: row.updatedAt || null,
   };
 }
@@ -2921,32 +2946,37 @@ class AlteredRepository {
     const total = filtered.length;
     const campaigns = filtered
       .slice(safeOffset, safeOffset + safeLimit)
-      .map(({ row, meta }) => ({
-        id:
-          row.campaignExternalId !== null && row.campaignExternalId !== undefined
-            ? String(row.campaignExternalId)
-            : String(row.campaignDbId),
-        campaign_db_id: Number(row.campaignDbId || 0) || null,
-        campaign_external_id: Number(row.campaignExternalId || 0) || null,
-        club_id: Number(row.clubId || 0) || null,
-        name: row.campaignName || `Campaign ${row.campaignDbId}`,
-        display_name: meta.seasonLabel || row.campaignName || `Campaign ${row.campaignDbId}`,
-        season: meta.season || null,
-        season_year: meta.seasonYear || null,
-        season_label: meta.seasonLabel || null,
-        season_key: meta.seasonKey || null,
-        sort_timestamp_ms: Number(meta.sortTimestampMs || 0) || 0,
-        added_at: meta.addedAt || null,
-        map_count: Number(row.mapCount || 0),
-        thumbnail_url: row.thumbnailUrl || null,
-        alteration: meta.primaryAlteration?.name || null,
-        alterations: meta.alterations,
-        primary_alteration: meta.primaryAlteration || null,
-        environment: meta.environment || null,
-        campaign_type: meta.campaignType || null,
-        is_catalog: meta.isCatalog,
-        has_alteration: meta.alterations.length > 0,
-      }));
+      .map(({ row, meta }) => {
+        const payload = parseJsonSafe(row.payloadJson, null);
+        const sourceKey = toText(payload?.sourceKey || payload?.source_key).toLowerCase();
+        return {
+          id:
+            row.campaignExternalId !== null && row.campaignExternalId !== undefined
+              ? String(row.campaignExternalId)
+              : String(row.campaignDbId),
+          campaign_db_id: Number(row.campaignDbId || 0) || null,
+          campaign_external_id: Number(row.campaignExternalId || 0) || null,
+          club_id: Number(row.clubId || 0) || null,
+          name: row.campaignName || `Campaign ${row.campaignDbId}`,
+          display_name: meta.seasonLabel || row.campaignName || `Campaign ${row.campaignDbId}`,
+          season: meta.season || null,
+          season_year: meta.seasonYear || null,
+          season_label: meta.seasonLabel || null,
+          season_key: meta.seasonKey || null,
+          sort_timestamp_ms: Number(meta.sortTimestampMs || 0) || 0,
+          added_at: meta.addedAt || null,
+          map_count: Number(row.mapCount || 0),
+          thumbnail_url: row.thumbnailUrl || null,
+          alteration: meta.primaryAlteration?.name || null,
+          alterations: meta.alterations,
+          primary_alteration: meta.primaryAlteration || null,
+          environment: meta.environment || null,
+          campaign_type: meta.campaignType || null,
+          source_key: sourceKey || null,
+          is_catalog: meta.isCatalog,
+          has_alteration: meta.alterations.length > 0,
+        };
+      });
 
     return {
       total,
@@ -3825,11 +3855,14 @@ class AlteredRepository {
     mapUids = [],
     clubId = null,
     reviewState = "",
+    campaignName = "",
     includePayload = true,
   } = {}) {
     const query = String(q || "").trim().toLowerCase();
     const pattern = `%${query}%`;
     const safeClubId = clampInt(clubId, { min: 1, max: 2147483647, fallback: 0 }) || null;
+    const safeCampaignName = String(campaignName || "").trim().toLowerCase();
+    const campaignNamePattern = safeCampaignName ? `%${safeCampaignName}%` : "";
     const safeMapUids = uniqueBy(
       (Array.isArray(mapUids) ? mapUids : [])
         .map((value) => toText(value))
@@ -3840,6 +3873,7 @@ class AlteredRepository {
       ? `AND m.map_uid IN (${safeMapUids.map(() => "?").join(", ")})`
       : "";
     const clubWhere = safeClubId ? `AND c.club_id = ?` : "";
+    const campaignNameWhere = safeCampaignName ? `AND LOWER(c.name) LIKE ?` : "";
     const normalizedReview = String(reviewState || "").trim().toLowerCase();
     const reviewWhere = (normalizedReview === "pending" || normalizedReview === "approved" || normalizedReview === "ignored")
       ? "AND nc.review_state = ?"
@@ -3864,6 +3898,7 @@ class AlteredRepository {
               m.download_url AS downloadUrl,
               m.payload_json AS payloadJson,
               c.name AS campaign,
+              c.club_id AS clubId,
               c.campaign_id AS campaignId,
               c.external_campaign_id AS campaignExternalId,
               campaign_counts.mapCount AS campaignMapCount,
@@ -3882,6 +3917,7 @@ class AlteredRepository {
             WHERE (? = '' OR LOWER(m.name) LIKE ? OR LOWER(m.map_uid) LIKE ?)
               ${mapUidWhere}
               ${clubWhere}
+              ${campaignNameWhere}
               ${reviewWhere}
               ${EXCLUDE_NONCANONICAL_WEEKLY_SHORTS_SQL}
             ORDER BY COALESCE(c.name, 'Unassigned') COLLATE NOCASE ASC, COALESCE(p.slot, 9999) ASC, m.name COLLATE NOCASE ASC
@@ -3900,11 +3936,12 @@ class AlteredRepository {
               m.download_url AS downloadUrl,
               NULL AS payloadJson,
               c.name AS campaign,
+              c.club_id AS clubId,
               c.campaign_id AS campaignId,
               c.external_campaign_id AS campaignExternalId,
               NULL AS campaignMapCount,
               c.start_timestamp AS campaignStartTimestamp,
-              NULL AS campaignPayloadJson,
+              c.payload_json AS campaignPayloadJson,
               p.slot AS slot
             FROM altered_maps m
             LEFT JOIN altered_map_positions p ON p.map_uid = m.map_uid
@@ -3913,6 +3950,7 @@ class AlteredRepository {
             WHERE (? = '' OR LOWER(m.name) LIKE ? OR LOWER(m.map_uid) LIKE ?)
               ${mapUidWhere}
               ${clubWhere}
+              ${campaignNameWhere}
               ${reviewWhere}
               ${EXCLUDE_NONCANONICAL_WEEKLY_SHORTS_SQL}
             ORDER BY COALESCE(c.name, 'Unassigned') COLLATE NOCASE ASC, COALESCE(p.slot, 9999) ASC, m.name COLLATE NOCASE ASC
@@ -3925,6 +3963,7 @@ class AlteredRepository {
         pattern,
         ...safeMapUids,
         ...(safeClubId ? [safeClubId] : []),
+        ...(safeCampaignName ? [campaignNamePattern] : []),
         ...(reviewWhere ? [normalizedReview] : []),
         safeLimit
       )
@@ -3941,6 +3980,7 @@ class AlteredRepository {
     mapUids = [],
     clubId = null,
     reviewState = "",
+    campaignName = "",
     requiredAssignmentMethod = "",
     includePayload = true,
   } = {}) {
@@ -3948,6 +3988,8 @@ class AlteredRepository {
     const pattern = `%${query}%`;
     const requiredMethod = toText(requiredAssignmentMethod).toLowerCase();
     const safeClubId = clampInt(clubId, { min: 1, max: 2147483647, fallback: 0 }) || null;
+    const safeCampaignName = String(campaignName || "").trim().toLowerCase();
+    const campaignNamePattern = safeCampaignName ? `%${safeCampaignName}%` : "";
     const safeMapUids = uniqueBy(
       (Array.isArray(mapUids) ? mapUids : [])
         .map((value) => toText(value))
@@ -3958,6 +4000,7 @@ class AlteredRepository {
       ? `AND m.map_uid IN (${safeMapUids.map(() => "?").join(", ")})`
       : "";
     const clubWhere = safeClubId ? `AND c.club_id = ?` : "";
+    const campaignNameWhere = safeCampaignName ? `AND LOWER(c.name) LIKE ?` : "";
     const normalizedReview = String(reviewState || "").trim().toLowerCase();
     const reviewWhere = (normalizedReview === "pending" || normalizedReview === "approved" || normalizedReview === "ignored")
       ? "AND nc.review_state = ?"
@@ -3983,6 +4026,7 @@ class AlteredRepository {
               m.download_url AS downloadUrl,
               m.payload_json AS payloadJson,
               c.name AS campaign,
+              c.club_id AS clubId,
               c.campaign_id AS campaignId,
               c.external_campaign_id AS campaignExternalId,
               campaign_counts.mapCount AS campaignMapCount,
@@ -4004,6 +4048,7 @@ class AlteredRepository {
             WHERE (? = '' OR LOWER(m.name) LIKE ? OR LOWER(m.map_uid) LIKE ?)
               ${mapUidWhere}
               ${clubWhere}
+              ${campaignNameWhere}
               ${reviewWhere}
               ${EXCLUDE_NONCANONICAL_WEEKLY_SHORTS_SQL}
               AND (
@@ -4036,11 +4081,12 @@ class AlteredRepository {
               m.download_url AS downloadUrl,
               NULL AS payloadJson,
               c.name AS campaign,
+              c.club_id AS clubId,
               c.campaign_id AS campaignId,
               c.external_campaign_id AS campaignExternalId,
               NULL AS campaignMapCount,
               c.start_timestamp AS campaignStartTimestamp,
-              NULL AS campaignPayloadJson,
+              c.payload_json AS campaignPayloadJson,
               p.slot AS slot,
               sim.assignment_method AS similarityAssignmentMethod,
               sim.updated_at AS similarityUpdatedAt
@@ -4052,6 +4098,7 @@ class AlteredRepository {
             WHERE (? = '' OR LOWER(m.name) LIKE ? OR LOWER(m.map_uid) LIKE ?)
               ${mapUidWhere}
               ${clubWhere}
+              ${campaignNameWhere}
               ${reviewWhere}
               ${EXCLUDE_NONCANONICAL_WEEKLY_SHORTS_SQL}
               AND (
@@ -4078,6 +4125,7 @@ class AlteredRepository {
         pattern,
         ...safeMapUids,
         ...(safeClubId ? [safeClubId] : []),
+        ...(safeCampaignName ? [campaignNamePattern] : []),
         ...(reviewWhere ? [normalizedReview] : []),
         requiredMethod,
         requiredMethod,
@@ -4987,6 +5035,353 @@ class AlteredRepository {
       processed: inserted + updated,
       inserted,
       updated,
+    };
+  }
+
+  getSimilarityCampaignWeightOverrides({ campaignIds = [] } = {}) {
+    const safeCampaignIds = uniqueBy(
+      (Array.isArray(campaignIds) ? campaignIds : [campaignIds])
+        .map((value) => clampInt(value, { min: 1, max: 2147483647, fallback: 0 }) || null)
+        .filter(Boolean),
+      (value) => value
+    );
+    if (!safeCampaignIds.length) return [];
+    const placeholders = safeCampaignIds.map(() => "?").join(", ");
+    const rows = this.db
+      .prepare(
+        `
+        SELECT
+          campaign_id AS campaignId,
+          weights_json AS weightsJson,
+          updated_at AS updatedAt
+        FROM altered_similarity_campaign_weight_overrides
+        WHERE campaign_id IN (${placeholders})
+        `
+      )
+      .all(...safeCampaignIds);
+    return rows.map((row) => rowToSimilarityWeightOverride(row));
+  }
+
+  getSimilarityMapWeightOverrides({ mapUids = [] } = {}) {
+    const safeMapUids = uniqueBy(
+      (Array.isArray(mapUids) ? mapUids : [mapUids])
+        .map((value) => toText(value))
+        .filter(Boolean),
+      (value) => value.toLowerCase()
+    );
+    if (!safeMapUids.length) return [];
+    const placeholders = safeMapUids.map(() => "?").join(", ");
+    const rows = this.db
+      .prepare(
+        `
+        SELECT
+          map_uid AS mapUid,
+          campaign_id AS campaignId,
+          weights_json AS weightsJson,
+          updated_at AS updatedAt
+        FROM altered_similarity_map_weight_overrides
+        WHERE map_uid IN (${placeholders})
+        `
+      )
+      .all(...safeMapUids);
+    return rows.map((row) => rowToSimilarityWeightOverride(row));
+  }
+
+  listSimilarityCampaignWeightOverrides() {
+    const rows = this.db
+      .prepare(
+        `
+        SELECT
+          campaign_id AS campaignId,
+          weights_json AS weightsJson,
+          updated_at AS updatedAt
+        FROM altered_similarity_campaign_weight_overrides
+        ORDER BY updated_at DESC, campaign_id DESC
+        `
+      )
+      .all();
+    return rows.map((row) => rowToSimilarityWeightOverride(row));
+  }
+
+  listSimilarityWeightRules() {
+    const rows = this.db
+      .prepare(
+        `
+        SELECT
+          rule_id AS ruleId,
+          source_key AS sourceKey,
+          season,
+          season_year AS seasonYear,
+          environment,
+          alteration_slug AS alterationSlug,
+          weights_json AS weightsJson,
+          enabled,
+          created_at AS createdAt,
+          updated_at AS updatedAt
+        FROM altered_similarity_weight_rules
+        ORDER BY
+          enabled DESC,
+          updated_at DESC,
+          rule_id DESC
+        `
+      )
+      .all();
+    return rows.map((row) => rowToSimilarityWeightRule(row));
+  }
+
+  upsertSimilarityWeightRule({
+    ruleId = null,
+    sourceKey = null,
+    season = null,
+    seasonYear = null,
+    environment = null,
+    alterationSlug = null,
+    weights = null,
+    enabled = true,
+  } = {}) {
+    const safeRuleId = clampInt(ruleId, { min: 1, max: 2147483647, fallback: 0 }) || null;
+    const safeSourceKey = toText(sourceKey).toLowerCase() || null;
+    const safeSeason = toText(season) || null;
+    const safeSeasonYear = clampInt(seasonYear, { min: 1900, max: 3000, fallback: 0 }) || null;
+    const safeEnvironment = toText(environment) || null;
+    const safeAlterationSlug = slugifyText(alterationSlug || "", "") || null;
+    const safeWeights = buildSimilarityWeightProfile(weights);
+    const now = new Date().toISOString();
+
+    if (!safeSourceKey && !safeSeason && !safeSeasonYear && !safeEnvironment && !safeAlterationSlug) {
+      return {
+        error: "Provide at least one scope filter for a similarity weight rule.",
+      };
+    }
+
+    if (safeRuleId) {
+      const result = this.db
+        .prepare(
+          `
+          UPDATE altered_similarity_weight_rules
+          SET
+            source_key = ?,
+            season = ?,
+            season_year = ?,
+            environment = ?,
+            alteration_slug = ?,
+            weights_json = ?,
+            enabled = ?,
+            updated_at = ?
+          WHERE rule_id = ?
+          `
+        )
+        .run(
+          safeSourceKey,
+          safeSeason,
+          safeSeasonYear,
+          safeEnvironment,
+          safeAlterationSlug,
+          serializeJson(safeWeights),
+          enabled ? 1 : 0,
+          now,
+          safeRuleId
+        );
+      if (!Number(result?.changes || 0)) {
+        return { error: "Similarity weight rule not found." };
+      }
+      return {
+        ok: true,
+        rule: {
+          ruleId: safeRuleId,
+          sourceKey: safeSourceKey,
+          season: safeSeason,
+          seasonYear: safeSeasonYear,
+          environment: safeEnvironment,
+          alterationSlug: safeAlterationSlug,
+          weights: safeWeights,
+          enabled: Boolean(enabled),
+          updatedAt: now,
+        },
+      };
+    }
+
+    const insert = this.db
+      .prepare(
+        `
+        INSERT INTO altered_similarity_weight_rules (
+          source_key,
+          season,
+          season_year,
+          environment,
+          alteration_slug,
+          weights_json,
+          enabled,
+          created_at,
+          updated_at
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+        `
+      )
+      .run(
+        safeSourceKey,
+        safeSeason,
+        safeSeasonYear,
+        safeEnvironment,
+        safeAlterationSlug,
+        serializeJson(safeWeights),
+        enabled ? 1 : 0,
+        now,
+        now
+      );
+    return {
+      ok: true,
+      rule: {
+        ruleId: Number(insert?.lastInsertRowid || 0) || null,
+        sourceKey: safeSourceKey,
+        season: safeSeason,
+        seasonYear: safeSeasonYear,
+        environment: safeEnvironment,
+        alterationSlug: safeAlterationSlug,
+        weights: safeWeights,
+        enabled: Boolean(enabled),
+        createdAt: now,
+        updatedAt: now,
+      },
+    };
+  }
+
+  deleteSimilarityWeightRule({ ruleId } = {}) {
+    const safeRuleId = clampInt(ruleId, { min: 1, max: 2147483647, fallback: 0 }) || null;
+    if (!safeRuleId) return { error: "ruleId is required." };
+    const result = this.db
+      .prepare(
+        `
+        DELETE FROM altered_similarity_weight_rules
+        WHERE rule_id = ?
+        `
+      )
+      .run(safeRuleId);
+    return {
+      ok: true,
+      ruleId: safeRuleId,
+      deleted: Number(result?.changes || 0),
+    };
+  }
+
+  upsertSimilarityCampaignWeightOverride({ campaignId, weights } = {}) {
+    const safeCampaignId = clampInt(campaignId, { min: 1, max: 2147483647, fallback: 0 }) || null;
+    if (!safeCampaignId) return { error: "campaignId is required." };
+    const safeWeights = buildSimilarityWeightProfile(weights);
+    const now = new Date().toISOString();
+    const existed = Boolean(
+      this.db
+        .prepare(
+          `
+          SELECT 1
+          FROM altered_similarity_campaign_weight_overrides
+          WHERE campaign_id = ?
+          LIMIT 1
+          `
+        )
+        .get(safeCampaignId)
+    );
+    this.db
+      .prepare(
+        `
+        INSERT INTO altered_similarity_campaign_weight_overrides (
+          campaign_id,
+          weights_json,
+          updated_at
+        ) VALUES (?, ?, ?)
+        ON CONFLICT(campaign_id) DO UPDATE SET
+          weights_json = excluded.weights_json,
+          updated_at = excluded.updated_at
+        `
+      )
+      .run(safeCampaignId, serializeJson(safeWeights), now);
+    return {
+      ok: true,
+      inserted: existed ? 0 : 1,
+      updated: existed ? 1 : 0,
+      campaignId: safeCampaignId,
+      weights: safeWeights,
+      updatedAt: now,
+    };
+  }
+
+  deleteSimilarityCampaignWeightOverride({ campaignId } = {}) {
+    const safeCampaignId = clampInt(campaignId, { min: 1, max: 2147483647, fallback: 0 }) || null;
+    if (!safeCampaignId) return { error: "campaignId is required." };
+    const result = this.db
+      .prepare(
+        `
+        DELETE FROM altered_similarity_campaign_weight_overrides
+        WHERE campaign_id = ?
+        `
+      )
+      .run(safeCampaignId);
+    return {
+      ok: true,
+      campaignId: safeCampaignId,
+      deleted: Number(result?.changes || 0),
+    };
+  }
+
+  upsertSimilarityMapWeightOverride({ mapUid, campaignId = null, weights } = {}) {
+    const safeMapUid = toText(mapUid);
+    if (!safeMapUid) return { error: "mapUid is required." };
+    const safeCampaignId = clampInt(campaignId, { min: 1, max: 2147483647, fallback: 0 }) || null;
+    const safeWeights = buildSimilarityWeightProfile(weights);
+    const now = new Date().toISOString();
+    const existed = Boolean(
+      this.db
+        .prepare(
+          `
+          SELECT 1
+          FROM altered_similarity_map_weight_overrides
+          WHERE map_uid = ?
+          LIMIT 1
+          `
+        )
+        .get(safeMapUid)
+    );
+    this.db
+      .prepare(
+        `
+        INSERT INTO altered_similarity_map_weight_overrides (
+          map_uid,
+          campaign_id,
+          weights_json,
+          updated_at
+        ) VALUES (?, ?, ?, ?)
+        ON CONFLICT(map_uid) DO UPDATE SET
+          campaign_id = excluded.campaign_id,
+          weights_json = excluded.weights_json,
+          updated_at = excluded.updated_at
+        `
+      )
+      .run(safeMapUid, safeCampaignId, serializeJson(safeWeights), now);
+    return {
+      ok: true,
+      inserted: existed ? 0 : 1,
+      updated: existed ? 1 : 0,
+      mapUid: safeMapUid,
+      campaignId: safeCampaignId,
+      weights: safeWeights,
+      updatedAt: now,
+    };
+  }
+
+  deleteSimilarityMapWeightOverride({ mapUid } = {}) {
+    const safeMapUid = toText(mapUid);
+    if (!safeMapUid) return { error: "mapUid is required." };
+    const result = this.db
+      .prepare(
+        `
+        DELETE FROM altered_similarity_map_weight_overrides
+        WHERE map_uid = ?
+        `
+      )
+      .run(safeMapUid);
+    return {
+      ok: true,
+      mapUid: safeMapUid,
+      deleted: Number(result?.changes || 0),
     };
   }
 
@@ -5916,6 +6311,7 @@ class AlteredRepository {
     clubId,
     campaignName,
     externalCampaignId,
+    uploadBucketId,
     activityId,
     activityType = "",
     campaignType = "",
@@ -5933,6 +6329,11 @@ class AlteredRepository {
       fallback: 0,
     });
     const normalizedExternalId = externalId || null;
+    const normalizedUploadBucketId = clampInt(uploadBucketId, {
+      min: 1,
+      max: 2147483647,
+      fallback: 0,
+    }) || null;
     if ((!Number.isFinite(club) && club !== 0) || !name) return null;
 
     const now = new Date().toISOString();
@@ -5949,6 +6350,23 @@ class AlteredRepository {
     const normalizedLeaderboardGroupUid = String(leaderboardGroupUid || "").trim() || null;
     const payloadJson = serializeJson(payload);
 
+    const byUploadBucket =
+      normalizedUploadBucketId === null
+        ? null
+        : this.db
+            .prepare(
+              `
+              SELECT
+                campaign_id AS campaignId,
+                name,
+                external_campaign_id AS externalCampaignId,
+                upload_bucket_id AS uploadBucketId
+              FROM altered_campaigns
+              WHERE club_id = ? AND upload_bucket_id = ?
+              LIMIT 1
+              `
+            )
+            .get(club, normalizedUploadBucketId) || null;
     const byExternal =
       normalizedExternalId === null
         ? null
@@ -5958,7 +6376,8 @@ class AlteredRepository {
               SELECT
                 campaign_id AS campaignId,
                 name,
-                external_campaign_id AS externalCampaignId
+                external_campaign_id AS externalCampaignId,
+                upload_bucket_id AS uploadBucketId
               FROM altered_campaigns
               WHERE club_id = ? AND external_campaign_id = ?
               LIMIT 1
@@ -5972,7 +6391,8 @@ class AlteredRepository {
           SELECT
             campaign_id AS campaignId,
             name,
-            external_campaign_id AS externalCampaignId
+            external_campaign_id AS externalCampaignId,
+            upload_bucket_id AS uploadBucketId
           FROM altered_campaigns
           WHERE club_id = ? AND name = ?
           LIMIT 1
@@ -5980,14 +6400,22 @@ class AlteredRepository {
         )
         .get(club, name) || null;
 
-    let target = byExternal;
+    let target = byUploadBucket || byExternal;
     if (!target && byName) {
       const byNameExternalId = clampInt(byName.externalCampaignId, {
         min: 1,
         max: 2147483647,
         fallback: 0,
       });
-      if (!normalizedExternalId || !byNameExternalId || byNameExternalId === normalizedExternalId) {
+      const byNameUploadBucketId = clampInt(byName.uploadBucketId, {
+        min: 1,
+        max: 2147483647,
+        fallback: 0,
+      });
+      if (
+        (!normalizedUploadBucketId || !byNameUploadBucketId || byNameUploadBucketId === normalizedUploadBucketId) &&
+        (!normalizedExternalId || !byNameExternalId || byNameExternalId === normalizedExternalId)
+      ) {
         target = byName;
       }
     }
@@ -6056,6 +6484,7 @@ class AlteredRepository {
               `
               SELECT
                 external_campaign_id AS externalCampaignId,
+                upload_bucket_id AS uploadBucketId,
                 activity_id AS activityId,
                 activity_type AS activityType,
                 campaign_type AS campaignType,
@@ -6075,6 +6504,14 @@ class AlteredRepository {
       normalizedExternalId !== null
         ? normalizedExternalId
         : clampInt(existingTargetRow?.externalCampaignId, {
+            min: 1,
+            max: 2147483647,
+            fallback: 0,
+          }) || null;
+    const resolvedUploadBucketId =
+      normalizedUploadBucketId !== null
+        ? normalizedUploadBucketId
+        : clampInt(existingTargetRow?.uploadBucketId, {
             min: 1,
             max: 2147483647,
             fallback: 0,
@@ -6117,6 +6554,7 @@ class AlteredRepository {
             club_id,
             name,
             external_campaign_id,
+            upload_bucket_id,
             activity_id,
             activity_type,
             campaign_type,
@@ -6128,13 +6566,14 @@ class AlteredRepository {
             monitor_updated_at,
             created_at,
             updated_at
-          ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+          ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
           `
         )
         .run(
           club,
           uniqueName,
           resolvedExternalId,
+          resolvedUploadBucketId,
           resolvedActivityId,
           resolvedActivityType,
           resolvedCampaignType,
@@ -6158,6 +6597,7 @@ class AlteredRepository {
           SET
             name = ?,
             external_campaign_id = ?,
+            upload_bucket_id = ?,
             activity_id = ?,
             activity_type = ?,
             campaign_type = ?,
@@ -6174,6 +6614,7 @@ class AlteredRepository {
         .run(
           uniqueName,
           resolvedExternalId,
+          resolvedUploadBucketId,
           resolvedActivityId,
           resolvedActivityType,
           resolvedCampaignType,
@@ -7391,6 +7832,7 @@ class AlteredRepository {
     clubId = null,
     clubName = "",
     campaigns = [],
+    uploadBuckets = [],
     sourceLabel = "",
     note = "",
   } = {}) {
@@ -7410,8 +7852,13 @@ class AlteredRepository {
       : Array.isArray(club?.campaigns)
         ? club.campaigns
         : [];
-    if (!payloadCampaigns.length) {
-      return { error: "campaigns[] is required for hook sync." };
+    const payloadUploadBuckets = Array.isArray(uploadBuckets)
+      ? uploadBuckets
+      : Array.isArray(club?.uploadBuckets)
+        ? club.uploadBuckets
+        : [];
+    if (!payloadCampaigns.length && !payloadUploadBuckets.length) {
+      return { error: "campaigns[] or uploadBuckets[] is required for hook sync." };
     }
 
     const resolvedClubName =
@@ -7431,6 +7878,8 @@ class AlteredRepository {
 
     const counters = {
       campaignsSeen: 0,
+      uploadBucketsSeen: 0,
+      uploadMapsSeen: 0,
       mapsSeen: 0,
       mapsInserted: 0,
       mapsUpdated: 0,
@@ -7440,8 +7889,256 @@ class AlteredRepository {
 
     try {
       this.db.exec("BEGIN");
+      const selectExistingMapStmt = this.db.prepare(
+        `
+        SELECT
+          tracked,
+          status,
+          check_frequency AS checkFrequency,
+          wr_ms AS wrMs,
+          wr_holder AS wrHolder,
+          player_count AS playerCount,
+          payload_json AS payloadJson
+        FROM altered_maps
+        WHERE map_uid = ?
+        LIMIT 1
+        `
+      );
+      const upsertMapStmt = this.db.prepare(
+        `
+        INSERT INTO altered_maps (
+          map_uid, map_id, name, map_type, map_style, map_environment, author, author_display_name, submitter, submitter_display_name,
+          author_time, gold_time, silver_time, bronze_time, nb_laps,
+          thumbnail_url, download_url, player_count, player_count_updated_at, wr_ms, wr_holder, wr_updated_at,
+          tracked, status, check_frequency, last_checked_at,
+          map_created_at, map_updated_at, payload_json, monitor_updated_at,
+          created_at, updated_at, last_synced_at
+        ) VALUES (
+          ?, ?, ?, ?, ?, ?, ?, ?, ?, ?,
+          ?, ?, ?, ?, ?,
+          ?, ?, ?, ?, ?, ?, ?,
+          ?, ?, ?, ?,
+          ?, ?, ?, ?,
+          ?, ?, ?
+        )
+        ON CONFLICT(map_uid) DO UPDATE SET
+          map_id = excluded.map_id,
+          name = excluded.name,
+          map_type = excluded.map_type,
+          map_style = excluded.map_style,
+          map_environment = excluded.map_environment,
+          author = excluded.author,
+          author_display_name = COALESCE(NULLIF(excluded.author_display_name, ''), altered_maps.author_display_name),
+          submitter = excluded.submitter,
+          submitter_display_name = COALESCE(NULLIF(excluded.submitter_display_name, ''), altered_maps.submitter_display_name),
+          author_time = excluded.author_time,
+          gold_time = excluded.gold_time,
+          silver_time = excluded.silver_time,
+          bronze_time = excluded.bronze_time,
+          nb_laps = excluded.nb_laps,
+          thumbnail_url = excluded.thumbnail_url,
+          download_url = excluded.download_url,
+          player_count = excluded.player_count,
+          player_count_updated_at = excluded.player_count_updated_at,
+          wr_ms = excluded.wr_ms,
+          wr_holder = excluded.wr_holder,
+          wr_updated_at = excluded.wr_updated_at,
+          tracked = excluded.tracked,
+          status = excluded.status,
+          check_frequency = excluded.check_frequency,
+          last_checked_at = COALESCE(excluded.last_checked_at, altered_maps.last_checked_at),
+          map_created_at = COALESCE(excluded.map_created_at, altered_maps.map_created_at),
+          map_updated_at = COALESCE(excluded.map_updated_at, altered_maps.map_updated_at),
+          payload_json = COALESCE(excluded.payload_json, altered_maps.payload_json),
+          monitor_updated_at = excluded.monitor_updated_at,
+          updated_at = excluded.updated_at,
+          last_synced_at = excluded.last_synced_at
+        `
+      );
+      const selectPositionStmt = this.db.prepare(
+        `
+        SELECT
+          p.campaign_id AS campaignId,
+          p.slot,
+          c.campaign_type AS campaignType,
+          c.upload_bucket_id AS uploadBucketId
+        FROM altered_map_positions p
+        LEFT JOIN altered_campaigns c ON c.campaign_id = p.campaign_id
+        WHERE p.map_uid = ?
+        LIMIT 1
+        `
+      );
+      const upsertPositionStmt = this.db.prepare(
+        `
+        INSERT INTO altered_map_positions (map_uid, campaign_id, slot, updated_at)
+        VALUES (?, ?, ?, ?)
+        ON CONFLICT(map_uid) DO UPDATE SET
+          campaign_id = excluded.campaign_id,
+          slot = excluded.slot,
+          updated_at = excluded.updated_at
+        `
+      );
+      const upsertMapRecord = (map = {}, { payload = null } = {}) => {
+        const mapUid = toText(map?.uid || map?.mapUid || map?.map_uid);
+        if (!mapUid) return null;
+
+        counters.mapsSeen += 1;
+        touchedMapUids.add(mapUid);
+
+        const existing = selectExistingMapStmt.get(mapUid);
+        const now = new Date().toISOString();
+        const payloadTracked = typeof map.tracked === "boolean" ? map.tracked : null;
+        const tracked =
+          payloadTracked === null
+            ? existing
+              ? Boolean(existing.tracked)
+              : Boolean(hook.autoTrackNewMaps)
+            : payloadTracked;
+        const status = normalizeStatus(
+          map.status,
+          tracked
+            ? existing?.status || "live"
+            : existing
+              ? existing.status || "paused"
+              : "paused"
+        );
+        const checkFrequency = clampInt(map.checkFrequency ?? map.check_frequency, {
+          min: 120,
+          max: 604800,
+          fallback: clampInt(existing?.checkFrequency, {
+            min: 120,
+            max: 604800,
+            fallback: 21600,
+          }),
+        });
+        const wrMs = clampInt(map.wrMs ?? map.wrTime ?? map.wr_time, {
+          min: 0,
+          max: 2147483647,
+          fallback: clampInt(existing?.wrMs, { min: 0, max: 2147483647, fallback: 0 }),
+        });
+        const wrHolder = toText(
+          map.wrHolder ?? map.wrDisplayName ?? map.wr_display_name ?? existing?.wrHolder
+        ) || null;
+        const playerCount = clampInt(
+          map.playerCount ??
+            map.player_count ??
+            map.nbPlayers ??
+            map.nb_players ??
+            map.playCount ??
+            map.play_count ??
+            map.playersCount ??
+            map.players_count,
+          {
+            min: 0,
+            max: 2147483647,
+            fallback: clampInt(existing?.playerCount, {
+              min: 0,
+              max: 2147483647,
+              fallback: 0,
+            }),
+          }
+        );
+        const rawPayload = payload ?? map?.raw ?? map?.payload ?? map;
+        const existingPayload = parseJsonSafe(existing?.payloadJson, null);
+        const mergedPayload =
+          existingPayload &&
+          typeof existingPayload === "object" &&
+          !Array.isArray(existingPayload) &&
+          rawPayload &&
+          typeof rawPayload === "object" &&
+          !Array.isArray(rawPayload)
+            ? { ...existingPayload, ...rawPayload }
+            : rawPayload;
+
+        upsertMapStmt.run(
+          mapUid,
+          toText(map.mapId || map.map_id || map.id, `map-${mapUid.toLowerCase()}`),
+          toText(map.name || map.title, mapUid) || mapUid,
+          toText(map.mapType ?? map.map_type ?? map.type) || null,
+          toText(map.mapStyle ?? map.map_style ?? map.style) || null,
+          toText(map.mapEnvironment ?? map.map_environment ?? map.environment ?? map.mood) || null,
+          toText(map.author),
+          toText(
+            map.authorDisplayName ??
+              map.author_display_name ??
+              map.authorName ??
+              map.author_name
+          ),
+          toText(map.submitter),
+          toText(
+            map.submitterDisplayName ??
+              map.submitter_display_name ??
+              map.submitterName ??
+              map.submitter_name
+          ),
+          clampInt(map.authorMs ?? map.authorTime ?? map.author_time, {
+            min: 0,
+            max: 2147483647,
+            fallback: 0,
+          }),
+          clampInt(map.goldMs ?? map.goldTime ?? map.gold_time, {
+            min: 0,
+            max: 2147483647,
+            fallback: 0,
+          }),
+          clampInt(map.silverMs ?? map.silverTime ?? map.silver_time, {
+            min: 0,
+            max: 2147483647,
+            fallback: 0,
+          }),
+          clampInt(map.bronzeMs ?? map.bronzeTime ?? map.bronze_time, {
+            min: 0,
+            max: 2147483647,
+            fallback: 0,
+          }),
+          clampInt(map.nbLaps ?? map.nb_laps, {
+            min: 1,
+            max: 64,
+            fallback: 1,
+          }),
+          toText(map.thumbnailUrl ?? map.thumbnail_url),
+          toText(map.downloadUrl ?? map.download_url),
+          playerCount,
+          now,
+          wrMs,
+          wrHolder,
+          wrMs > 0 ? now : null,
+          tracked ? 1 : 0,
+          status,
+          checkFrequency,
+          map.lastCheckedAt || map.last_checked_at || null,
+          toNullableIso(
+            map.mapCreatedAt ??
+              map.map_created_at ??
+              map.createdAt ??
+              map.created_at ??
+              map.uploadTimestamp
+          ),
+          toNullableIso(
+            map.mapUpdatedAt ??
+              map.map_updated_at ??
+              map.updatedAt ??
+              map.updated_at ??
+              map.updateTimestamp
+          ),
+          serializeJson(mergedPayload),
+          now,
+          now,
+          now,
+          now
+        );
+
+        if (existing) counters.mapsUpdated += 1;
+        else counters.mapsInserted += 1;
+
+        return {
+          mapUid,
+          now,
+        };
+      };
+
       for (const campaign of payloadCampaigns) {
-        const campaignName = String(campaign?.name || campaign?.campaignName || "").trim();
+        const campaignName = toText(campaign?.name || campaign?.campaignName);
         if (!campaignName) continue;
         const campaignRow = this.upsertCampaign({
           clubId: resolvedClubId,
@@ -7478,215 +8175,10 @@ class AlteredRepository {
         const maps = Array.isArray(campaign?.maps) ? campaign.maps : [];
         for (let index = 0; index < maps.length; index += 1) {
           const map = maps[index] || {};
-          const mapUid = String(map.uid || map.mapUid || map.map_uid || "").trim();
-          if (!mapUid) continue;
-          counters.mapsSeen += 1;
-          touchedMapUids.add(mapUid);
-
-          const existing = this.db
-            .prepare(
-              `
-              SELECT
-                tracked,
-                status,
-                check_frequency AS checkFrequency,
-                wr_ms AS wrMs,
-                wr_holder AS wrHolder,
-                player_count AS playerCount
-              FROM altered_maps
-              WHERE map_uid = ?
-              LIMIT 1
-              `
-            )
-            .get(mapUid);
-          const now = new Date().toISOString();
-          const payloadTracked = typeof map.tracked === "boolean" ? map.tracked : null;
-          const tracked =
-            payloadTracked === null
-              ? existing
-                ? Boolean(existing.tracked)
-                : Boolean(hook.autoTrackNewMaps)
-              : payloadTracked;
-          const status = normalizeStatus(
-            map.status,
-            tracked
-              ? existing?.status || "live"
-              : existing
-                ? existing.status || "paused"
-                : "paused"
-          );
-          const checkFrequency = clampInt(map.checkFrequency ?? map.check_frequency, {
-            min: 120,
-            max: 604800,
-            fallback: clampInt(existing?.checkFrequency, {
-              min: 120,
-              max: 604800,
-              fallback: 21600,
-            }),
+          const stored = upsertMapRecord(map, {
+            payload: map?.raw ?? map?.payload ?? map,
           });
-          const wrMs = clampInt(map.wrMs ?? map.wrTime ?? map.wr_time, {
-            min: 0,
-            max: 2147483647,
-            fallback: clampInt(existing?.wrMs, { min: 0, max: 2147483647, fallback: 0 }),
-          });
-          const wrHolder =
-            String(map.wrHolder ?? map.wrDisplayName ?? map.wr_display_name ?? existing?.wrHolder ?? "")
-              .trim() || null;
-          const playerCount = clampInt(
-            map.playerCount ??
-              map.player_count ??
-              map.nbPlayers ??
-              map.nb_players ??
-              map.playCount ??
-              map.play_count ??
-              map.playersCount ??
-              map.players_count,
-            {
-              min: 0,
-              max: 2147483647,
-              fallback: clampInt(existing?.playerCount, {
-                min: 0,
-                max: 2147483647,
-                fallback: 0,
-              }),
-            }
-          );
-
-          this.db
-            .prepare(
-              `
-              INSERT INTO altered_maps (
-                map_uid, map_id, name, map_type, map_style, map_environment, author, author_display_name, submitter, submitter_display_name,
-                author_time, gold_time, silver_time, bronze_time, nb_laps,
-                thumbnail_url, download_url, player_count, player_count_updated_at, wr_ms, wr_holder, wr_updated_at,
-                tracked, status, check_frequency, last_checked_at,
-                map_created_at, map_updated_at, payload_json, monitor_updated_at,
-                created_at, updated_at, last_synced_at
-              ) VALUES (
-                ?, ?, ?, ?, ?, ?, ?, ?, ?, ?,
-                ?, ?, ?, ?, ?,
-                ?, ?, ?, ?, ?, ?, ?,
-                ?, ?, ?, ?,
-                ?, ?, ?, ?,
-                ?, ?, ?
-              )
-              ON CONFLICT(map_uid) DO UPDATE SET
-                map_id = excluded.map_id,
-                name = excluded.name,
-                map_type = excluded.map_type,
-                map_style = excluded.map_style,
-                map_environment = excluded.map_environment,
-                author = excluded.author,
-                author_display_name = COALESCE(NULLIF(excluded.author_display_name, ''), altered_maps.author_display_name),
-                submitter = excluded.submitter,
-                submitter_display_name = COALESCE(NULLIF(excluded.submitter_display_name, ''), altered_maps.submitter_display_name),
-                author_time = excluded.author_time,
-                gold_time = excluded.gold_time,
-                silver_time = excluded.silver_time,
-                bronze_time = excluded.bronze_time,
-                nb_laps = excluded.nb_laps,
-                thumbnail_url = excluded.thumbnail_url,
-                download_url = excluded.download_url,
-                player_count = excluded.player_count,
-                player_count_updated_at = excluded.player_count_updated_at,
-                wr_ms = excluded.wr_ms,
-                wr_holder = excluded.wr_holder,
-                wr_updated_at = excluded.wr_updated_at,
-                tracked = excluded.tracked,
-                status = excluded.status,
-                check_frequency = excluded.check_frequency,
-                last_checked_at = COALESCE(excluded.last_checked_at, altered_maps.last_checked_at),
-                map_created_at = COALESCE(excluded.map_created_at, altered_maps.map_created_at),
-                map_updated_at = COALESCE(excluded.map_updated_at, altered_maps.map_updated_at),
-                payload_json = COALESCE(excluded.payload_json, altered_maps.payload_json),
-                monitor_updated_at = excluded.monitor_updated_at,
-                updated_at = excluded.updated_at,
-                last_synced_at = excluded.last_synced_at
-              `
-            )
-            .run(
-              mapUid,
-              String(map.mapId || map.map_id || map.id || `map-${mapUid.toLowerCase()}`).trim(),
-              String(map.name || map.title || mapUid).trim() || mapUid,
-              String(map.mapType ?? map.map_type ?? map.type ?? "").trim() || null,
-              String(map.mapStyle ?? map.map_style ?? map.style ?? "").trim() || null,
-              String(map.mapEnvironment ?? map.map_environment ?? map.environment ?? map.mood ?? "").trim() ||
-                null,
-              String(map.author || "").trim(),
-              String(
-                map.authorDisplayName ??
-                  map.author_display_name ??
-                  map.authorName ??
-                  map.author_name ??
-                  ""
-              ).trim(),
-              String(map.submitter || "").trim(),
-              String(
-                map.submitterDisplayName ??
-                  map.submitter_display_name ??
-                  map.submitterName ??
-                  map.submitter_name ??
-                  ""
-              ).trim(),
-              clampInt(map.authorMs ?? map.authorTime ?? map.author_time, {
-                min: 0,
-                max: 2147483647,
-                fallback: 0,
-              }),
-              clampInt(map.goldMs ?? map.goldTime ?? map.gold_time, {
-                min: 0,
-                max: 2147483647,
-                fallback: 0,
-              }),
-              clampInt(map.silverMs ?? map.silverTime ?? map.silver_time, {
-                min: 0,
-                max: 2147483647,
-                fallback: 0,
-              }),
-              clampInt(map.bronzeMs ?? map.bronzeTime ?? map.bronze_time, {
-                min: 0,
-                max: 2147483647,
-                fallback: 0,
-              }),
-              clampInt(map.nbLaps ?? map.nb_laps, {
-                min: 1,
-                max: 64,
-                fallback: 1,
-              }),
-              String(map.thumbnailUrl ?? map.thumbnail_url ?? "").trim(),
-              String(map.downloadUrl ?? map.download_url ?? "").trim(),
-              playerCount,
-              now,
-              wrMs,
-              wrHolder,
-              wrMs > 0 ? now : null,
-              tracked ? 1 : 0,
-              status,
-              checkFrequency,
-              map.lastCheckedAt || map.last_checked_at || null,
-              toNullableIso(
-                map.mapCreatedAt ??
-                  map.map_created_at ??
-                  map.createdAt ??
-                  map.created_at ??
-                  map.uploadTimestamp
-              ),
-              toNullableIso(
-                map.mapUpdatedAt ??
-                  map.map_updated_at ??
-                  map.updatedAt ??
-                  map.updated_at ??
-                  map.updateTimestamp
-              ),
-              serializeJson(map.raw ?? map.payload ?? map),
-              now,
-              now,
-              now,
-              now
-            );
-
-          if (existing) counters.mapsUpdated += 1;
-          else counters.mapsInserted += 1;
+          if (!stored) continue;
 
           const slot = normalizeCampaignSlotValue({
             slot: map.slot,
@@ -7695,33 +8187,123 @@ class AlteredRepository {
             fallbackSlot: index + 1,
             max: 999,
           });
-          const oldPosition = this.db
-            .prepare(
-              `
-              SELECT campaign_id AS campaignId, slot
-              FROM altered_map_positions
-              WHERE map_uid = ?
-              LIMIT 1
-              `
-            )
-            .get(mapUid);
+          const oldPosition = selectPositionStmt.get(stored.mapUid);
           const changedPosition =
             !oldPosition ||
             Number(oldPosition.campaignId || 0) !== campaignPk ||
             Number(oldPosition.slot || 0) !== slot;
 
-          this.db
-            .prepare(
-              `
-              INSERT INTO altered_map_positions (map_uid, campaign_id, slot, updated_at)
-              VALUES (?, ?, ?, ?)
-              ON CONFLICT(map_uid) DO UPDATE SET
-                campaign_id = excluded.campaign_id,
-                slot = excluded.slot,
-                updated_at = excluded.updated_at
-              `
-            )
-            .run(mapUid, campaignPk, slot, now);
+          upsertPositionStmt.run(stored.mapUid, campaignPk, slot, stored.now);
+          if (changedPosition) counters.mapsLinked += 1;
+        }
+      }
+
+      for (const bucket of payloadUploadBuckets) {
+        const bucketId = clampInt(bucket?.bucketId ?? bucket?.bucket_id ?? bucket?.id, {
+          min: 1,
+          max: 2147483647,
+          fallback: 0,
+        });
+        if (!bucketId) continue;
+
+        counters.uploadBucketsSeen += 1;
+
+        const bucketName =
+          toText(bucket?.name || bucket?.title || bucket?.bucketName || bucket?.bucket_name) ||
+          `Upload Bucket ${bucketId}`;
+        const bucketType = toText(bucket?.bucketType ?? bucket?.bucket_type ?? bucket?.type, "map") || "map";
+        const activityId =
+          clampInt(bucket?.activityId ?? bucket?.activity_id ?? bucket?.activity?.id, {
+            min: 1,
+            max: 2147483647,
+            fallback: 0,
+          }) || null;
+        const bucketCampaign = this.upsertCampaign({
+          clubId: resolvedClubId,
+          campaignName: bucketName,
+          uploadBucketId: bucketId,
+          activityId,
+          activityType: "club-upload",
+          campaignType: "upload-bucket",
+          payload: {
+            ...(bucket?.raw && typeof bucket.raw === "object"
+              ? bucket.raw
+              : bucket?.payload && typeof bucket.payload === "object"
+                ? bucket.payload
+                : bucket && typeof bucket === "object"
+                  ? bucket
+                  : {}),
+            uploadBucket: {
+              bucketId,
+              name: bucketName,
+              bucketType,
+              activityId,
+              clubId: resolvedClubId,
+              clubName: resolvedClubName,
+              hookKey,
+              sourceLabel: resolvedSourceLabel,
+            },
+          },
+        });
+        const bucketCampaignPk = Number(bucketCampaign?.campaignId || 0);
+        const maps = Array.isArray(bucket?.maps) ? bucket.maps : [];
+
+        for (let index = 0; index < maps.length; index += 1) {
+          const map = maps[index] || {};
+          const mapUid = toText(map?.uid || map?.mapUid || map?.map_uid);
+          if (!mapUid) continue;
+
+          counters.uploadMapsSeen += 1;
+
+          const uploadSlot = normalizeCampaignSlotValue({
+            slot: map.slot,
+            order: map.order,
+            position: map.position,
+            fallbackSlot: index + 1,
+            max: 100000,
+          });
+          const uploadPayload = {
+            ...(map?.raw && typeof map.raw === "object"
+              ? map.raw
+              : map?.payload && typeof map.payload === "object"
+                ? map.payload
+                : map && typeof map === "object"
+                  ? map
+                  : {}),
+            uploadBucket: {
+              bucketId,
+              name: bucketName,
+              bucketType,
+              activityId,
+              slot: uploadSlot,
+              clubId: resolvedClubId,
+              clubName: resolvedClubName,
+              hookKey,
+              sourceLabel: resolvedSourceLabel,
+            },
+          };
+          const stored = upsertMapRecord(map, { payload: uploadPayload });
+          if (!stored || !bucketCampaignPk) continue;
+
+          const oldPosition = selectPositionStmt.get(stored.mapUid);
+          const oldCampaignType = toText(oldPosition?.campaignType).toLowerCase();
+          const oldUploadBucketId = clampInt(oldPosition?.uploadBucketId, {
+            min: 1,
+            max: 2147483647,
+            fallback: 0,
+          });
+          const canAssignUploadBucket =
+            !oldPosition ||
+            !Number(oldPosition.campaignId || 0) ||
+            oldCampaignType === "upload-bucket" ||
+            oldUploadBucketId === bucketId;
+          if (!canAssignUploadBucket) continue;
+
+          const changedPosition =
+            !oldPosition ||
+            Number(oldPosition.campaignId || 0) !== bucketCampaignPk ||
+            Number(oldPosition.slot || 0) !== uploadSlot;
+          upsertPositionStmt.run(stored.mapUid, bucketCampaignPk, uploadSlot, stored.now);
           if (changedPosition) counters.mapsLinked += 1;
         }
       }

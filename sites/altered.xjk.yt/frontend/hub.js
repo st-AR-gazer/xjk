@@ -1,6 +1,7 @@
 const WR_FEED_LIMIT = 6;
 const WR_HOLDERS_PAGE_SIZE = 10;
 const ACCOUNT_ID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+const alteredUrl = window.__alteredUrl || ((value) => value);
 
 function fmtTime(ms) {
   if (!ms || ms <= 0) return "\u2014";
@@ -35,7 +36,7 @@ function stripFmt(v) { return String(v ?? "").replace(NADEO_FMT_RE, ""); }
 function escN(v) { return esc(stripFmt(v)); }
 
 async function fetchJson(url) {
-  const res = await fetch(url);
+  const res = await fetch(alteredUrl(url));
   if (!res.ok) throw new Error(`HTTP ${res.status}`);
   return res.json();
 }

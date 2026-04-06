@@ -56,6 +56,7 @@ export const MIGRATIONS = [
     club_id INTEGER NOT NULL,
     name TEXT NOT NULL,
     external_campaign_id INTEGER,
+    upload_bucket_id INTEGER,
     activity_id INTEGER,
     activity_type TEXT,
     campaign_type TEXT,
@@ -71,6 +72,8 @@ export const MIGRATIONS = [
   );
   CREATE INDEX IF NOT EXISTS idx_altered_campaigns_club ON altered_campaigns(club_id, name);
   CREATE INDEX IF NOT EXISTS idx_altered_campaigns_external_id ON altered_campaigns(club_id, external_campaign_id);
+  CREATE UNIQUE INDEX IF NOT EXISTS idx_altered_campaigns_upload_bucket
+    ON altered_campaigns(club_id, upload_bucket_id);
   `,
   `
   CREATE TABLE IF NOT EXISTS altered_maps (
@@ -242,6 +245,43 @@ export const MIGRATIONS = [
     ON altered_map_number_similarity(family_key, updated_at DESC);
   CREATE INDEX IF NOT EXISTS idx_altered_map_number_similarity_reference
     ON altered_map_number_similarity(reference_campaign_id, primary_reference_slot);
+  `,
+  `
+  CREATE TABLE IF NOT EXISTS altered_similarity_campaign_weight_overrides (
+    campaign_id INTEGER PRIMARY KEY REFERENCES altered_campaigns(campaign_id) ON DELETE CASCADE,
+    weights_json TEXT NOT NULL,
+    updated_at TEXT NOT NULL
+  );
+  CREATE INDEX IF NOT EXISTS idx_altered_similarity_campaign_weight_overrides_updated
+    ON altered_similarity_campaign_weight_overrides(updated_at DESC);
+  `,
+  `
+  CREATE TABLE IF NOT EXISTS altered_similarity_map_weight_overrides (
+    map_uid TEXT PRIMARY KEY REFERENCES altered_maps(map_uid) ON DELETE CASCADE,
+    campaign_id INTEGER REFERENCES altered_campaigns(campaign_id) ON DELETE SET NULL,
+    weights_json TEXT NOT NULL,
+    updated_at TEXT NOT NULL
+  );
+  CREATE INDEX IF NOT EXISTS idx_altered_similarity_map_weight_overrides_campaign
+    ON altered_similarity_map_weight_overrides(campaign_id, updated_at DESC);
+  `,
+  `
+  CREATE TABLE IF NOT EXISTS altered_similarity_weight_rules (
+    rule_id INTEGER PRIMARY KEY AUTOINCREMENT,
+    source_key TEXT,
+    season TEXT,
+    season_year INTEGER,
+    environment TEXT,
+    alteration_slug TEXT,
+    weights_json TEXT NOT NULL,
+    enabled INTEGER NOT NULL DEFAULT 1,
+    created_at TEXT NOT NULL,
+    updated_at TEXT NOT NULL
+  );
+  CREATE INDEX IF NOT EXISTS idx_altered_similarity_weight_rules_enabled
+    ON altered_similarity_weight_rules(enabled, updated_at DESC);
+  CREATE INDEX IF NOT EXISTS idx_altered_similarity_weight_rules_scope
+    ON altered_similarity_weight_rules(source_key, season, season_year, environment, alteration_slug);
   `,
   `
   CREATE TABLE IF NOT EXISTS altered_map_positions (

@@ -12,10 +12,18 @@ const dashDomainRoot = path.join(sitesRoot, "dash.xjk.yt");
 const trackerDisplaynameDomainRoot = path.join(sitesRoot, "tracker-displayname.xjk.yt");
 const trackerClubDomainRoot = path.join(sitesRoot, "tracker-club.xjk.yt");
 const alteredServiceRoot = path.join(repoRoot, "services", "altered");
+const bannerBuilderServiceRoot = path.join(repoRoot, "services", "bannerbuilder");
 const trackerServiceRoot = path.join(repoRoot, "services", "tracker");
 const aggregatorServiceRoot = path.join(repoRoot, "services", "aggregator");
 const trackerDisplaynameServiceRoot = path.join(repoRoot, "services", "tracker-displayname");
 const trackerClubServiceRoot = path.join(repoRoot, "services", "tracker-club");
+const trackmaniaRoot = path.resolve(repoRoot, "..", "..");
+const underwaterMapConverterEnginePath = path.join(
+  trackmaniaRoot,
+  "engines",
+  "script-tm_Underwater-Map-Converter",
+  "UnderwaterMapConverter.exe"
+);
 
 function loadEnvFile(filePath) {
   if (!filePath || !fs.existsSync(filePath)) {
@@ -24,7 +32,7 @@ function loadEnvFile(filePath) {
 
   const lines = fs.readFileSync(filePath, "utf8").split(/\r?\n/);
   for (const rawLine of lines) {
-    const line = String(rawLine || "").trim();
+    const line = String(rawLine || "").replace(/^\uFEFF/, "").trim();
     if (!line || line.startsWith("#")) {
       continue;
     }
@@ -54,6 +62,7 @@ function loadEnvFile(filePath) {
 [
   path.join(repoRoot, "deploy", "server", ".env"),
   path.join(repoRoot, "services", "altered", ".env"),
+  path.join(repoRoot, "services", "bannerbuilder", ".env"),
   path.join(repoRoot, "services", "tracker", ".env"),
   path.join(repoRoot, "services", "tracker-displayname", ".env"),
   path.join(repoRoot, "services", "tracker-club", ".env"),
@@ -126,6 +135,22 @@ module.exports = {
         ALTERED_SESSION_COOKIE_NAME: process.env.ALTERED_SESSION_COOKIE_NAME || "altered_admin_session",
         ALTERED_SESSION_TTL_SECONDS: process.env.ALTERED_SESSION_TTL_SECONDS || "43200",
         ALTERED_OAUTH_STATE_TTL_SECONDS: process.env.ALTERED_OAUTH_STATE_TTL_SECONDS || "600",
+      },
+    },
+    {
+      name: "xjk-bannerbuilder",
+      cwd: bannerBuilderServiceRoot,
+      script: path.join(bannerBuilderServiceRoot, "python-runtime", "python.exe"),
+      args: "app.py",
+      interpreter: "none",
+      env: {
+        PORT: "3050",
+        HOST: "127.0.0.1",
+        FLASK_DEBUG: process.env.BANNERBUILDER_LEGACY_DEBUG || "0",
+        TRUST_PROXY: process.env.BANNERBUILDER_LEGACY_TRUST_PROXY || "1",
+        DASHMAP_USER: process.env.DASHMAP_USER || "alterednadeo",
+        ...optionalEnvVar("DASHMAP_API_KEY"),
+        ...optionalEnvVar("SECRET_KEY", "BANNERBUILDER_LEGACY_SECRET_KEY", "SECRET_KEY"),
       },
     },
     {
@@ -472,9 +497,15 @@ module.exports = {
         FRONTEND_DIR: path.join(toolsDomainRoot, "Underwater-Map-Converter", "frontend"),
         UPLOAD_DIR: path.join(toolsDomainRoot, "Underwater-Map-Converter", "data", "uploads"),
         OUTPUT_DIR: path.join(toolsDomainRoot, "Underwater-Map-Converter", "data", "processed"),
-        TOOL_PATH: path.join(toolsDomainRoot, "Underwater-Map-Converter", "tools", "UnderwaterMapConverter.exe"),
+        TOOL_PATH: fs.existsSync(underwaterMapConverterEnginePath)
+          ? underwaterMapConverterEnginePath
+          : path.join(
+              toolsDomainRoot,
+              "Underwater-Map-Converter",
+              "tools",
+              "UnderwaterMapConverter.exe"
+            ),
       },
     },
   ],
 };
-

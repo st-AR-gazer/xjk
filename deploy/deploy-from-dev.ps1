@@ -134,6 +134,7 @@ function Should-IncludeRelativePath {
     '(^|/)sites/tools\.xjk\.yt/Gbx-Medal-Time-Modifier/data(/|$)',
     '(^|/)sites/tools\.xjk\.yt/Map-Validation-Checker/data(/|$)',
     '(^|/)sites/tools\.xjk\.yt/Strip-RaceValidationGhost/data(/|$)',
+    '(^|/)services/bannerbuilder/static/banners(/|$)',
     '(^|/)sites/altered\.xjk\.yt/data_server(/|$)',
     '(^|/)sites/altered\.xjk\.yt/data(/|$)',
     '(^|/)\.claude(/|$)',

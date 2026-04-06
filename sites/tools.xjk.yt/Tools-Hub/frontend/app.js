@@ -67,6 +67,29 @@
     link: "Map-Validation-Checker/",
     tone: "cool",
   },
+  {
+    id: "underwater-converter",
+    name: "Underwater Map Converter",
+    description:
+      "Convert any Trackmania 2020 map into an underwater variant with automatic environment detection and water carrier placement.",
+    category: "Map Conversion",
+    status: "live",
+    input: ".Map.Gbx",
+    output: "Underwater .Map.Gbx / Zip",
+    link: "Underwater-Map-Converter/",
+    tone: "cool",
+  },
+  {
+    id: "colorizer",
+    name: "TM Gradient Color Formatter",
+    description: "Format Trackmania text with per-letter gradient color codes (supports custom palettes & presets).",
+    category: "Text",
+    status: "live",
+    input: "Text + 2-7 colors",
+    output: "Formatted gradient string",
+    link: "Colorizer/",
+    tone: "warm",
+  },
 ];
 
 const state = {
@@ -462,7 +485,9 @@ function renderBuildDate() {
 
 async function loadTools() {
   try {
-    const response = await fetch("/api/tools", { headers: { Accept: "application/json" } });
+    const response = await fetch(new URL("./api/tools", window.location.href), {
+      headers: { Accept: "application/json" },
+    });
     if (!response.ok) throw new Error(`API returned HTTP ${response.status}`);
 
     const payload = await response.json();

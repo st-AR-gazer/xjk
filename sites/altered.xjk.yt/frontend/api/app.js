@@ -1,4 +1,5 @@
 const GROUP_ORDER = ["Maps", "Alterations", "Leaderboards", "Clubs", "Hub", "Tracker", "Aggregator", "Webhooks", "Catalog"];
+const alteredUrl = window.__alteredUrl || ((value) => value);
 
 const state = {
   catalog: null,
@@ -31,7 +32,7 @@ function esc(value) {
 }
 
 function endpointHref(endpoint) {
-  return `/api/endpoints/${encodeURIComponent(String(endpoint?.key || "").trim())}`;
+  return alteredUrl(`/api/endpoints/${encodeURIComponent(String(endpoint?.key || "").trim())}`);
 }
 
 function matchesFilter(endpoint, filter) {
@@ -86,7 +87,7 @@ function renderOverview() {
   el.topbarSummary.textContent = `${filtered.length} endpoint${filtered.length !== 1 ? "s" : ""} in ${groups.length} group${groups.length !== 1 ? "s" : ""}`;
   el.statVersion.textContent = String(catalog.api?.version || "1").replace(/^v/i, "");
   el.statEndpoints.textContent = String(catalog.api?.totalEndpoints || filtered.length || 0);
-  el.catalogCurl.textContent = `curl "${window.location.origin}/api/v1/public/endpoints"`;
+  el.catalogCurl.textContent = `curl "${window.location.origin}${alteredUrl("/api/v1/public/endpoints")}"`;
 }
 
 function withDepth(items) {
@@ -158,7 +159,7 @@ function renderAll() {
 }
 
 async function fetchJson(url) {
-  const response = await fetch(url, { headers: { Accept: "application/json" } });
+  const response = await fetch(alteredUrl(url), { headers: { Accept: "application/json" } });
   let payload = null;
   try { payload = await response.json(); } catch { payload = null; }
   if (!response.ok) throw new Error(payload?.error || `Request failed (${response.status}).`);

@@ -1,4 +1,5 @@
 const GROUP_ORDER = ["Maps", "Alterations", "Leaderboards", "Clubs", "Hub", "Tracker", "Aggregator", "Webhooks", "Catalog"];
+const alteredUrl = window.__alteredUrl || ((value) => value);
 
 const elements = {
   sidebarTitle: document.getElementById("sidebarTitle"),
@@ -37,16 +38,23 @@ function endpointKeyFromPath() {
   return decodeURIComponent(String(segments[segments.length - 1] || "").trim());
 }
 
-function getBaseOrigin(endpoint) {
+function toAbsoluteServiceUrl(path, endpoint) {
+  const safePath = String(path || "").trim() || "/";
+  if (/^https?:\/\//i.test(safePath)) return safePath;
+
   if (endpoint?.service === "aggregator") {
-    const host = window.location.hostname;
+    const host = String(window.location.hostname || "").toLowerCase();
     const port = window.location.port ? `:${window.location.port}` : "";
-    if (host.endsWith(".localhost") || host === "localhost") {
-      return `${window.location.protocol}//aggregator.localhost${port}`;
+    if (host === "localhost" || host === "127.0.0.1") {
+      return new URL(`/aggregator${safePath}`, window.location.origin).toString();
     }
-    return `${window.location.protocol}//aggregator.xjk.yt`;
+    if (host.endsWith(".localhost")) {
+      return `${window.location.protocol}//aggregator.localhost${port}${safePath}`;
+    }
+    return `${window.location.protocol}//aggregator.xjk.yt${safePath}`;
   }
-  return window.location.origin;
+
+  return new URL(alteredUrl(safePath), window.location.origin).toString();
 }
 
 function buildExamplePath(endpoint) {
@@ -60,8 +68,7 @@ function buildExamplePath(endpoint) {
 }
 
 function buildCurl(endpoint) {
-  const base = getBaseOrigin(endpoint);
-  const url = `${base}${buildExamplePath(endpoint)}`;
+  const url = toAbsoluteServiceUrl(buildExamplePath(endpoint), endpoint);
   if (String(endpoint?.method || "GET").toUpperCase() === "POST") {
     return `curl -X POST "${url}" \\\n  -H "Content-Type: application/json" \\\n  -d '${endpoint.requestBodyExample || "{\"example\":true}"}'`;
   }
@@ -167,10 +174,9 @@ function renderEndpoint(endpoint, catalog) {
   elements.endpointCurl.textContent = buildCurl(endpoint);
   elements.exampleResponses.innerHTML = renderExampleResponses(endpoint.exampleResponses);
 
-  const liveBase = getBaseOrigin(endpoint);
-  elements.openEndpointBtn.href = `${liveBase}${buildExamplePath(endpoint)}` || "/api/";
+  elements.openEndpointBtn.href = toAbsoluteServiceUrl(buildExamplePath(endpoint), endpoint) || alteredUrl("/api/");
   elements.openEndpointBtn.textContent = endpoint.service === "aggregator" ? "Open on Aggregator" : "Open Live Route";
-  elements.jsonLink.href = "/api/v1/public/endpoints";
+  elements.jsonLink.href = alteredUrl("/api/v1/public/endpoints");
 
   if (endpoint.requestBodyExample) {
     elements.requestBodyWrap.classList.remove("hidden");
@@ -191,7 +197,7 @@ function renderEndpoint(endpoint, catalog) {
         <div class="sidebar-dropdown-items">
           ${withDepth(items).map(({ ep: item, depth }) => {
             const isActive = String(item.key || "") === currentKey;
-            return `<a class="sidebar-ep${isActive ? " active" : ""}" style="--depth:${depth}" href="/api/endpoints/${encodeURIComponent(item.key)}">
+            return `<a class="sidebar-ep${isActive ? " active" : ""}" style="--depth:${depth}" href="${esc(alteredUrl(`/api/endpoints/${encodeURIComponent(item.key)}`))}">
               <span class="method-pip ${esc(String(item.method || "GET").toLowerCase())}">${esc(item.method || "GET")}</span>
               <span class="sidebar-ep-title">${esc(item.title || item.key || "Endpoint")}</span>
               ${item.service === "aggregator" ? '<span class="sidebar-svc">agg</span>' : ""}
@@ -203,7 +209,7 @@ function renderEndpoint(endpoint, catalog) {
 }
 
 async function fetchJson(url) {
-  const response = await fetch(url, { headers: { Accept: "application/json" } });
+  const response = await fetch(alteredUrl(url), { headers: { Accept: "application/json" } });
   let payload = null;
   try { payload = await response.json(); } catch { payload = null; }
   if (!response.ok) throw new Error(payload?.error || `Request failed (${response.status}).`);
@@ -224,14 +230,14 @@ async function boot() {
     elements.endpointGroup.textContent = "Reference";
     elements.endpointTitle.textContent = "Endpoint not found";
     elements.endpointDescription.textContent = `No endpoint matched "${key}".`;
-    elements.endpointPath.textContent = "/api/";
+    elements.endpointPath.textContent = alteredUrl("/api/");
     elements.headerParams.innerHTML = renderParamRows([]);
     elements.pathParams.innerHTML = renderParamRows([]);
     elements.queryParams.innerHTML = renderParamRows([]);
     elements.endpointRemarks.innerHTML = `<p class="inline-empty">Return to the API index and choose a documented endpoint.</p>`;
-    elements.endpointCurl.textContent = `curl "${window.location.origin}/api/v1/public/endpoints"`;
+    elements.endpointCurl.textContent = `curl "${window.location.origin}${alteredUrl("/api/v1/public/endpoints")}"`;
     elements.exampleResponses.innerHTML = `<p class="inline-empty">No example responses available.</p>`;
-    elements.openEndpointBtn.href = "/api/";
+    elements.openEndpointBtn.href = alteredUrl("/api/");
     elements.openEndpointBtn.textContent = "Back to Index";
     return;
   }

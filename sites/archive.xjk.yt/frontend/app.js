@@ -133,9 +133,9 @@ function buildSearchText(game, build) {
   return parts.join(" ").trim();
 }
 
-function createPill(label, className) {
+function createPill(label) {
   const pill = document.createElement("span");
-  pill.className = `pill ${className || ""}`.trim();
+  pill.className = "pill";
   pill.textContent = label;
   return pill;
 }
@@ -222,6 +222,13 @@ function createGameDetails(game, query) {
   if (game.platforms.length) metaParts.push(game.platforms.join(", "));
   meta.textContent = metaParts.join(" · ");
 
+  if (game.years) {
+    const yearBadge = document.createElement("span");
+    yearBadge.className = "year-badge";
+    yearBadge.textContent = game.years;
+    titleBlock.append(yearBadge);
+  }
+
   titleBlock.append(title);
   if (meta.textContent) titleBlock.append(meta);
 
@@ -230,7 +237,7 @@ function createGameDetails(game, query) {
 
   const buildCount = game.builds.length;
   const fileCount = game.builds.reduce((sum, build) => sum + build.files.length, 0);
-  pillStack.append(createPill(`${buildCount} builds`, "pill-builds"), createPill(`${fileCount} files`, "pill-files"));
+  pillStack.append(createPill(`${buildCount} builds`), createPill(`${fileCount} files`));
 
   summary.append(titleBlock, pillStack);
   details.appendChild(summary);
@@ -478,4 +485,3 @@ async function boot() {
 }
 
 boot();
-

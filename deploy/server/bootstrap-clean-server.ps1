@@ -40,6 +40,7 @@ $resolvedCaddyConfig = if ([System.IO.Path]::IsPathRooted($CaddyConfigPath)) {
 Write-Host "Ensuring prerequisites"
 Ensure-Command -Name git -WingetId Git.Git
 Ensure-Command -Name node -WingetId OpenJS.NodeJS.LTS
+Ensure-Command -Name python -WingetId Python.Python.3.12
 Ensure-Command -Name caddy -WingetId CaddyServer.Caddy
 
 if ($InstallCloudflareTunnel) {
@@ -109,6 +110,12 @@ $backendDirs = @(
 foreach ($dir in $backendDirs) {
   $full = Join-Path $RepoPath $dir
   npm ci --prefix $full
+}
+
+$bannerBuilderDir = Join-Path $RepoPath "services/bannerbuilder"
+if (Test-Path $bannerBuilderDir) {
+  Write-Host "Installing legacy banner builder Python dependencies"
+  python -m pip install -r (Join-Path $bannerBuilderDir "requirements.txt")
 }
 
 Write-Host "Starting PM2 apps"

@@ -11,7 +11,7 @@ const __dirname = path.dirname(__filename);
 const PORT = Number(process.env.PORT || 3130);
 const FRONTEND_DIR =
   process.env.FRONTEND_DIR || path.join(__dirname, "..", "..", "..", "frontend");
-const DATA_DIR = process.env.DATA_DIR || path.join(__dirname, "..", "..", "data");
+const DATA_DIR = process.env.DATA_DIR || path.join(__dirname, "..", "..", "..", "sites", "altered.xjk.yt", "data");
 const DB_FILE = process.env.DB_FILE || path.join(DATA_DIR, "altered-tracker.sqlite");
 const TRACKER_ADMIN_TOKEN =
   String(process.env.TRACKER_ADMIN_TOKEN || "").trim() ||
