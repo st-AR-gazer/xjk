@@ -15,6 +15,8 @@ Aggregator is the shared cache for:
 - `DATA_DIR` (default `./data`)
 - `DB_FILE` (default `${DATA_DIR}/tracker-aggregator.sqlite`)
 - `AGGREGATOR_INGEST_TOKEN` (optional token for ingest endpoints)
+- `ARL_OPENPLANET_AUTH_SECRET` (required for authenticated ARL display-name ingest)
+- `OPENPLANET_AUTH_VALIDATE_URL` (default `https://openplanet.dev/api/auth/validate`)
 
 ## API Endpoints
 
@@ -24,6 +26,7 @@ Health/meta:
 
 Display names:
 - `GET /api/v1/display-names`
+- `GET /api/v1/display-names/by-name`
 - `GET /api/v1/display-names/candidates`
 
 Club data:
@@ -52,9 +55,23 @@ DB explorer:
 Ingest:
 - `POST /api/v1/ingest/tracker-run`
 - `POST /api/v1/ingest/display-names`
+- `POST /api/v1/ingest/display-names/arl`
 - `POST /api/v1/ingest/club-snapshot`
 - `POST /api/v1/ingest/instance/register`
 - `POST /api/v1/ingest/instance/heartbeat`
+
+## ARL Authenticated Display-name Ingest
+
+`POST /api/v1/ingest/display-names/arl`
+
+This route is intended for the Arbitrary Record Loader Openplanet plugin.
+
+It requires:
+- an Openplanet auth token in the request body (`opToken`)
+- `ARL_OPENPLANET_AUTH_SECRET` configured on the server
+
+The route validates the plugin token against Openplanet before passing normalized
+display-name data into the shared aggregator store.
 
 ## Ingest Payload Shape
 

@@ -11,61 +11,51 @@
   <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
 </head>
 <body>
-  <!-- Backdrop -->
-  <div class="backdrop" aria-hidden="true">
-    <div class="dot-grid"></div>
-    <div class="orb orb-1"></div>
-    <div class="orb orb-2"></div>
-    <div class="orb orb-3"></div>
-  </div>
+  <!-- Clean Technical Backdrop -->
+  <div class="backdrop" aria-hidden="true"></div>
 
-  <main>
-    <!-- Header -->
-    <header class="header">
-      <div class="header-inner">
-        <div class="header-brand">
-          <span class="header-badge">Aggregator</span>
-          <h1 class="header-title">aggregator.</h1>
-          <p class="header-sub">
-            Canonical cache and source-of-truth across all tracker and project instances.
-          </p>
-          <div class="header-status" id="statusLine">Loading...</div>
-        </div>
+  <div class="app-container">
+    <!-- Sidebar -->
+    <aside class="sidebar">
+      <div class="sidebar-brand">
+        <h1 class="header-title">aggregator.</h1>
+        <p class="header-sub">Canonical source-of-truth cache</p>
+        <div class="header-status" id="statusLine">Loading...</div>
       </div>
 
-      <section class="stats-bar" aria-label="Global summary">
+      <nav class="tab-nav sidebar-nav" aria-label="Dashboard sections">
+        <button class="tab-btn is-active" data-tab="events">Events</button>
+        <button class="tab-btn" data-tab="projects">Projects</button>
+        <button class="tab-btn" data-tab="names">Names</button>
+        <button class="tab-btn" data-tab="clubs">Clubs</button>
+        <button class="tab-btn" data-tab="database">Database</button>
+        <button class="tab-btn" data-tab="metrics">Metrics</button>
+      </nav>
+
+      <section class="sidebar-stats" aria-label="Global summary">
         <div class="stat">
-          <span class="stat-value" id="mProjects">&mdash;</span>
           <span class="stat-label">Projects</span>
+          <span class="stat-value" id="mProjects">&mdash;</span>
         </div>
         <div class="stat">
-          <span class="stat-value" id="mMaps">&mdash;</span>
           <span class="stat-label">Maps</span>
+          <span class="stat-value" id="mMaps">&mdash;</span>
         </div>
         <div class="stat">
-          <span class="stat-value" id="mEvents">&mdash;</span>
           <span class="stat-label">Events</span>
+          <span class="stat-value" id="mEvents">&mdash;</span>
         </div>
         <div class="stat">
+          <span class="stat-label">Latest</span>
           <span class="stat-value" id="mLatestEvent">&mdash;</span>
-          <span class="stat-label">Latest Event</span>
         </div>
       </section>
-    </header>
+    </aside>
 
-    <!-- Tab Navigation -->
-    <nav class="tab-nav" aria-label="Dashboard sections">
-      <button class="tab-btn is-active" data-tab="events">Events</button>
-      <button class="tab-btn" data-tab="projects">Projects</button>
-      <button class="tab-btn" data-tab="names">Names</button>
-      <button class="tab-btn" data-tab="clubs">Clubs</button>
-      <button class="tab-btn" data-tab="database">Database</button>
-      <button class="tab-btn" data-tab="metrics">Metrics</button>
-    </nav>
-
-    <!-- Tab: Events -->
-    <div class="tab-panel is-active" id="tab-events">
-      <section class="panel-card">
+    <main class="content-area">
+      <!-- Tab: Events -->
+      <div class="tab-panel is-active" id="tab-events">
+        <section class="panel-card">
         <div class="section-bar">
           <h2>Recent Events</h2>
           <span class="tab-count" id="eventsCount">&mdash;</span>
@@ -479,7 +469,8 @@
         <a data-link="tools" href="https://tools.xjk.yt/">Tools</a>
       </nav>
     </footer>
-  </main>
+    </main>
+  </div>
 
   <script src="app.js?v=20260306-staged-refresh"></script>
 </body>

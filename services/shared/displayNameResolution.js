@@ -19,8 +19,16 @@ function hasResolvedDisplayName(value, { accountId = "" } = {}) {
   return Boolean(sanitizeResolvedDisplayName(value, { accountId }));
 }
 
+function normalizeDisplayNameQuery(value) {
+  return String(value || "")
+    .trim()
+    .toLowerCase()
+    .replace(/\s+/g, " ");
+}
+
 export {
   hasResolvedDisplayName,
+  normalizeDisplayNameQuery,
   normalizePossibleAccountId,
   sanitizeResolvedDisplayName,
 };

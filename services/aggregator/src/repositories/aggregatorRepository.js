@@ -1,4 +1,4 @@
-import { sanitizeResolvedDisplayName } from "../../../shared/displayNameResolution.js";
+import { sanitizeResolvedDisplayName, normalizeDisplayNameQuery } from "../../../shared/displayNameResolution.js";
 
 function clampInt(value, { min = 0, max = Number.MAX_SAFE_INTEGER, fallback = 0 } = {}) {
   const parsed = Number(value);
@@ -430,6 +430,198 @@ class AggregatorRepository {
     this.trafficQueryCache.clear();
     this.trafficBackfillStateCache.expiresAtMs = 0;
     return this.trafficCacheVersion;
+  }
+
+  backfillNormalizedDisplayNames() {
+    try {
+      const db = this.db;
+      db.exec("BEGIN");
+      
+      const unnormalizedCurrent = db.prepare("SELECT account_id, display_name FROM account_display_name_current WHERE normalized_display_name IS NULL LIMIT 20000").all();
+      const updateCurrent = db.prepare("UPDATE account_display_name_current SET normalized_display_name = ? WHERE account_id = ?");
+      for (const row of unnormalizedCurrent) {
+        updateCurrent.run(normalizeDisplayNameQuery(row.display_name), row.account_id);
+      }
+
+      const unnormalizedHistory = db.prepare("SELECT id, display_name FROM account_display_name_history WHERE normalized_display_name IS NULL LIMIT 20000").all();
+      const updateHistory = db.prepare("UPDATE account_display_name_history SET normalized_display_name = ? WHERE id = ?");
+      for (const row of unnormalizedHistory) {
+        updateHistory.run(normalizeDisplayNameQuery(row.display_name), row.id);
+      }
+      
+      db.exec("COMMIT");
+      if (unnormalizedCurrent.length > 0 || unnormalizedHistory.length > 0) {
+        return true;
+      }
+      return false;
+    } catch (err) {
+      try { this.db.exec("ROLLBACK"); } catch(e) {}
+      console.error("Failed to backfill normalized display names:", err);
+      return false;
+    }
+  }
+
+  getDisplayNamesByName({ displayNames = [], maxAgeSeconds = 0 } = {}) {
+    const isStale = (ageSeconds) =>
+      Number(maxAgeSeconds || 0) > 0 ? Number(ageSeconds || 0) > Number(maxAgeSeconds) : false;
+
+    const names = normalizeArray(displayNames).map((n) => String(n || "").trim()).filter(Boolean);
+    const uniqueOriginals = [...new Set(names)];
+
+    const queries = uniqueOriginals.map((original) => {
+      return {
+        displayName: original,
+        normalizedDisplayName: normalizeDisplayNameQuery(original),
+        matches: []
+      };
+    });
+
+    const normalizedToQuery = new Map();
+    for (const q of queries) {
+      if (!normalizedToQuery.has(q.normalizedDisplayName)) {
+        normalizedToQuery.set(q.normalizedDisplayName, []);
+      }
+      normalizedToQuery.get(q.normalizedDisplayName).push(q);
+    }
+
+    const uniqueNormalized = [...normalizedToQuery.keys()];
+
+    if (uniqueNormalized.length > 0) {
+      const placeholders = uniqueNormalized.map(() => "?").join(",");
+      const rows = this.db
+        .prepare(
+          `
+        SELECT
+          c.account_id AS accountId,
+          c.display_name AS displayName,
+          c.normalized_display_name AS normalizedDisplayName,
+          c.source,
+          c.observed_at AS observedAt,
+          c.updated_at AS updatedAt,
+          CAST((julianday('now') - julianday(c.observed_at)) * 86400 AS INTEGER) AS ageSeconds
+        FROM account_display_name_current c
+        WHERE c.normalized_display_name IN (${placeholders})
+        ORDER BY c.account_id ASC
+        `
+        )
+        .all(...uniqueNormalized);
+
+      for (const row of rows) {
+        const item = {
+          accountId: row.accountId,
+          displayName: row.displayName,
+          source: row.source || null,
+          observedAt: row.observedAt,
+          updatedAt: row.updatedAt,
+          stale: isStale(row.ageSeconds),
+        };
+        const mappedQueries = normalizedToQuery.get(row.normalizedDisplayName) || [];
+        for (const mq of mappedQueries) {
+          mq.matches.push(item);
+        }
+      }
+    }
+
+    return {
+      queries,
+      count: queries.length,
+    };
+  }
+
+  backfillNormalizedDisplayNames() {
+    try {
+      const db = this.db;
+      db.exec("BEGIN");
+      
+      const unnormalizedCurrent = db.prepare("SELECT account_id, display_name FROM account_display_name_current WHERE normalized_display_name IS NULL LIMIT 20000").all();
+      const updateCurrent = db.prepare("UPDATE account_display_name_current SET normalized_display_name = ? WHERE account_id = ?");
+      for (const row of unnormalizedCurrent) {
+        updateCurrent.run(normalizeDisplayNameQuery(row.display_name), row.account_id);
+      }
+
+      const unnormalizedHistory = db.prepare("SELECT id, display_name FROM account_display_name_history WHERE normalized_display_name IS NULL LIMIT 20000").all();
+      const updateHistory = db.prepare("UPDATE account_display_name_history SET normalized_display_name = ? WHERE id = ?");
+      for (const row of unnormalizedHistory) {
+        updateHistory.run(normalizeDisplayNameQuery(row.display_name), row.id);
+      }
+      
+      db.exec("COMMIT");
+      if (unnormalizedCurrent.length > 0 || unnormalizedHistory.length > 0) {
+        return true;
+      }
+      return false;
+    } catch (err) {
+      try { this.db.exec("ROLLBACK"); } catch(e) {}
+      console.error("Failed to backfill normalized display names:", err);
+      return false;
+    }
+  }
+
+  getDisplayNamesByName({ displayNames = [], maxAgeSeconds = 0 } = {}) {
+    const isStale = (ageSeconds) =>
+      Number(maxAgeSeconds || 0) > 0 ? Number(ageSeconds || 0) > Number(maxAgeSeconds) : false;
+
+    const names = normalizeArray(displayNames).map((n) => String(n || "").trim()).filter(Boolean);
+    const uniqueOriginals = [...new Set(names)];
+
+    const queries = uniqueOriginals.map((original) => {
+      return {
+        displayName: original,
+        normalizedDisplayName: normalizeDisplayNameQuery(original),
+        matches: []
+      };
+    });
+
+    const normalizedToQuery = new Map();
+    for (const q of queries) {
+      if (!normalizedToQuery.has(q.normalizedDisplayName)) {
+        normalizedToQuery.set(q.normalizedDisplayName, []);
+      }
+      normalizedToQuery.get(q.normalizedDisplayName).push(q);
+    }
+
+    const uniqueNormalized = [...normalizedToQuery.keys()];
+
+    if (uniqueNormalized.length > 0) {
+      const placeholders = uniqueNormalized.map(() => "?").join(",");
+      const rows = this.db
+        .prepare(
+          `
+        SELECT
+          c.account_id AS accountId,
+          c.display_name AS displayName,
+          c.normalized_display_name AS normalizedDisplayName,
+          c.source,
+          c.observed_at AS observedAt,
+          c.updated_at AS updatedAt,
+          CAST((julianday('now') - julianday(c.observed_at)) * 86400 AS INTEGER) AS ageSeconds
+        FROM account_display_name_current c
+        WHERE c.normalized_display_name IN (${placeholders})
+        ORDER BY c.account_id ASC
+        `
+        )
+        .all(...uniqueNormalized);
+
+      for (const row of rows) {
+        const item = {
+          accountId: row.accountId,
+          displayName: row.displayName,
+          source: row.source || null,
+          observedAt: row.observedAt,
+          updatedAt: row.updatedAt,
+          stale: isStale(row.ageSeconds),
+        };
+        const mappedQueries = normalizedToQuery.get(row.normalizedDisplayName) || [];
+        for (const mq of mappedQueries) {
+          mq.matches.push(item);
+        }
+      }
+    }
+
+    return {
+      queries,
+      count: queries.length,
+    };
   }
 
   withTrafficCache(cacheKey, compute, { ttlMs = 15000 } = {}) {
@@ -2925,10 +3117,11 @@ class AggregatorRepository {
       const insertCurrentStmt = this.db.prepare(
         `
         INSERT INTO account_display_name_current (
-          account_id, display_name, source, observed_at, updated_at
-        ) VALUES (?, ?, ?, ?, ?)
+          account_id, display_name, normalized_display_name, source, observed_at, updated_at
+        ) VALUES (?, ?, ?, ?, ?, ?)
         ON CONFLICT(account_id) DO UPDATE SET
           display_name = excluded.display_name,
+          normalized_display_name = excluded.normalized_display_name,
           source = COALESCE(excluded.source, account_display_name_current.source),
           observed_at = excluded.observed_at,
           updated_at = excluded.updated_at
@@ -2946,8 +3139,8 @@ class AggregatorRepository {
       const insertHistoryStmt = this.db.prepare(
         `
         INSERT OR IGNORE INTO account_display_name_history (
-          account_id, display_name, source, valid_from, valid_to, observed_at
-        ) VALUES (?, ?, ?, ?, NULL, ?)
+          account_id, display_name, normalized_display_name, source, valid_from, valid_to, observed_at
+        ) VALUES (?, ?, ?, ?, ?, NULL, ?)
         `
       );
 
@@ -2974,8 +3167,8 @@ class AggregatorRepository {
         if (current?.displayName) previousName = String(current.displayName || "").trim() || null;
 
         if (!current) {
-          insertCurrentStmt.run(accountId, displayName, source, observedAt, receivedAt);
-          insertHistoryStmt.run(accountId, displayName, source, observedAt, observedAt);
+          insertCurrentStmt.run(accountId, displayName, normalizeDisplayNameQuery(displayName), source, observedAt, receivedAt);
+          insertHistoryStmt.run(accountId, displayName, normalizeDisplayNameQuery(displayName), source, observedAt, observedAt);
           accepted += 1;
           inserted += 1;
           changeMarker = "*";
@@ -2984,14 +3177,14 @@ class AggregatorRepository {
           const currentName = String(current.displayName || "");
           if (currentName !== displayName) {
             closeHistoryStmt.run(observedAt, accountId);
-            insertHistoryStmt.run(accountId, displayName, source, observedAt, observedAt);
-            insertCurrentStmt.run(accountId, displayName, source, observedAt, receivedAt);
+            insertHistoryStmt.run(accountId, displayName, normalizeDisplayNameQuery(displayName), source, observedAt, observedAt);
+            insertCurrentStmt.run(accountId, displayName, normalizeDisplayNameQuery(displayName), source, observedAt, receivedAt);
             accepted += 1;
             updated += 1;
             changeMarker = "yes";
             changeType = "changed";
           } else {
-            insertCurrentStmt.run(accountId, displayName, source, observedAt, receivedAt);
+            insertCurrentStmt.run(accountId, displayName, normalizeDisplayNameQuery(displayName), source, observedAt, receivedAt);
             accepted += 1;
             unchanged += 1;
             changeMarker = "no";
@@ -3579,10 +3772,11 @@ class AggregatorRepository {
       const upsertCurrentName = this.db.prepare(
         `
         INSERT INTO account_display_name_current (
-          account_id, display_name, source, observed_at, updated_at
-        ) VALUES (?, ?, ?, ?, ?)
+          account_id, display_name, normalized_display_name, source, observed_at, updated_at
+        ) VALUES (?, ?, ?, ?, ?, ?)
         ON CONFLICT(account_id) DO UPDATE SET
           display_name = excluded.display_name,
+          normalized_display_name = excluded.normalized_display_name,
           source = COALESCE(excluded.source, account_display_name_current.source),
           observed_at = excluded.observed_at,
           updated_at = excluded.updated_at
@@ -3591,8 +3785,8 @@ class AggregatorRepository {
       const upsertHistoryName = this.db.prepare(
         `
         INSERT OR IGNORE INTO account_display_name_history (
-          account_id, display_name, source, valid_from, valid_to, observed_at
-        ) VALUES (?, ?, ?, ?, NULL, ?)
+          account_id, display_name, normalized_display_name, source, valid_from, valid_to, observed_at
+        ) VALUES (?, ?, ?, ?, ?, NULL, ?)
         `
       );
       const closeHistoryName = this.db.prepare(
@@ -3637,9 +3831,9 @@ class AggregatorRepository {
           const current = getCurrentName.get(accountId);
           if (!current || String(current.displayName || "") !== displayName) {
             closeHistoryName.run(observedAt, accountId);
-            upsertHistoryName.run(accountId, displayName, sourceLabel, observedAt, observedAt);
+            upsertHistoryName.run(accountId, displayName, normalizeDisplayNameQuery(displayName), sourceLabel, observedAt, observedAt);
           }
-          upsertCurrentName.run(accountId, displayName, sourceLabel, observedAt, receivedAt);
+          upsertCurrentName.run(accountId, displayName, normalizeDisplayNameQuery(displayName), sourceLabel, observedAt, receivedAt);
         }
       }
 

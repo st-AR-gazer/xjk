@@ -23,6 +23,8 @@ import {
   ALTERED_BASE_URL,
   ALTERED_INTERNAL_TOKEN,
   TRACKER_ADMIN_TOKEN,
+  ARL_OPENPLANET_AUTH_SECRET,
+  OPENPLANET_AUTH_VALIDATE_URL,
   PM2_LOG_DIR,
   NADEO_GLOBAL_THROTTLE_FILE,
   NADEO_GLOBAL_MIN_REQUEST_GAP_MS,
@@ -259,7 +261,11 @@ const publicRoutes = createPublicRoutes(repository, {
     leaderboardBaseUrl: TRACKER_LEADERBOARD_BASE_URL,
   },
 });
-const ingestRoutes = createIngestRoutes(repository, { ingestToken: INGEST_TOKEN });
+const ingestRoutes = createIngestRoutes(repository, {
+  ingestToken: INGEST_TOKEN,
+  arlOpenplanetAuthSecret: ARL_OPENPLANET_AUTH_SECRET,
+  openplanetValidateUrl: OPENPLANET_AUTH_VALIDATE_URL,
+});
 const privateDashRoutes = createPrivateDashRoutes(repository, {
   trackerControl: {
     wrBaseUrl: TRACKER_WR_BASE_URL,
@@ -341,4 +347,17 @@ app.listen(PORT, "127.0.0.1", () => {
   };
 
   setTimeout(runTrafficBackfill, 25);
+
+  const runNormBackfill = () => {
+    try {
+      const more = repository.backfillNormalizedDisplayNames();
+      if (more) {
+        console.log("Backfilled a batch of normalized display names.");
+        setTimeout(runNormBackfill, 500);
+      }
+    } catch (error) {
+      console.warn(`Norm backfill failed: ${error?.message || error}`);
+    }
+  };
+  setTimeout(runNormBackfill, 50);
 });

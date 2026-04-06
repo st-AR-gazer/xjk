@@ -5,6 +5,17 @@ function applyMigrations(db) {
   for (const statement of MIGRATIONS) {
     db.exec(statement);
   }
+
+  try {
+    db.exec("ALTER TABLE account_display_name_current ADD COLUMN normalized_display_name TEXT;");
+  } catch (err) {}
+  try {
+    db.exec("ALTER TABLE account_display_name_history ADD COLUMN normalized_display_name TEXT;");
+  } catch (err) {}
+  try {
+    db.exec("CREATE INDEX IF NOT EXISTS idx_account_display_name_current_normalized ON account_display_name_current(normalized_display_name);");
+    db.exec("CREATE INDEX IF NOT EXISTS idx_account_display_name_history_normalized ON account_display_name_history(normalized_display_name);");
+  } catch (err) {}
 }
 
 function createDatabase({ filePath }) {

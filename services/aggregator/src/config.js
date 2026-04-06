@@ -85,6 +85,10 @@ const TRACKER_ADMIN_TOKEN = String(
     DASH_ADMIN_TOKEN ||
     ""
 ).trim();
+const ARL_OPENPLANET_AUTH_SECRET = String(process.env.ARL_OPENPLANET_AUTH_SECRET || "").trim();
+const OPENPLANET_AUTH_VALIDATE_URL = String(
+  process.env.OPENPLANET_AUTH_VALIDATE_URL || "https://openplanet.dev/api/auth/validate"
+).trim();
 const PM2_HOME = String(
   process.env.PM2_HOME || path.join(process.env.USERPROFILE || process.env.HOME || DATA_DIR, ".pm2")
 ).trim();
@@ -121,6 +125,8 @@ export {
   ALTERED_BASE_URL,
   ALTERED_INTERNAL_TOKEN,
   TRACKER_ADMIN_TOKEN,
+  ARL_OPENPLANET_AUTH_SECRET,
+  OPENPLANET_AUTH_VALIDATE_URL,
   PM2_LOG_DIR,
   NADEO_GLOBAL_THROTTLE_FILE,
   NADEO_GLOBAL_MIN_REQUEST_GAP_MS,

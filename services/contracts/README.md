@@ -30,6 +30,7 @@ Used by tracker instances to report telemetry:
 Used by specialized trackers:
 
 - `POST /api/v1/ingest/display-names`
+- `POST /api/v1/ingest/display-names/arl`
 - `POST /api/v1/ingest/club-snapshot`
 
 ## Aggregator Query
@@ -37,6 +38,7 @@ Used by specialized trackers:
 Used by portals/trackers/bots:
 
 - `GET /api/v1/display-names`
+- `GET /api/v1/display-names/by-name`
 - `GET /api/v1/display-names/candidates`
 - `GET /api/v1/clubs/:clubId/summary`
 - `GET /api/v1/clubs/:clubId/campaigns`

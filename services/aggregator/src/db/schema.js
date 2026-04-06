@@ -151,6 +151,7 @@ export const MIGRATIONS = [
   CREATE TABLE IF NOT EXISTS account_display_name_current (
     account_id TEXT PRIMARY KEY REFERENCES accounts(account_id) ON DELETE CASCADE,
     display_name TEXT NOT NULL,
+    normalized_display_name TEXT,
     source TEXT,
     observed_at TEXT NOT NULL,
     updated_at TEXT NOT NULL
@@ -162,6 +163,7 @@ export const MIGRATIONS = [
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     account_id TEXT NOT NULL REFERENCES accounts(account_id) ON DELETE CASCADE,
     display_name TEXT NOT NULL,
+    normalized_display_name TEXT,
     source TEXT,
     valid_from TEXT NOT NULL,
     valid_to TEXT,

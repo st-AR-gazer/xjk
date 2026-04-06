@@ -231,6 +231,29 @@ function createPublicRoutes(repository, { trackerControl = {} } = {}) {
     });
   });
 
+  router.get("/display-names/by-name", (req, res) => {
+    const query = req.query || {};
+    const displayNames = []
+      .concat(query.displayName || [])
+      .concat(query.displayNames || [])
+      .concat(query.name || [])
+      .concat(query.names || [])
+      .flatMap((value) =>
+        Array.isArray(value)
+          ? value
+          : String(value || "")
+              .split(/[\s,;]+/)
+              .filter(Boolean)
+      );
+
+    const payload = repository.getDisplayNamesByName({
+      displayNames,
+      maxAgeSeconds: Number(query.max_age_seconds) || 0,
+    });
+    
+    return res.json(payload);
+  });
+
   router.get("/display-names/candidates", (req, res) => {
     const accountIds = repository.listDisplayNameCandidates({
       staleAfterSeconds: Number(req.query.stale_after_seconds) || 86400,
