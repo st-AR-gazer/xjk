@@ -224,14 +224,6 @@ If you only want to rerun restart/install steps on the server without copying fi
 powershell -ExecutionPolicy Bypass -File .\deploy\deploy-from-dev.ps1 -Server "user@your-server" -RemoteRepoPath "C:\srv\xjk" -SkipSync -SkipInstall -CaddyConfigPath "deploy/Caddyfile.tunnel"
 ```
 
-Bannerbuilder-only fast path:
-
-```powershell
-powershell -ExecutionPolicy Bypass -File .\deploy\deploy-bannerbuilder-from-dev.ps1
-```
-
-This helper syncs only `services/bannerbuilder` (excluding local runtime/log/cache folders), verifies the server-side files, and prints the PM2 restart command for `xjk-bannerbuilder`.
-
 ## Local Test
 
 ```powershell

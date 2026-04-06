@@ -8,16 +8,22 @@ const BACKGROUND_FILES = {
   fall: "assets/backgrounds/Fall.png",
   training: "assets/backgrounds/Training.png",
   other: "assets/backgrounds/Other.png",
+  black: "assets/backgrounds/Black.png",
+  blue: "assets/backgrounds/Blue.png",
+  green: "assets/backgrounds/Green.png",
+  red: "assets/backgrounds/Red.png",
+  white: "assets/backgrounds/White.png",
 };
 
 const SOLID_FILES = {
   none: "",
-  dodecahedron: "assets/solids/Dodecahedron.png",
-  tetrahedron: "assets/solids/Tetrahedron.png",
-  cube: "assets/solids/Cube.png",
-  octahedron: "assets/solids/Octahedron.png",
-  icosahedron: "assets/solids/Icosahedron.png",
+  dodecahedron: "assets/solids/high-quality/Dodecahedron.png",
+  tetrahedron: "assets/solids/high-quality/Tetrahedron.png",
+  cube: "assets/solids/high-quality/Cube.png",
+  octahedron: "assets/solids/high-quality/Octahedron.png",
+  icosahedron: "assets/solids/high-quality/Icosahedron.png",
 };
+const BANNER_FONT_STACK = '"Altered Carbon V2", "Chakra Petch", "Trebuchet MS", sans-serif';
 
 const SLOT_POSITIONS = [
   { x: 166, y: 106, bias: 0 },
@@ -225,7 +231,7 @@ function drawTexts() {
   ctx.textBaseline = "alphabetic";
   ctx.lineJoin = "round";
   ctx.lineWidth = Math.max(2, state.mainSize * 0.08);
-  ctx.font = `700 ${state.mainSize}px "Chakra Petch", "Trebuchet MS", sans-serif`;
+  ctx.font = `700 ${state.mainSize}px ${BANNER_FONT_STACK}`;
 
   ctx.strokeStyle = "rgba(0, 51, 204, 0.74)";
   ctx.fillStyle = "#ecfcff";
@@ -235,7 +241,7 @@ function drawTexts() {
   if (subText) {
     ctx.textAlign = "right";
     ctx.lineWidth = Math.max(2, state.subSize * 0.07);
-    ctx.font = `600 ${state.subSize}px "Chakra Petch", "Trebuchet MS", sans-serif`;
+    ctx.font = `600 ${state.subSize}px ${BANNER_FONT_STACK}`;
     ctx.strokeStyle = "rgba(0, 51, 204, 0.72)";
     ctx.fillStyle = "rgba(236, 252, 255, 0.95)";
     ctx.strokeText(subText, state.subX, 72);

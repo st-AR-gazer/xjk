@@ -319,3 +319,8 @@ h1 {
 }
 
 
+@font-face {
+  font-family: "Altered Carbon V2";
+  src: url("assets/fonts/Altered%20Carbon%20V2.ttf") format("truetype");
+  font-display: swap;
+}

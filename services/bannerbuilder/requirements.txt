@@ -1,7 +1,0 @@
-Flask==3.0.3
-Pillow==10.4.0
-requests>=2.31
-waitress
-python-dotenv
-flask_wtf
-flask_limiter
