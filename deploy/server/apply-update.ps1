@@ -180,10 +180,19 @@ foreach ($dir in $backendDirs) {
 
 $bannerBuilderDir = Join-Path $RepoPath "services/bannerbuilder"
 $bannerBuilderRuntime = Join-Path $bannerBuilderDir ".venv\Scripts\python.exe"
+$pythonPath = Resolve-CommandPath -Name "python" -FallbackPaths @(
+  (Join-Path $env:LOCALAPPDATA "Programs\Python\Python312\python.exe"),
+  (Join-Path $env:LOCALAPPDATA "Programs\Python\Python311\python.exe"),
+  "C:\Python312\python.exe",
+  "C:\Python311\python.exe"
+)
 if ((-not $SkipInstall -or $ForceInstall) -and (Test-Path $bannerBuilderDir)) {
   if (-not (Test-Path $bannerBuilderRuntime)) {
+    if (-not $pythonPath) {
+      throw "Python is required to create the bannerbuilder virtual environment but was not found."
+    }
     Write-Host "Creating Python virtual environment in $bannerBuilderDir"
-    Invoke-NativeWithOutput -FilePath "python" -ArgumentList @(
+    Invoke-NativeWithOutput -FilePath $pythonPath -ArgumentList @(
       "-m",
       "venv",
       (Join-Path $bannerBuilderDir ".venv")
