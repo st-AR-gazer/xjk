@@ -10,7 +10,8 @@ from typing import Dict, Optional, Tuple
 TTL = 600
 
 BASE = Path(__file__).resolve().parent.parent
-BANNER_DIR = BASE / "static" / "banners"
+STATIC_DIR = BASE / "static"
+BANNER_DIR = STATIC_DIR / "banners"
 BANNER_DIR.mkdir(exist_ok=True, parents=True)
 
 
@@ -24,6 +25,7 @@ class EphemeralBannerStore:
     def put(self, png_buf: BytesIO) -> tuple[str, int]:
         _id = uuid.uuid4().hex
         path = self._path(_id)
+        path.parent.mkdir(exist_ok=True, parents=True)
         with open(path, "wb") as f:
             f.write(png_buf.getbuffer())
 
