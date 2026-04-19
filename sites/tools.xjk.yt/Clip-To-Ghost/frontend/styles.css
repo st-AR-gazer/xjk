@@ -1,0 +1,567 @@
+:root {
+  --bg-0: #060912;
+  --bg-1: #11182a;
+  --ink: #edf3ff;
+  --ink-soft: #afbdd7;
+  --panel: rgba(13, 20, 34, 0.84);
+  --line: rgba(226, 236, 255, 0.18);
+  --line-strong: rgba(226, 236, 255, 0.3);
+  --cool: #59d2ff;
+  --warm: #ff7a32;
+  --ok: #4af0a8;
+  --bad: #ff637c;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  margin: 0;
+  min-height: 100%;
+  color: var(--ink);
+  font-family: "Manrope", "Segoe UI", sans-serif;
+  background:
+    radial-gradient(1400px 900px at 10% -8%, rgba(89, 210, 255, 0.2), transparent 52%),
+    radial-gradient(1200px 700px at 92% 4%, rgba(255, 122, 50, 0.16), transparent 48%),
+    linear-gradient(150deg, var(--bg-0), var(--bg-1));
+}
+
+.bg-grid {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  opacity: 0.22;
+  background-image:
+    linear-gradient(rgba(255, 255, 255, 0.05) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255, 255, 255, 0.05) 1px, transparent 1px);
+  background-size: 38px 38px;
+}
+
+.bg-sweep {
+  position: fixed;
+  pointer-events: none;
+  filter: blur(10px);
+}
+
+.bg-sweep-warm {
+  width: 84vw;
+  height: 38vh;
+  left: -12vw;
+  top: -13vh;
+  transform: rotate(-8deg);
+}
+
+.bg-sweep-cool {
+  width: 74vw;
+  height: 38vh;
+  right: -18vw;
+  top: 22vh;
+  transform: rotate(11deg);
+}
+
+.shell {
+  position: relative;
+  width: min(1080px, 94vw);
+  margin: 1.8rem auto;
+  padding: 1.35rem;
+  border-radius: 24px;
+  border: 1px solid var(--line);
+  background: var(--panel);
+  backdrop-filter: blur(5px);
+}
+
+.hero {
+  padding: 0.35rem 0.2rem 0.1rem;
+}
+
+.eyebrow {
+  margin: 0;
+  font-family: "Chakra Petch", "Trebuchet MS", sans-serif;
+  font-size: 0.78rem;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--ink-soft);
+}
+
+.hero h1 {
+  margin: 0.6rem 0 0;
+  font-family: "Chakra Petch", "Trebuchet MS", sans-serif;
+  font-size: clamp(1.9rem, 5.4vw, 3rem);
+  line-height: 1.08;
+  letter-spacing: 0.02em;
+}
+
+.lead {
+  margin: 0.75rem 0 0;
+  color: var(--ink-soft);
+  max-width: 80ch;
+}
+
+.panel {
+  margin-top: 0.95rem;
+  padding: 0.95rem 1rem;
+  border-radius: 16px;
+  border: 1px solid var(--line);
+  background: rgba(11, 17, 29, 0.88);
+}
+
+.panel h2 {
+  margin: 0;
+  font-family: "Chakra Petch", "Trebuchet MS", sans-serif;
+  font-size: 1.08rem;
+}
+
+.page-tabs {
+  position: absolute;
+  top: 1.7rem;
+  right: -0.85rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+  padding: 0.35rem;
+  border-radius: 18px;
+  border: 1px solid var(--line);
+  background: rgba(10, 16, 28, 0.94);
+  box-shadow: 0 16px 36px rgba(0, 0, 0, 0.34);
+  z-index: 3;
+}
+
+.page-tab {
+  min-height: 38px;
+  min-width: 88px;
+  padding: 0.4rem 0.72rem;
+  border: 1px solid transparent;
+  border-radius: 12px;
+  background: transparent;
+  color: var(--ink-soft);
+  font-family: "Chakra Petch", "Trebuchet MS", sans-serif;
+  font-size: 0.76rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  cursor: pointer;
+  text-align: center;
+  transition: border-color 0.14s ease, color 0.14s ease, background 0.14s ease, transform 0.14s ease;
+}
+
+.page-tab:hover {
+  transform: translateX(-1px);
+  border-color: rgba(226, 236, 255, 0.12);
+  color: var(--ink);
+}
+
+.page-tab.is-active {
+  color: var(--ink);
+  border-color: rgba(226, 236, 255, 0.22);
+  background:
+    linear-gradient(120deg, rgba(255, 255, 255, 0.08), rgba(255, 255, 255, 0.02)),
+    linear-gradient(110deg, var(--cool), var(--warm));
+  box-shadow: 0 8px 18px rgba(0, 0, 0, 0.22);
+}
+
+.page-tab-panel {
+  margin-top: 1rem;
+}
+
+.page-tab-panel.hidden {
+  display: none;
+}
+
+.cards {
+  display: grid;
+  gap: 0.85rem;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.dropcard {
+  position: relative;
+  border: 2px dashed rgba(173, 191, 223, 0.3);
+  border-radius: 18px;
+  padding: 1rem;
+  cursor: pointer;
+  overflow: hidden;
+  transition: transform 0.12s ease, border-color 0.12s ease, background-color 0.12s ease;
+  background: linear-gradient(145deg, rgba(16, 23, 37, 0.95), rgba(12, 19, 31, 0.95));
+}
+
+.dropcard::after {
+  content: "";
+  position: absolute;
+  right: -48px;
+  top: -40px;
+  width: 140px;
+  height: 120px;
+  transform: rotate(18deg);
+}
+
+.dropcard:hover {
+  transform: translateY(-2px);
+}
+
+.dropcard.dragover {
+  background: linear-gradient(145deg, rgba(16, 33, 45, 0.95), rgba(14, 29, 40, 0.95));
+}
+
+.dropcard.ready {
+  border-color: rgba(74, 240, 168, 0.72);
+}
+
+.dropcard.hidden {
+  display: none;
+}
+
+.dropcard input[type="file"] {
+  display: none;
+}
+
+.card-title,
+.card-copy,
+.card-meta {
+  position: relative;
+  z-index: 1;
+}
+
+.card-title {
+  margin: 0;
+  font-family: "Chakra Petch", "Trebuchet MS", sans-serif;
+  font-size: 1.06rem;
+}
+
+.card-copy {
+  margin: 0.45rem 0 0;
+  color: var(--ink-soft);
+}
+
+.card-meta {
+  margin: 0.72rem 0 0;
+  font-weight: 700;
+}
+
+.field-grid {
+  margin-top: 0.75rem;
+  display: grid;
+  gap: 0.7rem;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.field-grid-triple {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+.field span,
+.muted.small {
+  font-size: 0.78rem;
+  color: var(--ink-soft);
+}
+
+.field input,
+.field select {
+  min-height: 38px;
+  padding: 0.45rem 0.6rem;
+  border-radius: 10px;
+  border: 1px solid rgba(226, 236, 255, 0.14);
+  background: rgba(255, 255, 255, 0.04);
+  color: var(--ink);
+  font: inherit;
+}
+
+.check-label {
+  display: flex;
+  align-items: center;
+  gap: 0.55rem;
+  min-height: 38px;
+  padding: 0.45rem 0.6rem;
+  border-radius: 10px;
+  border: 1px solid rgba(226, 236, 255, 0.14);
+  background: rgba(255, 255, 255, 0.03);
+}
+
+.option-row {
+  margin-top: 0.8rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.8rem;
+  flex-wrap: wrap;
+}
+
+.action-row {
+  margin-top: 0.95rem;
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.7rem;
+  flex-wrap: wrap;
+}
+
+.go,
+.btn-lite {
+  appearance: none;
+  border-radius: 999px;
+  cursor: pointer;
+  font-family: "Chakra Petch", "Trebuchet MS", sans-serif;
+}
+
+.go {
+  border: 0;
+  min-height: 46px;
+  padding: 0.8rem 1.45rem;
+  font-size: 1rem;
+  letter-spacing: 0.03em;
+  color: #ffffff;
+  transition: filter 0.12s ease, transform 0.12s ease;
+}
+
+.go:hover {
+  transform: translateY(-1px);
+}
+
+.go.ghost {
+  background: rgba(255, 255, 255, 0.08);
+  color: var(--ink);
+  border: 1px solid rgba(226, 236, 255, 0.16);
+}
+
+.go:disabled {
+  cursor: not-allowed;
+  opacity: 0.72;
+  transform: none;
+}
+
+.btn-lite {
+  min-height: 38px;
+  padding: 0.45rem 0.85rem;
+  border: 1px solid rgba(226, 236, 255, 0.16);
+  background: rgba(255, 255, 255, 0.05);
+  color: var(--ink);
+}
+
+.status,
+.error {
+  min-height: 1.4rem;
+  margin-top: 0.72rem;
+  font-weight: 600;
+}
+
+.error {
+  color: var(--bad);
+}
+
+.summary-grid {
+  margin-top: 0.7rem;
+  display: grid;
+  gap: 0.55rem;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.summary-item {
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  padding: 0.6rem 0.7rem;
+  background: rgba(18, 27, 42, 0.94);
+}
+
+.summary-item .k {
+  color: var(--ink-soft);
+  font-size: 0.8rem;
+}
+
+.summary-item .v {
+  margin-top: 0.14rem;
+  font-weight: 700;
+  word-break: break-word;
+}
+
+.panel.hidden {
+  display: none;
+}
+
+.docs-panel {
+  margin-top: 0;
+}
+
+.docs-kicker {
+  margin: 0.7rem 0 0;
+  color: var(--ink-soft);
+}
+
+.docs-endpoint + .docs-endpoint {
+  margin-top: 1rem;
+  padding-top: 1rem;
+  border-top: 1px solid rgba(226, 236, 255, 0.1);
+}
+
+.docs-endpoint h3 {
+  margin: 0 0 0.45rem;
+  font-family: "Chakra Petch", "Trebuchet MS", sans-serif;
+  font-size: 1rem;
+}
+
+.docs-list {
+  margin: 0.55rem 0 0;
+  padding-left: 1.1rem;
+  color: var(--ink-soft);
+}
+
+.docs-list li + li {
+  margin-top: 0.32rem;
+}
+
+.panel-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.8rem;
+  flex-wrap: wrap;
+}
+
+.panel-actions {
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.candidate-grid {
+  margin-top: 0.85rem;
+  display: grid;
+  gap: 0.75rem;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.candidate-card {
+  border: 1.5px solid var(--line);
+  border-radius: 14px;
+  background: rgba(18, 27, 42, 0.94);
+  padding: 0.8rem;
+  color: var(--ink);
+  text-align: left;
+  cursor: pointer;
+}
+
+.candidate-card:hover {
+  transform: translateY(-1px);
+}
+
+.candidate-card.active {
+  box-shadow: 0 0 0 2px rgba(89, 210, 255, 0.18);
+}
+
+.candidate-top {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 0.7rem;
+}
+
+.candidate-top strong {
+  font-family: "Chakra Petch", "Trebuchet MS", sans-serif;
+  font-size: 0.98rem;
+}
+
+.candidate-time {
+  font-family: "Chakra Petch", "Trebuchet MS", sans-serif;
+  white-space: nowrap;
+}
+
+.candidate-meta {
+  margin-top: 0.55rem;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.45rem;
+  color: var(--ink-soft);
+  font-size: 0.82rem;
+}
+
+.candidate-path {
+  margin-top: 0.55rem;
+  color: var(--ink-soft);
+  font-size: 0.82rem;
+  word-break: break-word;
+}
+
+.code {
+  margin: 0.75rem 0 0;
+  overflow: auto;
+  border-radius: 14px;
+  border: 1px solid rgba(226, 236, 255, 0.12);
+  background: rgba(5, 10, 18, 0.92);
+  padding: 0.9rem;
+  white-space: pre-wrap;
+}
+
+.empty-state {
+  border: 1px dashed var(--line);
+  border-radius: 12px;
+  padding: 1rem;
+  text-align: center;
+  color: var(--ink-soft);
+}
+
+.overlay {
+  position: fixed;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  align-content: center;
+  gap: 0.7rem;
+  background: rgba(4, 10, 18, 0.8);
+  z-index: 30;
+}
+
+.overlay.hidden {
+  display: none;
+}
+
+.overlay-title {
+  margin: 0;
+  font-family: "Chakra Petch", "Trebuchet MS", sans-serif;
+  font-size: 1.1rem;
+}
+
+.overlay-copy {
+  margin: 0;
+  color: var(--ink-soft);
+}
+
+.loader {
+  width: 42px;
+  height: 42px;
+  border-radius: 999px;
+  border: 3px solid rgba(255, 255, 255, 0.16);
+  border-top-color: var(--cool);
+  animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@media (max-width: 900px) {
+  .page-tabs {
+    position: static;
+    margin-top: 1rem;
+    flex-direction: row;
+    width: fit-content;
+    max-width: 100%;
+  }
+
+  .page-tab {
+    min-width: 96px;
+  }
+
+  .cards,
+  .field-grid,
+  .field-grid-triple,
+  .candidate-grid,
+  .summary-grid {
+    grid-template-columns: 1fr;
+  }
+}

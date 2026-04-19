@@ -90,6 +90,40 @@ const DEFAULT_TOOLS = [
     link: "Map-Validation-Checker/",
     tone: "cool",
   },
+  {
+    id: "underwater-converter",
+    name: "Underwater Map Converter",
+    description:
+      "Convert any Trackmania 2020 map into an underwater variant with automatic environment detection and water carrier placement.",
+    category: "Map Conversion",
+    status: "live",
+    input: ".Map.Gbx",
+    output: "Underwater .Map.Gbx / Zip",
+    link: "Underwater-Map-Converter/",
+    tone: "cool",
+  },
+  {
+    id: "colorizer",
+    name: "TM Gradient Color Formatter",
+    description: "Format Trackmania text with per-letter gradient color codes (supports custom palettes & presets).",
+    category: "Text",
+    status: "live",
+    input: "Text + 2-7 colors",
+    output: "Formatted gradient string",
+    link: "Colorizer/",
+    tone: "warm",
+  },
+  {
+    id: "clip-to-ghost",
+    name: "Clip To Ghost",
+    description: "Export GPS clip RecordData blocks from Trackmania maps into standalone ghost files with optional manifest output.",
+    category: "Ghost Export",
+    status: "live",
+    input: ".Map.Gbx",
+    output: ".Ghost.Gbx + manifest",
+    link: "Clip-To-Ghost/",
+    tone: "cool",
+  },
 ];
 
 function safeMkdir(dir) {

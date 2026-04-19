@@ -17,6 +17,7 @@ Hub site for listing and launching Trackmania tools.
 - Exposes `GET /api/tools`
 - Reads tool definitions from `data/tools.json`
 - Uses built-in defaults if `tools.json` is missing or invalid
+- Individual tool pages can expose their own embedded docs tabs
 
 ## Run Local
 

@@ -159,7 +159,9 @@ $backendDirs = @(
   "sites/tools.xjk.yt/Embedded-Blocks-And-Items-Checker/backend",
   "sites/tools.xjk.yt/Extract-Replay-Data/backend",
   "sites/tools.xjk.yt/Gbx-Medal-Time-Modifier/backend",
-  "sites/tools.xjk.yt/Map-Validation-Checker/backend"
+  "sites/tools.xjk.yt/Map-Validation-Checker/backend",
+  "sites/tools.xjk.yt/Underwater-Map-Converter/backend",
+  "sites/tools.xjk.yt/Clip-To-Ghost/backend"
 )
 
 foreach ($dir in $backendDirs) {
@@ -202,7 +204,13 @@ $pm2HomeCandidates = @(
 
 $pm2Home = $null
 foreach ($candidate in $pm2HomeCandidates) {
-  if (Test-Path $candidate) {
+  $candidateExists = $false
+  try {
+    $candidateExists = Test-Path $candidate -ErrorAction Stop
+  } catch {
+    $candidateExists = $false
+  }
+  if ($candidateExists) {
     $pm2Home = $candidate
     break
   }
@@ -295,7 +303,12 @@ function Ensure-Pm2AppHealthyOnPort {
     Write-Host "PM2 app '$AppName' is '$pm2Status' while port $Port is still responding; replacing stale listener."
   }
 
-  $listener = Get-NetTCPConnection -State Listen -LocalPort $Port -ErrorAction SilentlyContinue | Select-Object -First 1
+  $listener = $null
+  try {
+    $listener = Get-NetTCPConnection -State Listen -LocalPort $Port -ErrorAction Stop | Select-Object -First 1
+  } catch {
+    $listener = $null
+  }
   if ($listener -and $listener.OwningProcess) {
     $listenerPid = [int]$listener.OwningProcess
     if ($listenerPid -gt 0) {
@@ -330,7 +343,7 @@ Write-Host "Reloading PM2 apps"
 # Guard against stale/orphan listeners that leave critical apps stopped.
 Ensure-Pm2AppHealthyOnPort -Pm2Exe $pm2Path -AppName "xjk-tracker-hub" -Port 3031 -HealthPath "/api/v1/tracker/status"
 Ensure-Pm2AppHealthyOnPort -Pm2Exe $pm2Path -AppName "xjk-aggregator-hub" -Port 3040 -HealthPath "/health" -ForceRestart
-Ensure-Pm2AppHealthyOnPort -Pm2Exe $pm2Path -AppName "xjk-bannerbuilder" -Port 3050 -HealthPath "/health"
+Ensure-Pm2AppHealthyOnPort -Pm2Exe $pm2Path -AppName "xjk-tools-clip-to-ghost" -Port 3018 -HealthPath "/health"
 
 & $pm2Path save
 

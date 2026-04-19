@@ -1,0 +1,25 @@
+<svg viewBox="0 0 400 240" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="g" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#120600"/>
+      <stop offset="55%" stop-color="#703000"/>
+      <stop offset="100%" stop-color="#d06000"/>
+    </linearGradient>
+  </defs>
+  <rect width="400" height="240" fill="url(#g)"/>
+  <rect x="0" y="90" width="300" height="3" fill="rgba(255,140,0,0.28)" rx="1"/>
+  <rect x="0" y="100" width="240" height="2" fill="rgba(255,120,0,0.20)" rx="1"/>
+  <rect x="0" y="108" width="280" height="3" fill="rgba(255,160,0,0.22)" rx="1"/>
+  <rect x="0" y="116" width="200" height="2" fill="rgba(255,100,0,0.18)" rx="1"/>
+  <rect x="0" y="124" width="260" height="3" fill="rgba(255,140,0,0.20)" rx="1"/>
+  <rect x="0" y="132" width="220" height="2" fill="rgba(255,120,0,0.15)" rx="1"/>
+  <rect x="290" y="30" width="90" height="70" rx="8" fill="none" stroke="rgba(255,180,80,0.20)" stroke-width="2"/>
+  <rect x="300" y="40" width="70" height="40" rx="4" fill="rgba(255,180,80,0.07)"/>
+  <rect x="0" y="228" width="400" height="12" fill="rgba(160,60,0,0.5)"/>
+  <rect x="0" y="228" width="80" height="12" fill="rgba(255,150,0,0.4)"/>
+  <text x="396" y="230" text-anchor="end" font-family="monospace" font-size="72" font-weight="700" fill="rgba(255,255,255,0.05)" letter-spacing="-4">2010</text>
+  <text x="16" y="22" font-family="monospace" font-size="9" font-weight="700" fill="rgba(255,255,255,0.4)" letter-spacing="3">TRACKMANIA</text>
+  <text x="16" y="64" font-family="monospace" font-size="22" font-weight="700" fill="rgba(255,255,255,0.88)" letter-spacing="1">TRACKMANIA</text>
+  <text x="16" y="88" font-family="monospace" font-size="34" font-weight="700" fill="rgba(255,160,40,0.92)" letter-spacing="2">TURBO</text>
+  <text x="16" y="74" font-family="monospace" font-size="8" font-weight="700" fill="rgba(255,200,100,0.5)" letter-spacing="3">DS / Wii - 2010</text>
+</svg>

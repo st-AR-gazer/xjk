@@ -1,10 +1,14 @@
 const elements = {
   buildDate: document.getElementById("buildDate"),
   search: document.getElementById("search"),
+  searchWrap: document.getElementById("searchWrap"),
   statGames: document.getElementById("statGames"),
   statBuilds: document.getElementById("statBuilds"),
   statFiles: document.getElementById("statFiles"),
   catalog: document.getElementById("catalog"),
+  catalogView: document.getElementById("catalogView"),
+  gamePage: document.getElementById("gamePage"),
+  gameContent: document.getElementById("gamePageContent"),
 };
 
 const state = {
@@ -13,13 +17,12 @@ const state = {
   query: "",
 };
 
-function normalizeText(value) {
-  return String(value || "").trim();
+function normalizeText(v) {
+  return String(v || "").trim();
 }
 
-function toArray(value) {
-  if (Array.isArray(value)) return value;
-  return [];
+function toArray(v) {
+  return Array.isArray(v) ? v : [];
 }
 
 function stripUnsafeUrl(value) {
@@ -29,93 +32,81 @@ function stripUnsafeUrl(value) {
   return url;
 }
 
-function normalizeFile(file, index) {
+function normalizeFile(file, i) {
   if (!file || typeof file !== "object") return null;
-  const label = normalizeText(file.label || `File ${index + 1}`);
+  const label = normalizeText(file.label || `File ${i + 1}`);
   const url = stripUnsafeUrl(file.url);
   return url ? { label, url } : null;
 }
 
-function normalizeLink(link, index) {
+function normalizeLink(link, i) {
   if (!link || typeof link !== "object") return null;
-  const label = normalizeText(link.label || `Link ${index + 1}`);
+  const label = normalizeText(link.label || `Link ${i + 1}`);
   const url = stripUnsafeUrl(link.url);
   return url ? { label, url } : null;
 }
 
-function normalizeBuild(build, index) {
+function normalizeBuild(build, i) {
   if (!build || typeof build !== "object") return null;
-  const name = normalizeText(build.name || build.label || `Build ${index + 1}`);
-  const version = normalizeText(build.version);
-  const released = normalizeText(build.released);
-  const platform = normalizeText(build.platform);
-  const distribution = normalizeText(build.distribution);
-  const notes = normalizeText(build.notes);
-
-  const files = toArray(build.files)
-    .map((file, fileIndex) => normalizeFile(file, fileIndex))
-    .filter(Boolean);
-  const links = toArray(build.links)
-    .map((link, linkIndex) => normalizeLink(link, linkIndex))
-    .filter(Boolean);
-
   return {
-    id: normalizeText(build.id || `build-${index + 1}`),
-    name,
-    version,
-    released,
-    platform,
-    distribution,
-    notes,
-    files,
-    links,
+    id: normalizeText(build.id || `build-${i + 1}`),
+    name: normalizeText(build.name || build.label || `Build ${i + 1}`),
+    version: normalizeText(build.version),
+    released: normalizeText(build.released),
+    platform: normalizeText(build.platform),
+    distribution: normalizeText(build.distribution),
+    notes: normalizeText(build.notes),
+    category: normalizeText(build.category),
+    files: toArray(build.files).map(normalizeFile).filter(Boolean),
+    links: toArray(build.links).map(normalizeLink).filter(Boolean),
   };
 }
 
-function normalizeGame(game, index) {
+function normalizeGame(game, i) {
   if (!game || typeof game !== "object") return null;
-  const id = normalizeText(game.id || `game-${index + 1}`);
-  const name = normalizeText(game.name || "Untitled Game");
-  const franchise = normalizeText(game.franchise || "TrackMania");
-  const years = normalizeText(game.years);
-  const description = normalizeText(game.description);
-  const platforms = toArray(game.platforms).map((p) => normalizeText(p)).filter(Boolean);
-  const builds = toArray(game.builds)
-    .map((build, buildIndex) => normalizeBuild(build, buildIndex))
-    .filter(Boolean);
+  return {
+    id: normalizeText(game.id || `game-${i + 1}`),
+    name: normalizeText(game.name || "Untitled Game"),
+    franchise: normalizeText(game.franchise || "TrackMania"),
+    years: normalizeText(game.years),
+    image: normalizeText(game.image),
+    description: normalizeText(game.description),
+    platforms: toArray(game.platforms).map(normalizeText).filter(Boolean),
+    builds: toArray(game.builds).map(normalizeBuild).filter(Boolean),
+  };
+}
 
-  return { id, name, franchise, years, description, platforms, builds };
+function parseStartYear(years) {
+  const match = (years || "").match(/(\d{4})/);
+  return match ? parseInt(match[1], 10) : 0;
 }
 
 function normalizeArchive(payload) {
   const games = toArray(payload?.games)
-    .map((game, index) => normalizeGame(game, index))
+    .map(normalizeGame)
     .filter(Boolean);
+  games.sort((a, b) => parseStartYear(b.years) - parseStartYear(a.years));
+  return games;
+}
 
-  const byFranchise = new Map();
-  games.forEach((game) => {
-    const key = game.franchise || "Other";
-    if (!byFranchise.has(key)) byFranchise.set(key, []);
-    byFranchise.get(key).push(game);
+function formatDate(iso) {
+  if (!iso) return "";
+  const date = new Date(iso);
+  if (!Number.isFinite(date.getTime())) return iso;
+  return date.toLocaleDateString(undefined, {
+    year: "numeric",
+    month: "short",
+    day: "2-digit",
   });
-
-  return { games, byFranchise };
 }
 
-function formatDate(dateIso) {
-  if (!dateIso) return "";
-  const parsed = new Date(dateIso);
-  if (!Number.isFinite(parsed.getTime())) return dateIso;
-  return parsed.toLocaleDateString(undefined, { year: "numeric", month: "short", day: "2-digit" });
-}
-
-function textIncludes(haystack, needle) {
+function textIncludes(hay, needle) {
   if (!needle) return true;
-  return haystack.toLowerCase().includes(needle);
+  return hay.toLowerCase().includes(needle);
 }
 
 function buildSearchText(game, build) {
-  const parts = [
+  return [
     game?.name,
     game?.franchise,
     game?.years,
@@ -127,167 +118,259 @@ function buildSearchText(game, build) {
     build?.platform,
     build?.distribution,
     build?.notes,
+    build?.category,
     ...(build?.files || []).map((f) => `${f.label} ${f.url}`),
     ...(build?.links || []).map((l) => `${l.label} ${l.url}`),
-  ].filter(Boolean);
-  return parts.join(" ").trim();
+  ]
+    .filter(Boolean)
+    .join(" ");
 }
 
-function createPill(label) {
-  const pill = document.createElement("span");
-  pill.className = "pill";
-  pill.textContent = label;
-  return pill;
+function el(tag, attrs, ...children) {
+  const node = document.createElement(tag);
+  if (attrs) {
+    Object.entries(attrs).forEach(([key, value]) => {
+      if (key === "className") node.className = value;
+      else if (key === "textContent") node.textContent = value;
+      else node.setAttribute(key, value);
+    });
+  }
+  children.flat().forEach((child) => {
+    if (child == null) return;
+    node.appendChild(typeof child === "string" ? document.createTextNode(child) : child);
+  });
+  return node;
+}
+
+function renderStats() {
+  elements.statGames.textContent = String(state.games.length);
+  elements.statBuilds.textContent = String(
+    state.games.reduce((sum, game) => sum + game.builds.length, 0)
+  );
+  elements.statFiles.textContent = String(
+    state.games.reduce(
+      (sum, game) => sum + game.builds.reduce((inner, build) => inner + build.files.length, 0),
+      0
+    )
+  );
+}
+
+function renderBuildDate() {
+  elements.buildDate.textContent = new Date().toLocaleDateString(undefined, {
+    year: "numeric",
+    month: "short",
+    day: "2-digit",
+  });
 }
 
 function createBuildCard(build) {
-  const wrapper = document.createElement("div");
-  wrapper.className = "build";
+  const card = el("div", { className: "build" });
 
-  const head = document.createElement("div");
-  head.className = "build-head";
-
-  const title = document.createElement("strong");
-  title.textContent = build.name;
-
-  const right = document.createElement("span");
-  right.className = "muted";
-  const releaseLabel = build.released ? formatDate(build.released) : "";
-  right.textContent = releaseLabel;
-
-  head.append(title, right);
-
-  const meta = document.createElement("div");
-  meta.className = "build-meta";
+  const head = el(
+    "div",
+    { className: "build-head" },
+    el("strong", { textContent: build.name }),
+    el("span", { className: "muted", textContent: formatDate(build.released) })
+  );
 
   const metaParts = [];
   if (build.version) metaParts.push(`Version: ${build.version}`);
   if (build.platform) metaParts.push(`Platform: ${build.platform}`);
   if (build.distribution) metaParts.push(`Source: ${build.distribution}`);
-  meta.textContent = metaParts.join(" · ");
 
-  const notes = document.createElement("p");
-  notes.className = "muted";
-  notes.textContent = build.notes || "";
-
-  const links = document.createElement("div");
-  links.className = "links";
-
-  const fileLinks = build.files.map((file, index) => {
-    const a = document.createElement("a");
-    a.className = index === 0 ? "btn btn-primary" : "btn";
-    a.href = file.url;
-    a.rel = "noopener";
-    a.textContent = file.label || "Download";
-    return a;
+  const links = el("div", { className: "links" });
+  build.files.forEach((file, index) => {
+    const link = el("a", {
+      className: index === 0 ? "btn btn-primary" : "btn",
+      href: file.url,
+      rel: "noopener",
+    });
+    link.textContent = file.label || "Download";
+    links.appendChild(link);
+  });
+  build.links.forEach((linkData) => {
+    const link = el("a", {
+      className: "btn",
+      href: linkData.url,
+      rel: "noopener",
+      ...(linkData.url.startsWith("/") ? {} : { target: "_blank" }),
+    });
+    link.textContent = linkData.label || "Info";
+    links.appendChild(link);
   });
 
-  const infoLinks = build.links.map((link) => {
-    const a = document.createElement("a");
-    a.className = "btn";
-    a.href = link.url;
-    a.target = link.url.startsWith("/") ? "" : "_blank";
-    a.rel = "noopener";
-    a.textContent = link.label || "Info";
-    return a;
-  });
-
-  [...fileLinks, ...infoLinks].forEach((a) => links.appendChild(a));
-
-  wrapper.append(head);
-  if (meta.textContent) wrapper.append(meta);
-  if (notes.textContent) wrapper.append(notes);
-  if (links.children.length) wrapper.append(links);
-
-  return wrapper;
+  card.appendChild(head);
+  if (metaParts.length) {
+    card.appendChild(el("div", { className: "build-meta", textContent: metaParts.join(" | ") }));
+  }
+  if (build.notes) {
+    card.appendChild(el("p", { className: "muted", textContent: build.notes }));
+  }
+  if (links.children.length) {
+    card.appendChild(links);
+  }
+  return card;
 }
 
-function createGameDetails(game, query) {
-  const details = document.createElement("details");
-  details.className = "game";
+function renderGamePage(game) {
+  const content = elements.gameContent;
+  content.innerHTML = "";
 
-  const summary = document.createElement("summary");
+  const back = el("a", { className: "back-btn", href: "#" });
+  back.innerHTML = "&larr; BACK TO VAULT";
+  back.addEventListener("click", (event) => {
+    event.preventDefault();
+    location.hash = "";
+  });
+  content.appendChild(back);
 
-  const titleBlock = document.createElement("div");
-  titleBlock.className = "game-title";
-
-  const title = document.createElement("strong");
-  title.textContent = game.name;
-
-  const meta = document.createElement("div");
-  meta.className = "game-meta";
-
-  const metaParts = [];
-  if (game.years) metaParts.push(game.years);
-  if (game.platforms.length) metaParts.push(game.platforms.join(", "));
-  meta.textContent = metaParts.join(" · ");
-
-  if (game.years) {
-    const yearBadge = document.createElement("span");
-    yearBadge.className = "year-badge";
-    yearBadge.textContent = game.years;
-    titleBlock.append(yearBadge);
+  const coverWrap = el("div", { className: "gp-cover" });
+  if (game.image) {
+    const img = el("img", { src: game.image, alt: game.name, loading: "eager" });
+    img.onerror = () => {
+      img.style.display = "none";
+    };
+    coverWrap.appendChild(img);
   }
+  const coverOverlay = el("div", { className: "gp-cover-overlay" });
+  coverOverlay.appendChild(el("span", { className: "gp-franchise", textContent: game.franchise }));
+  if (game.years) {
+    coverOverlay.appendChild(el("span", { className: "gp-year", textContent: game.years }));
+  }
+  coverWrap.appendChild(coverOverlay);
+  content.appendChild(coverWrap);
 
-  titleBlock.append(title);
-  if (meta.textContent) titleBlock.append(meta);
+  const meta = el("div", { className: "gp-meta" });
+  meta.appendChild(el("h2", { className: "gp-title", textContent: game.name }));
 
-  const pillStack = document.createElement("div");
-  pillStack.className = "pill-stack";
+  const pills = el("div", { className: "gp-pills" });
+  game.platforms.forEach((platform) => {
+    pills.appendChild(el("span", { className: "pill", textContent: platform }));
+  });
+  const buildCount = game.builds.length;
+  const fileCount = game.builds.reduce((sum, build) => sum + build.files.length, 0);
+  pills.appendChild(
+    el("span", {
+      className: "pill-count",
+      textContent: `${buildCount} build${buildCount !== 1 ? "s" : ""}`,
+    })
+  );
+  if (fileCount > 0) {
+    pills.appendChild(
+      el("span", {
+        className: "pill-count",
+        textContent: `${fileCount} file${fileCount !== 1 ? "s" : ""}`,
+      })
+    );
+  }
+  meta.appendChild(pills);
+
+  if (game.description) {
+    meta.appendChild(el("p", { className: "gp-desc", textContent: game.description }));
+  }
+  content.appendChild(meta);
+
+  const buildsSection = el("div", { className: "gp-builds" });
+  buildsSection.appendChild(
+    el("div", { className: "gp-builds-heading", textContent: "ARCHIVED BUILDS" })
+  );
+
+  if (game.builds.length === 0) {
+    buildsSection.appendChild(
+      el("div", {
+        className: "empty-state",
+        textContent: "No archived builds yet. Add entries to data/archive.json.",
+      })
+    );
+  } else {
+    const hasCategories = game.builds.some((build) => build.category);
+    if (hasCategories) {
+      const grouped = new Map();
+      game.builds.forEach((build) => {
+        const key = build.category || "General";
+        if (!grouped.has(key)) grouped.set(key, []);
+        grouped.get(key).push(build);
+      });
+      grouped.forEach((builds, category) => {
+        buildsSection.appendChild(
+          el("div", { className: "build-category-head", textContent: category })
+        );
+        const grid = el("div", { className: "builds" });
+        builds.forEach((build) => grid.appendChild(createBuildCard(build)));
+        buildsSection.appendChild(grid);
+      });
+    } else {
+      const grid = el("div", { className: "builds" });
+      game.builds.forEach((build) => grid.appendChild(createBuildCard(build)));
+      buildsSection.appendChild(grid);
+    }
+  }
+  content.appendChild(buildsSection);
+}
+
+function createGameCard(game) {
+  const card = el("a", {
+    className: "game-card",
+    href: `#${game.id}`,
+    "data-game-id": game.id,
+  });
+
+  const cover = el("div", { className: "game-cover" });
+  if (game.image) {
+    const img = document.createElement("img");
+    img.src = game.image;
+    img.alt = game.name;
+    img.loading = "lazy";
+    img.onerror = () => {
+      img.style.display = "none";
+    };
+    cover.appendChild(img);
+  }
+  cover.appendChild(el("span", { className: "cover-franchise", textContent: game.franchise }));
+  if (game.years) {
+    cover.appendChild(el("span", { className: "cover-year", textContent: game.years }));
+  }
+  card.appendChild(cover);
+
+  const info = el("div", { className: "game-info" });
+  info.appendChild(el("span", { className: "game-name", textContent: game.name }));
+
+  const pills = el("div", { className: "game-pills" });
+  game.platforms
+    .slice(0, 3)
+    .forEach((platform) => pills.appendChild(el("span", { className: "pill", textContent: platform })));
+  if (game.platforms.length > 3) {
+    pills.appendChild(
+      el("span", { className: "pill", textContent: `+${game.platforms.length - 3}` })
+    );
+  }
 
   const buildCount = game.builds.length;
   const fileCount = game.builds.reduce((sum, build) => sum + build.files.length, 0);
-  pillStack.append(createPill(`${buildCount} builds`), createPill(`${fileCount} files`));
-
-  summary.append(titleBlock, pillStack);
-  details.appendChild(summary);
-
-  const body = document.createElement("div");
-  body.className = "game-body";
-
-  const desc = document.createElement("p");
-  desc.className = "game-desc";
-  desc.textContent = game.description || "";
-
-  const buildsWrap = document.createElement("div");
-  buildsWrap.className = "builds";
-
-  const q = query.trim().toLowerCase();
-  const matchedBuilds = q
-    ? game.builds.filter((build) => textIncludes(buildSearchText(game, build), q))
-    : game.builds;
-
-  if (matchedBuilds.length === 0) {
-    const empty = document.createElement("div");
-    empty.className = "empty-state";
-    empty.textContent = game.builds.length
-      ? "No builds match your search."
-      : "No archived builds yet. Add entries to data/archive.json.";
-    buildsWrap.appendChild(empty);
-  } else {
-    matchedBuilds.forEach((build) => buildsWrap.appendChild(createBuildCard(build)));
+  pills.appendChild(
+    el("span", {
+      className: "pill-count",
+      textContent: `${buildCount} build${buildCount !== 1 ? "s" : ""}`,
+    })
+  );
+  if (fileCount > 0) {
+    pills.appendChild(
+      el("span", {
+        className: "pill-count",
+        textContent: `${fileCount} file${fileCount !== 1 ? "s" : ""}`,
+      })
+    );
   }
 
-  if (desc.textContent) body.appendChild(desc);
-  body.appendChild(buildsWrap);
-  details.appendChild(body);
-
-  return { details, matchedCount: matchedBuilds.length };
-}
-
-function renderStats() {
-  const games = state.games.length;
-  const builds = state.games.reduce((sum, game) => sum + game.builds.length, 0);
-  const files = state.games.reduce((sum, game) => sum + game.builds.reduce((s, b) => s + b.files.length, 0), 0);
-  elements.statGames.textContent = String(games);
-  elements.statBuilds.textContent = String(builds);
-  elements.statFiles.textContent = String(files);
+  info.appendChild(pills);
+  card.appendChild(info);
+  return card;
 }
 
 function renderCatalog() {
   elements.catalog.innerHTML = "";
-
   const query = state.query.trim().toLowerCase();
+
   const byFranchise = new Map();
   state.games.forEach((game) => {
     const key = game.franchise || "Other";
@@ -295,71 +378,90 @@ function renderCatalog() {
     byFranchise.get(key).push(game);
   });
 
-  const franchiseKeys = Array.from(byFranchise.keys()).sort((a, b) => a.localeCompare(b));
+  const franchiseKeys = Array.from(byFranchise.keys()).sort((a, b) => {
+    const aYear = parseStartYear(byFranchise.get(a)[0]?.years || "0");
+    const bYear = parseStartYear(byFranchise.get(b)[0]?.years || "0");
+    return bYear - aYear;
+  });
 
-  let visibleGames = 0;
+  let totalVisible = 0;
 
   franchiseKeys.forEach((franchise) => {
     const games = byFranchise.get(franchise) || [];
+    const section = el("section", { className: "group" });
 
-    const groupContainer = document.createElement("section");
-    groupContainer.className = "group";
+    const head = el(
+      "div",
+      { className: "group-head" },
+      el("h3", { textContent: franchise }),
+      el("span", {
+        className: "count",
+        textContent: `${games.length} game${games.length === 1 ? "" : "s"}`,
+      })
+    );
+    section.appendChild(head);
 
-    const head = document.createElement("div");
-    head.className = "group-head";
-
-    const title = document.createElement("h3");
-    title.textContent = franchise;
-
-    const count = document.createElement("span");
-    count.className = "count";
-    count.textContent = `${games.length} game${games.length === 1 ? "" : "s"}`;
-
-    head.append(title, count);
-    groupContainer.appendChild(head);
-
-    let groupHasVisible = false;
+    const grid = el("div", { className: "games-grid" });
+    let groupVisible = false;
 
     games.forEach((game) => {
-      const gameMatches =
+      const matches =
         !query ||
         textIncludes(buildSearchText(game, null), query) ||
         game.builds.some((build) => textIncludes(buildSearchText(game, build), query));
-
-      if (!gameMatches) return;
-      groupHasVisible = true;
-      visibleGames += 1;
-
-      const { details } = createGameDetails(game, state.query);
-      groupContainer.appendChild(details);
+      if (!matches) return;
+      groupVisible = true;
+      totalVisible += 1;
+      grid.appendChild(createGameCard(game));
     });
 
-    if (groupHasVisible) {
-      elements.catalog.appendChild(groupContainer);
+    if (groupVisible) {
+      section.appendChild(grid);
+      elements.catalog.appendChild(section);
     }
   });
 
-  if (visibleGames === 0) {
-    const empty = document.createElement("div");
-    empty.className = "empty-state";
-    empty.textContent = "No games match your search.";
-    elements.catalog.appendChild(empty);
+  if (totalVisible === 0) {
+    elements.catalog.appendChild(
+      el("div", { className: "empty-state", textContent: "No games match your search." })
+    );
   }
 }
 
-function renderBuildDate() {
-  const stamp = new Date();
-  elements.buildDate.textContent = stamp.toLocaleDateString(undefined, {
-    year: "numeric",
-    month: "short",
-    day: "2-digit",
-  });
+function showCatalog() {
+  elements.catalogView.hidden = false;
+  elements.gamePage.hidden = true;
+  elements.searchWrap.hidden = false;
+  document.title = "xjk / archive hub";
+  renderCatalog();
+  window.scrollTo(0, 0);
+}
+
+function showGame(game) {
+  elements.catalogView.hidden = true;
+  elements.gamePage.hidden = false;
+  elements.searchWrap.hidden = true;
+  document.title = `xjk / ${game.name}`;
+  renderGamePage(game);
+  window.scrollTo(0, 0);
+}
+
+function handleRoute() {
+  const hash = location.hash.replace(/^#/, "").trim();
+  if (hash && state.games.length > 0) {
+    const game = state.games.find((entry) => entry.id === hash);
+    if (game) {
+      showGame(game);
+      return;
+    }
+  }
+  showCatalog();
 }
 
 async function loadArchive() {
   const response = await fetch("data/archive.json", { headers: { Accept: "application/json" } });
-  if (!response.ok) throw new Error(`archive.json returned HTTP ${response.status}`);
-  return await response.json();
+  if (!response.ok) throw new Error(`HTTP ${response.status}`);
+  return response.json();
 }
 
 function defaultArchive() {
@@ -368,105 +470,30 @@ function defaultArchive() {
       {
         id: "tm-original",
         franchise: "TrackMania",
-        name: "TrackMania (Original)",
+        name: "TrackMania",
         years: "2003",
+        image: "img/tm-original.svg",
         platforms: ["Windows"],
-        description: "The original TrackMania release.",
-        builds: [],
-      },
-      {
-        id: "tm-sunrise",
-        franchise: "TrackMania",
-        name: "TrackMania Sunrise",
-        years: "2005",
-        platforms: ["Windows"],
-        description: "TrackMania Sunrise and Sunrise eXtreme-era builds.",
-        builds: [],
-      },
-      {
-        id: "tm-nations-eswc",
-        franchise: "TrackMania",
-        name: "TrackMania Nations ESWC",
-        years: "2006",
-        platforms: ["Windows"],
-        description: "The ESWC release and related patches.",
-        builds: [],
-      },
-      {
-        id: "tm-united",
-        franchise: "TrackMania",
-        name: "TrackMania United",
-        years: "2006",
-        platforms: ["Windows"],
-        description: "TrackMania United (retail/digital) installers and updates.",
-        builds: [],
-      },
-      {
-        id: "tm-forever",
-        franchise: "TrackMania",
-        name: "TrackMania Forever (Nations / United)",
-        years: "2008",
-        platforms: ["Windows"],
-        description: "Nations Forever and United Forever builds.",
-        builds: [],
-      },
-      {
-        id: "tm2",
-        franchise: "TrackMania² / ManiaPlanet",
-        name: "TrackMania² (Canyon / Stadium / Valley / Lagoon)",
-        years: "2011–2017",
-        platforms: ["Windows"],
-        description: "ManiaPlanet-era TrackMania² titles and updates.",
-        builds: [],
-      },
-      {
-        id: "tm-turbo",
-        franchise: "TrackMania",
-        name: "TrackMania Turbo",
-        years: "2016",
-        platforms: ["Windows", "PS4", "Xbox One"],
-        description: "TrackMania Turbo releases and patches.",
+        description: "Original TrackMania release.",
         builds: [],
       },
       {
         id: "tm-2020",
         franchise: "TrackMania",
         name: "Trackmania (2020)",
-        years: "2020–",
-        platforms: ["Windows", "PS4/PS5", "Xbox One/Series", "Cloud"],
-        description: "Trackmania 2020 builds, tools, and data snapshots.",
-        builds: [],
-      },
-      {
-        id: "shootmania-storm",
-        franchise: "ShootMania / ManiaPlanet",
-        name: "ShootMania Storm",
-        years: "2013",
+        years: "2020-",
+        image: "img/tm-2020.svg",
         platforms: ["Windows"],
-        description: "ShootMania Storm builds and updates.",
-        builds: [],
-      },
-      {
-        id: "questmania",
-        franchise: "QuestMania / ManiaPlanet",
-        name: "QuestMania",
-        years: "2011",
-        platforms: ["Windows"],
-        description: "QuestMania builds and updates.",
+        description: "Current Trackmania release.",
         builds: [],
       },
     ],
   };
 }
 
-function setQuery(next) {
-  state.query = String(next || "");
-  renderCatalog();
-}
-
 async function boot() {
   renderBuildDate();
-  elements.catalog.innerHTML = '<div class="empty-state">Loading archive…</div>';
+  elements.catalog.innerHTML = '<div class="empty-state">Loading archive...</div>';
 
   try {
     state.raw = await loadArchive();
@@ -475,13 +502,15 @@ async function boot() {
     state.raw = defaultArchive();
   }
 
-  const normalized = normalizeArchive(state.raw);
-  state.games = normalized.games;
-
+  state.games = normalizeArchive(state.raw);
   renderStats();
-  renderCatalog();
+  handleRoute();
 
-  elements.search.addEventListener("input", () => setQuery(elements.search.value));
+  window.addEventListener("hashchange", handleRoute);
+  elements.search.addEventListener("input", () => {
+    state.query = elements.search.value;
+    if (!elements.catalogView.hidden) renderCatalog();
+  });
 }
 
 boot();

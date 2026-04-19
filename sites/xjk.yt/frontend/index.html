@@ -1,5 +1,6 @@
 <!doctype html>
 <html lang="en">
+
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
@@ -7,290 +8,609 @@
   <link rel="icon" href="favicon.svg" type="image/svg+xml" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@500;600;700&family=Manrope:wght@400;500;700&display=swap" rel="stylesheet" />
+  <link
+    href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@500;600;700&family=Manrope:wght@400;500;700&family=Space+Mono:wght@400;700&display=swap"
+    rel="stylesheet" />
   <style>
     :root {
-      --bg-0: #060a16;
-      --bg-1: #0d1428;
-      --ink: #e8f0ff;
-      --muted: #9badcf;
-      --card: #111b33;
-      --stroke: #2b3e6a;
-      --accent-a: #f98a3b;
-      --accent-b: #2cbfd0;
-      --accent-c: #9a56e9;
-      --accent-d: #5ed28d;
-      --accent-e: #ffd07a;
-      --accent-f: #58cbff;
-      --accent-g: #88d66f;
-      --accent-h: #ff5f7a;
-      --radius: 18px;
+      --bg-base: #030408;
+      --bg-panel: #0a0d14;
+      --bg-panel-hover: #10141d;
+      --ink: #e2e8f0;
+      --muted: #8492a6;
+      --stroke: #1e293b;
+      --stroke-hover: #334155;
+
+      --accent-tools: #f98a3b;
+      --accent-plugins: #4ade80;
+      --accent-learn: #38bdf8;
+      --accent-archive: #e8a200;
+      --accent-altered: #60a5fa;
+      --accent-trackers: #facc15;
+      --accent-aggregator: #ef4444;
+
+      --radius: 12px;
     }
 
-    * { box-sizing: border-box; }
+    * {
+      box-sizing: border-box;
+    }
 
     body {
       margin: 0;
       min-height: 100vh;
       font-family: "Manrope", sans-serif;
       color: var(--ink);
-      background:
-        radial-gradient(1400px 700px at 90% -5%, rgba(249, 138, 59, 0.2), transparent 60%),
-        radial-gradient(900px 600px at -15% 110%, rgba(44, 191, 208, 0.2), transparent 60%),
-        linear-gradient(165deg, var(--bg-0), var(--bg-1));
+      background: var(--bg-base);
+      background-image: radial-gradient(circle at 50% 0%, rgba(30, 41, 59, 0.4), transparent 70%);
+      overflow-x: hidden;
+    }
+
+    body::before {
+      content: "";
+      position: fixed;
+      inset: 0;
+      z-index: -1;
+      background-image: radial-gradient(rgba(255, 255, 255, 0.03) 1px, transparent 1px);
+      background-size: 24px 24px;
+      pointer-events: none;
     }
 
     main {
-      width: min(1040px, 100% - 2rem);
+      width: min(1200px, 100% - 2rem);
       margin: 0 auto;
-      padding: 3.2rem 0 3.8rem;
+      padding: 4rem 0 6rem;
+    }
+
+    header {
+      margin-bottom: 3rem;
     }
 
     .kicker {
-      display: inline-block;
-      padding: 0.35rem 0.7rem;
-      border-radius: 999px;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      padding: 0.4rem 0.8rem;
       border: 1px solid var(--stroke);
-      background: rgba(255, 255, 255, 0.04);
-      font-family: "Chakra Petch", sans-serif;
-      font-size: 0.74rem;
-      letter-spacing: 0.05em;
+      background: rgba(255, 255, 255, 0.02);
+      font-family: "Space Mono", monospace;
+      font-size: 0.75rem;
+      letter-spacing: 0.1em;
       text-transform: uppercase;
       color: var(--muted);
+      border-radius: 4px;
+    }
+
+    .kicker::before {
+      content: "";
+      width: 6px;
+      height: 6px;
+      background: var(--accent-aggregator);
+      border-radius: 50%;
+      box-shadow: 0 0 8px var(--accent-aggregator);
     }
 
     h1 {
-      margin: 1rem 0 0.7rem;
-      font-size: clamp(1.9rem, 5.8vw, 3.6rem);
-      line-height: 1.05;
-      letter-spacing: -0.02em;
+      margin: 1.5rem 0 0.5rem;
+      font-size: clamp(2.5rem, 6vw, 4rem);
+      line-height: 1;
+      letter-spacing: -0.03em;
       font-family: "Chakra Petch", sans-serif;
+      font-weight: 700;
     }
 
     .lead {
-      margin: 0 0 2rem;
-      max-width: 62ch;
+      margin: 0;
+      max-width: 50ch;
       color: var(--muted);
+      font-size: 1.1rem;
       line-height: 1.6;
     }
 
-    .grid {
+    .bento-grid {
       display: grid;
-      grid-template-columns: repeat(12, minmax(0, 1fr));
-      gap: 0.9rem;
+      grid-template-columns: repeat(1, 1fr);
+      gap: 1rem;
+      perspective: 1000px;
+    }
+
+    @media (min-width: 640px) {
+      .bento-grid {
+        grid-template-columns: repeat(2, 1fr);
+      }
+    }
+
+    @media (min-width: 1024px) {
+      .bento-grid {
+        grid-template-columns: repeat(4, 1fr);
+        grid-auto-rows: 180px;
+      }
+
+      .card.aggregator {
+        grid-column: span 2;
+        grid-row: span 2;
+      }
+
+      .card.trackers {
+        grid-column: span 2;
+      }
+
+      .card.archive {
+        grid-row: span 2;
+      }
+
+      .card.learn {
+        grid-column: span 2;
+      }
     }
 
     .card {
-      grid-column: span 12;
-      display: block;
+      position: relative;
+      display: flex;
+      flex-direction: column;
       text-decoration: none;
       color: inherit;
       border: 1px solid var(--stroke);
       border-radius: var(--radius);
-      background: var(--card);
-      padding: 1.1rem 1.1rem 1rem;
-      box-shadow: 0 12px 32px rgba(0, 0, 0, 0.35);
-      transition: transform 160ms ease, box-shadow 160ms ease, border-color 160ms ease;
+      background: var(--bg-panel);
+      padding: 1.5rem;
+      overflow: hidden;
+      transform-style: preserve-3d;
+      transition: border-color 0.3s ease, background 0.3s ease;
+      will-change: transform;
+
+      opacity: 0;
+      animation-fill-mode: forwards;
+      animation-timing-function: cubic-bezier(0.2, 0.8, 0.2, 1);
+      animation-duration: 0.8s;
+    }
+
+    @keyframes flyInLeft {
+      0% { opacity: 0; translate: -50px 0; }
+      100% { opacity: 1; translate: 0 0; }
+    }
+    @keyframes flyInRight {
+      0% { opacity: 0; translate: 50px 0; }
+      100% { opacity: 1; translate: 0 0; }
+    }
+    @keyframes flyInBottom {
+      0% { opacity: 0; translate: 0 50px; }
+      100% { opacity: 1; translate: 0 0; }
+    }
+    @keyframes popInCenter {
+      0% { opacity: 0; scale: 0.9; }
+      100% { opacity: 1; scale: 1; }
+    }
+
+    .card.aggregator { animation-name: popInCenter; animation-delay: 0.1s; }
+    .card.plugins { animation-name: flyInLeft; animation-delay: 0.2s; }
+    .card.trackers { animation-name: flyInRight; animation-delay: 0.3s; }
+    .card.tools { animation-name: flyInRight; animation-delay: 0.4s; }
+    .card.archive { animation-name: flyInBottom; animation-delay: 0.5s; }
+    .card.learn { animation-name: flyInBottom; animation-delay: 0.6s; }
+    .card.altered { animation-name: flyInBottom; animation-delay: 0.7s; }
+
+    .card::before {
+      content: "";
+      position: absolute;
+      inset: 0;
+      background: radial-gradient(800px circle at var(--mouse-x, 50%) var(--mouse-y, 50%),
+          rgba(255, 255, 255, 0.06),
+          transparent 40%);
+      opacity: 0;
+      transition: opacity 0.3s ease;
+      pointer-events: none;
+      z-index: 1;
     }
 
     .card:hover {
-      transform: translateY(-2px);
-      box-shadow: 0 16px 36px rgba(0, 0, 0, 0.42);
-      border-color: #45639d;
+      border-color: var(--stroke-hover);
+      background: var(--bg-panel-hover);
+    }
+
+    .card:hover::before {
+      opacity: 1;
+    }
+
+    .card-content {
+      position: relative;
+      z-index: 2;
+      height: 100%;
+      display: flex;
+      flex-direction: column;
+      transform: translateZ(20px);
+    }
+
+    .card-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      margin-bottom: auto;
     }
 
     .card h2 {
-      margin: 0 0 0.3rem;
-      font-size: 1.1rem;
+      margin: 0 0 0.5rem;
+      font-size: 1.4rem;
       line-height: 1.2;
       font-family: "Chakra Petch", sans-serif;
+      color: var(--ink);
     }
 
     .card p {
-      margin: 0;
+      margin: 0 0 1.5rem;
       color: var(--muted);
-      font-size: 0.96rem;
+      font-size: 0.95rem;
       line-height: 1.5;
+      max-width: 90%;
     }
 
-    .card .host {
-      margin-top: 0.75rem;
-      display: inline-block;
-      font-family: "Chakra Petch", sans-serif;
-      font-size: 0.78rem;
+    .host-tag {
+      display: inline-flex;
+      align-items: center;
+      font-family: "Space Mono", monospace;
+      font-size: 0.75rem;
       color: var(--ink);
-      padding: 0.3rem 0.5rem;
-      border-radius: 999px;
+      padding: 0.3rem 0.6rem;
       border: 1px solid var(--stroke);
-      background: rgba(255, 255, 255, 0.04);
+      background: rgba(0, 0, 0, 0.2);
+      border-radius: 4px;
+      align-self: flex-start;
+      transition: border-color 0.2s, color 0.2s;
     }
 
-    .tools { border-left: 6px solid var(--accent-a); }
-    .plugins { border-left: 6px solid var(--accent-d); }
-    .learn { border-left: 6px solid var(--accent-b); }
-    .archive { border-left: 6px solid var(--accent-f); }
-    .altered { border-left: 6px solid var(--accent-c); }
-    .trackers { border-left: 6px solid var(--accent-e); }
-    .aggregator {
-      border-left: 6px solid var(--accent-h);
-      border-color: #6a3751;
-      background:
-        linear-gradient(155deg, rgba(255, 95, 122, 0.22), rgba(255, 95, 122, 0.05) 42%, rgba(17, 27, 51, 0.96)),
-        var(--card);
+    .card:hover .host-tag {
+      border-color: currentColor;
     }
 
-    .aggregator .host {
-      border-color: rgba(255, 95, 122, 0.55);
-      background: rgba(255, 95, 122, 0.18);
+    .tools .host-tag {
+      color: var(--accent-tools);
     }
 
-    .planned {
-      position: relative;
+    .plugins .host-tag {
+      color: var(--accent-plugins);
+    }
+
+    .learn .host-tag {
+      color: var(--accent-learn);
+    }
+
+    .archive .host-tag {
+      color: var(--accent-archive);
+    }
+
+    .altered .host-tag {
+      color: var(--accent-altered);
+    }
+
+    .trackers .host-tag {
+      color: var(--accent-trackers);
+    }
+
+    .aggregator .host-tag {
+      color: var(--accent-aggregator);
     }
 
     .badge {
-      margin-top: 0.72rem;
-      display: inline-flex;
-      min-height: 1.45rem;
-      align-items: center;
-      border-radius: 999px;
-      border: 1px solid rgba(255, 208, 122, 0.5);
-      background: rgba(255, 208, 122, 0.13);
-      color: #ffd07a;
-      font-size: 0.72rem;
+      display: inline-block;
+      margin-left: 0.5rem;
+      padding: 0.2rem 0.5rem;
+      border: 1px solid currentColor;
+      border-radius: 4px;
+      font-size: 0.65rem;
       text-transform: uppercase;
-      letter-spacing: 0.06em;
-      font-family: "Chakra Petch", sans-serif;
-      padding: 0 0.46rem;
+      letter-spacing: 0.1em;
+      opacity: 0.8;
     }
 
-    .stack {
-      margin-top: 1.15rem;
-      border: 1px solid var(--stroke);
-      border-radius: var(--radius);
-      background: rgba(17, 27, 51, 0.74);
-      padding: 1rem 1.1rem;
+    .bg-pattern {
+      position: absolute;
+      inset: 0;
+      z-index: 0;
+      opacity: 0.1;
+      pointer-events: none;
+      transition: opacity 0.5s ease;
     }
 
-    .stack h2 {
-      margin: 0;
-      font-size: 1rem;
-      font-family: "Chakra Petch", sans-serif;
+    .card:hover .bg-pattern {
+      opacity: 0.25;
     }
 
-    .stack p {
-      margin: 0.35rem 0 0.8rem;
-      color: var(--muted);
-      font-size: 0.92rem;
-      line-height: 1.5;
+    .tools .bg-pattern {
+      background-image:
+        linear-gradient(var(--accent-tools) 1px, transparent 1px),
+        linear-gradient(90deg, var(--accent-tools) 1px, transparent 1px);
+      background-size: 20px 20px;
+      background-position: center;
+      opacity: 0.05;
     }
 
-    .stack-grid {
-      display: grid;
-      grid-template-columns: repeat(1, minmax(0, 1fr));
-      gap: 0.55rem;
-      margin: 0;
-      padding: 0;
-      list-style: none;
+    .plugins .bg-pattern {
+      background-image: radial-gradient(var(--accent-plugins) 1px, transparent 1px);
+      background-size: 15px 15px;
+      opacity: 0.08;
     }
 
-    .stack-grid li {
-      border: 1px solid var(--stroke);
-      border-radius: 12px;
-      padding: 0.55rem 0.65rem;
-      background: rgba(255, 255, 255, 0.025);
-      font-size: 0.88rem;
-      line-height: 1.4;
-      color: var(--muted);
+    .learn .bg-pattern {
+      overflow: hidden;
     }
 
-    .stack-grid code {
-      color: var(--ink);
-      font-family: "Chakra Petch", sans-serif;
-      font-size: 0.8rem;
-      margin-right: 0.3rem;
+    .learn .bg-pattern::after {
+      content: "01101000 01100101 01101100 01101100 01101111 00100000 01110111 01101111 01110010 01101100 01100100 01101111 01101100 01101100 01101111 00100000 01110111 01101111 01110010 01101100 01100100";
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      font-family: monospace;
+      font-size: 10px;
+      word-wrap: break-word;
+      color: var(--accent-learn);
+      opacity: 0.5;
+      animation: codeScroll 20s linear infinite;
     }
 
-    @media (min-width: 760px) {
-      .card { grid-column: span 4; }
-      .stack-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    @keyframes codeScroll {
+      from {
+        transform: translateY(0);
+      }
+
+      to {
+        transform: translateY(-50%);
+      }
+    }
+
+    .archive .bg-pattern {
+      background: repeating-linear-gradient(0deg,
+          transparent,
+          transparent 2px,
+          var(--accent-archive) 3px,
+          var(--accent-archive) 4px);
+      opacity: 0.05;
+    }
+
+    .archive:hover .bg-pattern {
+      animation: scanline 4s linear infinite;
+    }
+
+    @keyframes scanline {
+      from {
+        background-position: 0 0;
+      }
+
+      to {
+        background-position: 0 100px;
+      }
+    }
+
+    .altered .bg-pattern {
+      background:
+        linear-gradient(45deg, transparent 48%, var(--accent-altered) 49%, var(--accent-altered) 51%, transparent 52%),
+        linear-gradient(-45deg, transparent 48%, var(--accent-altered) 49%, var(--accent-altered) 51%, transparent 52%);
+      background-size: 30px 30px;
+      opacity: 0.05;
+    }
+
+    .trackers .bg-pattern {
+      background:
+        radial-gradient(circle at 100% 100%, transparent 40%, var(--accent-trackers) 41%, transparent 42%),
+        radial-gradient(circle at 100% 100%, transparent 60%, var(--accent-trackers) 61%, transparent 62%);
+      opacity: 0.15;
+      overflow: hidden;
+    }
+
+    .trackers .bg-pattern::before {
+      content: "";
+      position: absolute;
+      bottom: -100%;
+      right: -100%;
+      width: 200%;
+      height: 200%;
+      background: conic-gradient(from 0deg at 50% 50%, transparent 0deg, rgba(255, 208, 122, 0.4) 45deg, transparent 45deg);
+      animation: radarSweep 4s linear infinite;
+      border-radius: 50%;
+    }
+
+    .trackers .bg-pattern::after {
+      content: "";
+      position: absolute;
+      bottom: 45%;
+      right: 55%;
+      width: 6px;
+      height: 6px;
+      background: #fff;
+      border-radius: 50%;
+      box-shadow: 0 0 12px 4px var(--accent-trackers);
+      opacity: 0;
+      animation: radarBlip 4s infinite;
+      animation-delay: 2.2s;
+    }
+
+    .trackers:hover .bg-pattern {
+      opacity: 0.3;
+    }
+
+    @keyframes radarSweep {
+      from { transform: rotate(0deg); }
+      to { transform: rotate(-360deg); }
+    }
+
+    @keyframes radarBlip {
+      0%, 5% { opacity: 0; scale: 0.5; }
+      10% { opacity: 1; scale: 1.5; }
+      20%, 100% { opacity: 0; scale: 0.5; }
+    }
+
+    .aggregator .bg-pattern {
+      background: radial-gradient(circle at 50% 50%, rgba(255, 95, 122, 0.15) 0%, transparent 60%);
+      opacity: 0.5;
+    }
+
+    .aggregator::after {
+      content: "";
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      width: 100vw;
+      height: 100vw;
+      background: conic-gradient(from 0deg, transparent 0%, rgba(255, 95, 122, 0.05) 10%, transparent 40%);
+      transform-origin: center;
+      animation: spin 10s linear infinite;
+      pointer-events: none;
+    }
+
+    @keyframes spin {
+      from {
+        transform: translate(-50%, -50%) rotate(0deg);
+      }
+
+      to {
+        transform: translate(-50%, -50%) rotate(360deg);
+      }
+    }
+
+    .card.aggregator {
+      border-color: rgba(255, 95, 122, 0.3);
+      box-shadow: inset 0 0 60px rgba(255, 95, 122, 0.02);
+    }
+
+    .card.aggregator h2 {
+      font-size: 2.2rem;
+    }
+
+    .card.aggregator p {
+      font-size: 1.1rem;
+      max-width: 40ch;
     }
   </style>
 </head>
+
 <body>
   <main>
-    <span class="kicker">XJK Network</span>
-    <h1>Hub of Hubs for xjk.yt</h1>
-    <p class="lead">
-      Central launchpad for every xjk subdomain. Each card opens a dedicated hub for that area.
-    </p>
+    <header>
+      <span class="kicker">XJK.SYS</span>
+      <h1>Network Hub</h1>
+      <p class="lead">
+        Jump point for the xjk.yt sites.
+      </p>
+    </header>
 
-    <section class="grid" aria-label="Subdomain hubs">
-      <a class="card tools" data-link="tools" href="https://tools.xjk.yt/" target="_blank" rel="noopener noreferrer">
-        <h2>Tools Hub</h2>
-        <p>Trackmania utilities and conversion tools, with each tool hosted on a path under one domain.</p>
-        <span class="host">tools.xjk.yt</span>
+    <section class="bento-grid" aria-label="Subdomain hubs">
+
+      <a class="card aggregator" data-link="aggregator" href="https://aggregator.xjk.yt/" target="_blank"
+        rel="noopener noreferrer">
+        <div class="bg-pattern"></div>
+        <div class="card-content">
+          <div class="card-header">
+            <h2>Aggregator</h2>
+          </div>
+          <p>Maps, names, club snapshots, and tracker events.</p>
+          <span class="host-tag">aggregator.xjk.yt</span>
+        </div>
       </a>
 
-      <a class="card plugins" data-link="plugins" href="https://plugins.xjk.yt/" target="_blank" rel="noopener noreferrer">
-        <h2>Plugins Hub</h2>
-        <p>Catalog of your Trackmania plugins, with per-plugin cards and publish status tracking.</p>
-        <span class="host">plugins.xjk.yt</span>
+      <a class="card trackers" data-link="trackers" href="https://trackers.xjk.yt/" target="_blank"
+        rel="noopener noreferrer">
+        <div class="bg-pattern"></div>
+        <div class="card-content">
+          <div class="card-header">
+            <h2>Trackers Hub</h2>
+          </div>
+          <p>Hub for the leaderboard, displayname, and club tracker runtimes.</p>
+          <div style="display: flex; align-items: center; gap: 0.5rem; margin-top: auto;">
+            <span class="host-tag">trackers.xjk.yt</span>
+            <span class="badge" style="color: var(--accent-trackers)">Group</span>
+          </div>
+        </div>
+      </a>
+
+      <a class="card archive" data-link="archive" href="https://archive.xjk.yt/" target="_blank"
+        rel="noopener noreferrer">
+        <div class="bg-pattern"></div>
+        <div class="card-content">
+          <div class="card-header">
+            <h2>Archive Hub</h2>
+          </div>
+          <p>Archived Nadeo releases grouped by game, with downloadable files and notes.</p>
+          <span class="host-tag" style="margin-top: auto;">archive.xjk.yt</span>
+        </div>
+      </a>
+
+      <a class="card tools" data-link="tools" href="https://tools.xjk.yt/" target="_blank" rel="noopener noreferrer">
+        <div class="bg-pattern"></div>
+        <div class="card-content">
+          <div class="card-header">
+            <h2>Tools</h2>
+          </div>
+          <p>Trackmania utilities and conversion tools.</p>
+          <span class="host-tag" style="margin-top: auto;">tools.xjk.yt</span>
+        </div>
+      </a>
+
+      <a class="card plugins" data-link="plugins" href="https://plugins.xjk.yt/" target="_blank"
+        rel="noopener noreferrer">
+        <div class="bg-pattern"></div>
+        <div class="card-content">
+          <div class="card-header">
+            <h2>Plugins</h2>
+          </div>
+          <p>Catalog of your plugins and their publish status.</p>
+          <span class="host-tag" style="margin-top: auto;">plugins.xjk.yt</span>
+        </div>
       </a>
 
       <a class="card learn" data-link="learn" href="https://learn.xjk.yt/" target="_blank" rel="noopener noreferrer">
-        <h2>Learn Hub</h2>
-        <p>Tutorials, notes, and learning resources for your projects and workflows.</p>
-        <span class="host">learn.xjk.yt</span>
+        <div class="bg-pattern"></div>
+        <div class="card-content">
+          <div class="card-header">
+            <h2>Learn</h2>
+          </div>
+          <p>Notes, guides, and references.</p>
+          <span class="host-tag" style="margin-top: auto;">learn.xjk.yt</span>
+        </div>
       </a>
 
-      <a class="card archive" data-link="archive" href="https://archive.xjk.yt/" target="_blank" rel="noopener noreferrer">
-        <h2>Archive Hub</h2>
-        <p>Archived Nadeo releases grouped by game, with downloadable files and structured notes.</p>
-        <span class="host">archive.xjk.yt</span>
-      </a>
-
-      <a class="card altered" data-link="altered" href="https://altered.xjk.yt/" target="_blank" rel="noopener noreferrer">
-        <h2>Altered Hub</h2>
-        <p>Altered-related projects and experiments grouped under one dedicated subdomain.</p>
-        <span class="host">altered.xjk.yt</span>
-      </a>
-
-      <a
-        class="card trackers"
-        data-link="trackers"
-        href="https://trackers.xjk.yt/"
-        target="_blank"
-        rel="noopener noreferrer"
-      >
-        <h2>Trackers Hub</h2>
-        <p>Unified tracker group host for leaderboard, displayname, and club tracker runtimes.</p>
-        <span class="host">trackers.xjk.yt</span>
-        <span class="badge">Tracker Group</span>
-      </a>
-
-      <a
-        class="card aggregator"
-        data-link="aggregator"
-        href="https://aggregator.xjk.yt/"
-        target="_blank"
-        rel="noopener noreferrer"
-      >
-        <h2>Aggregator</h2>
-        <p>Shared source-of-truth cache for maps, names, club snapshots, and cross-project tracker events.</p>
-        <span class="host">aggregator.xjk.yt</span>
+      <a class="card altered" data-link="altered" href="https://altered.xjk.yt/" target="_blank"
+        rel="noopener noreferrer">
+        <div class="bg-pattern"></div>
+        <div class="card-content">
+          <div class="card-header">
+            <h2>Altered</h2>
+          </div>
+          <p>Altered-related projects and experiments.</p>
+          <span class="host-tag" style="margin-top: auto;">altered.xjk.yt</span>
+        </div>
       </a>
 
     </section>
 
   </main>
   <script>
+    document.querySelectorAll('.card').forEach(card => {
+      card.addEventListener('mousemove', e => {
+        const rect = card.getBoundingClientRect();
+        const x = e.clientX - rect.left;
+        const y = e.clientY - rect.top;
+
+        card.style.setProperty('--mouse-x', `${x}px`);
+        card.style.setProperty('--mouse-y', `${y}px`);
+
+        const centerX = rect.width / 2;
+        const centerY = rect.height / 2;
+        const rotateX = ((y - centerY) / centerY) * -5;
+        const rotateY = ((x - centerX) / centerX) * 5;
+
+        card.style.transform = `perspective(1000px) rotateX(${rotateX}deg) rotateY(${rotateY}deg) scale3d(1.02, 1.02, 1.02)`;
+      });
+
+      card.addEventListener('mouseleave', () => {
+        card.style.transform = `perspective(1000px) rotateX(0deg) rotateY(0deg) scale3d(1, 1, 1)`;
+      });
+    });
+
     (function configureHubLinks() {
       const host = window.location.hostname.toLowerCase();
       const port = window.location.port || "80";
       const isLocalSubdomainMode = host.endsWith(".localhost");
       const isLocalPathMode = host === "localhost" || host === "127.0.0.1";
-      const isLocalMode = isLocalPathMode || isLocalSubdomainMode;
 
       const links = {
         tools: "https://tools.xjk.yt/",
@@ -302,24 +622,10 @@
         aggregator: "https://aggregator.xjk.yt/",
       };
 
-      if (isLocalSubdomainMode) {
-        links.tools = `http://tools.localhost:${port}/`;
-        links.plugins = `http://plugins.localhost:${port}/`;
-        links.learn = `http://learn.localhost:${port}/`;
-        links.archive = `http://archive.localhost:${port}/`;
-        links.altered = `http://altered.localhost:${port}/`;
-        links.trackers = `http://trackers.localhost:${port}/`;
-        links.aggregator = `http://aggregator.localhost:${port}/`;
-      }
-
-      if (isLocalPathMode) {
-        links.tools = `http://localhost:${port}/tools/`;
-        links.plugins = `http://localhost:${port}/plugins/`;
-        links.learn = `http://localhost:${port}/learn/`;
-        links.archive = `http://localhost:${port}/archive/`;
-        links.altered = `http://localhost:${port}/altered/`;
-        links.trackers = `http://localhost:${port}/trackers/`;
-        links.aggregator = `http://localhost:${port}/aggregator/`;
+      if (isLocalSubdomainMode || isLocalPathMode) {
+        Object.keys(links).forEach(key => {
+          links[key] = `http://${key}.localhost:${port}/`;
+        });
       }
 
       document.querySelectorAll("[data-link]").forEach((node) => {
@@ -331,4 +637,5 @@
     })();
   </script>
 </body>
+
 </html>

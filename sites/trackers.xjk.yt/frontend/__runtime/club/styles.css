@@ -1,0 +1,24 @@
+
+:root {
+  --accent: #88d66f;
+  --accent-strong: #a8e894;
+  --accent-soft: rgba(136, 214, 111, 0.12);
+  --accent-border: rgba(136, 214, 111, 0.4);
+  --accent-glow: rgba(136, 214, 111, 0.18);
+  --border: rgba(136, 214, 111, 0.14);
+  --border-hover: rgba(136, 214, 111, 0.35);
+}
+
+.dashboard-grid {
+  display: grid;
+  gap: 1rem;
+  grid-template-columns: 1fr;
+}
+
+@media (min-width: 880px) {
+  .dashboard-grid { grid-template-columns: 1fr 1fr; }
+}
+
+#snapshotJson.form-textarea {
+  min-height: 240px;
+}

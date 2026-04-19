@@ -1,0 +1,184 @@
+<!doctype html>
+<html lang="en" data-tool-id="clip-to-ghost">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>xjk / tools / clip to ghost</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@500;600;700&family=Manrope:wght@400;500;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="styles.css" />
+  <link rel="stylesheet" href="../../shared/tool-theme.css" />
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+</head>
+<body>
+  <div class="bg-grid" aria-hidden="true"></div>
+  <div class="bg-sweep bg-sweep-warm" aria-hidden="true"></div>
+  <div class="bg-sweep bg-sweep-cool" aria-hidden="true"></div>
+
+  <main class="shell">
+    <section class="hero">
+      <p class="eyebrow">Ghost Export Utility</p>
+      <h1>Clip To Ghost</h1>
+      <p class="lead">
+        Scan Trackmania GPS clips inside a map, inspect each discovered <code>RecordData</code> block,
+        and export standalone <code>.Ghost.Gbx</code> files that can be dropped straight into ARL.
+      </p>
+    </section>
+
+    <nav class="page-tabs" aria-label="Clip To Ghost sections">
+      <button id="toolTabBtn" class="page-tab is-active" type="button" data-page-tab="tool">Tool</button>
+      <button id="docsTabBtn" class="page-tab" type="button" data-page-tab="docs">Docs</button>
+    </nav>
+
+    <section id="toolTabPanel" class="page-tab-panel is-active" aria-label="Tool panel">
+      <section class="cards" aria-label="Inputs">
+        <article id="mapDrop" class="dropcard" tabindex="0" aria-label="Map upload">
+          <input id="mapFile" type="file" accept=".gbx,.Map.Gbx" />
+          <p class="card-title">Map Input</p>
+          <p class="card-copy">Drop <code>.Map.Gbx</code> here or click to browse.</p>
+          <p id="mapName" class="card-meta">No map selected</p>
+        </article>
+
+        <article id="templateDrop" class="dropcard optional hidden" tabindex="0" aria-label="Template ghost upload">
+          <input id="templateGhostFile" type="file" accept=".gbx,.Ghost.Gbx" />
+          <p class="card-title">Custom Template Ghost</p>
+          <p class="card-copy">Required when <code>template mode = custom</code>.</p>
+          <p id="templateName" class="card-meta">No template ghost selected</p>
+        </article>
+      </section>
+
+      <section class="panel" aria-label="Export options">
+        <h2>Options</h2>
+
+        <div class="field-grid">
+          <label class="field">
+            <span>Template mode</span>
+            <select id="templateMode">
+              <option value="shipped" selected>Shipped template</option>
+              <option value="custom">Custom template ghost</option>
+              <option value="blank">Blank mode (experimental)</option>
+            </select>
+          </label>
+
+          <label class="check-label">
+            <input id="includeManifest" type="checkbox" />
+            <span>Include manifest in download</span>
+          </label>
+        </div>
+
+        <p class="muted small">
+          For ARL, scan the map, pick a single candidate, and export with the manifest disabled to download one
+          <code>.Ghost.Gbx</code> file directly.
+        </p>
+
+        <div class="field-grid field-grid-triple">
+          <label class="field">
+            <span>Clip index</span>
+            <input id="clipIndex" type="number" min="0" step="1" placeholder="All" />
+          </label>
+          <label class="field">
+            <span>Track index</span>
+            <input id="trackIndex" type="number" min="0" step="1" placeholder="All" />
+          </label>
+          <label class="field">
+            <span>Block index</span>
+            <input id="blockIndex" type="number" min="0" step="1" placeholder="All" />
+          </label>
+        </div>
+
+        <div class="option-row">
+          <button id="clearSelectionBtn" class="btn-lite" type="button">Clear Candidate Selection</button>
+          <p class="muted small">Selecting a candidate card below fills these filters automatically.</p>
+        </div>
+      </section>
+
+      <section class="action-row">
+        <button id="scanBtn" class="go ghost" type="button" disabled>Scan GPS Blocks</button>
+        <button id="exportBtn" class="go" type="button" disabled>Export Ghosts</button>
+      </section>
+
+      <div id="status" class="status" role="status" aria-live="polite"></div>
+      <div id="error" class="error" role="alert"></div>
+
+      <section id="summaryPanel" class="panel hidden" aria-label="Inspection summary">
+        <h2>Inspection Summary</h2>
+        <div id="summaryGrid" class="summary-grid"></div>
+      </section>
+
+      <section id="candidatesPanel" class="panel hidden" aria-label="Candidate list">
+        <div class="panel-head">
+          <h2>GPS Candidates</h2>
+          <span id="candidatesCount" class="muted small"></span>
+        </div>
+        <div id="candidateGrid" class="candidate-grid"></div>
+      </section>
+
+      <section id="resultPanel" class="panel hidden" aria-label="Manifest JSON">
+        <div class="panel-head">
+          <h2>Manifest JSON</h2>
+          <div class="panel-actions">
+            <button id="copyManifestBtn" class="btn-lite" type="button">Copy JSON</button>
+            <button id="downloadManifestBtn" class="btn-lite" type="button">Download JSON</button>
+          </div>
+        </div>
+        <pre id="manifestJson" class="code"></pre>
+      </section>
+    </section>
+
+    <section id="docsTabPanel" class="page-tab-panel hidden" aria-label="API documentation">
+      <section class="panel docs-panel">
+        <h2>API Docs</h2>
+        <p class="docs-kicker">Hosted base path: <code>/Clip-To-Ghost</code></p>
+
+        <div class="docs-endpoint">
+          <h3><code>GET /health</code></h3>
+          <p>Returns <code>text/plain</code> with <code>ok</code>.</p>
+        </div>
+
+        <div class="docs-endpoint">
+          <h3><code>POST /api/inspect</code></h3>
+          <p>Submit <code>multipart/form-data</code> with a required map and optional candidate filters.</p>
+          <ul class="docs-list">
+            <li><code>map</code>: required <code>.Map.Gbx</code> file.</li>
+            <li><code>clipIndex</code>, <code>trackIndex</code>, <code>blockIndex</code>: optional non-negative integer filters.</li>
+          </ul>
+          <p>Returns JSON with a manifest-style payload listing discovered GPS clip candidates.</p>
+          <pre class="docs-code"><code>curl -X POST "https://tools.xjk.yt/Clip-To-Ghost/api/inspect" ^
+  -F "map=@example.Map.Gbx"</code></pre>
+        </div>
+
+        <div class="docs-endpoint">
+          <h3><code>POST /api/export</code></h3>
+          <p>Exports ghosts using the selected template mode and optional candidate filters.</p>
+          <ul class="docs-list">
+            <li><code>map</code>: required <code>.Map.Gbx</code> file.</li>
+            <li><code>templateMode</code>: <code>shipped</code>, <code>custom</code>, or <code>blank</code>.</li>
+            <li><code>templateGhost</code>: required file when using <code>templateMode=custom</code>.</li>
+            <li><code>includeManifest</code>: optional boolean.</li>
+            <li><code>clipIndex</code>, <code>trackIndex</code>, <code>blockIndex</code>: optional non-negative integer filters.</li>
+          </ul>
+          <p>Returns a single <code>.Ghost.Gbx</code> if one export is produced and manifest output is disabled; otherwise returns a zip archive.</p>
+          <p>This is the preferred mode when exporting a single GPS clip for ARL.</p>
+          <pre class="docs-code"><code>curl -X POST "https://tools.xjk.yt/Clip-To-Ghost/api/export" ^
+  -F "map=@example.Map.Gbx" ^
+  -F "clipIndex=0" ^
+  -F "trackIndex=0" ^
+  -F "blockIndex=1" ^
+  -F "templateMode=shipped" ^
+  -F "includeManifest=false" --output clip.Ghost.Gbx</code></pre>
+        </div>
+      </section>
+    </section>
+  </main>
+
+  <div id="overlay" class="overlay hidden" aria-live="polite" aria-busy="true">
+    <div class="loader" aria-hidden="true"></div>
+    <p id="overlayText" class="overlay-title">Working...</p>
+    <p id="progressText" class="overlay-copy"></p>
+  </div>
+
+  <script src="../../shared/tool-theme.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>

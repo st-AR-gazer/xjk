@@ -30,7 +30,7 @@ function normalizeBaseUrl(value, fallback = "") {
 const PORT = clampInt(process.env.PORT || 3142, { min: 1, max: 65535, fallback: 3142 });
 const FRONTEND_DIR =
   process.env.FRONTEND_DIR ||
-  path.join(__dirname, "..", "..", "..", "sites", "tracker-club.xjk.yt", "frontend");
+  path.join(__dirname, "..", "..", "..", "sites", "trackers.xjk.yt", "frontend", "__runtime", "club");
 const TRACKER_CLUB_ENABLED = parseBool(process.env.TRACKER_CLUB_ENABLED, true);
 const TRACKER_CLUB_PROJECT_KEY = String(process.env.TRACKER_CLUB_PROJECT_KEY || "local-tracker-club")
   .trim()

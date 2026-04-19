@@ -26,7 +26,7 @@
     </p>
 
     <div class="header-controls">
-      <div class="search-wrap">
+      <div class="search-wrap" id="searchWrap">
         <label class="sr-only" for="search">Search</label>
         <div class="search-input-wrapper">
           <span class="prompt">$</span>
@@ -42,13 +42,16 @@
     </div>
   </header>
 
-  <main class="vault-catalog">
+  <main class="vault-catalog" id="catalogView" aria-live="polite">
     <div class="catalog-bar">
       <h2>CATALOG_INDEX</h2>
-      <p class="catalog-note">ACCESS DIRECTORIES BELOW.</p>
+      <p class="catalog-note">SELECT A GAME TO VIEW ARCHIVE.</p>
     </div>
+    <div id="catalog"></div>
+  </main>
 
-    <div id="catalog" class="catalog-list" aria-live="polite"></div>
+  <main class="vault-game-page" id="gamePage" hidden>
+    <div id="gamePageContent"></div>
   </main>
 
   <footer class="vault-footer">

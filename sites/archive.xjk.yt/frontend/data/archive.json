@@ -1,75 +1,53 @@
 {
   "games": [
     {
-      "id": "tm-original",
-      "franchise": "TrackMania",
-      "name": "TrackMania (Original)",
-      "years": "2003",
-      "platforms": ["Windows"],
-      "description": "The original TrackMania release.",
-      "builds": []
-    },
-    {
-      "id": "tm-sunrise",
-      "franchise": "TrackMania",
-      "name": "TrackMania Sunrise",
-      "years": "2005",
-      "platforms": ["Windows"],
-      "description": "TrackMania Sunrise and Sunrise eXtreme-era builds.",
-      "builds": []
-    },
-    {
-      "id": "tm-nations-eswc",
-      "franchise": "TrackMania",
-      "name": "TrackMania Nations ESWC",
-      "years": "2006",
-      "platforms": ["Windows"],
-      "description": "The ESWC release and related patches.",
-      "builds": []
-    },
-    {
-      "id": "tm-united",
-      "franchise": "TrackMania",
-      "name": "TrackMania United",
-      "years": "2006",
-      "platforms": ["Windows"],
-      "description": "TrackMania United (retail/digital) installers and updates.",
-      "builds": []
-    },
-    {
-      "id": "tm-forever",
-      "franchise": "TrackMania",
-      "name": "TrackMania Forever (Nations / United)",
-      "years": "2008",
-      "platforms": ["Windows"],
-      "description": "Nations Forever and United Forever builds.",
-      "builds": []
-    },
-    {
-      "id": "tm2",
-      "franchise": "TrackMania² / ManiaPlanet",
-      "name": "TrackMania² (Canyon / Stadium / Valley / Lagoon)",
-      "years": "2011–2017",
-      "platforms": ["Windows"],
-      "description": "ManiaPlanet-era TrackMania² titles and updates.",
-      "builds": []
-    },
-    {
-      "id": "tm-turbo",
-      "franchise": "TrackMania",
-      "name": "TrackMania Turbo",
-      "years": "2016",
-      "platforms": ["Windows", "PS4", "Xbox One"],
-      "description": "TrackMania Turbo releases and patches.",
-      "builds": []
-    },
-    {
       "id": "tm-2020",
       "franchise": "TrackMania",
       "name": "Trackmania (2020)",
-      "years": "2020–",
+      "years": "2020-",
+      "image": "img/tm-2020.svg",
       "platforms": ["Windows", "PS4/PS5", "Xbox One/Series", "Cloud"],
-      "description": "Trackmania 2020 builds, tools, and data snapshots.",
+      "description": "Current Trackmania release focused on time-trial racing on creator-made tracks, with Free, Standard, and Club access tiers.",
+      "builds": []
+    },
+    {
+      "id": "tm2-lagoon",
+      "franchise": "TrackMania 2 / ManiaPlanet",
+      "name": "TrackMania 2: Lagoon",
+      "years": "2017",
+      "image": "img/tm2-lagoon.svg",
+      "platforms": ["Windows"],
+      "description": "Tropical island environment with aquatic shortcuts and high-speed straights. Fourth and final TrackMania 2 title on ManiaPlanet.",
+      "builds": []
+    },
+    {
+      "id": "tm-turbo-2016",
+      "franchise": "TrackMania",
+      "name": "TrackMania Turbo",
+      "years": "2016",
+      "image": "img/tm-turbo-2016.svg",
+      "platforms": ["Windows", "PS4", "Xbox One"],
+      "description": "Console-focused entry with four environments: Rollercoaster Lagoon, International Stadium, Canyon Grand Drift, and Valley Down & Dirty, plus a co-op stunt mode.",
+      "builds": []
+    },
+    {
+      "id": "tm2-valley",
+      "franchise": "TrackMania 2 / ManiaPlanet",
+      "name": "TrackMania 2: Valley",
+      "years": "2013",
+      "image": "img/tm2-valley.svg",
+      "platforms": ["Windows"],
+      "description": "Forested mountain roads, off-road terrain, and sweeping high-speed corners. Third TrackMania 2 title on ManiaPlanet.",
+      "builds": []
+    },
+    {
+      "id": "tm2-stadium",
+      "franchise": "TrackMania 2 / ManiaPlanet",
+      "name": "TrackMania 2: Stadium",
+      "years": "2013",
+      "image": "img/tm2-stadium.svg",
+      "platforms": ["Windows"],
+      "description": "Free-to-play revival of the Nations/Forever Stadium environment on the ManiaPlanet engine.",
       "builds": []
     },
     {
@@ -77,8 +55,19 @@
       "franchise": "ShootMania / ManiaPlanet",
       "name": "ShootMania Storm",
       "years": "2013",
+      "image": "img/shootmania-storm.svg",
       "platforms": ["Windows"],
-      "description": "ShootMania Storm builds and updates.",
+      "description": "Arena shooter built on ManiaPlanet with elimination and team modes plus community modding support.",
+      "builds": []
+    },
+    {
+      "id": "tm2-canyon",
+      "franchise": "TrackMania 2 / ManiaPlanet",
+      "name": "TrackMania 2: Canyon",
+      "years": "2011",
+      "image": "img/tm2-canyon.svg",
+      "platforms": ["Windows"],
+      "description": "ManiaPlanet launch title with canyon environments, drifting, and big air sections.",
       "builds": []
     },
     {
@@ -86,10 +75,130 @@
       "franchise": "QuestMania / ManiaPlanet",
       "name": "QuestMania",
       "years": "2011",
+      "image": "img/questmania.svg",
       "platforms": ["Windows"],
-      "description": "QuestMania builds and updates.",
+      "description": "RPG/adventure spin-off on ManiaPlanet with exploration, puzzles, and Nadeo physics.",
+      "builds": []
+    },
+    {
+      "id": "tm-turbo-2010",
+      "franchise": "TrackMania",
+      "name": "TrackMania Turbo",
+      "years": "2010",
+      "image": "img/tm-turbo-2010.svg",
+      "platforms": ["Nintendo DS", "Wii"],
+      "description": "Spin-off for Nintendo DS and Wii with simplified turbo mechanics and handheld-oriented track design.",
+      "builds": []
+    },
+    {
+      "id": "tm-build-to-race",
+      "franchise": "TrackMania",
+      "name": "TrackMania: Build to Race",
+      "years": "2010",
+      "image": "img/tm-build-to-race.svg",
+      "platforms": ["Nintendo DS", "Wii"],
+      "description": "Track-building focused entry for Nintendo DS and Wii that lets players build and race their own courses.",
+      "builds": []
+    },
+    {
+      "id": "tm-nations-forever",
+      "franchise": "TrackMania",
+      "name": "TrackMania Nations Forever",
+      "years": "2008",
+      "image": "img/tm-nations-forever.svg",
+      "platforms": ["Windows"],
+      "description": "Free follow-up to TM Nations ESWC with the Stadium environment and online multiplayer.",
+      "builds": []
+    },
+    {
+      "id": "tm-united-forever",
+      "franchise": "TrackMania",
+      "name": "TrackMania United Forever",
+      "years": "2008",
+      "image": "img/tm-united-forever.svg",
+      "platforms": ["Windows"],
+      "description": "Updated TM United release with the six classic environments and improved online features.",
+      "builds": []
+    },
+    {
+      "id": "tm-ds",
+      "franchise": "TrackMania",
+      "name": "TrackMania DS",
+      "years": "2008",
+      "image": "img/tm-ds.svg",
+      "platforms": ["Nintendo DS"],
+      "description": "Nintendo DS version of TrackMania with adapted tracks and a portable track editor.",
+      "builds": []
+    },
+    {
+      "id": "tm-united",
+      "franchise": "TrackMania",
+      "name": "TrackMania United",
+      "years": "2006",
+      "image": "img/tm-united.svg",
+      "platforms": ["Windows"],
+      "description": "Bundles the six classic environments - Desert, Rally, Snow, Island, Bay, and Stadium - into one release.",
+      "builds": []
+    },
+    {
+      "id": "tm-nations-eswc",
+      "franchise": "TrackMania",
+      "name": "TrackMania Nations ESWC",
+      "years": "2006",
+      "image": "img/tm-nations-eswc.svg",
+      "platforms": ["Windows"],
+      "description": "Free ESWC tie-in release with the Stadium environment and competitive multiplayer.",
+      "builds": []
+    },
+    {
+      "id": "tm-sunrise-extreme",
+      "franchise": "TrackMania",
+      "name": "TrackMania Sunrise eXtreme",
+      "years": "2005",
+      "image": "img/tm-sunrise-extreme.svg",
+      "platforms": ["Windows"],
+      "description": "Expanded TrackMania Sunrise re-release with extra tracks, updated physics, and eXtreme mode.",
+      "builds": []
+    },
+    {
+      "id": "tm-original-free",
+      "franchise": "TrackMania",
+      "name": "TrackMania Original",
+      "years": "2005",
+      "image": "img/tm-original-free.svg",
+      "platforms": ["Windows"],
+      "description": "Free re-release of the original 2003 TrackMania with the Desert and Rally environments.",
+      "builds": []
+    },
+    {
+      "id": "tm-sunrise",
+      "franchise": "TrackMania",
+      "name": "TrackMania Sunrise",
+      "years": "2005",
+      "image": "img/tm-sunrise.svg",
+      "platforms": ["Windows"],
+      "description": "Second main entry with the Island and Bay environments, updated graphics, and stunt-focused play.",
+      "builds": []
+    },
+    {
+      "id": "tm-power-up",
+      "franchise": "TrackMania",
+      "name": "TrackMania: Power Up!",
+      "years": "2004",
+      "image": "img/tm-power-up.svg",
+      "platforms": ["Windows"],
+      "description": "Expansion pack for the original TrackMania with new tracks, cars, and game modes.",
+      "builds": []
+    },
+    {
+      "id": "tm-original",
+      "franchise": "TrackMania",
+      "name": "TrackMania",
+      "years": "2003",
+      "image": "img/tm-original.svg",
+      "platforms": ["Windows"],
+      "description": "Original TrackMania release focused on time-trial racing across the Desert and Rally environments.",
       "builds": []
     }
   ]
 }
-

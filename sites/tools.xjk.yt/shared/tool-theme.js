@@ -32,6 +32,21 @@
       slug: "Map-Validation-Checker",
       tone: "cool",
     },
+    "underwater-converter": {
+      id: "underwater-converter",
+      slug: "Underwater-Map-Converter",
+      tone: "cool",
+    },
+    colorizer: {
+      id: "colorizer",
+      slug: "Colorizer",
+      tone: "warm",
+    },
+    "clip-to-ghost": {
+      id: "clip-to-ghost",
+      slug: "Clip-To-Ghost",
+      tone: "cool",
+    },
   };
 
   const BASE_COOL_HUE = 194;

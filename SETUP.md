@@ -21,8 +21,6 @@ sites/
     frontend/
   trackers.xjk.yt/
     frontend/
-  tracker.xjk.yt/
-    frontend/            # shared tracker UI served by /wr/ and /leaderboard/
   plugins.xjk.yt/
     Plugins-Hub/
   tools.xjk.yt/

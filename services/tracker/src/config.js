@@ -9,8 +9,21 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 const PORT = Number(process.env.PORT || 3130);
+const TRACKER_MODE_RAW = String(process.env.TRACKER_MODE || "wr").trim().toLowerCase();
+const TRACKER_MODE = TRACKER_MODE_RAW === "leaderboard" ? "leaderboard" : "wr";
 const FRONTEND_DIR =
-  process.env.FRONTEND_DIR || path.join(__dirname, "..", "..", "..", "frontend");
+  process.env.FRONTEND_DIR ||
+  path.join(
+    __dirname,
+    "..",
+    "..",
+    "..",
+    "sites",
+    "trackers.xjk.yt",
+    "frontend",
+    "__runtime",
+    TRACKER_MODE === "leaderboard" ? "leaderboard" : "wr"
+  );
 const DATA_DIR = process.env.DATA_DIR || path.join(__dirname, "..", "..", "..", "sites", "altered.xjk.yt", "data");
 const DB_FILE = process.env.DB_FILE || path.join(DATA_DIR, "altered-tracker.sqlite");
 const TRACKER_ADMIN_TOKEN =
@@ -29,8 +42,6 @@ const TRACKER_ADMIN_ALLOW_OPEN =
   String(process.env.TRACKER_ADMIN_ALLOW_OPEN || "0").trim() !== "0";
 const TRACKER_ENABLED = String(process.env.TRACKER_ENABLED || "1") !== "0";
 const TRACKER_PROVIDER = String(process.env.TRACKER_PROVIDER || "noop");
-const TRACKER_MODE_RAW = String(process.env.TRACKER_MODE || "wr").trim().toLowerCase();
-const TRACKER_MODE = TRACKER_MODE_RAW === "leaderboard" ? "leaderboard" : "wr";
 const TRACKER_LEADERBOARD_TOP_N = Math.max(
   1,
   Math.min(1000, Number(process.env.TRACKER_LEADERBOARD_TOP_N || 100))

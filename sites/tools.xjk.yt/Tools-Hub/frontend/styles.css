@@ -461,10 +461,13 @@ body {
 
 .tool-foot {
   margin-top: 0.92rem;
+  display: flex;
+  gap: 0.55rem;
 }
 
 .btn-card {
   position: relative;
+  flex: 1 1 0;
   width: 100%;
   min-height: 52px;
   border-radius: 18px;
@@ -503,10 +506,183 @@ body {
   pointer-events: none;
 }
 
+.btn-card-secondary {
+  flex: 0 0 116px;
+  background: rgba(255, 255, 255, 0.05);
+  color: var(--ink);
+  border-color: var(--line-strong);
+  box-shadow: none;
+}
+
+.btn-card-secondary:hover,
+.btn-card-secondary:focus-visible {
+  border-color: var(--tool-card-border-hover);
+  color: var(--tool-title-hover);
+}
+
+.docs-modal {
+  position: fixed;
+  inset: 0;
+  z-index: 120;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1.25rem;
+  background: rgba(4, 8, 16, 0.74);
+  backdrop-filter: blur(8px);
+}
+
+.docs-modal.hidden {
+  display: none;
+}
+
+body.docs-open {
+  overflow: hidden;
+}
+
+.docs-shell {
+  --tool-accent-a: rgba(89, 210, 255, 0.24);
+  --tool-accent-b: rgba(89, 210, 255, 0.08);
+  --tool-btn-a: #70cae0;
+  --tool-btn-b: #5eaec4;
+  --tool-btn-border: rgba(186, 238, 255, 0.34);
+  width: min(860px, 100%);
+  max-height: min(86vh, 920px);
+  overflow: auto;
+  padding: 1.1rem 1.1rem 1.25rem;
+  border-radius: 24px;
+  border: 1px solid var(--line-strong);
+  background:
+    linear-gradient(160deg, rgba(15, 24, 40, 0.97), rgba(10, 16, 28, 0.98)),
+    linear-gradient(130deg, var(--tool-accent-a), var(--tool-accent-b));
+  box-shadow: 0 24px 72px rgba(0, 0, 0, 0.48);
+}
+
+.docs-topline {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.docs-status {
+  margin: 0;
+  color: var(--ink-soft);
+  font-size: 0.82rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.docs-close {
+  min-height: 38px;
+  padding: 0.45rem 0.8rem;
+  border-radius: 999px;
+  border: 1px solid var(--tool-btn-border);
+  background: rgba(255, 255, 255, 0.05);
+  color: var(--ink);
+  font: inherit;
+  cursor: pointer;
+}
+
+.docs-title {
+  margin: 0.55rem 0 0;
+  font-family: "Chakra Petch", "Trebuchet MS", sans-serif;
+  font-size: clamp(1.7rem, 5vw, 2.4rem);
+}
+
+.docs-tabs {
+  margin-top: 1rem;
+  display: inline-flex;
+  gap: 0.45rem;
+  padding: 0.25rem;
+  border-radius: 999px;
+  border: 1px solid var(--line);
+  background: rgba(255, 255, 255, 0.04);
+}
+
+.docs-tab {
+  min-height: 40px;
+  padding: 0.45rem 1rem;
+  border: 1px solid transparent;
+  border-radius: 999px;
+  background: transparent;
+  color: var(--ink-soft);
+  font-family: "Chakra Petch", "Trebuchet MS", sans-serif;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  cursor: pointer;
+}
+
+.docs-tab.is-active {
+  color: var(--ink);
+  border-color: var(--tool-btn-border);
+  background: linear-gradient(120deg, var(--tool-btn-a), var(--tool-btn-b));
+}
+
+.docs-panel {
+  margin-top: 1rem;
+  padding: 1rem 1.05rem;
+  border-radius: 18px;
+  border: 1px solid var(--line);
+  background: rgba(255, 255, 255, 0.04);
+}
+
+.docs-panel p:first-child,
+.docs-panel ul:first-child,
+.docs-panel .docs-endpoint:first-child {
+  margin-top: 0;
+}
+
+.docs-kicker {
+  margin: 0 0 0.8rem;
+  color: var(--ink-soft);
+}
+
+.docs-endpoint + .docs-endpoint {
+  margin-top: 1rem;
+  padding-top: 1rem;
+  border-top: 1px solid rgba(226, 236, 255, 0.1);
+}
+
+.docs-endpoint h4 {
+  margin: 0 0 0.45rem;
+  font-family: "Chakra Petch", "Trebuchet MS", sans-serif;
+  font-size: 1rem;
+}
+
+.docs-list {
+  margin: 0.55rem 0 0;
+  padding-left: 1.1rem;
+  color: var(--ink-soft);
+}
+
+.docs-list li + li {
+  margin-top: 0.32rem;
+}
+
+.docs-code {
+  margin: 0.75rem 0 0;
+  overflow: auto;
+  border-radius: 14px;
+  border: 1px solid rgba(226, 236, 255, 0.12);
+  background: rgba(5, 10, 18, 0.92);
+  padding: 0.8rem 0.9rem;
+}
+
+.docs-code code {
+  border: 0;
+  padding: 0;
+  background: transparent;
+  display: block;
+  line-height: 1.5;
+  white-space: pre-wrap;
+}
+
 @media (prefers-reduced-motion: reduce) {
   .tool-card,
   .btn-card,
-  .btn {
+  .btn,
+  .docs-tab {
     transition: none;
   }
 }
@@ -648,6 +824,24 @@ code {
 
   .tool-grid {
     grid-template-columns: 1fr;
+  }
+
+  .tool-foot {
+    flex-direction: column;
+  }
+
+  .btn-card-secondary {
+    flex-basis: auto;
+  }
+
+  .docs-shell {
+    padding: 0.95rem;
+  }
+
+  .docs-tabs {
+    width: 100%;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
   }
 
   .foot {

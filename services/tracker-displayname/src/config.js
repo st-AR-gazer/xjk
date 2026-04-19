@@ -30,7 +30,7 @@ function normalizeBaseUrl(value, fallback = "") {
 const PORT = clampInt(process.env.PORT || 3141, { min: 1, max: 65535, fallback: 3141 });
 const FRONTEND_DIR =
   process.env.FRONTEND_DIR ||
-  path.join(__dirname, "..", "..", "..", "sites", "tracker-displayname.xjk.yt", "frontend");
+  path.join(__dirname, "..", "..", "..", "sites", "trackers.xjk.yt", "frontend", "__runtime", "displayname");
 
 const TRACKER_DISPLAYNAME_ENABLED = parseBool(process.env.TRACKER_DISPLAYNAME_ENABLED, true);
 const TRACKER_DISPLAYNAME_SCHEDULER_ENABLED = parseBool(

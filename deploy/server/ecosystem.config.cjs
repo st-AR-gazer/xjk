@@ -6,13 +6,10 @@ const sitesRoot = path.join(repoRoot, "sites");
 const toolsDomainRoot = path.join(sitesRoot, "tools.xjk.yt");
 const pluginsDomainRoot = path.join(sitesRoot, "plugins.xjk.yt");
 const alteredDomainRoot = path.join(sitesRoot, "altered.xjk.yt");
-const trackerDomainRoot = path.join(sitesRoot, "tracker.xjk.yt");
+const trackersDomainRoot = path.join(sitesRoot, "trackers.xjk.yt");
 const aggregatorDomainRoot = path.join(sitesRoot, "aggregator.xjk.yt");
 const dashDomainRoot = path.join(sitesRoot, "dash.xjk.yt");
-const trackerDisplaynameDomainRoot = path.join(sitesRoot, "tracker-displayname.xjk.yt");
-const trackerClubDomainRoot = path.join(sitesRoot, "tracker-club.xjk.yt");
 const alteredServiceRoot = path.join(repoRoot, "services", "altered");
-const bannerBuilderServiceRoot = path.join(repoRoot, "services", "bannerbuilder");
 const trackerServiceRoot = path.join(repoRoot, "services", "tracker");
 const aggregatorServiceRoot = path.join(repoRoot, "services", "aggregator");
 const trackerDisplaynameServiceRoot = path.join(repoRoot, "services", "tracker-displayname");
@@ -62,7 +59,6 @@ function loadEnvFile(filePath) {
 [
   path.join(repoRoot, "deploy", "server", ".env"),
   path.join(repoRoot, "services", "altered", ".env"),
-  path.join(repoRoot, "services", "bannerbuilder", ".env"),
   path.join(repoRoot, "services", "tracker", ".env"),
   path.join(repoRoot, "services", "tracker-displayname", ".env"),
   path.join(repoRoot, "services", "tracker-club", ".env"),
@@ -138,22 +134,6 @@ module.exports = {
       },
     },
     {
-      name: "xjk-bannerbuilder",
-      cwd: bannerBuilderServiceRoot,
-      script: path.join(bannerBuilderServiceRoot, "python-runtime", "python.exe"),
-      args: "app.py",
-      interpreter: "none",
-      env: {
-        PORT: "3050",
-        HOST: "127.0.0.1",
-        FLASK_DEBUG: process.env.BANNERBUILDER_LEGACY_DEBUG || "0",
-        TRUST_PROXY: process.env.BANNERBUILDER_LEGACY_TRUST_PROXY || "1",
-        DASHMAP_USER: process.env.DASHMAP_USER || "alterednadeo",
-        ...optionalEnvVar("DASHMAP_API_KEY"),
-        ...optionalEnvVar("SECRET_KEY", "BANNERBUILDER_LEGACY_SECRET_KEY", "SECRET_KEY"),
-      },
-    },
-    {
       name: "xjk-tracker-hub",
       cwd: trackerServiceRoot,
       script: "server.js",
@@ -161,7 +141,7 @@ module.exports = {
       env: {
         NODE_ENV: "production",
         PORT: "3031",
-        FRONTEND_DIR: path.join(trackerDomainRoot, "frontend"),
+        FRONTEND_DIR: path.join(trackersDomainRoot, "frontend", "__runtime", "wr"),
         DATA_DIR: path.join(alteredDomainRoot, "data"),
         DB_FILE: path.join(alteredDomainRoot, "data", "altered-tracker.sqlite"),
         TRACKER_ENABLED: "1",
@@ -225,7 +205,7 @@ module.exports = {
       env: {
         NODE_ENV: "production",
         PORT: "3043",
-        FRONTEND_DIR: path.join(trackerDomainRoot, "frontend"),
+        FRONTEND_DIR: path.join(trackersDomainRoot, "frontend", "__runtime", "leaderboard"),
         DATA_DIR: path.join(alteredDomainRoot, "data"),
         DB_FILE: path.join(alteredDomainRoot, "data", "altered-tracker-leaderboard.sqlite"),
         TRACKER_ENABLED: "1",
@@ -314,7 +294,7 @@ module.exports = {
       env: {
         NODE_ENV: "production",
         PORT: "3041",
-        FRONTEND_DIR: path.join(trackerDisplaynameDomainRoot, "frontend"),
+        FRONTEND_DIR: path.join(trackersDomainRoot, "frontend", "__runtime", "displayname"),
         TRACKER_DISPLAYNAME_AGGREGATOR_BASE_URL:
           process.env.TRACKER_DISPLAYNAME_AGGREGATOR_BASE_URL || "http://127.0.0.1:3040/api",
         TRACKER_DISPLAYNAME_AGGREGATOR_TOKEN:
@@ -365,7 +345,7 @@ module.exports = {
       env: {
         NODE_ENV: "production",
         PORT: "3042",
-        FRONTEND_DIR: path.join(trackerClubDomainRoot, "frontend"),
+        FRONTEND_DIR: path.join(trackersDomainRoot, "frontend", "__runtime", "club"),
         TRACKER_CLUB_ENABLED: process.env.TRACKER_CLUB_ENABLED || "1",
         TRACKER_CLUB_PROJECT_KEY: process.env.TRACKER_CLUB_PROJECT_KEY || "prod-tracker-club",
         TRACKER_CLUB_PROJECT_NAME: process.env.TRACKER_CLUB_PROJECT_NAME || "Prod Tracker Club",
@@ -505,6 +485,20 @@ module.exports = {
               "tools",
               "UnderwaterMapConverter.exe"
             ),
+      },
+    },
+    {
+      name: "xjk-tools-clip-to-ghost",
+      cwd: path.join(toolsDomainRoot, "Clip-To-Ghost", "backend"),
+      script: "server.js",
+      interpreter: "node",
+      env: {
+        NODE_ENV: "production",
+        PORT: "3018",
+        FRONTEND_DIR: path.join(toolsDomainRoot, "Clip-To-Ghost", "frontend"),
+        UPLOAD_DIR: path.join(toolsDomainRoot, "Clip-To-Ghost", "data", "uploads"),
+        OUTPUT_DIR: path.join(toolsDomainRoot, "Clip-To-Ghost", "data", "processed"),
+        TOOL_PATH: path.join(toolsDomainRoot, "Clip-To-Ghost", "tools", "ClipToGhost.exe"),
       },
     },
   ],

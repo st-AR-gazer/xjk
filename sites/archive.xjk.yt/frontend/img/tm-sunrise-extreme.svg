@@ -1,0 +1,23 @@
+<svg viewBox="0 0 400 240" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="g" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#180500"/>
+      <stop offset="50%" stop-color="#802000"/>
+      <stop offset="100%" stop-color="#e05000"/>
+    </linearGradient>
+  </defs>
+  <rect width="400" height="240" fill="url(#g)"/>
+  <line x1="0"   y1="120" x2="350" y2="60"  stroke="rgba(255,120,0,0.22)" stroke-width="4"/>
+  <line x1="0"   y1="135" x2="350" y2="75"  stroke="rgba(255,100,0,0.18)" stroke-width="2.5"/>
+  <line x1="0"   y1="148" x2="350" y2="88"  stroke="rgba(255,140,0,0.15)" stroke-width="3"/>
+  <line x1="0"   y1="160" x2="350" y2="100" stroke="rgba(255,80,0,0.12)"  stroke-width="2"/>
+  <line x1="0"   y1="170" x2="350" y2="110" stroke="rgba(255,120,0,0.10)" stroke-width="1.5"/>
+  <line x1="308" y1="40" x2="368" y2="100" stroke="rgba(255,180,0,0.45)" stroke-width="4"/>
+  <line x1="368" y1="40" x2="308" y2="100" stroke="rgba(255,180,0,0.45)" stroke-width="4"/>
+  <rect x="0" y="228" width="400" height="12" fill="rgba(180,50,0,0.5)"/>
+  <rect x="0" y="228" width="80" height="12" fill="rgba(255,120,0,0.45)"/>
+  <text x="396" y="230" text-anchor="end" font-family="monospace" font-size="72" font-weight="700" fill="rgba(255,255,255,0.05)" letter-spacing="-4">2005</text>
+  <text x="16" y="22" font-family="monospace" font-size="9" font-weight="700" fill="rgba(255,255,255,0.4)" letter-spacing="3">TRACKMANIA</text>
+  <text x="16" y="190" font-family="monospace" font-size="20" font-weight="700" fill="rgba(255,255,255,0.88)" letter-spacing="1">SUNRISE</text>
+  <text x="16" y="218" font-family="monospace" font-size="24" font-weight="700" fill="rgba(255,160,40,0.92)" letter-spacing="2">eXTREME</text>
+</svg>

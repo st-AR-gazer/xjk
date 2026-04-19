@@ -1,0 +1,23 @@
+<svg viewBox="0 0 400 240" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="g" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#160020"/>
+      <stop offset="50%" stop-color="#5500b0"/>
+      <stop offset="100%" stop-color="#cc00ff"/>
+    </linearGradient>
+  </defs>
+  <rect width="400" height="240" fill="url(#g)"/>
+  <rect x="0" y="88"  width="340" height="3"  fill="rgba(255,0,255,0.25)" rx="1"/>
+  <rect x="0" y="98"  width="280" height="2"  fill="rgba(255,0,255,0.18)" rx="1"/>
+  <rect x="0" y="106" width="320" height="3"  fill="rgba(255,100,255,0.15)" rx="1"/>
+  <rect x="0" y="114" width="260" height="2"  fill="rgba(255,0,255,0.12)" rx="1"/>
+  <rect x="0" y="122" width="300" height="3"  fill="rgba(200,0,255,0.20)" rx="1"/>
+  <rect x="0" y="130" width="240" height="2"  fill="rgba(255,0,255,0.10)" rx="1"/>
+  <polygon points="260,0 400,0 400,240 310,240" fill="rgba(255,255,255,0.04)"/>
+  <rect x="0" y="228" width="400" height="12" fill="rgba(140,0,200,0.5)"/>
+  <rect x="0" y="228" width="90" height="12" fill="rgba(255,0,255,0.4)"/>
+  <text x="396" y="230" text-anchor="end" font-family="monospace" font-size="72" font-weight="700" fill="rgba(255,255,255,0.05)" letter-spacing="-4">2016</text>
+  <text x="16" y="22" font-family="monospace" font-size="9" font-weight="700" fill="rgba(255,255,255,0.4)" letter-spacing="3">TRACKMANIA</text>
+  <text x="16" y="64" font-family="monospace" font-size="22" font-weight="700" fill="rgba(255,255,255,0.88)" letter-spacing="1">TRACKMANIA</text>
+  <text x="16" y="82" font-family="monospace" font-size="36" font-weight="700" fill="rgba(255,80,255,0.95)" letter-spacing="2">TURBO</text>
+</svg>

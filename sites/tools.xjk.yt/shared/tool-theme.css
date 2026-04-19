@@ -55,6 +55,18 @@ html[data-tool-id="map-validation-checker"] {
   --theme-hue: 318;
 }
 
+html[data-tool-id="underwater-converter"] {
+  --theme-hue: 18;
+}
+
+html[data-tool-id="colorizer"] {
+  --theme-hue: 78;
+}
+
+html[data-tool-id="clip-to-ghost"] {
+  --theme-hue: 138;
+}
+
 html,
 body {
   background-color: var(--bg-1, #11182a);

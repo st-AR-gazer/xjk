@@ -82,9 +82,20 @@
     "description": "Format Trackmania text with per-letter gradient color codes (supports custom palettes & presets).",
     "category": "Text",
     "status": "live",
-    "input": "Text + 2–7 colors",
+    "input": "Text + 2-7 colors",
     "output": "Formatted gradient string",
     "link": "Colorizer/",
     "tone": "warm"
+  },
+  {
+    "id": "clip-to-ghost",
+    "name": "Clip To Ghost",
+    "description": "Export GPS clip RecordData blocks from Trackmania maps into standalone ghost files with optional manifest output.",
+    "category": "Ghost Export",
+    "status": "live",
+    "input": ".Map.Gbx",
+    "output": ".Ghost.Gbx + manifest",
+    "link": "Clip-To-Ghost/",
+    "tone": "cool"
   }
 ]

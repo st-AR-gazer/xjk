@@ -44,9 +44,6 @@ http://altered.xjk.yt {
   import favicon_redirect
   @bannerBuilderExact path /bannerbuilder
   redir @bannerBuilderExact /bannerbuilder/ 308
-  handle /bannerbuilder* {
-    reverse_proxy 127.0.0.1:3050
-  }
   reverse_proxy 127.0.0.1:3030
 }
 
@@ -87,26 +84,78 @@ http://trackers.xjk.yt {
   import favicon_redirect
   root * C:/srv/xjk/sites/trackers.xjk.yt/frontend
 
+  @wrRuntimeExact path /__runtime/wr
+  redir @wrRuntimeExact /__runtime/wr/ 308
+  handle_path /__runtime/wr/* {
+    reverse_proxy 127.0.0.1:3031
+  }
+
+  @leaderboardRuntimeExact path /__runtime/leaderboard
+  redir @leaderboardRuntimeExact /__runtime/leaderboard/ 308
+  handle_path /__runtime/leaderboard/* {
+    reverse_proxy 127.0.0.1:3043
+  }
+
+  @displaynameRuntimeExact path /__runtime/displayname
+  redir @displaynameRuntimeExact /__runtime/displayname/ 308
+  handle_path /__runtime/displayname/* {
+    reverse_proxy 127.0.0.1:3041
+  }
+
+  @clubRuntimeExact path /__runtime/club
+  redir @clubRuntimeExact /__runtime/club/ 308
+  handle_path /__runtime/club/* {
+    reverse_proxy 127.0.0.1:3042
+  }
+
   @wrExact path /wr
   redir @wrExact /wr/ 308
+  @wrIndex path /wr/index.html
+  redir @wrIndex /wr/ 308
+  @wrShell path /wr/
+  handle @wrShell {
+    rewrite * /index.html
+    file_server
+  }
   handle_path /wr/* {
     reverse_proxy 127.0.0.1:3031
   }
 
   @leaderboardExact path /leaderboard
   redir @leaderboardExact /leaderboard/ 308
+  @leaderboardIndex path /leaderboard/index.html
+  redir @leaderboardIndex /leaderboard/ 308
+  @leaderboardShell path /leaderboard/
+  handle @leaderboardShell {
+    rewrite * /index.html
+    file_server
+  }
   handle_path /leaderboard/* {
     reverse_proxy 127.0.0.1:3043
   }
 
   @displaynameExact path /displayname
   redir @displaynameExact /displayname/ 308
+  @displaynameIndex path /displayname/index.html
+  redir @displaynameIndex /displayname/ 308
+  @displaynameShell path /displayname/
+  handle @displaynameShell {
+    rewrite * /index.html
+    file_server
+  }
   handle_path /displayname/* {
     reverse_proxy 127.0.0.1:3041
   }
 
   @clubExact path /club
   redir @clubExact /club/ 308
+  @clubIndex path /club/index.html
+  redir @clubIndex /club/ 308
+  @clubShell path /club/
+  handle @clubShell {
+    rewrite * /index.html
+    file_server
+  }
   handle_path /club/* {
     reverse_proxy 127.0.0.1:3042
   }
@@ -188,6 +237,12 @@ http://tools.xjk.yt {
   redir @underwaterExact /Underwater-Map-Converter/ 308
   handle_path /Underwater-Map-Converter/* {
     reverse_proxy 127.0.0.1:3017
+  }
+
+  @clipToGhostExact path /Clip-To-Ghost
+  redir @clipToGhostExact /Clip-To-Ghost/ 308
+  handle_path /Clip-To-Ghost/* {
+    reverse_proxy 127.0.0.1:3018
   }
 
   handle {
