@@ -1,114 +1,99 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="en">
+
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>xjk / altered / banner builder</title>
-  <link rel="preconnect" href="https://fonts.googleapis.com" />
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@500;600;700&family=Manrope:wght@400;500;700&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="bannerbuilder.css" />
-  <link rel="icon" href="../favicon.svg" type="image/svg+xml" />
+  <meta charset="utf-8">
+  <title>Altered Nadeo - Banner Builder</title>
+
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml">
+
+  <link rel="stylesheet" href="static/css/style.css">
+  <link rel="stylesheet" href="static/css/history.css">
+  <link rel="stylesheet" href="static/css/modal.css">
 </head>
-<body>
-  <main class="page">
-    <header class="hero panel">
-      <div class="hero-top">
-        <span class="tag">Altered Creative</span>
-        <a class="chip" href="../">Back To Altered Hub</a>
-      </div>
-      <h1>Banner Builder</h1>
-      <p>Create Altered-styled banners using season backgrounds, color backdrops, and high-resolution platonic solid placements.</p>
-    </header>
 
-    <section class="workspace">
-      <aside class="panel controls">
-        <h2>Settings</h2>
+<body
+  data-dashmap-enabled="{{ 'true' if dashmap.enabled else 'false' }}"
+  data-dashmap-message="{{ dashmap.message }}"
+>
 
-        <div class="field-row">
-          <label class="field">
-            <span>Main text</span>
-            <input id="mainText" type="text" value="1:23:45.678" />
-          </label>
-          <label class="field">
-            <span>Secondary</span>
-            <input id="subText" type="text" value="ft. ar" />
-          </label>
-        </div>
+  <div class="layout">
 
-        <div class="field-row">
-          <label class="field">
-            <span>Background</span>
-            <select id="backgroundSelect">
-              <option value="winter">Winter</option>
-              <option value="spring">Spring</option>
-              <option value="summer">Summer</option>
-              <option value="fall">Fall</option>
-              <option value="training">Training</option>
-              <option value="other">Other</option>
-              <option value="black">Black</option>
-              <option value="blue">Blue</option>
-              <option value="green">Green</option>
-              <option value="red">Red</option>
-              <option value="white">White</option>
-            </select>
-          </label>
-          <label class="field">
-            <span>Main size</span>
-            <input id="mainSize" type="range" min="68" max="170" step="1" value="126" />
-          </label>
-          <label class="field">
-            <span>Secondary size</span>
-            <input id="subSize" type="range" min="28" max="92" step="1" value="58" />
-          </label>
-        </div>
+    <section id="builder-card" class="card">
 
-        <div class="field-row">
-          <label class="field">
-            <span>Main Y</span>
-            <input id="mainY" type="range" min="70" max="170" step="1" value="130" />
-          </label>
-          <label class="field">
-            <span>Secondary X</span>
-            <input id="subX" type="range" min="900" max="1550" step="1" value="1365" />
-          </label>
-          <label class="field">
-            <span>Solid size</span>
-            <input id="solidSize" type="range" min="90" max="260" step="1" value="158" />
-          </label>
-        </div>
-
-        <section class="slot-section">
-          <div class="slot-head">
-            <h3>Solid Slots</h3>
-            <span>Five placement points</span>
+      <h1>Banner builder</h1>
+      <form id="banner-form" class="header-row">
+        <label class="field">
+          <span>Main time</span>
+          <div class="input-wrap">
+            <input name="main" value="1:23:45.678" required>
+            <button type="button" id="edit-main-btn" class="btn-light">&#9881;</button>
           </div>
-          <div id="slotControls" class="slot-controls"></div>
-        </section>
+        </label>
 
-        <div class="actions">
-          <button id="randomizeBtn" class="btn secondary" type="button">Randomize Solids</button>
-          <button id="resetBtn" class="btn secondary" type="button">Reset Layout</button>
-          <button id="copyPresetBtn" class="btn secondary" type="button">Copy Preset JSON</button>
-          <button id="loadPresetBtn" class="btn secondary" type="button">Load Preset JSON</button>
-          <button id="downloadBtn" class="btn primary" type="button">Download PNG</button>
-        </div>
+        <label class="field">
+          <span>Secondary</span>
+          <div class="input-wrap">
+            <input name="sub" placeholder="ft' ar">
+            <button type="button" id="edit-sub-btn" class="btn-light">&#9881;</button>
+          </div>
+        </label>
 
-        <p id="statusLine" class="status-line">Loading assets...</p>
-      </aside>
+        <label class="field">
+          <span>Background</span>
+          <select name="bg">
+            {% for option in background_options %}
+            <option value="{{ option.value }}" {% if option.value == default_background %}selected{% endif %}>{{ option.label }}</option>
+            {% endfor %}
+          </select>
+        </label>
+      </form>
 
-      <section class="panel preview">
-        <div class="preview-head">
-          <h2>Preview</h2>
-          <span>1600 x 200 output</span>
-        </div>
-        <div class="canvas-wrap">
-          <canvas id="bannerCanvas" width="1600" height="200"></canvas>
-        </div>
-      </section>
+      <div class="solids-header">
+        <h2>Solids</h2>
+        <button id="reset-btn" type="button" class="btn-reset">Reset</button>
+      </div>
+
+      <div id="solids-top" class="solids-row five-boxes"></div>
+      <div id="solids-bottom" class="solids-row four-boxes"></div>
+
+      <button id="generate-btn" class="btn-primary" type="button">Generate</button>
     </section>
-  </main>
 
-  <script src="bannerbuilder.js"></script>
+    <aside id="editor-panel">
+      <header>
+        <h3 id="editor-title"></h3>
+        <button id="close-editor" type="button">&times;</button>
+      </header>
+      <form id="editor-form"></form>
+    </aside>
+
+  </div>
+
+  <section class="preview">
+
+    <div class="preview-header">
+      <h2>Preview</h2>
+      <button id="download-btn" class="btn-primary preview-action" type="button">
+        Download image
+      </button>
+      <button id="dashmap-btn" class="btn-primary" type="button">
+        Dashmap URL
+      </button>
+      {% if not dashmap.enabled %}
+      <span class="preview-note">{{ dashmap.message }}</span>
+      {% endif %}
+    </div>
+
+    <img id="preview-img" alt="Your banner will appear here">
+
+  </section>
+
+
+  <script src="static/js/main.js"></script>
+  <script defer src="static/js/history.js"></script>
+  <script defer src="static/js/modal.js"></script>
+
 </body>
+
 </html>

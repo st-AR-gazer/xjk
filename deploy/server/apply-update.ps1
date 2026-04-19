@@ -179,10 +179,19 @@ foreach ($dir in $backendDirs) {
 }
 
 $bannerBuilderDir = Join-Path $RepoPath "services/bannerbuilder"
-$bannerBuilderRuntime = Join-Path $bannerBuilderDir "python-runtime\python.exe"
-if ((-not $SkipInstall -or $ForceInstall) -and (Test-Path $bannerBuilderDir) -and -not (Test-Path $bannerBuilderRuntime)) {
+$bannerBuilderRuntime = Join-Path $bannerBuilderDir ".venv\Scripts\python.exe"
+if ((-not $SkipInstall -or $ForceInstall) -and (Test-Path $bannerBuilderDir)) {
+  if (-not (Test-Path $bannerBuilderRuntime)) {
+    Write-Host "Creating Python virtual environment in $bannerBuilderDir"
+    Invoke-NativeWithOutput -FilePath "python" -ArgumentList @(
+      "-m",
+      "venv",
+      (Join-Path $bannerBuilderDir ".venv")
+    ) -Label "python venv creation"
+  }
+
   Write-Host "Installing Python dependencies in $bannerBuilderDir"
-  Invoke-NativeWithOutput -FilePath "python" -ArgumentList @(
+  Invoke-NativeWithOutput -FilePath $bannerBuilderRuntime -ArgumentList @(
     "-m",
     "pip",
     "install",
@@ -343,6 +352,7 @@ Write-Host "Reloading PM2 apps"
 # Guard against stale/orphan listeners that leave critical apps stopped.
 Ensure-Pm2AppHealthyOnPort -Pm2Exe $pm2Path -AppName "xjk-tracker-hub" -Port 3031 -HealthPath "/api/v1/tracker/status"
 Ensure-Pm2AppHealthyOnPort -Pm2Exe $pm2Path -AppName "xjk-aggregator-hub" -Port 3040 -HealthPath "/health" -ForceRestart
+Ensure-Pm2AppHealthyOnPort -Pm2Exe $pm2Path -AppName "xjk-bannerbuilder" -Port 3050 -HealthPath "/health"
 Ensure-Pm2AppHealthyOnPort -Pm2Exe $pm2Path -AppName "xjk-tools-clip-to-ghost" -Port 3018 -HealthPath "/health"
 
 & $pm2Path save

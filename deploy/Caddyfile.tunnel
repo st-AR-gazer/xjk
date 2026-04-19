@@ -44,6 +44,9 @@ http://altered.xjk.yt {
   import favicon_redirect
   @bannerBuilderExact path /bannerbuilder
   redir @bannerBuilderExact /bannerbuilder/ 308
+  handle /bannerbuilder* {
+    reverse_proxy 127.0.0.1:3050
+  }
   reverse_proxy 127.0.0.1:3030
 }
 

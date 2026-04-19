@@ -1,0 +1,1 @@
+Small Flask app to generate sleek Trackmania-style banners, view them in a web UI, and (optionally) upload to Dashmap. It includes a JSON API for automated use and a simple admin dashboard for browsing, stats, and deletes.

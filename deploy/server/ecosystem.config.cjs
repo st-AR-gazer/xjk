@@ -10,6 +10,7 @@ const trackersDomainRoot = path.join(sitesRoot, "trackers.xjk.yt");
 const aggregatorDomainRoot = path.join(sitesRoot, "aggregator.xjk.yt");
 const dashDomainRoot = path.join(sitesRoot, "dash.xjk.yt");
 const alteredServiceRoot = path.join(repoRoot, "services", "altered");
+const bannerBuilderServiceRoot = path.join(repoRoot, "services", "bannerbuilder");
 const trackerServiceRoot = path.join(repoRoot, "services", "tracker");
 const aggregatorServiceRoot = path.join(repoRoot, "services", "aggregator");
 const trackerDisplaynameServiceRoot = path.join(repoRoot, "services", "tracker-displayname");
@@ -59,6 +60,7 @@ function loadEnvFile(filePath) {
 [
   path.join(repoRoot, "deploy", "server", ".env"),
   path.join(repoRoot, "services", "altered", ".env"),
+  path.join(repoRoot, "services", "bannerbuilder", ".env"),
   path.join(repoRoot, "services", "tracker", ".env"),
   path.join(repoRoot, "services", "tracker-displayname", ".env"),
   path.join(repoRoot, "services", "tracker-club", ".env"),
@@ -131,6 +133,22 @@ module.exports = {
         ALTERED_SESSION_COOKIE_NAME: process.env.ALTERED_SESSION_COOKIE_NAME || "altered_admin_session",
         ALTERED_SESSION_TTL_SECONDS: process.env.ALTERED_SESSION_TTL_SECONDS || "43200",
         ALTERED_OAUTH_STATE_TTL_SECONDS: process.env.ALTERED_OAUTH_STATE_TTL_SECONDS || "600",
+      },
+    },
+    {
+      name: "xjk-bannerbuilder",
+      cwd: bannerBuilderServiceRoot,
+      script: path.join(bannerBuilderServiceRoot, ".venv", "Scripts", "python.exe"),
+      args: "app.py",
+      interpreter: "none",
+      env: {
+        PORT: "3050",
+        HOST: "127.0.0.1",
+        FLASK_DEBUG: process.env.BANNERBUILDER_LEGACY_DEBUG || "0",
+        TRUST_PROXY: process.env.BANNERBUILDER_LEGACY_TRUST_PROXY || "1",
+        DASHMAP_USER: process.env.DASHMAP_USER || "alterednadeo",
+        ...optionalEnvVar("DASHMAP_API_KEY"),
+        ...optionalEnvVar("SECRET_KEY", "BANNERBUILDER_LEGACY_SECRET_KEY", "SECRET_KEY"),
       },
     },
     {
