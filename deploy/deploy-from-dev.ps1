@@ -6,7 +6,9 @@ param(
   [switch]$SkipSync,
   [switch]$SkipInstall,
   [switch]$ForceInstall,
-  [string]$CaddyConfigPath = ""
+  [string]$CaddyConfigPath = "",
+  [switch]$DirectApply,
+  [int]$RefreshTimeoutSeconds = 900
 )
 
 $ErrorActionPreference = "Stop"
@@ -107,6 +109,76 @@ function Invoke-RemotePowerShell {
   ) -Label "remote powershell"
 }
 
+function Invoke-RemoteRefreshQueue {
+  param(
+    [Parameter(Mandatory = $true)]
+    [string]$SshExe,
+    [Parameter(Mandatory = $true)]
+    [string]$Target,
+    [Parameter(Mandatory = $true)]
+    [string]$RemoteRoot,
+    [Parameter(Mandatory = $true)]
+    [string]$CaddyConfigPath,
+    [int]$TimeoutSeconds = 900
+  )
+
+  $requestId = "refresh-{0}-{1}" -f (Get-Date -Format "yyyyMMdd-HHmmss"), ([guid]::NewGuid().ToString("N").Substring(0, 8))
+  $escapedRemoteRoot = $RemoteRoot.Replace("'", "''")
+  $escapedCaddyConfigPath = $CaddyConfigPath.Replace("'", "''")
+  $escapedRequestId = $requestId.Replace("'", "''")
+  $safeTimeoutSeconds = [Math]::Max(30, $TimeoutSeconds)
+
+  $script = @"
+`$ErrorActionPreference = "Stop"
+`$remoteRoot = '$escapedRemoteRoot'
+`$requestId = '$escapedRequestId'
+`$caddyConfigPath = '$escapedCaddyConfigPath'
+`$timeoutSeconds = $safeTimeoutSeconds
+`$requestsDir = Join-Path `$remoteRoot 'deploy\ops-sync\refresh-requests'
+`$resultsDir = Join-Path `$remoteRoot 'deploy\ops-sync\refresh-results'
+`$logsDir = Join-Path `$remoteRoot 'deploy\ops-sync\refresh-logs'
+New-Item -ItemType Directory -Path `$requestsDir -Force | Out-Null
+New-Item -ItemType Directory -Path `$resultsDir -Force | Out-Null
+New-Item -ItemType Directory -Path `$logsDir -Force | Out-Null
+`$requestPath = Join-Path `$requestsDir (`$requestId + '.json')
+`$resultPath = Join-Path `$resultsDir (`$requestId + '.json')
+`$logPath = Join-Path `$logsDir (`$requestId + '.log')
+if (Test-Path `$resultPath) { Remove-Item -Path `$resultPath -Force -ErrorAction SilentlyContinue }
+`$payload = @{
+  requestId = `$requestId
+  requestedAt = (Get-Date).ToString('o')
+  remoteRoot = `$remoteRoot
+  caddyConfigPath = `$caddyConfigPath
+  tunnelServiceName = 'xjk-cloudflared'
+  skipTunnelRestart = `$true
+}
+`$payload | ConvertTo-Json -Compress | Set-Content -Path `$requestPath -Encoding ASCII
+Write-Host "Queued elevated service refresh: `$requestId"
+`$deadline = (Get-Date).AddSeconds(`$timeoutSeconds)
+while ((Get-Date) -lt `$deadline) {
+  if (Test-Path `$resultPath) {
+    `$statusRaw = Get-Content -Path `$resultPath -Raw
+    `$status = `$statusRaw | ConvertFrom-Json
+    if (`$status.ok) {
+      Write-Host "Remote service refresh completed. Log: `$logPath"
+      exit 0
+    }
+    `$errorText = if (`$status.error) { [string]`$status.error } else { 'Unknown queue-agent failure.' }
+    if (Test-Path `$logPath) {
+      Write-Host "---- queue-agent log tail ----"
+      Get-Content -Path `$logPath -Tail 80 -ErrorAction SilentlyContinue | ForEach-Object { Write-Host `$_.ToString() }
+      Write-Host "---- end queue-agent log tail ----"
+    }
+    throw "Remote service refresh failed: `$errorText"
+  }
+  Start-Sleep -Seconds 2
+}
+throw "Timed out waiting for elevated refresh queue after `$timeoutSeconds seconds. Ensure deploy\server\setup-refresh-queue-agent.ps1 is installed and running on the server."
+"@
+
+  Invoke-RemotePowerShell -SshExe $SshExe -Target $Target -Script $script
+}
+
 function Should-IncludeRelativePath {
   param(
     [Parameter(Mandatory = $true)]
@@ -120,9 +192,13 @@ function Should-IncludeRelativePath {
 
   $excludePatterns = @(
     '(^|/)\.git(/|$)',
+    '(^|/)\.venv(/|$)',
     '(^|/)node_modules(/|$)',
     '(^|/)deploy/local(/|$)',
     '(^|/)deploy/ops-sync(/|$)',
+    '(^|/)deploy/server/apply-update\.ps1$',
+    '(^|/)deploy/server/winsw/WinSW\.exe$',
+    '(^|/)deploy/server/winsw/services(/|$)',
     '(^|/)docs(/|$)',
     '(^|/)zDeploy(/|$)',
     '(^|/)tmp(/|$)',
@@ -251,7 +327,7 @@ if ([string]::IsNullOrWhiteSpace($Server)) {
   $Server = "user@your-server"
 }
 if ([string]::IsNullOrWhiteSpace($RemoteRepoPath)) {
-  $RemoteRepoPath = "C:\srv\xjk"
+  $RemoteRepoPath = "D:\srv\xjk"
 }
 if ([string]::IsNullOrWhiteSpace($Branch)) {
   $Branch = "main"
@@ -292,21 +368,37 @@ try {
     Write-Host "Skipping workspace sync"
   }
 
-  $applyScript = "$RemoteRepoPath\deploy\server\apply-update.ps1"
-  $applyArgs = "-RepoPath '$RemoteRepoPath' -SkipGit -CaddyConfigPath '$CaddyConfigPath'"
+  if ($DirectApply) {
+    $applyScript = "$RemoteRepoPath\deploy\server\apply-update-winsw.ps1"
+    $applyArgs = "-RepoPath '$RemoteRepoPath' -SkipGit -CaddyConfigPath '$CaddyConfigPath'"
 
-  if ($SkipInstall) {
-    $applyArgs += " -SkipInstall"
+    if ($SkipInstall) {
+      $applyArgs += " -SkipInstall"
+    }
+
+    if ($ForceInstall) {
+      $applyArgs += " -ForceInstall"
+    }
+
+    $remoteApplyScript = "& '$applyScript' $applyArgs"
+
+    Write-Host "Running remote deployment directly on $Server"
+    Invoke-RemotePowerShell -SshExe $sshPath -Target $Server -Script $remoteApplyScript
+  } else {
+    if ($ForceInstall) {
+      throw "-ForceInstall requires -DirectApply or an elevated server session. The refresh queue is for normal service restarts."
+    }
+    if (-not $SkipInstall) {
+      Write-Host "Queue deploys run with SkipInstall semantics. Use -DirectApply from an elevated session for dependency installs."
+    }
+    Write-Host "Queueing elevated remote service refresh on $Server"
+    Invoke-RemoteRefreshQueue `
+      -SshExe $sshPath `
+      -Target $Server `
+      -RemoteRoot $RemoteRepoPath `
+      -CaddyConfigPath $CaddyConfigPath `
+      -TimeoutSeconds $RefreshTimeoutSeconds
   }
-
-  if ($ForceInstall) {
-    $applyArgs += " -ForceInstall"
-  }
-
-  $remoteApplyScript = "& '$applyScript' $applyArgs"
-
-  Write-Host "Running remote deployment on $Server"
-  Invoke-RemotePowerShell -SshExe $sshPath -Target $Server -Script $remoteApplyScript
 } finally {
   if (Test-Path $archivePath) {
     Remove-Item -Path $archivePath -Force -ErrorAction SilentlyContinue

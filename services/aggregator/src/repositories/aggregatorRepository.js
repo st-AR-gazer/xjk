@@ -1,4 +1,8 @@
-import { sanitizeResolvedDisplayName, normalizeDisplayNameQuery } from "../../../shared/displayNameResolution.js";
+import {
+  sanitizeResolvedDisplayName,
+  normalizeDisplayNameQuery,
+  validateSharedDisplayName,
+} from "../../../shared/displayNameResolution.js";
 
 function clampInt(value, { min = 0, max = Number.MAX_SAFE_INTEGER, fallback = 0 } = {}) {
   const parsed = Number(value);
@@ -51,6 +55,41 @@ function normalizeClubId(value) {
 
 function normalizeArray(value) {
   return Array.isArray(value) ? value : [];
+}
+
+function normalizeSearchMode(value) {
+  const raw = String(value || "").trim().toLowerCase();
+  if (raw === "prefix" || raw === "contains" || raw === "fuzzy") return raw;
+  return "contains";
+}
+
+const FUZZY_SEARCH_ROW_LIMIT = 5000;
+
+function computeDiceScore(a, b) {
+  const left = String(a || "");
+  const right = String(b || "");
+  if (!left || !right) return 0;
+  if (left === right) return 1;
+  if (left.length === 1 || right.length === 1) {
+    return left === right ? 1 : 0;
+  }
+
+  const grams = (value) => {
+    const out = new Map();
+    for (let i = 0; i < value.length - 1; i += 1) {
+      const gram = value.slice(i, i + 2);
+      out.set(gram, (out.get(gram) || 0) + 1);
+    }
+    return out;
+  };
+
+  const leftGrams = grams(left);
+  const rightGrams = grams(right);
+  let overlap = 0;
+  for (const [gram, count] of leftGrams.entries()) {
+    overlap += Math.min(count, rightGrams.get(gram) || 0);
+  }
+  return (2 * overlap) / (Math.max(1, left.length - 1) + Math.max(1, right.length - 1));
 }
 
 function uniqueBy(values, toKey) {
@@ -372,18 +411,32 @@ function buildTrafficSampleQueryMeta({
 
 function normalizeDisplayNameEntries(payload = {}) {
   const out = [];
+  const rejected = [];
+
+  const rejectEntry = ({ accountId = "", displayName = "", reason = "invalid_display_name" } = {}) => {
+    rejected.push({
+      accountId: accountId || null,
+      displayName: displayName || null,
+      reason,
+    });
+  };
 
   const maybeArray = normalizeArray(payload.names);
   for (const row of maybeArray) {
     const accountId = normalizeAccountId(row?.accountId || row?.account_id || row?.id);
-    const displayName = sanitizeResolvedDisplayName(
-      row?.displayName ?? row?.display_name ?? row?.name ?? "",
-      { accountId }
-    );
-    if (!accountId || !displayName) continue;
+    const rawDisplayName = row?.displayName ?? row?.display_name ?? row?.name ?? "";
+    const validation = validateSharedDisplayName(rawDisplayName, { accountId });
+    if (!accountId) {
+      rejectEntry({ accountId, displayName: String(rawDisplayName || "").trim(), reason: "invalid_account_id" });
+      continue;
+    }
+    if (!validation.ok) {
+      rejectEntry({ accountId, displayName: validation.displayName || String(rawDisplayName || "").trim(), reason: validation.reason });
+      continue;
+    }
     out.push({
       accountId,
-      displayName,
+      displayName: validation.displayName,
       observedAt: row?.observedAt || row?.observed_at || payload.observedAt || payload.observed_at,
       source: row?.source || payload.sourceLabel || payload.source,
     });
@@ -393,11 +446,18 @@ function normalizeDisplayNameEntries(payload = {}) {
   if (mapping && typeof mapping === "object" && !Array.isArray(mapping)) {
     for (const [rawAccountId, rawName] of Object.entries(mapping)) {
       const accountId = normalizeAccountId(rawAccountId);
-      const displayName = sanitizeResolvedDisplayName(rawName, { accountId });
-      if (!accountId || !displayName) continue;
+      const validation = validateSharedDisplayName(rawName, { accountId });
+      if (!accountId) {
+        rejectEntry({ accountId, displayName: String(rawName || "").trim(), reason: "invalid_account_id" });
+        continue;
+      }
+      if (!validation.ok) {
+        rejectEntry({ accountId, displayName: validation.displayName || String(rawName || "").trim(), reason: validation.reason });
+        continue;
+      }
       out.push({
         accountId,
-        displayName,
+        displayName: validation.displayName,
         observedAt: payload.observedAt || payload.observed_at,
         source: payload.sourceLabel || payload.source,
       });
@@ -409,7 +469,10 @@ function normalizeDisplayNameEntries(payload = {}) {
     const key = `${entry.accountId}|${entry.displayName}`;
     if (!dedup.has(key)) dedup.set(key, entry);
   }
-  return [...dedup.values()];
+  return {
+    entries: [...dedup.values()],
+    rejected,
+  };
 }
 
 class AggregatorRepository {
@@ -510,106 +573,12 @@ class AggregatorRepository {
         const item = {
           accountId: row.accountId,
           displayName: row.displayName,
+          normalizedDisplayName: row.normalizedDisplayName,
           source: row.source || null,
           observedAt: row.observedAt,
           updatedAt: row.updatedAt,
           stale: isStale(row.ageSeconds),
-        };
-        const mappedQueries = normalizedToQuery.get(row.normalizedDisplayName) || [];
-        for (const mq of mappedQueries) {
-          mq.matches.push(item);
-        }
-      }
-    }
-
-    return {
-      queries,
-      count: queries.length,
-    };
-  }
-
-  backfillNormalizedDisplayNames() {
-    try {
-      const db = this.db;
-      db.exec("BEGIN");
-      
-      const unnormalizedCurrent = db.prepare("SELECT account_id, display_name FROM account_display_name_current WHERE normalized_display_name IS NULL LIMIT 20000").all();
-      const updateCurrent = db.prepare("UPDATE account_display_name_current SET normalized_display_name = ? WHERE account_id = ?");
-      for (const row of unnormalizedCurrent) {
-        updateCurrent.run(normalizeDisplayNameQuery(row.display_name), row.account_id);
-      }
-
-      const unnormalizedHistory = db.prepare("SELECT id, display_name FROM account_display_name_history WHERE normalized_display_name IS NULL LIMIT 20000").all();
-      const updateHistory = db.prepare("UPDATE account_display_name_history SET normalized_display_name = ? WHERE id = ?");
-      for (const row of unnormalizedHistory) {
-        updateHistory.run(normalizeDisplayNameQuery(row.display_name), row.id);
-      }
-      
-      db.exec("COMMIT");
-      if (unnormalizedCurrent.length > 0 || unnormalizedHistory.length > 0) {
-        return true;
-      }
-      return false;
-    } catch (err) {
-      try { this.db.exec("ROLLBACK"); } catch(e) {}
-      console.error("Failed to backfill normalized display names:", err);
-      return false;
-    }
-  }
-
-  getDisplayNamesByName({ displayNames = [], maxAgeSeconds = 0 } = {}) {
-    const isStale = (ageSeconds) =>
-      Number(maxAgeSeconds || 0) > 0 ? Number(ageSeconds || 0) > Number(maxAgeSeconds) : false;
-
-    const names = normalizeArray(displayNames).map((n) => String(n || "").trim()).filter(Boolean);
-    const uniqueOriginals = [...new Set(names)];
-
-    const queries = uniqueOriginals.map((original) => {
-      return {
-        displayName: original,
-        normalizedDisplayName: normalizeDisplayNameQuery(original),
-        matches: []
-      };
-    });
-
-    const normalizedToQuery = new Map();
-    for (const q of queries) {
-      if (!normalizedToQuery.has(q.normalizedDisplayName)) {
-        normalizedToQuery.set(q.normalizedDisplayName, []);
-      }
-      normalizedToQuery.get(q.normalizedDisplayName).push(q);
-    }
-
-    const uniqueNormalized = [...normalizedToQuery.keys()];
-
-    if (uniqueNormalized.length > 0) {
-      const placeholders = uniqueNormalized.map(() => "?").join(",");
-      const rows = this.db
-        .prepare(
-          `
-        SELECT
-          c.account_id AS accountId,
-          c.display_name AS displayName,
-          c.normalized_display_name AS normalizedDisplayName,
-          c.source,
-          c.observed_at AS observedAt,
-          c.updated_at AS updatedAt,
-          CAST((julianday('now') - julianday(c.observed_at)) * 86400 AS INTEGER) AS ageSeconds
-        FROM account_display_name_current c
-        WHERE c.normalized_display_name IN (${placeholders})
-        ORDER BY c.account_id ASC
-        `
-        )
-        .all(...uniqueNormalized);
-
-      for (const row of rows) {
-        const item = {
-          accountId: row.accountId,
-          displayName: row.displayName,
-          source: row.source || null,
-          observedAt: row.observedAt,
-          updatedAt: row.updatedAt,
-          stale: isStale(row.ageSeconds),
+          missing: false,
         };
         const mappedQueries = normalizedToQuery.get(row.normalizedDisplayName) || [];
         for (const mq of mappedQueries) {
@@ -2083,6 +2052,13 @@ class AggregatorRepository {
         return 0;
       }
     };
+    const safeApproxCount = (sql) => {
+      try {
+        return Number(this.db.prepare(sql).get()?.count || 0);
+      } catch {
+        return 0;
+      }
+    };
     const safeGetAt = (sql) => {
       try {
         return this.db.prepare(sql).get()?.at || null;
@@ -2093,35 +2069,23 @@ class AggregatorRepository {
 
     const projectCount = safeCount("SELECT COUNT(*) AS count FROM projects");
     const mapCount = safeCount("SELECT COUNT(*) AS count FROM map_registry");
-    const mapEventCount = safeCount("SELECT COUNT(*) AS count FROM map_events NOT INDEXED");
-    const aggregatorEventCount = safeCount("SELECT COUNT(*) AS count FROM aggregator_events NOT INDEXED");
+    const mapEventCount = safeApproxCount("SELECT MAX(event_id) AS count FROM map_events");
+    const aggregatorEventCount = safeApproxCount("SELECT MAX(event_id) AS count FROM aggregator_events");
     const eventCount = mapEventCount + aggregatorEventCount;
 
-    let latestEventAt = safeGetAt(
-      `
-      SELECT at
-      FROM (
-        SELECT checked_at AS at FROM map_events NOT INDEXED
-        UNION ALL
-        SELECT occurred_at AS at FROM aggregator_events NOT INDEXED
-      )
-      ORDER BY at DESC
-      LIMIT 1
-      `
+    const latestMapEventAt = safeGetAt(
+      "SELECT checked_at AS at FROM map_events ORDER BY checked_at DESC LIMIT 1"
     );
-    if (!latestEventAt) {
-      latestEventAt = safeGetAt(
-        "SELECT occurred_at AS at FROM aggregator_events NOT INDEXED ORDER BY occurred_at DESC LIMIT 1"
-      );
-    }
-    if (!latestEventAt) {
-      latestEventAt = safeGetAt(
-        "SELECT checked_at AS at FROM map_events NOT INDEXED ORDER BY checked_at DESC LIMIT 1"
-      );
-    }
+    const latestAggregatorEventAt = safeGetAt(
+      "SELECT occurred_at AS at FROM aggregator_events ORDER BY occurred_at DESC LIMIT 1"
+    );
+    const latestEventAt =
+      String(latestMapEventAt || "") > String(latestAggregatorEventAt || "")
+        ? latestMapEventAt
+        : latestAggregatorEventAt;
 
     const latestChangeAt = safeGetAt(
-      "SELECT checked_at AS at FROM map_events NOT INDEXED WHERE changed = 1 ORDER BY checked_at DESC LIMIT 1"
+      "SELECT checked_at AS at FROM map_events WHERE changed = 1 ORDER BY checked_at DESC LIMIT 1"
     );
 
     return {
@@ -3076,9 +3040,15 @@ class AggregatorRepository {
     const projectKey = normalizeProjectKey(payload.projectKey || payload.project?.key);
     const projectName = String(payload.projectName || payload.project?.name || projectKey || "display-name-tracker").trim();
     const sourceLabel = normalizeMaybeString(payload.sourceLabel || payload.source || payload.project?.sourceLabel);
-    const entries = normalizeDisplayNameEntries(payload);
+    const normalizedPayload = normalizeDisplayNameEntries(payload);
+    const entries = normalizedPayload.entries;
+    const rejected = normalizedPayload.rejected;
     if (!entries.length) {
-      return { error: "No valid display-name entries provided." };
+      return {
+        error: "No valid display-name entries provided.",
+        rejected,
+        rejectedCount: rejected.length,
+      };
     }
 
     let accepted = 0;
@@ -3244,6 +3214,8 @@ class AggregatorRepository {
       updated,
       unchanged,
       receivedAt,
+      rejected,
+      rejectedCount: rejected.length,
     };
   }
 
@@ -3261,9 +3233,13 @@ class AggregatorRepository {
     const mapRow = (row, missing = false, accountIdOverride = null) => {
       const accountId = accountIdOverride || row?.accountId || null;
       const displayName = sanitizeResolvedDisplayName(row?.displayName, { accountId });
+      const normalizedDisplayName = displayName
+        ? String(row?.normalizedDisplayName || normalizeDisplayNameQuery(displayName))
+        : null;
       return {
         accountId,
         displayName: displayName || null,
+        normalizedDisplayName,
         source: row?.source || null,
         observedAt: displayName ? row?.observedAt || null : null,
         updatedAt: row?.updatedAt || null,
@@ -3283,6 +3259,7 @@ class AggregatorRepository {
             SELECT
               c.account_id AS accountId,
               c.display_name AS displayName,
+              c.normalized_display_name AS normalizedDisplayName,
               c.source AS source,
               c.observed_at AS observedAt,
               c.updated_at AS updatedAt,
@@ -3312,12 +3289,8 @@ class AggregatorRepository {
     const clauses = [];
     const args = [];
     if (queryText) {
-      clauses.push("(LOWER(c.display_name) LIKE ? OR LOWER(c.account_id) LIKE ?)");
+      clauses.push("(c.normalized_display_name LIKE ? OR LOWER(c.account_id) LIKE ?)");
       args.push(`%${queryText}%`, `%${queryText}%`);
-    }
-    if (Number(maxAgeSeconds || 0) > 0) {
-      clauses.push("CAST((julianday('now') - julianday(c.observed_at)) * 86400 AS INTEGER) > ?");
-      args.push(Number(maxAgeSeconds));
     }
 
     let rows = [];
@@ -3325,12 +3298,13 @@ class AggregatorRepository {
       rows = this.db
         .prepare(
           `
-          SELECT
-            c.account_id AS accountId,
-            c.display_name AS displayName,
-            c.source AS source,
-            c.observed_at AS observedAt,
-            c.updated_at AS updatedAt,
+            SELECT
+              c.account_id AS accountId,
+              c.display_name AS displayName,
+              c.normalized_display_name AS normalizedDisplayName,
+              c.source AS source,
+              c.observed_at AS observedAt,
+              c.updated_at AS updatedAt,
             CAST((julianday('now') - julianday(c.observed_at)) * 86400 AS INTEGER) AS ageSeconds
           FROM account_display_name_current c NOT INDEXED
           ${clauses.length ? `WHERE ${clauses.join(" AND ")}` : ""}
@@ -3344,6 +3318,126 @@ class AggregatorRepository {
     }
 
     return rows.map((row) => mapRow(row, false, null));
+  }
+
+  searchDisplayNames({
+    q = "",
+    mode = "contains",
+    limit = 20,
+    maxAgeSeconds = 0,
+  } = {}) {
+    const queryText = normalizeDisplayNameQuery(q);
+    if (!queryText) {
+      return {
+        query: String(q || "").trim(),
+        mode: normalizeSearchMode(mode),
+        matches: [],
+        count: 0,
+      };
+    }
+
+    const safeMode = normalizeSearchMode(mode);
+    const safeLimit = Math.max(1, Math.min(Number(limit) || 20, 200));
+    const isStale = (ageSeconds) =>
+      Number(maxAgeSeconds || 0) > 0 ? Number(ageSeconds || 0) > Number(maxAgeSeconds) : false;
+
+    let whereClause = "";
+    const args = [];
+    if (safeMode === "prefix") {
+      whereClause = "WHERE c.normalized_display_name LIKE ? OR LOWER(c.account_id) LIKE ?";
+      args.push(`${queryText}%`, `${queryText}%`);
+    } else if (safeMode === "contains") {
+      whereClause = "WHERE c.normalized_display_name LIKE ? OR LOWER(c.account_id) LIKE ?";
+      args.push(`%${queryText}%`, `%${queryText}%`);
+    }
+
+    let rows = [];
+    try {
+      if (safeMode === "fuzzy") {
+        rows = this.db
+          .prepare(
+            `
+            SELECT
+              c.account_id AS accountId,
+              c.display_name AS displayName,
+              c.normalized_display_name AS normalizedDisplayName,
+              c.source AS source,
+              c.observed_at AS observedAt,
+              c.updated_at AS updatedAt,
+              CAST((julianday('now') - julianday(c.observed_at)) * 86400 AS INTEGER) AS ageSeconds
+            FROM account_display_name_current c
+            ORDER BY c.observed_at DESC, c.account_id ASC
+            LIMIT ?
+            `
+          )
+          .all(FUZZY_SEARCH_ROW_LIMIT);
+      } else {
+        rows = this.db
+          .prepare(
+            `
+            SELECT
+              c.account_id AS accountId,
+              c.display_name AS displayName,
+              c.normalized_display_name AS normalizedDisplayName,
+              c.source AS source,
+              c.observed_at AS observedAt,
+              c.updated_at AS updatedAt,
+              CAST((julianday('now') - julianday(c.observed_at)) * 86400 AS INTEGER) AS ageSeconds
+            FROM account_display_name_current c
+            ${whereClause}
+            ORDER BY c.observed_at DESC, c.account_id ASC
+            LIMIT ?
+            `
+          )
+          .all(...args, Math.max(safeLimit * 4, safeLimit));
+      }
+    } catch {
+      rows = [];
+    }
+
+    const matches = rows
+      .map((row) => {
+        const accountId = row?.accountId || null;
+        const displayName = sanitizeResolvedDisplayName(row?.displayName, { accountId });
+        const normalizedDisplayName = String(row?.normalizedDisplayName || normalizeDisplayNameQuery(displayName));
+        let score = 0;
+
+        if (safeMode === "prefix") {
+          score = normalizedDisplayName.startsWith(queryText) ? 1 : accountId && String(accountId).startsWith(queryText) ? 0.75 : 0;
+        } else if (safeMode === "contains") {
+          score = normalizedDisplayName.includes(queryText) ? 1 : accountId && String(accountId).includes(queryText) ? 0.75 : 0;
+        } else {
+          const nameScore = computeDiceScore(normalizedDisplayName, queryText);
+          const accountScore = computeDiceScore(String(accountId || ""), queryText) * 0.65;
+          score = Math.max(nameScore, accountScore);
+        }
+
+        return {
+          accountId,
+          displayName: displayName || null,
+          normalizedDisplayName: normalizedDisplayName || null,
+          source: row?.source || null,
+          observedAt: row?.observedAt || null,
+          updatedAt: row?.updatedAt || null,
+          stale: isStale(row?.ageSeconds),
+          missing: false,
+          score: Number(score.toFixed(4)),
+        };
+      })
+      .filter((row) => row.accountId && row.displayName && row.score > 0)
+      .sort((a, b) => {
+        const scoreDiff = Number(b.score || 0) - Number(a.score || 0);
+        if (scoreDiff !== 0) return scoreDiff;
+        return String(a.displayName || "").localeCompare(String(b.displayName || ""));
+      })
+      .slice(0, safeLimit);
+
+    return {
+      query: String(q || "").trim(),
+      mode: safeMode,
+      matches,
+      count: matches.length,
+    };
   }
 
   collectDisplayNameCandidates({ staleAfterSeconds = 86400 } = {}) {
@@ -4077,62 +4171,85 @@ class AggregatorRepository {
       ? new Date(parsedFromMs).toISOString()
       : "";
     const normalizedToIso = Number.isFinite(parsedToMs) ? new Date(parsedToMs).toISOString() : "";
-
-    const baseSql = `
-      SELECT
-        me.project_key AS projectKey,
-        me.checked_at AS occurredAt,
-        CASE WHEN me.changed = 1 THEN 'map.wr_changed' ELSE 'map.checked' END AS eventType,
-        COALESCE(me.source, 'tracker-run') AS sourceLabel
-      FROM map_events me NOT INDEXED
-
-      UNION ALL
-
-      SELECT
-        ae.project_key AS projectKey,
-        ae.occurred_at AS occurredAt,
-        ae.event_type AS eventType,
-        ae.source_label AS sourceLabel
-      FROM aggregator_events ae NOT INDEXED
-    `;
-
-    const clauses = [];
-    const args = [];
-    if (queryKey) {
-      clauses.push("eventSet.projectKey = ?");
-      args.push(queryKey);
-    }
-    if (!includeSystem) {
-      clauses.push("eventSet.eventType NOT LIKE 'instance.%'");
-    }
-    if (normalizedFromIso) {
-      clauses.push("datetime(eventSet.occurredAt) >= datetime(?)");
-      args.push(normalizedFromIso);
-    }
-    if (normalizedToIso) {
-      clauses.push("datetime(eventSet.occurredAt) <= datetime(?)");
-      args.push(normalizedToIso);
-    }
-    const whereSql = clauses.length ? `WHERE ${clauses.join(" AND ")}` : "";
-
-    const rows = this.db
-      .prepare(
-        `
-        SELECT
-          eventSet.sourceLabel AS sourceLabel,
-          eventSet.eventType AS eventType
-        FROM (${baseSql}) eventSet
-        ${whereSql}
-        `
-      )
-      .all(...args);
+    const facetSampleLimit = 2000;
 
     const sourceSet = new Set();
     const eventTypeSet = new Set();
-    for (const row of rows) {
+
+    const mapClauses = [];
+    const mapArgs = [];
+    if (queryKey) {
+      mapClauses.push("project_key = ?");
+      mapArgs.push(queryKey);
+    }
+    if (normalizedFromIso) {
+      mapClauses.push("checked_at >= ?");
+      mapArgs.push(normalizedFromIso);
+    }
+    if (normalizedToIso) {
+      mapClauses.push("checked_at <= ?");
+      mapArgs.push(normalizedToIso);
+    }
+    const mapWhereSql = mapClauses.length ? `WHERE ${mapClauses.join(" AND ")}` : "";
+
+    const aggregatorClauses = [];
+    const aggregatorArgs = [];
+    if (queryKey) {
+      aggregatorClauses.push("project_key = ?");
+      aggregatorArgs.push(queryKey);
+    }
+    if (!includeSystem) {
+      aggregatorClauses.push("event_type NOT LIKE 'instance.%'");
+    }
+    if (normalizedFromIso) {
+      aggregatorClauses.push("occurred_at >= ?");
+      aggregatorArgs.push(normalizedFromIso);
+    }
+    if (normalizedToIso) {
+      aggregatorClauses.push("occurred_at <= ?");
+      aggregatorArgs.push(normalizedToIso);
+    }
+    const aggregatorWhereSql = aggregatorClauses.length
+      ? `WHERE ${aggregatorClauses.join(" AND ")}`
+      : "";
+
+    const mapFacetRows = this.db
+      .prepare(
+        `
+        SELECT source, changed
+        FROM map_events
+        ${mapWhereSql}
+        ORDER BY checked_at DESC
+        LIMIT ${facetSampleLimit}
+        `
+      )
+      .all(...mapArgs);
+    if (mapFacetRows.length > 0) {
+      sourceSet.add("tracker-run");
+    }
+    for (const row of mapFacetRows) {
+      if (Number(row?.changed || 0) === 1) {
+        eventTypeSet.add("map.wr_changed");
+      } else {
+        eventTypeSet.add("map.checked");
+      }
+    }
+
+    const aggregatorFacetRows = this.db
+      .prepare(
+        `
+        SELECT source_label AS sourceLabel, event_type AS eventType
+        FROM aggregator_events
+        ${aggregatorWhereSql}
+        ORDER BY occurred_at DESC
+        LIMIT ${facetSampleLimit}
+        `
+      )
+      .all(...aggregatorArgs);
+    for (const row of aggregatorFacetRows) {
       const sourceLabel = String(row?.sourceLabel || "").trim();
-      const eventType = String(row?.eventType || "").trim();
       if (sourceLabel) sourceSet.add(sourceLabel);
+      const eventType = String(row?.eventType || "").trim();
       if (eventType) eventTypeSet.add(eventType);
     }
 
@@ -4299,152 +4416,161 @@ class AggregatorRepository {
       : "";
     const normalizedToIso = Number.isFinite(parsedToMs) ? new Date(parsedToMs).toISOString() : "";
     const queryText = String(q || "").trim().toLowerCase();
+    const sourceFilter = String(source || "").trim().toLowerCase();
+    const eventTypeFilter = String(eventType || "").trim().toLowerCase();
+    const sampleLimit = Math.min(20000, Math.max(2000, requestedOffset + safeLimit * 10));
 
-    const baseSql = `
-      SELECT
-        me.event_id AS eventId,
-        'map:' || me.event_id AS eventKey,
-        me.project_key AS projectKey,
-        p.display_name AS projectName,
-        me.checked_at AS occurredAt,
-        CASE WHEN me.changed = 1 THEN 'map.wr_changed' ELSE 'map.checked' END AS eventType,
-        COALESCE(me.map_name, mr.map_name, me.map_uid) AS detail1,
-        CASE
-          WHEN me.changed = 1 THEN ('wr: ' || COALESCE(CAST(me.old_wr_time AS TEXT), '-') || ' -> ' || COALESCE(CAST(me.new_wr_time AS TEXT), '-'))
-          ELSE 'wr unchanged'
-        END AS detail2,
-        CASE
-          WHEN me.changed = 1 THEN ('holder: ' || COALESCE(me.old_holder, '-') || ' -> ' || COALESCE(me.new_holder, '-'))
-          ELSE COALESCE(me.note, '')
-        END AS detail3,
-        COALESCE(me.source, 'tracker-run') AS sourceLabel,
-        NULL AS payloadJson,
-        me.map_uid AS mapUid,
-        COALESCE(me.map_name, mr.map_name, me.map_uid) AS mapName,
-        me.changed AS changed,
-        CASE
-          WHEN me.changed = 1 AND COALESCE(me.old_wr_time, 0) <= 0 THEN '*'
-          WHEN me.changed = 1 THEN 'yes'
-          ELSE 'no'
-        END AS changedMarker,
-        me.old_wr_time AS oldWrTime,
-        me.new_wr_time AS newWrTime,
-        me.old_holder AS oldHolder,
-        me.new_holder AS newHolder,
-        me.note AS note
-      FROM map_events me NOT INDEXED
-      LEFT JOIN projects p ON p.project_key = me.project_key
-      LEFT JOIN map_registry mr ON mr.map_uid = me.map_uid
+    const includeMapEvents =
+      !eventTypeFilter || eventTypeFilter === "map.checked" || eventTypeFilter === "map.wr_changed";
+    const includeAggregatorEvents =
+      !eventTypeFilter || (eventTypeFilter !== "map.checked" && eventTypeFilter !== "map.wr_changed");
 
-      UNION ALL
+    const rows = [];
 
-      SELECT
-        ae.event_id AS eventId,
-        'agg:' || ae.event_id AS eventKey,
-        ae.project_key AS projectKey,
-        p.display_name AS projectName,
-        ae.occurred_at AS occurredAt,
-        ae.event_type AS eventType,
-        ae.detail_1 AS detail1,
-        ae.detail_2 AS detail2,
-        ae.detail_3 AS detail3,
-        ae.source_label AS sourceLabel,
-        ae.payload_json AS payloadJson,
-        NULL AS mapUid,
-        NULL AS mapName,
-        0 AS changed,
-        CASE
-          WHEN ae.event_type = 'displayname.checked' THEN
-            CASE
-              WHEN LOWER(COALESCE(ae.detail_3, '')) LIKE 'change:*%' THEN '*'
-              WHEN LOWER(COALESCE(ae.detail_3, '')) LIKE 'change:yes%' THEN 'yes'
-              ELSE 'no'
-            END
-          ELSE 'no'
-        END AS changedMarker,
-        NULL AS oldWrTime,
-        NULL AS newWrTime,
-        NULL AS oldHolder,
-        NULL AS newHolder,
-        NULL AS note
-      FROM aggregator_events ae NOT INDEXED
-      LEFT JOIN projects p ON p.project_key = ae.project_key
-    `;
-
-    const clauses = [];
-    const args = [];
-    if (queryKey) {
-      clauses.push("eventSet.projectKey = ?");
-      args.push(queryKey);
-    }
-    if (!includeSystem) {
-      clauses.push("eventSet.eventType NOT LIKE 'instance.%'");
-    }
-    if (changedOnly) {
-      clauses.push("eventSet.changedMarker IN ('yes', '*')");
-    }
-    if (String(source || "").trim()) {
-      clauses.push("LOWER(COALESCE(eventSet.sourceLabel, '')) = ?");
-      args.push(String(source).trim().toLowerCase());
-    }
-    if (String(eventType || "").trim()) {
-      clauses.push("LOWER(COALESCE(eventSet.eventType, '')) = ?");
-      args.push(String(eventType).trim().toLowerCase());
-    }
-    if (normalizedFromIso) {
-      clauses.push("datetime(eventSet.occurredAt) >= datetime(?)");
-      args.push(normalizedFromIso);
-    }
-    if (normalizedToIso) {
-      clauses.push("datetime(eventSet.occurredAt) <= datetime(?)");
-      args.push(normalizedToIso);
-    }
-    if (queryText) {
-      clauses.push(
-        "(" +
-          [
-            "LOWER(COALESCE(eventSet.detail1, '')) LIKE ?",
-            "LOWER(COALESCE(eventSet.detail2, '')) LIKE ?",
-            "LOWER(COALESCE(eventSet.detail3, '')) LIKE ?",
-            "LOWER(COALESCE(eventSet.mapName, '')) LIKE ?",
-            "LOWER(COALESCE(eventSet.mapUid, '')) LIKE ?",
-            "LOWER(COALESCE(eventSet.eventType, '')) LIKE ?",
-            "LOWER(COALESCE(eventSet.projectName, '')) LIKE ?",
-          ].join(" OR ") +
-          ")"
-      );
-      for (let i = 0; i < 7; i += 1) args.push(`%${queryText}%`);
-    }
-    const whereSql = clauses.length ? `WHERE ${clauses.join(" AND ")}` : "";
-
-    const totalRow =
-      this.db
+    if (includeMapEvents) {
+      const mapClauses = [];
+      const mapArgs = [];
+      if (queryKey) {
+        mapClauses.push("me.project_key = ?");
+        mapArgs.push(queryKey);
+      }
+      if (changedOnly || eventTypeFilter === "map.wr_changed") {
+        mapClauses.push("me.changed = 1");
+      } else if (eventTypeFilter === "map.checked") {
+        mapClauses.push("me.changed = 0");
+      }
+      if (sourceFilter) {
+        mapClauses.push("LOWER(COALESCE(me.source, 'tracker-run')) = ?");
+        mapArgs.push(sourceFilter);
+      }
+      if (normalizedFromIso) {
+        mapClauses.push("me.checked_at >= ?");
+        mapArgs.push(normalizedFromIso);
+      }
+      if (normalizedToIso) {
+        mapClauses.push("me.checked_at <= ?");
+        mapArgs.push(normalizedToIso);
+      }
+      const mapWhereSql = mapClauses.length ? `WHERE ${mapClauses.join(" AND ")}` : "";
+      const mapRows = this.db
         .prepare(
           `
-          SELECT COUNT(*) AS count
-          FROM (${baseSql}) eventSet
-          ${whereSql}
+          SELECT
+            me.event_id AS eventId,
+            'map:' || me.event_id AS eventKey,
+            me.project_key AS projectKey,
+            p.display_name AS projectName,
+            me.checked_at AS occurredAt,
+            CASE WHEN me.changed = 1 THEN 'map.wr_changed' ELSE 'map.checked' END AS eventType,
+            COALESCE(me.map_name, mr.map_name, me.map_uid) AS detail1,
+            CASE
+              WHEN me.changed = 1 THEN ('wr: ' || COALESCE(CAST(me.old_wr_time AS TEXT), '-') || ' -> ' || COALESCE(CAST(me.new_wr_time AS TEXT), '-'))
+              ELSE 'wr unchanged'
+            END AS detail2,
+            CASE
+              WHEN me.changed = 1 THEN ('holder: ' || COALESCE(me.old_holder, '-') || ' -> ' || COALESCE(me.new_holder, '-'))
+              ELSE COALESCE(me.note, '')
+            END AS detail3,
+            COALESCE(me.source, 'tracker-run') AS sourceLabel,
+            NULL AS payloadJson,
+            me.map_uid AS mapUid,
+            COALESCE(me.map_name, mr.map_name, me.map_uid) AS mapName,
+            me.changed AS changed,
+            CASE
+              WHEN me.changed = 1 AND COALESCE(me.old_wr_time, 0) <= 0 THEN '*'
+              WHEN me.changed = 1 THEN 'yes'
+              ELSE 'no'
+            END AS changedMarker,
+            me.old_wr_time AS oldWrTime,
+            me.new_wr_time AS newWrTime,
+            me.old_holder AS oldHolder,
+            me.new_holder AS newHolder,
+            me.note AS note
+          FROM map_events me
+          LEFT JOIN projects p ON p.project_key = me.project_key
+          LEFT JOIN map_registry mr ON mr.map_uid = me.map_uid
+          ${mapWhereSql}
+          ORDER BY me.checked_at DESC, me.event_id DESC
+          LIMIT ?
           `
         )
-        .get(...args) || {};
-    const total = Number(totalRow.count || 0);
-    const totalPages = Math.max(1, Math.ceil(total / safeLimit));
-    const clampedPage = Math.max(1, Math.min(requestedPage, totalPages));
-    const clampedOffset = Math.max(0, (clampedPage - 1) * safeLimit);
+        .all(...mapArgs, sampleLimit);
+      rows.push(...mapRows);
+    }
 
-    const rows = this.db
-      .prepare(
-        `
-        SELECT *
-        FROM (${baseSql}) eventSet
-        ${whereSql}
-        ORDER BY datetime(eventSet.occurredAt) DESC, eventSet.eventId DESC
-        LIMIT ? OFFSET ?
-        `
-      )
-      .all(...args, safeLimit, clampedOffset);
+    if (includeAggregatorEvents) {
+      const aggregatorClauses = [];
+      const aggregatorArgs = [];
+      if (queryKey) {
+        aggregatorClauses.push("ae.project_key = ?");
+        aggregatorArgs.push(queryKey);
+      }
+      if (!includeSystem) {
+        aggregatorClauses.push("ae.event_type NOT LIKE 'instance.%'");
+      }
+      if (sourceFilter) {
+        aggregatorClauses.push("LOWER(COALESCE(ae.source_label, '')) = ?");
+        aggregatorArgs.push(sourceFilter);
+      }
+      if (eventTypeFilter) {
+        aggregatorClauses.push("LOWER(ae.event_type) = ?");
+        aggregatorArgs.push(eventTypeFilter);
+      }
+      if (normalizedFromIso) {
+        aggregatorClauses.push("ae.occurred_at >= ?");
+        aggregatorArgs.push(normalizedFromIso);
+      }
+      if (normalizedToIso) {
+        aggregatorClauses.push("ae.occurred_at <= ?");
+        aggregatorArgs.push(normalizedToIso);
+      }
+      const aggregatorWhereSql = aggregatorClauses.length
+        ? `WHERE ${aggregatorClauses.join(" AND ")}`
+        : "";
+      const aggregatorRows = this.db
+        .prepare(
+          `
+          SELECT
+            ae.event_id AS eventId,
+            'agg:' || ae.event_id AS eventKey,
+            ae.project_key AS projectKey,
+            p.display_name AS projectName,
+            ae.occurred_at AS occurredAt,
+            ae.event_type AS eventType,
+            ae.detail_1 AS detail1,
+            ae.detail_2 AS detail2,
+            ae.detail_3 AS detail3,
+            ae.source_label AS sourceLabel,
+            ae.payload_json AS payloadJson,
+            NULL AS mapUid,
+            NULL AS mapName,
+            0 AS changed,
+            CASE
+              WHEN ae.event_type = 'displayname.checked' THEN
+                CASE
+                  WHEN LOWER(COALESCE(ae.detail_3, '')) LIKE 'change:*%' THEN '*'
+                  WHEN LOWER(COALESCE(ae.detail_3, '')) LIKE 'change:yes%' THEN 'yes'
+                  ELSE 'no'
+                END
+              ELSE 'no'
+            END AS changedMarker,
+            NULL AS oldWrTime,
+            NULL AS newWrTime,
+            NULL AS oldHolder,
+            NULL AS newHolder,
+            NULL AS note
+          FROM aggregator_events ae
+          LEFT JOIN projects p ON p.project_key = ae.project_key
+          ${aggregatorWhereSql}
+          ORDER BY ae.occurred_at DESC, ae.event_id DESC
+          LIMIT ?
+          `
+        )
+        .all(...aggregatorArgs, sampleLimit);
+      rows.push(...aggregatorRows);
+    }
 
-    const events = rows.map((row) => {
+    const mappedEvents = rows.map((row) => {
       let payloadObject = null;
       if (row.payloadJson) {
         try {
@@ -4508,6 +4634,35 @@ class AggregatorRepository {
         payload: row.payloadJson ? String(row.payloadJson) : null,
       };
     });
+
+    const filteredEvents = mappedEvents
+      .filter((event) => {
+        if (changedOnly && !event.changed) return false;
+        if (!queryText) return true;
+        return [
+          event.detail1,
+          event.detail2,
+          event.detail3,
+          event.mapName,
+          event.mapUid,
+          event.eventType,
+          event.projectName,
+          event.item,
+          event.eventDetail,
+          event.sourceLabel,
+        ].some((value) => String(value || "").toLowerCase().includes(queryText));
+      })
+      .sort((a, b) => {
+        const timeCompare = String(b.occurredAt || "").localeCompare(String(a.occurredAt || ""));
+        if (timeCompare !== 0) return timeCompare;
+        return Number(b.eventId || 0) - Number(a.eventId || 0);
+      });
+
+    const total = filteredEvents.length;
+    const totalPages = Math.max(1, Math.ceil(total / safeLimit));
+    const clampedPage = Math.max(1, Math.min(requestedPage, totalPages));
+    const clampedOffset = Math.max(0, (clampedPage - 1) * safeLimit);
+    const events = filteredEvents.slice(clampedOffset, clampedOffset + safeLimit);
 
     return {
       events,

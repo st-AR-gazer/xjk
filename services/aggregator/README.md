@@ -2,6 +2,12 @@
 
 Shared ingestion and query service for trackers and project portals.
 
+Browser docs:
+
+- `GET /api/`
+- `GET /api/catalog.json`
+- `GET /api/v1/catalog`
+
 Aggregator is the shared cache for:
 
 - tracker run/check telemetry
@@ -26,8 +32,12 @@ Health/meta:
 
 Display names:
 - `GET /api/v1/display-names`
+- `POST /api/v1/display-names/resolve` (up to 500 account IDs)
+- `GET /api/v1/display-names/resolve/:accountId`
 - `GET /api/v1/display-names/by-name`
+- `GET /api/v1/display-names/search`
 - `GET /api/v1/display-names/candidates`
+- `GET /api/v1/display-names/candidates/details`
 
 Club data:
 - `GET /api/v1/clubs/:clubId/summary`
@@ -43,8 +53,11 @@ Project/map views:
 - `GET /api/v1/maps/:mapUid/projects`
 
 Events/metrics:
+- `GET /api/v1/events/facets`
 - `GET /api/v1/events/recent`
+- `GET /api/v1/queue/wr-baseline`
 - `GET /api/v1/metrics/overview`
+- `GET /api/v1/metrics/leaderboards/coverage`
 - `GET /api/v1/metrics/timeseries`
 
 DB explorer:
@@ -54,11 +67,16 @@ DB explorer:
 
 Ingest:
 - `POST /api/v1/ingest/tracker-run`
+- `POST /api/v1/ingest/tracker-runs`
 - `POST /api/v1/ingest/display-names`
 - `POST /api/v1/ingest/display-names/arl`
 - `POST /api/v1/ingest/club-snapshot`
 - `POST /api/v1/ingest/instance/register`
 - `POST /api/v1/ingest/instance/heartbeat`
+- `POST /api/v1/ingest/event`
+- `POST /api/v1/ingest/events`
+- `POST /api/v1/ingest/traffic`
+- `POST /api/v1/ingest/traffic/batch`
 
 ## ARL Authenticated Display-name Ingest
 
@@ -72,6 +90,11 @@ It requires:
 
 The route validates the plugin token against Openplanet before passing normalized
 display-name data into the shared aggregator store.
+
+Display-name ingest rejects shared-cache artifacts such as `accountId`,
+`zoneId`, `groupUid`, `mapId`, `mapUid`, `seasonId`, personal-best labels, and
+known platform labels. Rejected rows are reported in the ingest response and are
+not stored.
 
 ## Ingest Payload Shape
 

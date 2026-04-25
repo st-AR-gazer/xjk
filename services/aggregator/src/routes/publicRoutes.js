@@ -31,9 +31,37 @@ async function fetchJsonWithTimeout(url, { timeoutMs = 15000 } = {}) {
   return payload;
 }
 
-function createPublicRoutes(repository, { trackerControl = {} } = {}) {
+function collectQueryValues(rawValues, { splitWhitespace = true } = {}) {
+  return []
+    .concat(rawValues || [])
+    .flatMap((value) =>
+      Array.isArray(value)
+        ? value
+        : String(value || "")
+            .split(splitWhitespace ? /[\s,;]+/ : /[,;]+/)
+            .map((part) => String(part || "").trim())
+            .filter(Boolean)
+    );
+}
+
+function clampBatchLimit(value, fallback = 200) {
+  return Math.max(1, Math.min(Number(value) || fallback, 2000));
+}
+
+function clampResolveBatchLimit(value, fallback = 200) {
+  return Math.max(1, Math.min(Number(value) || fallback, 500));
+}
+
+function createPublicRoutes(repository, { trackerControl = {}, catalogFactory = null } = {}) {
   const router = express.Router();
   const trackerLeaderboardBaseUrl = normalizeBaseUrl(trackerControl?.leaderboardBaseUrl);
+
+  router.get("/catalog", (req, res) => {
+    if (typeof catalogFactory !== "function") {
+      return res.status(503).json({ error: "API catalog is not configured." });
+    }
+    return res.json(catalogFactory(req));
+  });
 
   router.get("/meta", (_req, res) => {
     res.json({
@@ -209,20 +237,14 @@ function createPublicRoutes(repository, { trackerControl = {} } = {}) {
 
   router.get("/display-names", (req, res) => {
     const query = req.query || {};
-    const accountIds = []
-      .concat(query.accountId || [])
-      .concat(query.accountIds || [])
-      .flatMap((value) =>
-        Array.isArray(value)
-          ? value
-          : String(value || "")
-              .split(/[\s,;]+/)
-              .filter(Boolean)
-      );
+    const limit = clampBatchLimit(query.limit, 200);
+    const accountIds = collectQueryValues([query.accountId, query.accountIds], {
+      splitWhitespace: true,
+    }).slice(0, limit);
     const rows = repository.getDisplayNames({
       accountIds,
       q: query.q || "",
-      limit: Number(query.limit) || 200,
+      limit,
       maxAgeSeconds: Number(query.max_age_seconds) || 0,
     });
     return res.json({
@@ -231,26 +253,82 @@ function createPublicRoutes(repository, { trackerControl = {} } = {}) {
     });
   });
 
+  router.post("/display-names/resolve", (req, res) => {
+    const body = req.body || {};
+    const limit = clampResolveBatchLimit(body.limit, 200);
+    const accountIds = collectQueryValues(
+      [
+        body.accountId,
+        body.accountIds,
+        body.account_id,
+        body.account_ids,
+        body["accountId[]"],
+        body["account_id[]"],
+      ],
+      { splitWhitespace: true }
+    ).slice(0, limit);
+
+    if (!accountIds.length) {
+      return res.status(400).json({ error: "No accountIds provided." });
+    }
+
+    const rows = repository.getDisplayNames({
+      accountIds,
+      limit,
+      maxAgeSeconds: Number(body.maxAgeSeconds ?? body.max_age_seconds) || 0,
+    });
+    const names = rows.filter((row) => !row.missing);
+    const missing = rows
+      .filter((row) => row.missing)
+      .map((row) => row.accountId)
+      .filter(Boolean);
+
+    return res.json({
+      names,
+      missing,
+      count: names.length,
+      requestedCount: rows.length,
+      missingCount: missing.length,
+    });
+  });
+
+  router.get("/display-names/resolve/:accountId", (req, res) => {
+    const rows = repository.getDisplayNames({
+      accountIds: [req.params.accountId],
+      limit: 1,
+      maxAgeSeconds: Number(req.query.max_age_seconds) || 0,
+    });
+    return res.json({
+      name: rows[0] || null,
+    });
+  });
+
   router.get("/display-names/by-name", (req, res) => {
     const query = req.query || {};
-    const displayNames = []
-      .concat(query.displayName || [])
-      .concat(query.displayNames || [])
-      .concat(query.name || [])
-      .concat(query.names || [])
-      .flatMap((value) =>
-        Array.isArray(value)
-          ? value
-          : String(value || "")
-              .split(/[\s,;]+/)
-              .filter(Boolean)
-      );
+    const displayNames = collectQueryValues(
+      [query.displayName, query.displayNames, query.name, query.names],
+      { splitWhitespace: false }
+    );
 
     const payload = repository.getDisplayNamesByName({
       displayNames,
       maxAgeSeconds: Number(query.max_age_seconds) || 0,
     });
     
+    return res.json(payload);
+  });
+
+  router.get("/display-names/search", (req, res) => {
+    const queryText = String(req.query.q || "").trim();
+    if (!queryText) {
+      return res.status(400).json({ error: "Missing q query parameter." });
+    }
+    const payload = repository.searchDisplayNames({
+      q: queryText,
+      mode: req.query.mode || "contains",
+      limit: Number(req.query.limit) || 20,
+      maxAgeSeconds: Number(req.query.max_age_seconds) || 0,
+    });
     return res.json(payload);
   });
 

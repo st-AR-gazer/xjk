@@ -1,4 +1,25 @@
 const ACCOUNT_ID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+const BLOCKED_DISPLAY_NAME_EXACT = new Set([
+  "accountid",
+  "zoneid",
+  "groupuid",
+  "mapid",
+  "mapuid",
+  "seasonid",
+]);
+const BLOCKED_PLATFORM_LABELS = new Set([
+  "playstation",
+  "playstation4",
+  "playstation5",
+  "ps4",
+  "ps5",
+  "xbox",
+  "xboxone",
+  "xboxseries",
+  "xboxseriesx",
+  "xboxseriess",
+  "nintendoswitch",
+]);
 
 function normalizePossibleAccountId(value) {
   const text = String(value || "").trim().toLowerCase();
@@ -26,9 +47,60 @@ function normalizeDisplayNameQuery(value) {
     .replace(/\s+/g, " ");
 }
 
+function compactDisplayName(value) {
+  return normalizeDisplayNameQuery(value).replace(/[^a-z0-9]+/g, "");
+}
+
+function validateSharedDisplayName(value, { accountId = "" } = {}) {
+  const displayName = sanitizeResolvedDisplayName(value, { accountId });
+  if (!displayName) {
+    return {
+      ok: false,
+      displayName: "",
+      normalizedDisplayName: "",
+      reason: "empty_or_account_id",
+    };
+  }
+
+  const normalizedDisplayName = normalizeDisplayNameQuery(displayName);
+  const compact = compactDisplayName(displayName);
+  if (BLOCKED_DISPLAY_NAME_EXACT.has(compact)) {
+    return {
+      ok: false,
+      displayName,
+      normalizedDisplayName,
+      reason: "reserved_field_name",
+    };
+  }
+  if (normalizedDisplayName.includes("personal best") || compact.includes("personalbest")) {
+    return {
+      ok: false,
+      displayName,
+      normalizedDisplayName,
+      reason: "personal_best_label",
+    };
+  }
+  if (BLOCKED_PLATFORM_LABELS.has(compact)) {
+    return {
+      ok: false,
+      displayName,
+      normalizedDisplayName,
+      reason: "platform_label",
+    };
+  }
+
+  return {
+    ok: true,
+    displayName,
+    normalizedDisplayName,
+    reason: "",
+  };
+}
+
 export {
   hasResolvedDisplayName,
   normalizeDisplayNameQuery,
   normalizePossibleAccountId,
   sanitizeResolvedDisplayName,
+  validateSharedDisplayName,
 };

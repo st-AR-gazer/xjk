@@ -1,0 +1,14 @@
+*.env*
+*.env
+!.env.example
+
+Caddy*
+
+local/
+
+ops-sync/*
+!ops-sync/
+!ops-sync/remote-refresh-services.ps1
+
+server/winsw/
+server/winsw/**

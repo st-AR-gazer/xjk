@@ -1,5 +1,6 @@
 # Dependencies
 **/node_modules/
+**/.venv/
 
 # Secrets and local environment overrides
 **/.env
@@ -33,7 +34,6 @@ tmp/
 
 # Local-only folders (do not sync/commit)
 /deploy/local/
-/deploy/ops-sync/
 /docs/
 /zDeploy/
 /deploy/ops-sync/refresh-requests/
@@ -42,6 +42,8 @@ tmp/
 /deploy/ops-sync/remote-refresh-status/
 /deploy/ops-sync/sync-config.local.cmd
 /deploy/ops-sync/$null
+/deploy/server/
+/deploy/server/winsw/
 
 # Tool runtime outputs (do not sync/commit)
 /sites/tools.xjk.yt/Embed-RaceValidationGhost/data/

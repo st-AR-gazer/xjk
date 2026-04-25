@@ -119,25 +119,25 @@ The embed backend defaults to the local `tools/` folder first.
 On the server (PowerShell as Administrator), clone the repo:
 
 ```powershell
-git clone --branch main <REPO_URL> C:\srv\xjk
+git clone --branch main <REPO_URL> D:\srv\xjk
 ```
 
 Run:
 
 ```powershell
-powershell -ExecutionPolicy Bypass -File C:\srv\xjk\deploy\server\bootstrap-clean-server.ps1 -RepoUrl "<REPO_URL>" -RepoPath "C:\srv\xjk" -Branch "main"
+powershell -ExecutionPolicy Bypass -File D:\srv\xjk\deploy\server\bootstrap-clean-server.ps1 -RepoUrl "<REPO_URL>" -RepoPath "D:\srv\xjk" -Branch "main"
 ```
 
 For Cloudflare Tunnel mode, run:
 
 ```powershell
-powershell -ExecutionPolicy Bypass -File C:\srv\xjk\deploy\server\bootstrap-clean-server.ps1 -RepoUrl "<REPO_URL>" -RepoPath "C:\srv\xjk" -Branch "main" -InstallCloudflareTunnel -TunnelToken "<TUNNEL_TOKEN>" -CaddyConfigPath "deploy/Caddyfile.tunnel"
+powershell -ExecutionPolicy Bypass -File D:\srv\xjk\deploy\server\bootstrap-clean-server.ps1 -RepoUrl "<REPO_URL>" -RepoPath "D:\srv\xjk" -Branch "main" -InstallCloudflareTunnel -TunnelToken "<TUNNEL_TOKEN>" -CaddyConfigPath "deploy/Caddyfile.tunnel"
 ```
 
 After bootstrap, copy the two embed binaries into the embed `tools/` folder, then:
 
 ```powershell
-powershell -ExecutionPolicy Bypass -File C:\srv\xjk\deploy\server\apply-update.ps1 -RepoPath "C:\srv\xjk" -SkipGit -CaddyConfigPath "deploy/Caddyfile.tunnel"
+powershell -ExecutionPolicy Bypass -File D:\srv\xjk\deploy\server\apply-update.ps1 -RepoPath "D:\srv\xjk" -SkipGit -CaddyConfigPath "deploy/Caddyfile.tunnel"
 ```
 
 ## DNS + Network
@@ -170,7 +170,7 @@ Forward router ports:
 2. Run one tunnel connector service on the server:
 
 ```powershell
-powershell -ExecutionPolicy Bypass -File C:\srv\xjk\deploy\server\setup-cloudflare-tunnel-service.ps1 -TunnelToken "<TUNNEL_TOKEN>" -ServiceName "xjk-cloudflared" -DisplayName "xjk Cloudflare Tunnel"
+powershell -ExecutionPolicy Bypass -File D:\srv\xjk\deploy\server\setup-cloudflare-tunnel-service.ps1 -TunnelToken "<TUNNEL_TOKEN>" -ServiceName "xjk-cloudflared" -DisplayName "xjk Cloudflare Tunnel"
 ```
 
 3. In Cloudflare Tunnel "Published application routes", map these hostnames to `http://127.0.0.1`:
@@ -200,26 +200,26 @@ Copy-Item .\deploy\.env.example .\deploy\.env
 Then set at least `DEPLOY_SERVER` in `deploy/.env`.
 
 ```powershell
-powershell -ExecutionPolicy Bypass -File .\deploy\deploy-from-dev.ps1 -Server "user@your-server" -RemoteRepoPath "C:\srv\xjk"
+powershell -ExecutionPolicy Bypass -File .\deploy\deploy-from-dev.ps1 -Server "user@your-server" -RemoteRepoPath "D:\srv\xjk"
 ```
 
 Fast path when only frontend/code changed and lockfiles did not change:
 
 ```powershell
-powershell -ExecutionPolicy Bypass -File .\deploy\deploy-from-dev.ps1 -Server "user@your-server" -RemoteRepoPath "C:\srv\xjk" -SkipInstall -CaddyConfigPath "deploy/Caddyfile.tunnel"
+powershell -ExecutionPolicy Bypass -File .\deploy\deploy-from-dev.ps1 -Server "user@your-server" -RemoteRepoPath "D:\srv\xjk" -SkipInstall -CaddyConfigPath "deploy/Caddyfile.tunnel"
 ```
 
 This script:
 
 1. Packs the current local workspace into a deployment archive
 2. Copies that archive to the primary server over SSH/SCP
-3. Extracts it into `C:\srv\xjk`
+3. Extracts it into `D:\srv\xjk`
 4. Runs `deploy/server/apply-update.ps1 -SkipGit` (supports `-SkipInstall`, `-ForceInstall`, and `-CaddyConfigPath`)
 
 If you only want to rerun restart/install steps on the server without copying files again:
 
 ```powershell
-powershell -ExecutionPolicy Bypass -File .\deploy\deploy-from-dev.ps1 -Server "user@your-server" -RemoteRepoPath "C:\srv\xjk" -SkipSync -SkipInstall -CaddyConfigPath "deploy/Caddyfile.tunnel"
+powershell -ExecutionPolicy Bypass -File .\deploy\deploy-from-dev.ps1 -Server "user@your-server" -RemoteRepoPath "D:\srv\xjk" -SkipSync -SkipInstall -CaddyConfigPath "deploy/Caddyfile.tunnel"
 ```
 
 ## Local Test
@@ -295,7 +295,7 @@ On server:
 
 ```powershell
 pm2 list
-caddy validate --config C:\srv\xjk\deploy\Caddyfile.tunnel
+caddy validate --config D:\srv\xjk\deploy\Caddyfile.tunnel
 Get-Service xjk-caddy
 Get-Service xjk-cloudflared
 ```
@@ -305,7 +305,7 @@ Get-Service xjk-cloudflared
 On server:
 
 ```powershell
-powershell -ExecutionPolicy Bypass -File .\deploy\server\apply-update.ps1 -RepoPath "C:\srv\xjk" -SkipGit -CaddyConfigPath "deploy/Caddyfile.tunnel"
+powershell -ExecutionPolicy Bypass -File .\deploy\server\apply-update.ps1 -RepoPath "D:\srv\xjk" -SkipGit -CaddyConfigPath "deploy/Caddyfile.tunnel"
 ```
 
 If you need to roll back code, redeploy an older known-good workspace snapshot from your dev machine, then run the same `apply-update.ps1 -SkipGit` flow.

@@ -1,0 +1,198 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>xjk / aggregator / api</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@400;500;600;700&family=Manrope:wght@400;500;700&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="./_docs/styles.css" />
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+</head>
+<body>
+  <div class="backdrop" aria-hidden="true"></div>
+
+  <div class="app-container">
+    <aside class="sidebar">
+      <div class="sidebar-brand">
+        <h1 class="header-title">aggregator.api</h1>
+        <p class="header-sub">Public read API and contribution guide</p>
+        <div class="header-status" id="statusLine">Loading...</div>
+      </div>
+
+      <nav class="tab-nav sidebar-nav" aria-label="Aggregator API sections">
+        <button class="tab-btn is-active" data-tab="overview" type="button">Overview</button>
+        <button class="tab-btn" data-tab="names" type="button">Names</button>
+        <button class="tab-btn" data-tab="projects" type="button">Projects</button>
+        <button class="tab-btn" data-tab="events" type="button">Events / Metrics</button>
+        <button class="tab-btn" data-tab="clubs" type="button">Clubs</button>
+        <button class="tab-btn" data-tab="database" type="button">Database</button>
+        <button class="tab-btn" data-tab="recipes" type="button">Client Recipes</button>
+        <button class="tab-btn" data-tab="contribute" type="button">Contribute</button>
+      </nav>
+
+      <section class="sidebar-stats" aria-label="API summary">
+        <div class="stat">
+          <span class="stat-label">Docs</span>
+          <span class="stat-value" id="mDocs">/api</span>
+        </div>
+        <div class="stat">
+          <span class="stat-label">Public</span>
+          <span class="stat-value" id="mPublic">/api/v1</span>
+        </div>
+        <div class="stat">
+          <span class="stat-label">Ingest</span>
+          <span class="stat-value" id="mIngest">/api/v1/ingest</span>
+        </div>
+        <div class="stat">
+          <span class="stat-label">Sections</span>
+          <span class="stat-value" id="mSections">&mdash;</span>
+        </div>
+      </section>
+    </aside>
+
+    <main class="content-area">
+      <div class="tab-panel is-active" id="tab-overview">
+        <section class="panel-card hero-card">
+          <div class="section-bar">
+            <h2>Overview</h2>
+            <span class="tab-count" id="overviewCount">&mdash;</span>
+          </div>
+          <p class="hero-copy">
+            Use the public query routes for lookups and metrics. Use the ingest routes to contribute observations back into the shared cache.
+          </p>
+          <div id="baseUrls" class="base-grid"></div>
+        </section>
+
+        <section class="panel-card">
+          <div class="section-bar">
+            <h2>Current Role</h2>
+          </div>
+          <ul id="currentRole" class="fact-list"></ul>
+        </section>
+
+        <section class="panel-card">
+          <div class="section-bar">
+            <h2>Access</h2>
+          </div>
+          <div id="authBadges" class="badge-grid"></div>
+        </section>
+
+        <section class="panel-card">
+          <div class="section-bar">
+            <h2>Meta</h2>
+          </div>
+          <p class="hero-copy">
+            Start here to discover the service, its catalog, and the main base routes.
+          </p>
+          <div id="overviewEndpoints" class="endpoint-grid"></div>
+        </section>
+      </div>
+
+      <div class="tab-panel" id="tab-names">
+        <section class="panel-card">
+          <div class="section-bar">
+            <h2>Names</h2>
+            <span class="tab-count" id="namesCount">&mdash;</span>
+          </div>
+          <p class="hero-copy">
+            Shared player identity cache for accountId/displayName observations.
+          </p>
+          <div id="namesEndpoints" class="endpoint-grid"></div>
+        </section>
+      </div>
+
+      <div class="tab-panel" id="tab-projects">
+        <section class="panel-card">
+          <div class="section-bar">
+            <h2>Projects</h2>
+            <span class="tab-count" id="projectsCount">&mdash;</span>
+          </div>
+          <p class="hero-copy">
+            Project metadata, tracked maps, and instance state.
+          </p>
+          <div id="projectsEndpoints" class="endpoint-grid"></div>
+        </section>
+      </div>
+
+      <div class="tab-panel" id="tab-events">
+        <section class="panel-card">
+          <div class="section-bar">
+            <h2>Events / Metrics</h2>
+            <span class="tab-count" id="eventsCount">&mdash;</span>
+          </div>
+          <p class="hero-copy">
+            Recent events, queues, facets, and metrics for dashboards or automation.
+          </p>
+          <div id="eventsEndpoints" class="endpoint-grid"></div>
+        </section>
+      </div>
+
+      <div class="tab-panel" id="tab-clubs">
+        <section class="panel-card">
+          <div class="section-bar">
+            <h2>Clubs</h2>
+            <span class="tab-count" id="clubsCount">&mdash;</span>
+          </div>
+          <p class="hero-copy">
+            Read club summaries, campaigns, maps, and members from shared club snapshots.
+          </p>
+          <div id="clubsEndpoints" class="endpoint-grid"></div>
+        </section>
+      </div>
+
+      <div class="tab-panel" id="tab-database">
+        <section class="panel-card">
+          <div class="section-bar">
+            <h2>Database</h2>
+            <span class="tab-count" id="databaseCount">&mdash;</span>
+          </div>
+          <p class="hero-copy">
+            Low-level table inspection for debugging and internal tooling.
+          </p>
+          <div id="databaseEndpoints" class="endpoint-grid"></div>
+        </section>
+      </div>
+
+      <div class="tab-panel" id="tab-recipes">
+        <section class="panel-card">
+          <div class="section-bar">
+            <h2>Client Recipes</h2>
+            <span class="tab-count" id="recipesCount">&mdash;</span>
+          </div>
+          <p class="hero-copy">
+            Quick starts for plugins, portals, and services that want to read from or contribute to the aggregator.
+          </p>
+          <div id="recipes" class="recipe-grid"></div>
+        </section>
+      </div>
+
+      <div class="tab-panel" id="tab-contribute">
+        <section class="panel-card">
+          <div class="section-bar">
+            <h2>Contribute</h2>
+            <span class="tab-count" id="contributeCount">&mdash;</span>
+          </div>
+          <p class="hero-copy">
+            Token-gated ingest is for shared facts, not raw blobs. Keep project identity stable and payloads normalized.
+          </p>
+          <ul id="guidelines" class="fact-list"></ul>
+          <div id="contributeEndpoints" class="endpoint-grid" style="margin-top: 1rem;"></div>
+        </section>
+      </div>
+
+      <footer class="foot">
+        <span class="foot-mark">aggregator.xjk.yt / api</span>
+        <nav aria-label="Aggregator API links">
+          <a href="/">Dashboard</a>
+          <a href="/api/catalog.json">Catalog JSON</a>
+          <a href="/api/v1/catalog">API Catalog</a>
+        </nav>
+      </footer>
+    </main>
+  </div>
+
+  <script src="./_docs/app.js"></script>
+</body>
+</html>

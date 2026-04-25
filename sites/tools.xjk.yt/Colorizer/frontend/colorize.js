@@ -1,8 +1,5 @@
 let includeEscapeCharacters = false;
 
-let startColorGlobal = "#0033CC";
-let endColorGlobal = "#33FFFF";
-
 function toggleEscapeCharacters() {
     includeEscapeCharacters = !includeEscapeCharacters;
     document.getElementById('toggleEscape').textContent = includeEscapeCharacters ? "Exclude \\" : "Include \\";
@@ -13,7 +10,7 @@ function toggleEscapeCharacters() {
 document.addEventListener('DOMContentLoaded', function() {
     document.querySelectorAll('[name="interpolation"]').forEach(radio => {
         radio.addEventListener('change', function() {
-            colorizeAndDisplay(this.value);
+            colorizeAndDisplay();
         });
     });
 
@@ -21,20 +18,7 @@ document.addEventListener('DOMContentLoaded', function() {
         colorizeAndDisplay();
     });
 
-    colorizeAndDisplay(document.querySelector('[name="interpolation"]:checked').value);
-
-    document.getElementById('startColor').addEventListener('input', applyColorChanges);
-    document.getElementById('endColor').addEventListener('input', applyColorChanges);
-    
-    function applyColorChanges() {
-        const startColor = document.getElementById('startColor').value;
-        const endColor = document.getElementById('endColor').value;
-        
-        startColorGlobal = startColor;
-        endColorGlobal = endColor;
-        
-        colorizeAndDisplay();
-    }
+    colorizeAndDisplay();
 });
 
 function hexToRgb(hex) {
@@ -44,57 +28,48 @@ function hexToRgb(hex) {
     return {r, g, b};
 }    
 
+function getActiveColors() {
+    if (typeof colorArrayGlobal !== 'undefined' && colorArrayGlobal.length > 0) {
+        return colorArrayGlobal;
+    }
+
+    return ["#0033CC", "#33FFFF"];
+}
+
 function interpolateColors(steps, type) {
+    const activeColors = getActiveColors();
+
     if (type === 'DirectApply') {
         let directColors = [];
         for (let i = 0; i < steps; i++) {
-            directColors.push(colorArrayGlobal[i % colorArrayGlobal.length]);
+            directColors.push(activeColors[i % activeColors.length]);
         }
         return directColors;
     }
 
-    if (colorArrayGlobal.length < 2 || steps < 2) {
-        // Not enough colors or steps to interpolate, return default or single color
-        return Array(steps).fill(colorArrayGlobal[0] || '#FFFFFF');
+    if (activeColors.length < 2 || steps < 2) {
+        return Array(steps).fill(activeColors[0] || '#FFFFFF');
     }
 
     let colorArray = [];
-    let totalSegments = colorArrayGlobal.length - 1;
-    let segmentSteps = steps - totalSegments;
+    const totalSegments = activeColors.length - 1;
 
-    for (let i = 0; i < totalSegments; i++) {
-        const startColor = colorArrayGlobal[i];
-        const endColor = colorArrayGlobal[i + 1];
+    for (let i = 0; i < steps; i++) {
+        const position = (i / (steps - 1)) * totalSegments;
+        const segmentIndex = Math.min(Math.floor(position), totalSegments - 1);
+        const startColor = activeColors[segmentIndex];
+        const endColor = activeColors[segmentIndex + 1];
         const {r: sR, g: sG, b: sB} = hexToRgb(startColor);
         const {r: eR, g: eG, b: eB} = hexToRgb(endColor);
 
-        let stepsForSegment = Math.floor(segmentSteps / totalSegments);
-        if (i < segmentSteps % totalSegments) stepsForSegment++;
-
-        for (let step = 0; step < stepsForSegment; step++) {
-            let t = step / (stepsForSegment - 1);
-            t = applyInterpolation(t, type);
-            const r = Math.round(sR + (eR - sR) * t).toString(16).padStart(2, '0');
-            const g = Math.round(sG + (eG - sG) * t).toString(16).padStart(2, '0');
-            const b = Math.round(sB + (eB - sB) * t).toString(16).padStart(2, '0');
-            colorArray.push(`#${r}${g}${b}`);
-        }
-
-        if (i === totalSegments - 1) break;
-
-        if (i < totalSegments - 1) {
-            colorArray.push(endColor);
-        }
+        let t = applyInterpolation(position - segmentIndex, type);
+        const r = Math.round(sR + (eR - sR) * t).toString(16).padStart(2, '0');
+        const g = Math.round(sG + (eG - sG) * t).toString(16).padStart(2, '0');
+        const b = Math.round(sB + (eB - sB) * t).toString(16).padStart(2, '0');
+        colorArray.push(`#${r}${g}${b}`);
     }
 
-    if (colorArray.length < steps) {
-        const lastColor = colorArray[colorArray.length - 1];
-        while (colorArray.length < steps) {
-            colorArray.push(lastColor);
-        }
-    }
-
-    return colorArray.slice(0, steps);
+    return colorArray;
 }
 
 
@@ -158,8 +133,6 @@ function formatColorCode(hexColor) {
 }
 
 function colorizeString(inputString, type) {
-    if (inputString.length < 2) return formatColorCode(startColorGlobal) + inputString;
-
     let colors = interpolateColors(inputString.length, type);
     let coloredString = "";
 
@@ -183,8 +156,13 @@ function colorizeString(inputString, type) {
 function colorizeAndDisplay() {
     let inputString = document.getElementById("inputString").value;
     let type = document.querySelector('[name="interpolation"]:checked').value;
-    if(inputString) {
-        let outputString = colorizeString(inputString, type);
-        document.getElementById("outputString").innerText = outputString;
+
+    if (!inputString) {
+        document.getElementById("outputString").innerText = "Your formatted text will appear here...";
+        document.getElementById("previewString").innerHTML = "Preview color text here";
+        return;
     }
+
+    let outputString = colorizeString(inputString, type);
+    document.getElementById("outputString").innerText = outputString;
 }

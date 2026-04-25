@@ -8,6 +8,7 @@ import { AggregatorRepository } from "./src/repositories/aggregatorRepository.js
 import { createPublicRoutes } from "./src/routes/publicRoutes.js";
 import { createIngestRoutes } from "./src/routes/ingestRoutes.js";
 import { createPrivateDashRoutes } from "./src/routes/privateDashRoutes.js";
+import { createApiCatalog } from "./src/api/catalog.js";
 import {
   PORT,
   DB_FILE,
@@ -29,6 +30,9 @@ import {
   NADEO_GLOBAL_THROTTLE_FILE,
   NADEO_GLOBAL_MIN_REQUEST_GAP_MS,
 } from "./src/config.js";
+
+const STARTUP_BACKFILL_ENABLED =
+  String(process.env.AGGREGATOR_STARTUP_BACKFILL_ENABLED || (PORT >= 3100 ? "1" : "0")).trim() !== "0";
 
 const DASH_COOKIE_NAME = "xjk_dash_auth";
 const DASH_SESSION_TTL_MS = 12 * 60 * 60 * 1000;
@@ -165,10 +169,24 @@ function renderDashLoginPage({ error = "", nextPath = "/" } = {}) {
 </html>`;
 }
 
+function getRequestOrigin(req) {
+  const rawForwarded = req.headers["x-forwarded-host"];
+  const forwardedHost = Array.isArray(rawForwarded) ? rawForwarded[0] : rawForwarded;
+  const hostHeader = String(forwardedHost || req.headers.host || "").split(",")[0].trim();
+  if (!hostHeader) return "";
+  const normalizedHost = hostHeader.toLowerCase();
+  const protocol =
+    normalizedHost.includes("localhost") || normalizedHost.startsWith("127.0.0.1")
+      ? "http"
+      : "https";
+  return `${protocol}://${hostHeader}`;
+}
+
 const db = createDatabase({ filePath: DB_FILE });
 const repository = new AggregatorRepository(db);
 const serveAggregatorStatic = express.static(FRONTEND_DIR);
 const serveDashStatic = express.static(DASH_FRONTEND_DIR);
+const serveApiDocsStatic = express.static(path.join(FRONTEND_DIR, "api-docs"));
 
 const app = express();
 app.disable("x-powered-by");
@@ -260,6 +278,12 @@ const publicRoutes = createPublicRoutes(repository, {
   trackerControl: {
     leaderboardBaseUrl: TRACKER_LEADERBOARD_BASE_URL,
   },
+  catalogFactory: (req) =>
+    createApiCatalog({
+      origin: getRequestOrigin(req),
+      ingestTokenConfigured: Boolean(INGEST_TOKEN),
+      arlAuthConfigured: Boolean(ARL_OPENPLANET_AUTH_SECRET),
+    }),
 });
 const ingestRoutes = createIngestRoutes(repository, {
   ingestToken: INGEST_TOKEN,
@@ -285,6 +309,27 @@ const privateDashRoutes = createPrivateDashRoutes(repository, {
     throttleStateFile: NADEO_GLOBAL_THROTTLE_FILE,
     minRequestGapMs: NADEO_GLOBAL_MIN_REQUEST_GAP_MS,
   },
+});
+
+app.get(["/api", "/api/", "/api/index.html"], (req, res, next) => {
+  if (isDashHostRequest(req)) return next();
+  return res.sendFile(path.join(FRONTEND_DIR, "api-docs", "index.html"));
+});
+
+app.get("/api/catalog.json", (req, res, next) => {
+  if (isDashHostRequest(req)) return next();
+  return res.json(
+    createApiCatalog({
+      origin: getRequestOrigin(req),
+      ingestTokenConfigured: Boolean(INGEST_TOKEN),
+      arlAuthConfigured: Boolean(ARL_OPENPLANET_AUTH_SECRET),
+    })
+  );
+});
+
+app.use("/api/_docs", (req, res, next) => {
+  if (isDashHostRequest(req)) return next();
+  return serveApiDocsStatic(req, res, next);
 });
 
 app.use("/api/v1", publicRoutes);
@@ -329,35 +374,38 @@ app.listen(PORT, "127.0.0.1", () => {
   console.log(
     `DASH_NADEO_THROTTLE file=${NADEO_GLOBAL_THROTTLE_FILE || "<not-set>"} minGapMs=${NADEO_GLOBAL_MIN_REQUEST_GAP_MS}`
   );
+  console.log(`STARTUP_BACKFILL_ENABLED=${STARTUP_BACKFILL_ENABLED ? "1" : "0"}`);
 
-  const runTrafficBackfill = () => {
-    try {
-      const result = repository.backfillTrafficSamples({
-        batchSize: 5000,
-        maxBatches: 1,
-      });
-      const inserted = Number(result?.inserted || 0);
-      if (inserted > 0) {
-        console.log(`Backfilled ${inserted} traffic sample rows.`);
-        setTimeout(runTrafficBackfill, 25);
+  if (STARTUP_BACKFILL_ENABLED) {
+    const runTrafficBackfill = () => {
+      try {
+        const result = repository.backfillTrafficSamples({
+          batchSize: 5000,
+          maxBatches: 1,
+        });
+        const inserted = Number(result?.inserted || 0);
+        if (inserted > 0) {
+          console.log(`Backfilled ${inserted} traffic sample rows.`);
+          setTimeout(runTrafficBackfill, 25);
+        }
+      } catch (error) {
+        console.warn(`Traffic sample backfill failed: ${error?.message || error}`);
       }
-    } catch (error) {
-      console.warn(`Traffic sample backfill failed: ${error?.message || error}`);
-    }
-  };
+    };
 
-  setTimeout(runTrafficBackfill, 25);
+    setTimeout(runTrafficBackfill, 25);
 
-  const runNormBackfill = () => {
-    try {
-      const more = repository.backfillNormalizedDisplayNames();
-      if (more) {
-        console.log("Backfilled a batch of normalized display names.");
-        setTimeout(runNormBackfill, 500);
+    const runNormBackfill = () => {
+      try {
+        const more = repository.backfillNormalizedDisplayNames();
+        if (more) {
+          console.log("Backfilled a batch of normalized display names.");
+          setTimeout(runNormBackfill, 500);
+        }
+      } catch (error) {
+        console.warn(`Norm backfill failed: ${error?.message || error}`);
       }
-    } catch (error) {
-      console.warn(`Norm backfill failed: ${error?.message || error}`);
-    }
-  };
-  setTimeout(runNormBackfill, 50);
+    };
+    setTimeout(runNormBackfill, 50);
+  }
 });

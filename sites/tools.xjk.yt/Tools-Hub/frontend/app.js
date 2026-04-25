@@ -3,7 +3,7 @@
     id: "map-cleaner",
     name: "Strip Race Validation Ghost",
     description:
-      "Upload a map, strip the validation replay, and optionally export cleaned map and extracted ghost files.",
+      "Upload a map, strip the validation replay, and optionally export cleaned map and extracted ghost files. Maps stripped through the website still work for Unbeaten ATs when a validation ghost was present originally.",
     category: "Validation",
     status: "live",
     input: ".Map.Gbx",
@@ -110,6 +110,7 @@ const TOOL_DOCS = {
       <ul class="docs-list">
         <li>Uploads one <code>.Map.Gbx</code> file per request.</li>
         <li>Can return the cleaned map, extracted validation ghost, and replay output when the underlying tool can produce it.</li>
+        <li>Maps stripped through the website remain valid for Unbeaten ATs, as long as the map had a validation ghost originally.</li>
         <li>Returns either JSON, a single file stream, or a zip archive depending on the requested outputs.</li>
       </ul>
     `,

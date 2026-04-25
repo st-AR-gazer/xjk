@@ -137,7 +137,7 @@
       projectKey: "",
       source: "",
       eventType: "",
-      range: "all",
+      range: "24h",
       fromIso: "",
       toIso: "",
       q: "",
@@ -212,14 +212,14 @@
   }
 
   function setEventRangeInputsEnabled() {
-    const range = document.getElementById("eventsRangeFilter").value || "all";
+    const range = document.getElementById("eventsRangeFilter").value || "24h";
     const custom = range === "custom";
     document.getElementById("eventsFrom").disabled = !custom;
     document.getElementById("eventsTo").disabled = !custom;
   }
 
   function deriveEventTimeRange(filters) {
-    const range = String(filters.range || "all").toLowerCase();
+    const range = String(filters.range || "24h").toLowerCase();
     const now = Date.now();
     let fromIso = "";
     let toIso = "";
@@ -247,7 +247,7 @@
   }
 
   function readEventFiltersFromUI() {
-    const range = document.getElementById("eventsRangeFilter").value || "all";
+    const range = document.getElementById("eventsRangeFilter").value || "24h";
     const fromLocal = String(document.getElementById("eventsFrom").value || "").trim();
     const toLocal = String(document.getElementById("eventsTo").value || "").trim();
     return {
@@ -267,7 +267,7 @@
     document.getElementById("eventsProjectFilter").value = state.eventFilters.projectKey || "";
     document.getElementById("eventsSourceFilter").value = state.eventFilters.source || "";
     document.getElementById("eventsTypeFilter").value = state.eventFilters.eventType || "";
-    document.getElementById("eventsRangeFilter").value = state.eventFilters.range || "all";
+    document.getElementById("eventsRangeFilter").value = state.eventFilters.range || "24h";
     document.getElementById("eventsFrom").value = state.eventFilters.fromIso
       ? toDatetimeLocalInputValue(new Date(state.eventFilters.fromIso))
       : "";
@@ -1072,7 +1072,11 @@
     }
     if (refreshFacets || (!state.eventFacets.sources.length && !state.eventFacets.eventTypes.length)) {
       if (!silent) setStatus("Loading event facets...");
-      await loadEventFacets();
+      try {
+        await loadEventFacets();
+      } catch (error) {
+        console.warn("Event facets unavailable:", error);
+      }
       await waitForNextPaint();
     }
     if (!silent) setStatus("Loading events...");
@@ -1241,7 +1245,7 @@
         projectKey: "",
         source: "",
         eventType: "",
-        range: "all",
+        range: "24h",
         fromIso: "",
         toIso: "",
         q: "",
