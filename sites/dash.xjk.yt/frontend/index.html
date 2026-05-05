@@ -7,7 +7,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@500;600;700&family=Manrope:wght@400;500;600&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="styles.css?v=20260305-priority-any-tracker" />
+  <link rel="stylesheet" href="styles.css?v=20260503-status-probe2" />
   <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
 </head>
 <body>
@@ -322,6 +322,37 @@
               </tbody>
             </table>
           </div>
+          <div class="tracker-probe-panel">
+            <div class="section-head">
+              <h2>Status Route Probe</h2>
+              <div class="tracker-actions">
+                <select id="trackerProbeMode" class="compact-select">
+                  <option value="local" selected>Local</option>
+                  <option value="configured">Mirror</option>
+                  <option value="all">Both</option>
+                </select>
+                <button id="trackerProbeBtn" class="btn btn-outline btn-sm" type="button">Run Probe</button>
+              </div>
+            </div>
+            <div id="trackerProbeMeta" class="muted tracker-priority-status">Route probe not run yet.</div>
+            <div class="table-wrap tracker-probe-table">
+              <table>
+                <thead>
+                  <tr>
+                    <th>Tracker</th>
+                    <th>Target</th>
+                    <th>Path</th>
+                    <th>Result</th>
+                    <th>Time</th>
+                    <th>Error</th>
+                  </tr>
+                </thead>
+                <tbody id="trackerProbeBody">
+                  <tr><td colspan="6" class="muted">No probe data.</td></tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
         </div>
       </section>
 
@@ -451,6 +482,6 @@
     </div>
   </div>
 
-  <script src="app.js?v=20260306-altered-history"></script>
+  <script src="app.js?v=20260503-status-probe2"></script>
 </body>
 </html>

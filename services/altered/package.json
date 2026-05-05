@@ -5,7 +5,8 @@
   "type": "module",
   "main": "server.js",
   "scripts": {
-    "start": "node server.js"
+    "start": "node server.js",
+    "alterations:groups:write": "node tools/write-alteration-groups-local.mjs"
   },
   "dependencies": {
     "cors": "^2.8.5",

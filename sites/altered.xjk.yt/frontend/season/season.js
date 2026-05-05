@@ -1,3 +1,4 @@
+(() => {
 const alteredUrl = window.__alteredUrl || ((value) => value);
 const alteredPrefix = window.__alteredLocalPrefix || "";
 const currentPathname =
@@ -70,7 +71,7 @@ let allMaps = [];
 let allCampaigns = [];
 let matchedCampaigns = [];
 let searchQuery = "";
-let sortField = "name";
+let sortField = "campaign_slot";
 let mapsLoaded = false;
 const $heroBg = document.getElementById("season-hero-bg");
 const $badge = document.getElementById("season-badge");
@@ -263,6 +264,17 @@ function getMapsForCampaign(campaign) {
     return String(m.campaign_id) === id || m.campaign_name === name;
   });
 }
+function getCampaignMapPosition(map) {
+  const slot = Number(map?.slot || 0);
+  if (Number.isFinite(slot) && slot > 0) return slot;
+
+  const mapNumber = Number(map?.map_number || 0);
+  if (Number.isFinite(mapNumber) && mapNumber > 0) return mapNumber;
+
+  const mapNumbers = Array.isArray(map?.map_numbers) ? map.map_numbers : [];
+  const firstMapNumber = Number(mapNumbers[0] || 0);
+  return Number.isFinite(firstMapNumber) && firstMapNumber > 0 ? firstMapNumber : Infinity;
+}
 function filterAndSortMaps(maps) {
   let filtered = [...maps];
 
@@ -278,6 +290,12 @@ function filterAndSortMaps(maps) {
 
   filtered.sort((a, b) => {
     switch (sortField) {
+      case "campaign_slot":
+        return (
+          getCampaignMapPosition(a) - getCampaignMapPosition(b) ||
+          (a.name || "").localeCompare(b.name || "") ||
+          String(a.map_uid || "").localeCompare(String(b.map_uid || ""))
+        );
       case "wr_ms":
         return (a.wr_ms || Infinity) - (b.wr_ms || Infinity);
       case "author_time":
@@ -365,7 +383,7 @@ function renderCampaigns() {
       : '<div class="campaign-card-thumb"></div>';
 
     const card = document.createElement("a");
-    card.href = `/season/${encodeURIComponent(slug)}/?s=${encodeURIComponent(seasonInfo.key)}`;
+    card.href = alteredUrl(`/season/${encodeURIComponent(slug)}/?s=${encodeURIComponent(seasonInfo.key)}`);
     card.className = "campaign-card";
     card.innerHTML = `
       ${thumb}
@@ -388,7 +406,7 @@ function renderCampaignDetail() {
   $container.innerHTML = "";
 
   const back = document.createElement("a");
-  back.href = `/season/?s=${encodeURIComponent(seasonInfo.key)}`;
+  back.href = alteredUrl(`/season/?s=${encodeURIComponent(seasonInfo.key)}`);
   back.className = "back-link";
   back.innerHTML = `&larr; ${esc(seasonInfo.label)}`;
   $container.appendChild(back);
@@ -486,7 +504,7 @@ async function loadData({ silent = false, resetDisplayNameRefresh = true } = {})
       allMaps = await fetchPagedCollection(alteredUrl("/api/v1/alterations/maps"), "maps", {
         limit: 1200,
         maxPages: 25,
-        params: id ? { campaignIds: id } : {},
+        params: id ? { campaignIds: id, sort: "campaign_slot" } : { sort: "campaign_slot" },
       });
       mapsLoaded = true;
       renderStats();
@@ -519,3 +537,4 @@ if (seasonInfo?.redirecting) {
   setupHero();
   loadData();
 }
+})();

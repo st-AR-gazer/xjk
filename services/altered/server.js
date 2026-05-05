@@ -25,6 +25,7 @@ import {
   FRONTEND_DIR,
   DATA_DIR,
   DB_FILE,
+  ALTERED_ALTERATION_GROUPS_FILE,
   ADMIN_TOKEN,
   TRACKER_PUBLIC_BASE_URL,
   TRACKER_ADMIN_BASE_URL,
@@ -287,6 +288,9 @@ const alteredService = new AlteredService({
     maxConcurrentDownloads: ALTERED_MAP_COPY_MAX_CONCURRENT_DOWNLOADS,
     requestTimeoutMs: ALTERED_MAP_COPY_REQUEST_TIMEOUT_MS,
   },
+  alterationGroupingConfig: {
+    filePath: ALTERED_ALTERATION_GROUPS_FILE,
+  },
   logger: console,
 });
 const opsService = new OpsAutomationService({
@@ -356,6 +360,17 @@ const ubisoftAuth = new UbisoftAuth({
 app.use(
   helmet({
     crossOriginResourcePolicy: false,
+    contentSecurityPolicy: {
+      useDefaults: true,
+      directives: {
+        imgSrc: [
+          "'self'",
+          "data:",
+          "https://core.trackmania.nadeo.live",
+          "https://trackmania-prod-storage-map-thumbnail-s3.cdn.ubi.com",
+        ],
+      },
+    },
   })
 );
 app.use(
@@ -545,6 +560,23 @@ function disableAdminApiCache(_req, res, next) {
   next();
 }
 
+function disableApiCache(req, res, next) {
+  delete req.headers["if-none-match"];
+  delete req.headers["if-modified-since"];
+  res.setHeader("Cache-Control", "no-store, no-cache, must-revalidate, proxy-revalidate");
+  res.setHeader("Pragma", "no-cache");
+  res.setHeader("Expires", "0");
+  res.setHeader("Surrogate-Control", "no-store");
+  next();
+}
+
+function rejectMissingStaticAsset(req, res, next) {
+  if (req.method !== "GET" && req.method !== "HEAD") return next();
+  const ext = path.extname(req.path || "").toLowerCase();
+  if (!ext || ext === ".html") return next();
+  return res.status(404).type("text/plain").send("Not Found");
+}
+
 async function resolveLiveAuthContext(req) {
   if (isTrustedServiceAdminRequest(req)) return null;
   if (!isOAuthEnforced()) return null;
@@ -698,6 +730,8 @@ app.post("/api/v1/admin/auth/logout", (req, res) => {
   return res.status(200).json({ ok: true });
 });
 
+app.use("/api", disableApiCache);
+
 app.get("/api/v1/admin/auth/allowlist", requireApiAdmin, (req, res) => {
   const includeInactive = parseOptionalBoolean(req.query.includeInactive);
   const users = repository.listAdminUsers({
@@ -837,6 +871,7 @@ app.get(["/season/:campaignSlug([a-z0-9-]+)", "/season/:campaignSlug([a-z0-9-]+)
 });
 
 app.use(express.static(FRONTEND_DIR));
+app.use(rejectMissingStaticAsset);
 
 app.get("/", (_req, res) => {
   res.sendFile(path.join(FRONTEND_DIR, "index.html"));

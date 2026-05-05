@@ -374,6 +374,197 @@ class TrackerRepository {
     }));
   }
 
+  getLeaderboardWrLeaderboards({
+    overallLimit = 300,
+    overallOffset = 0,
+    perBucketLimit = 10,
+    trackedOnly = true,
+    includeBuckets = true,
+  } = {}) {
+    const safeOverallLimit = clampInt(overallLimit, { min: 1, max: 5000, fallback: 300 });
+    const safeOverallOffset = clampInt(overallOffset, { min: 0, max: 2000000, fallback: 0 });
+    const safePerBucketLimit = clampInt(perBucketLimit, { min: 1, max: 100, fallback: 10 });
+    const safeTrackedOnly = trackedOnly ? 1 : 0;
+    const safeIncludeBuckets = includeBuckets !== false;
+
+    const rankOneWhere = `
+      lb.ranking = 1
+      AND COALESCE(lb.score, 0) > 0
+      AND (? = 0 OR m.is_tracked = 1)
+    `;
+    const playerKeyExpr = `
+      CASE
+        WHEN NULLIF(TRIM(COALESCE(lb.account_id, '')), '') IS NOT NULL
+          THEN LOWER(TRIM(lb.account_id))
+        ELSE 'name:' || LOWER(TRIM(COALESCE(lb.display_name, 'Unknown')))
+      END
+    `;
+    const displayNameExpr = `
+      COALESCE(
+        NULLIF(MAX(p.latest_display_name), ''),
+        NULLIF(MAX(lb.display_name), ''),
+        NULLIF(MAX(lb.account_id), ''),
+        'Unknown'
+      )
+    `;
+
+    const summary =
+      this.db
+        .prepare(
+          `
+          WITH grouped AS (
+            SELECT
+              ${playerKeyExpr} AS playerKey,
+              COUNT(DISTINCT lb.map_uid) AS wrCount
+            FROM leaderboards lb
+            JOIN maps m ON m.map_uid = lb.map_uid
+            LEFT JOIN player_profiles p ON p.account_id = LOWER(TRIM(lb.account_id))
+            WHERE ${rankOneWhere}
+            GROUP BY playerKey
+          )
+          SELECT
+            COUNT(*) AS uniquePlayers,
+            COALESCE(SUM(wrCount), 0) AS totalWrs
+          FROM grouped
+          `
+        )
+        .get(safeTrackedOnly) || {};
+
+    const overall = this.db
+      .prepare(
+        `
+        WITH grouped AS (
+          SELECT
+            ${playerKeyExpr} AS playerKey,
+            LOWER(NULLIF(TRIM(MAX(lb.account_id)), '')) AS accountId,
+            ${displayNameExpr} AS displayName,
+            COUNT(DISTINCT lb.map_uid) AS wrCount,
+            MAX(lb.timestamp) AS latestWrAt
+          FROM leaderboards lb
+          JOIN maps m ON m.map_uid = lb.map_uid
+          LEFT JOIN player_profiles p ON p.account_id = LOWER(TRIM(lb.account_id))
+          WHERE ${rankOneWhere}
+          GROUP BY playerKey
+        )
+        SELECT accountId, displayName, wrCount, latestWrAt
+        FROM grouped
+        ORDER BY wrCount DESC, COALESCE(latestWrAt, '') DESC, displayName COLLATE NOCASE ASC
+        LIMIT ?
+        OFFSET ?
+        `
+      )
+      .all(safeTrackedOnly, safeOverallLimit, safeOverallOffset)
+      .map((row) => ({
+        account_id: normalizeAccountId(row.accountId),
+        player: row.displayName || row.accountId || "Unknown",
+        display_name: row.displayName || row.accountId || "Unknown",
+        wr_count: Number(row.wrCount || 0),
+        latest_wr_at: normalizeIso(row.latestWrAt),
+      }));
+
+    const bucketRows = (bucketSql, orderSql = "bucket COLLATE NOCASE ASC") =>
+      this.db
+        .prepare(
+          `
+          WITH grouped AS (
+            SELECT
+              ${bucketSql} AS bucket,
+              ${playerKeyExpr} AS playerKey,
+              LOWER(NULLIF(TRIM(MAX(lb.account_id)), '')) AS accountId,
+              ${displayNameExpr} AS displayName,
+              COUNT(DISTINCT lb.map_uid) AS wrCount,
+              MAX(lb.timestamp) AS latestWrAt
+            FROM leaderboards lb
+            JOIN maps m ON m.map_uid = lb.map_uid
+            ${LATEST_CAMPAIGN_JOIN}
+            LEFT JOIN player_profiles p ON p.account_id = LOWER(TRIM(lb.account_id))
+            WHERE ${rankOneWhere}
+            GROUP BY bucket, playerKey
+          ),
+          ranked AS (
+            SELECT
+              bucket,
+              accountId,
+              displayName,
+              wrCount,
+              latestWrAt,
+              ROW_NUMBER() OVER (
+                PARTITION BY bucket
+                ORDER BY wrCount DESC, COALESCE(latestWrAt, '') DESC, displayName COLLATE NOCASE ASC
+              ) AS rank
+            FROM grouped
+          )
+          SELECT bucket, accountId, displayName, wrCount, latestWrAt, rank
+          FROM ranked
+          WHERE rank <= ?
+          ORDER BY ${orderSql}, rank ASC
+          `
+        )
+        .all(safeTrackedOnly, safePerBucketLimit)
+        .map((row) => ({
+          bucket: row.bucket || "Other",
+          account_id: normalizeAccountId(row.accountId),
+          player: row.displayName || row.accountId || "Unknown",
+          display_name: row.displayName || row.accountId || "Unknown",
+          wr_count: Number(row.wrCount || 0),
+          latest_wr_at: normalizeIso(row.latestWrAt),
+          rank: Number(row.rank || 0),
+        }));
+
+    const bySeasonRows = safeIncludeBuckets
+      ? bucketRows(
+          `
+          CASE
+            WHEN LOWER(COALESCE(cm.campaign_name, '')) LIKE '%winter%' THEN 'Winter'
+            WHEN LOWER(COALESCE(cm.campaign_name, '')) LIKE '%spring%' THEN 'Spring'
+            WHEN LOWER(COALESCE(cm.campaign_name, '')) LIKE '%summer%' THEN 'Summer'
+            WHEN LOWER(COALESCE(cm.campaign_name, '')) LIKE '%fall%'
+              OR LOWER(COALESCE(cm.campaign_name, '')) LIKE '%autumn%' THEN 'Fall'
+            ELSE 'Other'
+          END
+          `,
+          `
+          CASE bucket
+            WHEN 'Winter' THEN 1
+            WHEN 'Spring' THEN 2
+            WHEN 'Summer' THEN 3
+            WHEN 'Fall' THEN 4
+            ELSE 5
+          END ASC,
+          bucket COLLATE NOCASE ASC
+          `
+        )
+      : [];
+    const byCampaignRows = safeIncludeBuckets
+      ? bucketRows("COALESCE(cm.campaign_name, 'Unassigned')")
+      : [];
+    const bySlotRows = safeIncludeBuckets
+      ? bucketRows(
+          `
+          CASE
+            WHEN COALESCE(cm.slot, 0) BETWEEN 1 AND 25 THEN printf('%02d', cm.slot)
+            ELSE 'Other'
+          END
+          `,
+          "CASE WHEN bucket = 'Other' THEN 999 ELSE CAST(bucket AS INTEGER) END ASC"
+        )
+      : [];
+
+    return {
+      sampledAt: new Date().toISOString(),
+      trackedOnly: Boolean(trackedOnly),
+      source: "tracker-leaderboard-rank-one",
+      summary: {
+        uniquePlayers: Number(summary.uniquePlayers || 0),
+        totalWrs: Number(summary.totalWrs || 0),
+      },
+      overall,
+      bySeasonRows,
+      byCampaignRows,
+      bySlotRows,
+    };
+  }
+
   getMapInfo(mapUid) {
     const row = this.db
       .prepare(
@@ -502,6 +693,30 @@ class TrackerRepository {
         checkFrequency: Number(row.checkFrequency || 0),
         status: row.status || "live",
       }));
+  }
+
+  countDueTrackedMaps({ nowIso, maxCheckIntervalSeconds = 0 } = {}) {
+    const now = nowIso || new Date().toISOString();
+    const maxInterval = Math.max(0, Number(maxCheckIntervalSeconds) || 0);
+    const frequencyExpr =
+      maxInterval > 0
+        ? "MIN(COALESCE(m.check_frequency, 0), ?)"
+        : "COALESCE(m.check_frequency, 0)";
+
+    const sql = `
+      SELECT COUNT(*) AS count
+      FROM maps m
+      WHERE
+        m.is_tracked = 1
+        AND m.tracking_status = 'live'
+        AND (
+          m.last_checked_at IS NULL
+          OR (strftime('%s', ?) - strftime('%s', m.last_checked_at)) >= ${frequencyExpr}
+        )
+    `;
+
+    const args = maxInterval > 0 ? [now, maxInterval] : [now];
+    return Number(this.db.prepare(sql).get(...args)?.count || 0);
   }
 
   touchMapCheckedAt(mapUid, checkedAt) {
@@ -1550,11 +1765,14 @@ class TrackerRepository {
             COUNT(*) AS totalMaps,
             SUM(
               CASE
-                WHEN COALESCE(m.wr_time, 0) > 0
-                  AND (
-                    NULLIF(TRIM(COALESCE(m.wr_account_id, '')), '') IS NOT NULL
-                    OR NULLIF(TRIM(COALESCE(m.wr_display_name, '')), '') IS NOT NULL
-                  )
+                WHEN (
+                  COALESCE(m.wr_time, 0) > 0
+                    AND (
+                      NULLIF(TRIM(COALESCE(m.wr_account_id, '')), '') IS NOT NULL
+                      OR NULLIF(TRIM(COALESCE(m.wr_display_name, '')), '') IS NOT NULL
+                    )
+                )
+                  OR COALESCE(lb.rankOneCount, 0) >= 1
                 THEN 1 ELSE 0
               END
             ) AS mapsWithKnownWr,
@@ -1568,7 +1786,8 @@ class TrackerRepository {
           LEFT JOIN (
             SELECT
               map_uid,
-              COUNT(*) AS rowCount
+              COUNT(*) AS rowCount,
+              SUM(CASE WHEN ranking = 1 AND COALESCE(score, 0) > 0 THEN 1 ELSE 0 END) AS rankOneCount
             FROM leaderboards
             GROUP BY map_uid
           ) lb ON lb.map_uid = m.map_uid

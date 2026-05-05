@@ -74,6 +74,22 @@ function createPublicRoutes(service, { realtimeHub = null } = {}) {
     res.json(payload);
   });
 
+  router.get("/leaderboards/wrs", (req, res) => {
+    const trackedOnly =
+      req.query.tracked_only === undefined ? true : parseTrackedOnly(req.query.tracked_only);
+    const payload = service.getLeaderboardWrLeaderboards({
+      overallLimit: Number(req.query.overall_limit ?? req.query.overallLimit) || 300,
+      overallOffset: Number(req.query.overall_offset ?? req.query.overallOffset) || 0,
+      perBucketLimit: Number(req.query.per_bucket_limit ?? req.query.perBucketLimit) || 10,
+      trackedOnly,
+      includeBuckets:
+        req.query.include_buckets === undefined && req.query.includeBuckets === undefined
+          ? true
+          : parseTrackedOnly(req.query.include_buckets ?? req.query.includeBuckets),
+    });
+    res.json(payload);
+  });
+
   router.get("/players/top-accounts", (req, res) => {
     const trackedOnly =
       req.query.tracked_only === undefined ? true : parseTrackedOnly(req.query.tracked_only);
@@ -135,6 +151,10 @@ function createPublicRoutes(service, { realtimeHub = null } = {}) {
   });
 
   router.get("/tracker/status", (_req, res) => {
+    res.json(service.getTrackerStatus());
+  });
+
+  router.get("/status", (_req, res) => {
     res.json(service.getTrackerStatus());
   });
 

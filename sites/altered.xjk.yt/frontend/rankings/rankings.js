@@ -17,7 +17,7 @@ function esc(str) {
   el.textContent = str;
   return el.innerHTML;
 }
-const alteredUrl = window.__alteredUrl || ((value) => value);
+const rankingsAlteredUrl = window.__alteredUrl || ((value) => value);
 
 const ACCOUNT_ID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 const displayNameRefresh = {
@@ -25,6 +25,10 @@ const displayNameRefresh = {
   attempts: 0,
   key: "",
 };
+const LEADERBOARD_QUERY =
+  "/api/v1/alterations/leaderboards?limit=40&overallLimit=250&perBucketLimit=5&includeBuckets=false&includeMedals=false";
+const LEADERBOARD_ENRICH_QUERY =
+  "/api/v1/alterations/leaderboards?limit=40&overallLimit=250&perBucketLimit=5&includeMedals=false";
 
 function looksLikeAccountId(value) {
   return ACCOUNT_ID_RE.test(String(value || "").trim());
@@ -117,8 +121,14 @@ function formatSlot(value) {
   return String(slot).padStart(2, "0");
 }
 
+function formatCount(value) {
+  const number = Number(value);
+  if (!Number.isFinite(number)) return String(value ?? "\u2014");
+  return number.toLocaleString();
+}
+
 async function fetchJson(url) {
-  const res = await fetch(alteredUrl(url));
+  const res = await fetch(rankingsAlteredUrl(url), { cache: "no-store" });
   if (!res.ok) throw new Error(`HTTP ${res.status}`);
   return res.json();
 }
@@ -161,7 +171,27 @@ const $pageSize = document.getElementById("page-size");
 
 function setStat(id, value) {
   const el = document.getElementById(id);
-  if (el) el.textContent = value ?? "\u2014";
+  if (!el) return;
+  el.classList.remove("stat-value--ratio");
+  el.closest(".stat")?.classList.remove("stat-is-ratio");
+  el.textContent = value === "\u2014" ? value : formatCount(value ?? "\u2014");
+}
+
+function setRatioStat(id, value, total, pct) {
+  const el = document.getElementById(id);
+  if (!el) return;
+  const safeValue = Number(value || 0);
+  const safeTotal = Number(total || 0);
+  const safePct = Number.isFinite(Number(pct)) ? Number(pct) : safeTotal > 0 ? (safeValue / safeTotal) * 100 : 0;
+  el.classList.add("stat-value--ratio");
+  el.closest(".stat")?.classList.add("stat-is-ratio");
+  el.innerHTML = `
+    <span class="stat-ratio">
+      <span class="stat-ratio-main">${esc(formatCount(safeValue))}</span>
+      <span class="stat-ratio-total">of ${esc(formatCount(safeTotal))}</span>
+    </span>
+    <span class="stat-ratio-sub">${esc(`${safePct.toFixed(1)}% coverage`)}</span>
+  `;
 }
 
 function renderStats() {
@@ -169,6 +199,7 @@ function renderStats() {
   const coverage = summary?.leaderboard_coverage || {};
   const overall = Array.isArray(state.payload?.wr?.overall) ? state.payload.wr.overall : [];
   const topCount = overall.length ? Math.max(...overall.map((item) => Number(item.wr_count || 0))) : 0;
+  const totalCoverageMaps = Number(coverage.total_maps || summary.total_maps || 0);
 
   setStat("stat-players", Number(summary.unique_wr_players || overall.length || 0));
   setStat(
@@ -180,13 +211,17 @@ function renderStats() {
   );
   setStat("stat-top-count", topCount || "\u2014");
   setStat("stat-maps", Number(summary.total_maps || 0));
-  setStat(
+  setRatioStat(
     "stat-maps-wr-known",
-    `${Number(coverage.maps_with_known_wr || 0)} / ${Number(coverage.total_maps || summary.total_maps || 0)}`
+    Number(coverage.maps_with_known_wr || 0),
+    totalCoverageMaps,
+    Number(coverage.wr_coverage_pct || 0)
   );
-  setStat(
+  setRatioStat(
     "stat-maps-fuller-lb",
-    `${Number(coverage.maps_with_extended_leaderboard || 0)} / ${Number(coverage.total_maps || summary.total_maps || 0)}`
+    Number(coverage.maps_with_extended_leaderboard || 0),
+    totalCoverageMaps,
+    Number(coverage.extended_coverage_pct || 0)
   );
 }
 
@@ -463,6 +498,14 @@ function renderAll() {
   renderMedalLeaderboards();
 }
 
+async function loadEnrichedData() {
+  const payload = await fetchJson(LEADERBOARD_ENRICH_QUERY).catch(() => null);
+  if (!Array.isArray(payload?.wr?.overall) || !payload.wr.overall.length) return;
+  state.payload = payload;
+  renderAll();
+  schedulePendingDisplayNameRefresh(collectPendingDisplayNameAccountIds(payload));
+}
+
 async function loadData({ silent = false, resetDisplayNameRefresh = true } = {}) {
   if (resetDisplayNameRefresh) {
     clearDisplayNameRefresh({ reset: true });
@@ -475,13 +518,12 @@ async function loadData({ silent = false, resetDisplayNameRefresh = true } = {})
   }
 
   try {
-    state.payload = await fetchJson(
-      "/api/v1/alterations/leaderboards?limit=80&overallLimit=5000&perBucketLimit=12"
-    );
+    state.payload = await fetchJson(LEADERBOARD_QUERY);
     renderAll();
     schedulePendingDisplayNameRefresh(collectPendingDisplayNameAccountIds(state.payload));
     if (!silent) {
       $loading.hidden = true;
+      loadEnrichedData();
     }
   } catch {
     if (!silent) {

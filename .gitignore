@@ -53,6 +53,7 @@ tmp/
 /sites/tools.xjk.yt/Map-Validation-Checker/data/
 /sites/tools.xjk.yt/Strip-RaceValidationGhost/data/
 /sites/altered.xjk.yt/data_server/
+/services/altered/alteration-groups.local.json
 
 # OS/editor files
 .DS_Store

@@ -1,7 +1,7 @@
 .rank-shell {
   position: relative;
   z-index: 1;
-  max-width: 1000px;
+  max-width: 1180px;
   margin: 0 auto;
   padding-right: 1.5rem;
   padding-bottom: 3rem;
@@ -46,43 +46,91 @@
 }
 .stats-row {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
-  gap: 0.75rem;
-  margin-bottom: 2rem;
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  gap: 0.85rem;
+  margin-bottom: 2.05rem;
 }
 
 .stat {
-  padding: 1rem;
+  min-width: 0;
+  min-height: 118px;
+  padding: 1rem 1.05rem;
   border: 1px solid var(--border);
-  border-radius: 12px;
+  border-radius: 8px;
   background: var(--surface);
   backdrop-filter: blur(12px);
-  text-align: center;
   display: flex;
   flex-direction: column;
-  gap: 0.25rem;
+  justify-content: center;
+  gap: 0.42rem;
+  text-align: left;
 }
 
 .stat-value {
   font-family: "Chakra Petch", "Trebuchet MS", sans-serif;
-  font-size: 1.8rem;
+  font-size: 1.88rem;
   font-weight: 700;
   color: var(--ink);
   line-height: 1.1;
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
 }
 
 .stat-label {
   font-size: 0.68rem;
+  line-height: 1.2;
   text-transform: uppercase;
   letter-spacing: 0.08em;
   color: var(--ink-muted);
+}
+
+.stat-is-ratio {
+  justify-content: space-between;
+}
+
+.stat-value--ratio {
+  display: grid;
+  gap: 0.25rem;
+  white-space: normal;
+}
+
+.stat-ratio {
+  display: grid;
+  gap: 0.16rem;
+  min-width: 0;
+}
+
+.stat-ratio-main {
+  font-size: 1.95rem;
+  line-height: 1;
+}
+
+.stat-ratio-slash {
+  color: var(--ink-muted);
+  font-size: 1.15rem;
+}
+
+.stat-ratio-total {
+  color: var(--ink-dim);
+  font-size: 0.86rem;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.stat-ratio-sub {
+  color: var(--cyan);
+  font-family: "Chakra Petch", "Trebuchet MS", sans-serif;
+  font-size: 0.72rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
 }
 
 .coverage-card {
   margin-bottom: 1.5rem;
   padding: 1rem;
   border: 1px solid var(--border);
-  border-radius: 14px;
+  border-radius: 8px;
   background: var(--surface);
   backdrop-filter: blur(12px);
 }
@@ -236,7 +284,7 @@
 }
 .rankings-table-wrap {
   border: 1px solid var(--border);
-  border-radius: 14px;
+  border-radius: 8px;
   background: var(--surface);
   backdrop-filter: blur(12px);
   overflow: hidden;
@@ -440,7 +488,7 @@
 
 .rank-card {
   border: 1px solid var(--border);
-  border-radius: 14px;
+  border-radius: 8px;
   background: var(--surface);
   backdrop-filter: blur(12px);
   padding: 0.75rem;
@@ -553,6 +601,23 @@
     grid-template-columns: repeat(2, 1fr);
   }
 
+  .stat {
+    min-height: 106px;
+  }
+
+  .stat-value {
+    font-size: 1.55rem;
+  }
+
+  .stat-ratio-main {
+    font-size: 1.58rem;
+  }
+
+  .stat-ratio-total,
+  .stat-ratio-slash {
+    font-size: 0.95rem;
+  }
+
   .col-latest {
     display: none;
   }
@@ -566,7 +631,11 @@
   }
 }
 
-@media (max-width: 480px) {
+@media (max-width: 560px) {
+  .stats-row {
+    grid-template-columns: 1fr;
+  }
+
   .controls-bar {
     flex-direction: column;
   }
@@ -574,5 +643,16 @@
   .search-input {
     min-width: 0;
   }
-}
 
+  .coverage-card-head,
+  .coverage-bar-head {
+    display: grid;
+    gap: 0.2rem;
+    justify-content: stretch;
+  }
+
+  .coverage-card-meta,
+  .coverage-bar-value {
+    justify-self: start;
+  }
+}

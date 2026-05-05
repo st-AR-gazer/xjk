@@ -64,9 +64,19 @@ app.get("/health", (_req, res) => {
   res.type("text").send("ok");
 });
 
-app.get("/api/v1/status", (_req, res) => {
+app.get(
+  [
+    "/status",
+    "/tracker/status",
+    "/api/status",
+    "/api/tracker/status",
+    "/api/v1/status",
+    "/api/v1/tracker/status",
+  ],
+  (_req, res) => {
   return res.json(service.getStatus());
-});
+  }
+);
 
 app.post("/api/v1/config", (req, res) => {
   const body = req.body || {};

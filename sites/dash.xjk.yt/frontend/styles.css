@@ -486,11 +486,66 @@ td.cell-key {
 /* Clickable rows */
 tr.clickable-row {
   cursor: pointer;
-  transition: background 0.1s;
+  transition: background 0.1s, box-shadow 0.1s, filter 0.1s;
 }
 
 tr.clickable-row:hover {
   background: rgba(85, 178, 255, 0.07);
+}
+
+.route-error-row {
+  --route-error-alpha: 0;
+  --route-error-tail-alpha: 0;
+  --route-error-hover-alpha: 0;
+  --route-error-border-alpha: 0;
+}
+
+.route-error-row:not(.route-error-none) {
+  background:
+    linear-gradient(
+      90deg,
+      rgba(255, 28, 36, var(--route-error-alpha)),
+      rgba(255, 28, 36, var(--route-error-tail-alpha)) 74%,
+      rgba(255, 28, 36, 0)
+    );
+  box-shadow: inset 3px 0 0 rgba(255, 82, 82, var(--route-error-border-alpha));
+}
+
+.route-error-row:not(.route-error-none):hover {
+  background:
+    linear-gradient(
+      90deg,
+      rgba(255, 42, 48, var(--route-error-hover-alpha)),
+      rgba(255, 42, 48, var(--route-error-tail-alpha)) 74%,
+      rgba(85, 178, 255, 0.04)
+    );
+  filter: brightness(1.05);
+}
+
+.route-error-rate {
+  font-family: "Chakra Petch", sans-serif;
+  font-weight: 700;
+}
+
+.route-error-rate-none {
+  color: var(--dim);
+}
+
+.route-error-rate-low {
+  color: #ffc9a0;
+}
+
+.route-error-rate-medium {
+  color: #ffae86;
+}
+
+.route-error-rate-high {
+  color: #ff8b8b;
+}
+
+.route-error-rate-critical {
+  color: #ffe0e0;
+  text-shadow: 0 0 10px rgba(255, 48, 48, 0.45);
 }
 
 /* ── Section Head ──────────────────────────────── */
@@ -540,6 +595,14 @@ tr.clickable-row:hover {
   display: flex;
   gap: 0.35rem;
   flex-wrap: wrap;
+  align-items: center;
+}
+
+.compact-select {
+  min-width: 120px;
+  height: 2rem;
+  padding-top: 0.25rem;
+  padding-bottom: 0.25rem;
 }
 
 .tracker-priority-row {
@@ -589,6 +652,38 @@ tr.clickable-row:hover {
 
 .tracker-status-stale {
   color: var(--warn);
+}
+
+.tracker-probe-panel {
+  margin-top: 0.9rem;
+  padding-top: 0.8rem;
+  border-top: 1px solid var(--line);
+}
+
+.tracker-probe-panel .section-head {
+  margin-bottom: 0.35rem;
+}
+
+.tracker-probe-table {
+  max-height: 360px;
+  overflow: auto;
+}
+
+.tracker-probe-row td {
+  vertical-align: top;
+}
+
+.tracker-probe-error {
+  background: linear-gradient(
+    90deg,
+    rgba(255, 46, 46, 0.16),
+    rgba(255, 46, 46, 0.05) 58%,
+    transparent
+  );
+}
+
+.mono {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace;
 }
 
 .altered-grid {

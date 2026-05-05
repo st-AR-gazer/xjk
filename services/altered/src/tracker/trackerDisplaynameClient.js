@@ -100,6 +100,18 @@ class TrackerDisplaynameClient {
     });
   }
 
+  async resolveAccountIds(accountIds = [], { front = true, reason = "altered-priority" } = {}) {
+    const normalized = [...new Set((Array.isArray(accountIds) ? accountIds : []).map(normalizeAccountId).filter(Boolean))];
+    return this.request("display-names/resolve", {
+      method: "POST",
+      body: {
+        accountIds: normalized,
+        front: Boolean(front),
+        reason,
+      },
+    });
+  }
+
   async runSync({ accountIds = [], forceCandidates = false, prioritizeAccountIds = true } = {}) {
     const normalized = [...new Set((Array.isArray(accountIds) ? accountIds : []).map(normalizeAccountId).filter(Boolean))];
     return this.request("sync/run-now", {

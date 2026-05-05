@@ -20,6 +20,9 @@ const BLOCKED_PLATFORM_LABELS = new Set([
   "xboxseriess",
   "nintendoswitch",
 ]);
+const KNOWN_DISPLAY_NAMES_BY_ACCOUNT_ID = new Map([
+  ["d2372a08-a8a1-46cb-97fb-23a161d85ad0", "Nadeo"],
+]);
 
 function normalizePossibleAccountId(value) {
   const text = String(value || "").trim().toLowerCase();
@@ -38,6 +41,12 @@ function sanitizeResolvedDisplayName(value, { accountId = "" } = {}) {
 
 function hasResolvedDisplayName(value, { accountId = "" } = {}) {
   return Boolean(sanitizeResolvedDisplayName(value, { accountId }));
+}
+
+function resolveKnownDisplayName(accountId) {
+  const normalizedAccountId = normalizePossibleAccountId(accountId);
+  if (!normalizedAccountId) return "";
+  return KNOWN_DISPLAY_NAMES_BY_ACCOUNT_ID.get(normalizedAccountId) || "";
 }
 
 function normalizeDisplayNameQuery(value) {
@@ -101,6 +110,7 @@ export {
   hasResolvedDisplayName,
   normalizeDisplayNameQuery,
   normalizePossibleAccountId,
+  resolveKnownDisplayName,
   sanitizeResolvedDisplayName,
   validateSharedDisplayName,
 };

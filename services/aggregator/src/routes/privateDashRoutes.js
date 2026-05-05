@@ -329,8 +329,143 @@ function createPrivateDashRoutes(
       supportsEnabledToggle: true,
     },
   };
+  const trackerProbePaths = [
+    "/health",
+    "/status",
+    "/tracker/status",
+    "/api/status",
+    "/api/tracker/status",
+    "/api/v1/status",
+    "/api/v1/tracker/status",
+  ];
+  const trackerProbeLocalPorts = {
+    wr: 3131,
+    leaderboard: 3143,
+    displayname: 3141,
+    club: 3142,
+  };
+  const trackerProbeLocalEnvKeys = {
+    wr: "DASH_TRACKER_WR_LOCAL_BASE_URL",
+    leaderboard: "DASH_TRACKER_LEADERBOARD_LOCAL_BASE_URL",
+    displayname: "DASH_TRACKER_DISPLAYNAME_LOCAL_BASE_URL",
+    club: "DASH_TRACKER_CLUB_LOCAL_BASE_URL",
+  };
   let trackerPrioritySnapshot = null;
   let trackerPriorityMeta = null;
+
+  function getTrackerLocalProbeBaseUrl(tracker) {
+    const key = String(tracker?.key || "").trim().toLowerCase();
+    const envKey = trackerProbeLocalEnvKeys[key];
+    const envBaseUrl = envKey ? normalizeBaseUrl(process.env[envKey]) : "";
+    if (envBaseUrl) return envBaseUrl;
+
+    const configuredBaseUrl = normalizeBaseUrl(tracker?.baseUrl);
+    const defaultPort = trackerProbeLocalPorts[key];
+    if (!defaultPort) return "";
+
+    if (configuredBaseUrl.includes("/__remote/trackers")) {
+      return `http://127.0.0.1:${defaultPort}`;
+    }
+
+    return "";
+  }
+
+  function getTrackerProbeTargets(tracker, mode = "all") {
+    const safeMode = String(mode || "all").trim().toLowerCase();
+    const targets = [];
+    const addTarget = (scope, baseUrl) => {
+      const normalizedBaseUrl = normalizeBaseUrl(baseUrl);
+      if (!normalizedBaseUrl) return;
+      if (targets.some((item) => item.scope === scope && item.baseUrl === normalizedBaseUrl)) return;
+      targets.push({ scope, baseUrl: normalizedBaseUrl });
+    };
+
+    if (safeMode === "all" || safeMode === "local") {
+      addTarget("local", getTrackerLocalProbeBaseUrl(tracker));
+    }
+    if (safeMode === "all" || safeMode === "configured") {
+      addTarget("configured", tracker?.baseUrl);
+    }
+
+    if (!targets.length && tracker?.baseUrl) {
+      addTarget("configured", tracker.baseUrl);
+    }
+    return targets;
+  }
+
+  async function probeTrackerRoute({ tracker, target, routePath, timeoutMs }) {
+    const url = buildUrl(target?.baseUrl, routePath);
+    const startedAt = Date.now();
+    if (!url) {
+      return {
+        tracker: tracker?.key || "",
+        scope: target?.scope || "configured",
+        baseUrl: target?.baseUrl || "",
+        path: routePath,
+        url,
+        ok: false,
+        statusCode: 0,
+        durationMs: 0,
+        bytes: 0,
+        error: "Probe URL is not configured.",
+      };
+    }
+
+    try {
+      const response = await fetch(url, {
+        method: "GET",
+        headers: { "cache-control": "no-cache" },
+        signal: AbortSignal.timeout(Math.max(1000, Number(timeoutMs) || 10000)),
+      });
+      const text = await response.text();
+      return {
+        tracker: tracker?.key || "",
+        scope: target?.scope || "configured",
+        baseUrl: target?.baseUrl || "",
+        path: routePath,
+        url,
+        ok: response.ok,
+        statusCode: Number(response.status || 0),
+        durationMs: Date.now() - startedAt,
+        bytes: Buffer.byteLength(text || "", "utf8"),
+        error: response.ok ? null : String(text || response.statusText || "Request failed.").slice(0, 240),
+      };
+    } catch (error) {
+      return {
+        tracker: tracker?.key || "",
+        scope: target?.scope || "configured",
+        baseUrl: target?.baseUrl || "",
+        path: routePath,
+        url,
+        ok: false,
+        statusCode: 0,
+        durationMs: Date.now() - startedAt,
+        bytes: 0,
+        error: error?.message || "Probe request failed.",
+      };
+    }
+  }
+
+  async function runProbeTasks(tasks, { concurrency = 4 } = {}) {
+    const safeConcurrency = clampInt(concurrency, { min: 1, max: 12, fallback: 4 });
+    const results = new Array(tasks.length);
+    let nextIndex = 0;
+
+    const worker = async () => {
+      while (nextIndex < tasks.length) {
+        const currentIndex = nextIndex;
+        nextIndex += 1;
+        results[currentIndex] = await tasks[currentIndex]();
+      }
+    };
+
+    const workers = Array.from(
+      { length: Math.min(safeConcurrency, Math.max(1, tasks.length)) },
+      () => worker()
+    );
+    await Promise.all(workers);
+    return results;
+  }
 
   async function loadTrackerPriorityState() {
     try {
@@ -400,7 +535,7 @@ function createPrivateDashRoutes(
     return headers;
   }
 
-  async function fetchTrackerStatusEntry(tracker) {
+  async function fetchTrackerStatusEntry(tracker, { timeoutMs = 10000 } = {}) {
     if (!tracker?.baseUrl) {
       return {
         ok: false,
@@ -418,7 +553,7 @@ function createPrivateDashRoutes(
     for (const routePath of paths) {
       const statusUrl = buildUrl(tracker.baseUrl, routePath);
       try {
-        payload = await fetchJsonWithTimeout(statusUrl, { method: "GET", timeoutMs: 10000 });
+        payload = await fetchJsonWithTimeout(statusUrl, { method: "GET", timeoutMs });
         lastError = null;
         break;
       } catch (error) {
@@ -804,6 +939,36 @@ function createPrivateDashRoutes(
     });
   });
 
+  router.get("/nadeo/guardrail", (req, res) => {
+    const windowHours = clampInt(req.query.window_hours, { min: 1, max: 24 * 90, fallback: 24 });
+    const guardrail = repository.getNadeoGuardrailSnapshot({
+      windowHours,
+      projectKey: req.query.project_key || "",
+      service: req.query.service || "",
+    });
+    const queue = readGlobalNadeoQueueSnapshot({
+      stateFile: nadeoThrottleStateFile,
+      minGapMs: nadeoMinRequestGapMs,
+      maxItems: 20,
+    });
+
+    return res.json({
+      generatedAt: new Date().toISOString(),
+      guardrail: {
+        ...guardrail,
+        queue: {
+          configured: queue.configured,
+          pendingCount: queue.pendingCount,
+          activeWaiterId: queue.activeWaiterId || null,
+          lastGrantedAt: queue.lastGrantedAt || null,
+          lastRequestAt: queue.lastRequestAt || null,
+          secondsSinceLastRequest: queue.secondsSinceLastRequest,
+          minGapMs: queue.minGapMs,
+        },
+      },
+    });
+  });
+
   router.get("/projects", (req, res) => {
     const projects = repository.listProjects({
       limit: clampInt(req.query.limit, { min: 1, max: 500, fallback: 120 }),
@@ -815,145 +980,30 @@ function createPrivateDashRoutes(
     });
   });
 
-  router.get("/altered/summary", async (req, res) => {
+  router.get("/altered/summary", (req, res) => {
     const syncRunsLimit = clampInt(req.query.sync_runs_limit, { min: 1, max: 100, fallback: 12 });
     const pollRunsLimit = clampInt(req.query.poll_runs_limit, { min: 1, max: 100, fallback: 20 });
-    const parts = [
-      {
-        key: "hook",
-        label: "hook config",
-        fallback: null,
-        pick: (payload) => payload?.hook || null,
-        request: () =>
-          fetchAlteredJson("/api/v1/hook/altered", {
-            requiresInternalAuth: false,
-            timeoutMs: 10000,
-          }),
-      },
-      {
-        key: "syncRuns",
-        label: "club sync runs",
-        fallback: [],
-        pick: (payload) => (Array.isArray(payload?.runs) ? payload.runs : []),
-        request: () =>
-          fetchAlteredJson(`/api/v1/hook/altered/runs?limit=${syncRunsLimit}`, {
-            requiresInternalAuth: false,
-            timeoutMs: 10000,
-          }),
-      },
-      {
-        key: "liveStatus",
-        label: "live monitor status",
-        fallback: null,
-        pick: (payload) => payload || null,
-        request: () =>
-          fetchAlteredJson("/api/v1/admin/hook/altered/live/status", {
-            timeoutMs: 15000,
-          }),
-      },
-      {
-        key: "opsOverview",
-        label: "ops overview",
-        fallback: null,
-        pick: (payload) => payload || null,
-        request: () =>
-          fetchAlteredJson("/api/v1/admin/ops/overview", {
-            timeoutMs: 10000,
-          }),
-      },
-      {
-        key: "pollRuns",
-        label: "ops runs",
-        fallback: [],
-        pick: (payload) => (Array.isArray(payload?.runs) ? payload.runs : []),
-        request: () =>
-          fetchAlteredJson(`/api/v1/admin/ops/runs?limit=${pollRunsLimit}`, {
-            timeoutMs: 10000,
-          }),
-      },
-    ];
-
-    const settled = await Promise.allSettled(parts.map((part) => part.request()));
-    const altered = {};
-    const warnings = [];
-    let successCount = 0;
-
-    parts.forEach((part, index) => {
-      const result = settled[index];
-      if (result?.status === "fulfilled") {
-        altered[part.key] = part.pick(result.value);
-        successCount += 1;
-        return;
-      }
-      altered[part.key] = part.fallback;
-      const reason = result?.reason;
-      warnings.push({
-        key: part.key,
-        label: part.label,
-        message: reason?.message || `Failed to load ${part.label}.`,
-        statusCode: Number(reason?.statusCode || 0) || null,
-      });
+    const summary = repository.getAlteredDashboardSummary({
+      syncRunsLimit,
+      pollRunsLimit,
     });
-
-    if (!successCount) {
-      return res.status(502).json({
-        error: "Failed to load altered summary.",
-        warnings,
-      });
-    }
-
     return res.json({
       generatedAt: new Date().toISOString(),
-      altered,
-      warnings,
-      degraded: warnings.length > 0,
+      ...summary,
     });
   });
 
-  router.get("/altered/check-history", async (req, res) => {
+  router.get("/altered/check-history", (req, res) => {
     const q = String(req.query.q || "").trim().toLowerCase();
     const mapUid = String(req.query.map_uid || "").trim();
     const limit = clampInt(req.query.limit, { min: 1, max: 500, fallback: 120 });
-    const upstreamLimit = mapUid
-      ? limit
-      : q
-        ? Math.max(limit, 400)
-        : limit;
-    try {
-      const query = new URLSearchParams();
-      query.set("limit", String(upstreamLimit));
-      if (mapUid) query.set("mapUid", mapUid);
-      const payload = await fetchAlteredJson(`/api/v1/admin/ops/events?${query.toString()}`, {
-        timeoutMs: 15000,
-      });
-      let events = Array.isArray(payload?.events) ? payload.events : [];
-      if (q) {
-        events = events.filter((item) => {
-          const mapName = String(item?.mapName || "").toLowerCase();
-          const itemUid = String(item?.mapUid || "").toLowerCase();
-          const oldHolder = String(item?.oldWrHolder || "").toLowerCase();
-          const newHolder = String(item?.newWrHolder || "").toLowerCase();
-          return (
-            mapName.includes(q) ||
-            itemUid.includes(q) ||
-            oldHolder.includes(q) ||
-            newHolder.includes(q)
-          );
-        });
-      }
-      events = events.slice(0, limit);
-      return res.json({
-        generatedAt: new Date().toISOString(),
-        events,
-        count: events.length,
-      });
-    } catch (error) {
-      const upstreamStatus = Number(error?.statusCode || 0);
-      const statusCode = upstreamStatus >= 400 && upstreamStatus < 500 ? upstreamStatus : 502;
-      return res.status(statusCode).json({
-        error: error?.message || "Failed to load altered check history.",
-      });
-    }
+    const events = repository.getAlteredCheckHistory({ q, mapUid, limit });
+    return res.json({
+      generatedAt: new Date().toISOString(),
+      events,
+      count: events.length,
+      source: "database",
+    });
   });
 
   router.post("/altered/run-full-sync", async (_req, res) => {
@@ -1002,10 +1052,11 @@ function createPrivateDashRoutes(
     if (!trackerPrioritySnapshot) {
       await loadTrackerPriorityState();
     }
-    const statusResults = await fetchAllTrackerStatuses();
+    const statusSnapshot = repository.getTrackerStatusSnapshots();
     return res.json({
       generatedAt: new Date().toISOString(),
-      trackers: statusResults,
+      trackers: statusSnapshot.trackers || {},
+      source: statusSnapshot.source || "database",
       priority: {
         active: Boolean(trackerPriorityMeta?.active),
         restoreAvailable: Boolean(trackerPrioritySnapshot),
@@ -1015,6 +1066,46 @@ function createPrivateDashRoutes(
         rollbackErrors: Array.isArray(trackerPriorityMeta?.rollbackErrors)
           ? trackerPriorityMeta.rollbackErrors
           : [],
+      },
+    });
+  });
+
+  router.get("/trackers/status-probe", async (req, res) => {
+    const mode = String(req.query.mode || "all").trim().toLowerCase();
+    const safeMode = mode === "local" || mode === "configured" ? mode : "all";
+    const timeoutMs = clampInt(req.query.timeout_ms, {
+      min: 1000,
+      max: 15000,
+      fallback: 10000,
+    });
+    const concurrency = clampInt(req.query.concurrency, {
+      min: 1,
+      max: 12,
+      fallback: 4,
+    });
+    const probeTasks = [];
+
+    for (const tracker of Object.values(trackers)) {
+      for (const target of getTrackerProbeTargets(tracker, safeMode)) {
+        for (const routePath of trackerProbePaths) {
+          probeTasks.push(() => probeTrackerRoute({ tracker, target, routePath, timeoutMs }));
+        }
+      }
+    }
+
+    const probes = await runProbeTasks(probeTasks, { concurrency });
+    const failed = probes.filter((item) => !item.ok);
+    return res.json({
+      generatedAt: new Date().toISOString(),
+      mode: safeMode,
+      timeoutMs,
+      concurrency,
+      source: "live-route-probe",
+      probes,
+      summary: {
+        total: probes.length,
+        ok: probes.length - failed.length,
+        failed: failed.length,
       },
     });
   });

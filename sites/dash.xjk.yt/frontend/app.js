@@ -66,6 +66,11 @@
     return `${current.toFixed(digits)} ${units[idx]}`;
   }
 
+  function fmtMaybeBytes(value) {
+    if (value === null || value === undefined || value === "") return "-";
+    return fmtBytes(value);
+  }
+
   function fmtDateTime(value) {
     const ts = Date.parse(String(value || ""));
     if (!Number.isFinite(ts)) return "-";
@@ -246,6 +251,8 @@
       lastLoadedAt: null,
       lastErrorAt: null,
       lastErrorMessage: "",
+      readOnly: false,
+      probe: null,
     },
     nadeoQueue: {
       open: false,
@@ -373,6 +380,40 @@
     }
   }
 
+  function routeErrorPercent(item = {}) {
+    const provided = Number(item.errorRatePct);
+    if (Number.isFinite(provided)) return Math.max(0, Math.min(100, provided));
+
+    const requests = Number(item.requests || 0);
+    const errors = Number(item.errorRequests || 0);
+    if (!Number.isFinite(requests) || requests <= 0 || !Number.isFinite(errors) || errors <= 0) return 0;
+    return Math.max(0, Math.min(100, (errors / requests) * 100));
+  }
+
+  function routeErrorHeat(errorRatePct) {
+    const rate = Math.max(0, Math.min(100, Number(errorRatePct || 0)));
+    const ratio = rate / 100;
+    const severity = rate >= 75 ? "critical" : rate >= 35 ? "high" : rate >= 10 ? "medium" : rate > 0 ? "low" : "none";
+
+    if (severity === "none") {
+      return { severity, style: "" };
+    }
+
+    const alpha = Math.min(0.58, 0.05 + ratio * 0.53);
+    const tailAlpha = Math.max(0.015, alpha * 0.18);
+    const hoverAlpha = Math.min(0.68, alpha + 0.08);
+    const borderAlpha = Math.min(0.95, 0.22 + ratio * 0.73);
+
+    return {
+      severity,
+      style:
+        `--route-error-alpha:${alpha.toFixed(3)};` +
+        `--route-error-tail-alpha:${tailAlpha.toFixed(3)};` +
+        `--route-error-hover-alpha:${hoverAlpha.toFixed(3)};` +
+        `--route-error-border-alpha:${borderAlpha.toFixed(3)};`,
+    };
+  }
+
   function renderTopTable(bodyId, rows = [], cacheKey = null, emptyMessage = "No traffic samples in this range.") {
     if (cacheKey) state.cached[cacheKey] = rows;
 
@@ -386,14 +427,17 @@
     }
     rows.forEach((item, idx) => {
       const tr = document.createElement("tr");
-      tr.className = "clickable-row";
+      const errorRatePct = routeErrorPercent(item);
+      const heat = routeErrorHeat(errorRatePct);
+      tr.className = `clickable-row route-error-row route-error-${heat.severity}`;
+      if (heat.style) tr.setAttribute("style", heat.style);
       tr.dataset.detailType = cacheKey;
       tr.dataset.detailIdx = String(idx);
       tr.innerHTML =
         `<td class="cell-key" title="${escapeHtml(item.key || "-")}">${renderKeyCellHtml(item.key)}</td>` +
         `<td>${fmtNumber(item.requests || 0)}</td>` +
         `<td>${fmtNumber(item.errorRequests || 0)}</td>` +
-        `<td>${fmtPercent(item.errorRatePct || 0)}</td>` +
+        `<td class="route-error-rate route-error-rate-${heat.severity}">${fmtPercent(errorRatePct)}</td>` +
         `<td>${fmtMs(item.avgDurationMs || 0)}</td>` +
         `<td>${fmtBytes(item.bytesIn || 0)}</td>` +
         `<td>${fmtBytes(item.bytesOut || 0)}</td>`;
@@ -411,8 +455,66 @@
 
   /* ── Tab management ──────────────────────────── */
 
-  function setActiveTab(nextTab) {
-    const tab = TABS.includes(nextTab) ? nextTab : "overview";
+  function normalizeTab(nextTab) {
+    const tab = String(nextTab || "").trim().toLowerCase();
+    return TABS.includes(tab) ? tab : "overview";
+  }
+
+  function normalizeRouteSubTab(nextSubtab) {
+    const subtab = String(nextSubtab || "").trim().toLowerCase();
+    return ROUTE_SUB_TABS.includes(subtab) ? subtab : "incoming";
+  }
+
+  function readHashParts() {
+    return decodeURIComponent(String(window.location.hash || "").replace(/^#/, ""))
+      .split(/[?&=]/)[0]
+      .split("/")
+      .map((part) => part.trim().toLowerCase())
+      .filter(Boolean);
+  }
+
+  function readTabFromUrl() {
+    const hashTab = readHashParts()[0] || "";
+    if (TABS.includes(hashTab)) return hashTab;
+
+    const queryTab = new URLSearchParams(window.location.search).get("tab");
+    return normalizeTab(queryTab);
+  }
+
+  function readRouteSubTabFromUrl() {
+    const hashParts = readHashParts();
+    if (hashParts[0] === "routes" && ROUTE_SUB_TABS.includes(hashParts[1])) {
+      return hashParts[1];
+    }
+
+    const query = new URLSearchParams(window.location.search);
+    return normalizeRouteSubTab(query.get("route_subtab") || query.get("subtab"));
+  }
+
+  function writeTabToUrl(nextTab, { replace = false, routeSubTab = state.routeSubTab } = {}) {
+    const tab = normalizeTab(nextTab);
+    const url = new URL(window.location.href);
+    url.searchParams.delete("tab");
+    url.searchParams.delete("route_subtab");
+    url.searchParams.delete("subtab");
+    url.hash = tab === "routes" ? `${tab}/${normalizeRouteSubTab(routeSubTab)}` : tab;
+
+    if (url.href === window.location.href) return;
+
+    const statePayload = {
+      ...(history.state && typeof history.state === "object" ? history.state : {}),
+      dashTab: tab,
+      dashRouteSubTab: tab === "routes" ? normalizeRouteSubTab(routeSubTab) : state.routeSubTab,
+    };
+    if (replace) {
+      history.replaceState(statePayload, "", url);
+    } else {
+      history.pushState(statePayload, "", url);
+    }
+  }
+
+  function setActiveTab(nextTab, { updateUrl = true, replaceUrl = false } = {}) {
+    const tab = normalizeTab(nextTab);
     state.activeTab = tab;
 
     document.querySelectorAll(".tab-nav .tab-btn").forEach((btn) => {
@@ -426,10 +528,14 @@
       const panel = document.getElementById(panelId);
       if (panel) panel.hidden = t !== tab;
     });
+
+    if (updateUrl) {
+      writeTabToUrl(tab, { replace: replaceUrl, routeSubTab: state.routeSubTab });
+    }
   }
 
-  function setActiveRouteSubTab(subtab) {
-    const active = ROUTE_SUB_TABS.includes(subtab) ? subtab : "incoming";
+  function setActiveRouteSubTab(subtab, { updateUrl = true, replaceUrl = false } = {}) {
+    const active = normalizeRouteSubTab(subtab);
     state.routeSubTab = active;
 
     document.querySelectorAll("#tabRoutes .sub-tab-btn").forEach((btn) => {
@@ -441,6 +547,10 @@
       const panel = document.getElementById(panelId);
       if (panel) panel.hidden = s !== active;
     });
+
+    if (updateUrl && state.activeTab === "routes") {
+      writeTabToUrl("routes", { replace: replaceUrl, routeSubTab: active });
+    }
   }
 
   /* ── Error rendering ─────────────────────────── */
@@ -552,19 +662,22 @@
 
   function renderTrackerStatuses(payload = {}, { stale = false, errorMessage = "" } = {}) {
     const trackers = payload?.trackers || {};
+    const readOnly = String(payload?.source || "").toLowerCase() === "database";
+    state.trackers.readOnly = readOnly;
     const rows = [
-      ["wr", "trackerWrStatus", "trackerWrRuntime", "trackerWrToggleBtn"],
-      ["leaderboard", "trackerLbStatus", "trackerLbRuntime", "trackerLbToggleBtn"],
-      ["displayname", "trackerDnStatus", "trackerDnRuntime", "trackerDnToggleBtn"],
-      ["club", "trackerClubStatus", "trackerClubRuntime", "trackerClubToggleBtn"],
+      ["wr", "trackerWrStatus", "trackerWrRuntime", "trackerWrToggleBtn", "trackerWrRunNowBtn"],
+      ["leaderboard", "trackerLbStatus", "trackerLbRuntime", "trackerLbToggleBtn", "trackerLbRunNowBtn"],
+      ["displayname", "trackerDnStatus", "trackerDnRuntime", "trackerDnToggleBtn", "trackerDnRunNowBtn"],
+      ["club", "trackerClubStatus", "trackerClubRuntime", "trackerClubToggleBtn", ""],
     ];
 
-    rows.forEach(([key, statusId, runtimeId, toggleId]) => {
+    rows.forEach(([key, statusId, runtimeId, toggleId, runNowId]) => {
       const entry = trackers[key] || {};
       const hasEntry = Object.keys(entry).length > 0;
       const statusEl = document.getElementById(statusId);
       const runtimeEl = document.getElementById(runtimeId);
       const toggleBtn = document.getElementById(toggleId);
+      const runNowBtn = runNowId ? document.getElementById(runNowId) : null;
       if (statusEl) {
         statusEl.classList.remove("tracker-status-ok", "tracker-status-error", "tracker-status-stale");
       }
@@ -612,19 +725,38 @@
         const enabled = entry.ok && trackerEnabled(key, entry.status);
         toggleBtn.textContent = enabled ? "Disable" : "Enable";
         toggleBtn.dataset.enabled = enabled ? "1" : "0";
-        toggleBtn.disabled = !hasEntry || !entry.configured;
+        toggleBtn.disabled = readOnly || !hasEntry || !entry.configured;
         toggleBtn.title = stale
           ? `Tracker status is stale. Last success ${fmtAgo(state.trackers.lastLoadedAt)}.`
+          : readOnly
+            ? "Tracker controls are read-only while this dashboard mirrors the server snapshot."
           : errorMessage && !hasEntry
             ? errorMessage
             : "";
+      }
+      if (runNowBtn) {
+        const enabled = entry.ok && trackerEnabled(key, entry.status);
+        runNowBtn.disabled = readOnly || !hasEntry || !entry.configured || !entry.ok || !enabled;
+        runNowBtn.title = readOnly
+          ? "Tracker controls are read-only while this dashboard mirrors the server snapshot."
+          : enabled
+          ? ""
+          : !entry.configured
+            ? "Tracker is not configured."
+            : !entry.ok
+              ? entry.error || "Tracker status is unavailable."
+              : "Enable this tracker before running it.";
       }
     });
 
     const priorityStatusEl = document.getElementById("trackerPriorityStatus");
     if (priorityStatusEl) {
-      priorityStatusEl.textContent = summarizeTrackerPriorityStatus(trackers);
+      priorityStatusEl.textContent = readOnly
+        ? `Snapshot mode: ${summarizeTrackerPriorityStatus(trackers)}`
+        : summarizeTrackerPriorityStatus(trackers);
     }
+
+    setTrackerPriorityControlsReadOnly(readOnly);
 
     const refreshMetaEl = document.getElementById("trackerRefreshMeta");
     if (refreshMetaEl) {
@@ -688,6 +820,10 @@
   }
 
   async function runTrackerAction(tracker, action, payload = {}) {
+    if (state.trackers.readOnly) {
+      setStatus("Tracker controls are read-only in snapshot mode.");
+      return;
+    }
     try {
       setStatus(`Applying ${action} on ${tracker}...`);
       await sendTrackerControl(tracker, action, payload);
@@ -706,6 +842,89 @@
       club: "Club",
     };
     return labels[String(key || "").trim().toLowerCase()] || String(key || "-");
+  }
+
+  function trackerProbeScopeLabel(scope) {
+    const safe = String(scope || "").trim().toLowerCase();
+    if (safe === "local") return "Local";
+    if (safe === "configured") return "Mirror";
+    return safe || "-";
+  }
+
+  function renderTrackerStatusProbe(payload = {}, { loading = false, errorMessage = "" } = {}) {
+    const body = document.getElementById("trackerProbeBody");
+    const meta = document.getElementById("trackerProbeMeta");
+    const button = document.getElementById("trackerProbeBtn");
+    if (button) button.disabled = Boolean(loading);
+
+    if (meta) {
+      meta.classList.remove("tracker-status-ok", "tracker-status-error", "tracker-status-stale");
+      if (loading) {
+        meta.textContent = "Testing status routes...";
+        meta.classList.add("tracker-status-stale");
+      } else if (errorMessage) {
+        meta.textContent = `Route probe failed: ${errorMessage}`;
+        meta.classList.add("tracker-status-error");
+      } else if (payload?.summary) {
+        const summary = payload.summary;
+        meta.textContent =
+          `Route probe ${fmtNumber(summary.ok || 0)}/${fmtNumber(summary.total || 0)} ok` +
+          ` (${fmtDateTime(payload.generatedAt)})`;
+        meta.classList.add(Number(summary.failed || 0) > 0 ? "tracker-status-error" : "tracker-status-ok");
+      } else {
+        meta.textContent = "Route probe not run yet.";
+      }
+    }
+
+    if (!body) return;
+    const probes = Array.isArray(payload?.probes) ? payload.probes : [];
+    if (loading && !probes.length) {
+      body.innerHTML = '<tr><td colspan="6" class="muted">Testing...</td></tr>';
+      return;
+    }
+    if (errorMessage) {
+      body.innerHTML = `<tr><td colspan="6" class="tracker-status-error">${escapeHtml(errorMessage)}</td></tr>`;
+      return;
+    }
+    if (!probes.length) {
+      body.innerHTML = '<tr><td colspan="6" class="muted">No probe data.</td></tr>';
+      return;
+    }
+
+    body.innerHTML = probes
+      .map((probe) => {
+        const ok = Boolean(probe.ok);
+        const statusText = ok ? `OK ${probe.statusCode || ""}` : `FAIL ${probe.statusCode || ""}`.trim();
+        const resultClass = ok ? "tracker-status-ok" : "tracker-status-error";
+        return (
+          `<tr class="tracker-probe-row ${ok ? "tracker-probe-ok" : "tracker-probe-error"}">` +
+          `<td>${escapeHtml(trackerLabel(probe.tracker))}</td>` +
+          `<td>${escapeHtml(trackerProbeScopeLabel(probe.scope))}</td>` +
+          `<td class="mono">${escapeHtml(probe.path || "-")}</td>` +
+          `<td class="${resultClass}">${escapeHtml(statusText)}</td>` +
+          `<td>${escapeHtml(fmtMs(probe.durationMs || 0))}</td>` +
+          `<td class="muted">${escapeHtml(probe.error || "")}</td>` +
+          `</tr>`
+        );
+      })
+      .join("");
+  }
+
+  async function runTrackerStatusProbe() {
+    renderTrackerStatusProbe(state.trackers.probe || {}, { loading: true });
+    try {
+      const mode = String(document.getElementById("trackerProbeMode")?.value || "local").trim() || "local";
+      const payload = await fetchDashJson(
+        `/trackers/status-probe?mode=${encodeURIComponent(mode)}&timeout_ms=10000&concurrency=4`
+      );
+      state.trackers.probe = payload || {};
+      renderTrackerStatusProbe(state.trackers.probe);
+      const failed = Number(payload?.summary?.failed || 0);
+      stampStatus(failed > 0 ? "Probe finished with failures" : "Probe passed");
+    } catch (error) {
+      renderTrackerStatusProbe({}, { errorMessage: error?.message || String(error || "unknown error") });
+      setStatus(`Error: ${error?.message || error}`);
+    }
   }
 
   function trackerSupportsInterval(key) {
@@ -761,8 +980,19 @@
     const intervalEl = document.getElementById("trackerPriorityInterval");
     const target = String(targetEl?.value || "displayname").trim().toLowerCase();
     if (intervalEl) {
-      intervalEl.disabled = !trackerSupportsInterval(target);
+      intervalEl.disabled = state.trackers.readOnly || !trackerSupportsInterval(target);
     }
+  }
+
+  function setTrackerPriorityControlsReadOnly(readOnly) {
+    const disabled = Boolean(readOnly);
+    const targetEl = document.getElementById("trackerPriorityTarget");
+    const intervalEl = document.getElementById("trackerPriorityInterval");
+    const pauseEl = document.getElementById("trackerPriorityPauseOthers");
+    if (targetEl) targetEl.disabled = disabled;
+    if (intervalEl) intervalEl.disabled = disabled || !trackerSupportsInterval(targetEl?.value || "displayname");
+    if (pauseEl) pauseEl.disabled = disabled;
+    setTrackerPriorityButtonsDisabled(disabled);
   }
 
   function setTrackerPriorityButtonsDisabled(disabled) {
@@ -773,6 +1003,10 @@
   }
 
   async function setTrackerPriorityMode(enablePriority) {
+    if (state.trackers.readOnly) {
+      setStatus("Tracker priority controls are read-only in snapshot mode.");
+      return;
+    }
     const enable = Boolean(enablePriority);
     try {
       setTrackerPriorityButtonsDisabled(true);
@@ -1253,15 +1487,25 @@
       return;
     }
 
+    const hasValue = (selector) => points.some((point) => Number(point?.[selector] || 0) > 0);
+    const series = [
+      { selector: "requests", label: "All", color: "#55b2ff", width: 2.8 },
+      { selector: "incomingRequests", label: "Incoming", color: "#73f2cc", width: 2 },
+      { selector: "outgoingRequests", label: "Outgoing", color: "#ffc774", width: 2, dash: "5 4" },
+      hasValue("nadeoOutgoingRequests")
+        ? { selector: "nadeoOutgoingRequests", label: "Nadeo", color: "#ff6f91", width: 2.2 }
+        : null,
+      hasValue("internalOutgoingRequests")
+        ? { selector: "internalOutgoingRequests", label: "Internal", color: "#b6f178", width: 1.8, dash: "3 5" }
+        : null,
+      hasValue("errorRequests")
+        ? { selector: "errorRequests", label: "Errors", color: "#ffdf6b", width: 1.8, dash: "2 4" }
+        : null,
+    ].filter(Boolean);
+
     const maxY = Math.max(
       1,
-      ...points.map((point) =>
-        Math.max(
-          Number(point.requests || 0),
-          Number(point.incomingRequests || 0),
-          Number(point.outgoingRequests || 0)
-        )
-      )
+      ...points.map((point) => Math.max(...series.map((item) => Number(point[item.selector] || 0))))
     );
 
     const xAt = (idx) =>
@@ -1281,24 +1525,29 @@
       .join("");
 
     const legendY = height - 7;
-    const legend = [
-      { label: "All requests", color: "#55b2ff", x: padding.left + 8 },
-      { label: "Incoming", color: "#73f2cc", x: padding.left + 170 },
-      { label: "Outgoing", color: "#ffc774", x: padding.left + 290 },
-    ]
+    const legend = series
+      .map(
+        (item, idx) => {
+          const x = padding.left + 8 + idx * 116;
+          return (
+            `<circle cx="${x}" cy="${legendY - 4}" r="3" fill="${item.color}"></circle>` +
+            `<text x="${x + 9}" y="${legendY}" fill="rgba(170,190,220,0.9)" font-size="11">${item.label}</text>`
+          );
+        }
+      )
+      .join("");
+    const paths = series
       .map(
         (item) =>
-          `<circle cx="${item.x}" cy="${legendY - 4}" r="3" fill="${item.color}"></circle>` +
-          `<text x="${item.x + 9}" y="${legendY}" fill="rgba(170,190,220,0.9)" font-size="11">${item.label}</text>`
+          `<path d="${pathFor(item.selector)}" fill="none" stroke="${item.color}" stroke-width="${item.width}"` +
+          `${item.dash ? ` stroke-dasharray="${item.dash}"` : ""}></path>`
       )
       .join("");
 
     svg.innerHTML =
       grids +
       `<line x1="${padding.left}" y1="${height - padding.bottom}" x2="${width - padding.right}" y2="${height - padding.bottom}" stroke="rgba(125,169,255,0.35)" />` +
-      `<path d="${pathFor("requests")}" fill="none" stroke="#55b2ff" stroke-width="2.6"></path>` +
-      `<path d="${pathFor("incomingRequests")}" fill="none" stroke="#73f2cc" stroke-width="2"></path>` +
-      `<path d="${pathFor("outgoingRequests")}" fill="none" stroke="#ffc774" stroke-width="2" stroke-dasharray="5 4"></path>` +
+      paths +
       legend;
   }
 
@@ -1386,10 +1635,23 @@
     setText("mPublicNonNadeoBytes", fmtBytes(overview.publicNonNadeoTransferBytes || 0));
   }
 
+  function updateNadeoGuardrail(payload = {}) {
+    const guardrail = payload?.guardrail || payload || {};
+    const effective = guardrail.effective || {};
+    if (!effective.available) return;
+    setText("mNadeoOut", fmtNumber(effective.requests || 0));
+    setText("mNadeoRps", fmtRate(effective.requestsPerSecond || 0));
+    setText("mNadeoPerSec", `1 req/${fmtOneReqEverySeconds(effective.requestsPerSecond || 0)}`);
+    setText("mNadeoRpm", fmtNumber(effective.requestsPerMinute || 0));
+    setText("mNadeoBytes", fmtMaybeBytes(effective.transferBytes));
+  }
+
   /* ── Refresh logic ───────────────────────────── */
 
   let fullRefreshBusy = false;
+  let fullRefreshQueued = false;
   let errorRefreshBusy = false;
+  let nadeoGuardrailRequestId = 0;
 
   function stampStatus(prefix = "Updated") {
     setStatus(
@@ -1403,17 +1665,36 @@
     );
   }
 
+  async function refreshNadeoGuardrail({ query = buildQuery() } = {}) {
+    const requestId = ++nadeoGuardrailRequestId;
+    const payload = await fetchDashJson(`/nadeo/guardrail?${query}`).catch(() => null);
+    if (!payload || requestId !== nadeoGuardrailRequestId) return;
+    updateNadeoGuardrail(payload);
+  }
+
+  function timelineBucketForWindow(windowHours) {
+    const hours = Number(windowHours || 24);
+    if (hours <= 6) return "minute";
+    if (hours <= 48) return "quarter_hour";
+    if (hours <= 24 * 21) return "hour";
+    return "day";
+  }
+
   async function refreshOverviewPanel({ silent = false } = {}) {
     if (!silent) setStatus("Loading overview...");
     const query = buildQuery();
+    const bucket = timelineBucketForWindow(state.filters.windowHours);
+
     const overviewPayload = await fetchDashJson(`/traffic/overview?${query}`);
-    updateOverview(overviewPayload?.overview || {});
+    const overview = overviewPayload?.overview || {};
+    updateOverview(overview);
+    refreshNadeoGuardrail({ query }).catch(() => {});
     if (state.nadeoQueue.open) {
-      await refreshNadeoQueue({ silent: true });
+      refreshNadeoQueue({ silent: true }).catch(() => {});
     }
     await waitForNextPaint();
     if (!silent) setStatus("Loading timeline...");
-    const bucket = state.filters.windowHours <= 6 ? "minute" : "hour";
+
     const seriesPayload = await fetchDashJson(`/traffic/timeseries?${query}&bucket=${bucket}`);
     const points = Array.isArray(seriesPayload?.series?.points) ? seriesPayload.series.points : [];
     renderTrafficChart(points);
@@ -1485,15 +1766,13 @@
   }
 
   async function loadFilters({ refreshProjects = false } = {}) {
-    const tasks = [
-      fetchDashJson(`/traffic/facets?window_hours=${encodeURIComponent(state.filters.windowHours)}`),
-    ];
+    let projectsPayload = null;
     if (refreshProjects || !state.projects.length) {
-      tasks.unshift(fetchDashJson("/projects?limit=250"));
+      projectsPayload = await fetchDashJson("/projects?limit=250");
     }
-    const results = await Promise.all(tasks);
-    const projectsPayload = refreshProjects || !state.projects.length ? results[0] : null;
-    const facetsPayload = results[results.length - 1];
+    const facetsPayload = await fetchDashJson(
+      `/traffic/facets?window_hours=${encodeURIComponent(state.filters.windowHours)}`
+    );
     if (projectsPayload) {
       state.projects = Array.isArray(projectsPayload?.projects) ? projectsPayload.projects : [];
     }
@@ -1503,7 +1782,10 @@
   }
 
   async function refresh() {
-    if (fullRefreshBusy) return;
+    if (fullRefreshBusy) {
+      fullRefreshQueued = true;
+      return;
+    }
     fullRefreshBusy = true;
     try {
       if (state.activeTab === "logs") {
@@ -1541,6 +1823,12 @@
       setStatus(`Error: ${error?.message || error}`);
     } finally {
       fullRefreshBusy = false;
+      if (fullRefreshQueued) {
+        fullRefreshQueued = false;
+        setTimeout(() => {
+          refresh();
+        }, 0);
+      }
     }
   }
 
@@ -1689,6 +1977,9 @@
     document.getElementById("trackerRefreshBtn")?.addEventListener("click", async () => {
       await refreshTrackerStatuses();
     });
+    document.getElementById("trackerProbeBtn")?.addEventListener("click", async () => {
+      await runTrackerStatusProbe();
+    });
     document.getElementById("trackerPriorityTarget")?.addEventListener("change", () => {
       syncTrackerPriorityControls();
     });
@@ -1797,16 +2088,47 @@
 
   /* ── Init ────────────────────────────────────── */
 
-  setActiveTab("overview");
-  setActiveRouteSubTab("incoming");
+  async function applyTabFromUrl() {
+    const tab = readTabFromUrl();
+    const routeSubTab = readRouteSubTabFromUrl();
+    const tabChanged = tab !== state.activeTab;
+    const routeSubTabChanged = tab === "routes" && routeSubTab !== state.routeSubTab;
+    if (!tabChanged && !routeSubTabChanged) return;
+
+    setActiveTab(tab, { updateUrl: false });
+    if (tab === "routes") {
+      setActiveRouteSubTab(routeSubTab, { updateUrl: false });
+    }
+    if (tab === "errors") {
+      state.errors.page = 1;
+    }
+    await refresh();
+  }
+
+  setActiveRouteSubTab(readRouteSubTabFromUrl(), { updateUrl: false });
+  setActiveTab(readTabFromUrl(), { replaceUrl: true });
   setNadeoQueueOpen(false);
   bindControls();
   syncTrackerPriorityControls();
-  loadFilters({ refreshProjects: true })
-    .then(async () => {
-      await refresh();
-    })
-    .catch((error) => setStatus(`Error: ${error?.message || error}`));
+  window.addEventListener("popstate", () => {
+    applyTabFromUrl();
+  });
+  window.addEventListener("hashchange", () => {
+    applyTabFromUrl();
+  });
+  const initialRefresh = refresh().catch((error) => {
+    setStatus(`Error: ${error?.message || error}`);
+  });
+  initialRefresh
+    .then(() => loadFilters({ refreshProjects: true }))
+    .catch((error) => {
+      setStatus(`Error: ${error?.message || error}`);
+    });
+  initialRefresh.then(() => {
+    if (state.activeTab === "overview" && !fullRefreshBusy) {
+      stampStatus("Updated");
+    }
+  });
   setInterval(() => {
     if (document.visibilityState === "visible") {
       refresh();

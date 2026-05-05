@@ -34,6 +34,17 @@ function resolveOrigin(req) {
 function createPublicRoutes(service, { wrWebhookSecret = "" } = {}) {
   const router = express.Router();
   const safeWrWebhookSecret = toText(wrWebhookSecret);
+  const ACCOUNT_ID_RE =
+    /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
+  function parsePublicAccountIds(value) {
+    return [...new Set(
+      (Array.isArray(value) ? value : [value])
+        .flatMap((entry) => String(entry || "").split(/[\s,]+/))
+        .map((entry) => entry.trim().toLowerCase())
+        .filter((entry) => ACCOUNT_ID_RE.test(entry))
+    )];
+  }
 
   function registerRoute(method, path, endpointKey, handler, { resolveMapUid = null } = {}) {
     router[method](path, async (req, res, next) => {
@@ -239,6 +250,43 @@ function createPublicRoutes(service, { wrWebhookSecret = "" } = {}) {
     return res.json(payload);
   });
 
+  registerRoute(
+    "post",
+    "/public/display-names/queue",
+    "public-display-names-queue",
+    async (req, res) => {
+      const body = req.body || {};
+      const accountIds = parsePublicAccountIds(body.accountIds ?? body.account_ids);
+      const result = service.queuePriorityDisplayNameLookups(accountIds, {
+        source: "public-maps-view",
+      });
+      return res.json({
+        ok: true,
+        accountIds,
+        ...result,
+      });
+    }
+  );
+
+  registerRoute(
+    "post",
+    "/public/display-names/resolve",
+    "public-display-names-resolve",
+    async (req, res) => {
+      const body = req.body || {};
+      const accountIds = parsePublicAccountIds(body.accountIds ?? body.account_ids);
+      const namesByAccountId = await service.resolvePlayerNamesByAccountIds(accountIds, {
+        chunkSize: 100,
+      });
+      return res.json({
+        ok: true,
+        accountIds,
+        namesByAccountId,
+        resolved: Object.keys(namesByAccountId || {}).length,
+      });
+    }
+  );
+
   registerRoute("get", "/alterations/maps", "alterations-maps", async (req, res) => {
     const query = req.query || {};
     const payload = await service.getAlterationsMaps({
@@ -247,16 +295,31 @@ function createPublicRoutes(service, { wrWebhookSecret = "" } = {}) {
       q: query.q || "",
       sort: query.sort || query.order || "",
       campaignIds: query.campaignIds ?? query.campaign_ids,
+      excludeCampaignIds: query.excludeCampaignIds ?? query.exclude_campaign_ids,
       status: query.status || "",
+      statuses: query.statuses ?? query.status,
+      excludeStatuses: query.excludeStatuses ?? query.exclude_statuses,
       season: query.season || "",
       year: query.year !== undefined ? Number(query.year) : undefined,
       alterationSlugs:
         query.alterationSlugs ?? query.alteration_slugs ?? query.alterations ?? query.alteration,
+      excludeAlterationSlugs:
+        query.excludeAlterationSlugs ??
+        query.exclude_alteration_slugs ??
+        query.excludeAlterations ??
+        query.exclude_alterations,
       alterationIds: query.alterationIds ?? query.alteration_ids,
       mapNumber: query.mapNumber ?? query.map_number,
       environment: query.environment || "",
+      environments: query.environments ?? query.environment,
+      excludeEnvironments: query.excludeEnvironments ?? query.exclude_environments,
       mapType: query.mapType ?? query.map_type,
+      mapTypes: query.mapTypes ?? query.map_types ?? query.mapType ?? query.map_type,
+      excludeMapTypes: query.excludeMapTypes ?? query.exclude_map_types,
       hasWr: parsePublicBoolean(query.hasWr ?? query.has_wr),
+      wrStates: query.wrStates ?? query.wr_states,
+      excludeWrStates: query.excludeWrStates ?? query.exclude_wr_states,
+      randomSeed: query.seed ?? query.randomSeed ?? query.random_seed,
     });
     return res.json(payload);
   });

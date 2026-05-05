@@ -49,6 +49,20 @@ function normalizeAccountId(value) {
   return "";
 }
 
+function seededRandomSortKey(seed, value) {
+  const input = `${String(seed || "").trim().toLowerCase()}|${String(value || "").trim().toLowerCase()}`;
+  let hash = 0x811c9dc5;
+  for (let i = 0; i < input.length; i += 1) {
+    hash ^= input.charCodeAt(i);
+    hash = Math.imul(hash, 0x01000193);
+  }
+  return hash >>> 0;
+}
+
+function registerDatabaseFunctions(db) {
+  db.function("altered_seeded_random", { deterministic: true }, seededRandomSortKey);
+}
+
 function ensureCompatibilityColumns(db) {
   ensureColumn(
     db,
@@ -233,6 +247,7 @@ function backfillCompatibilityData(db) {
 
 function createDatabase({ filePath, busyTimeoutMs = 30000 } = {}) {
   const db = new DatabaseSync(filePath);
+  registerDatabaseFunctions(db);
   db.exec("PRAGMA journal_mode = WAL;");
   db.exec("PRAGMA foreign_keys = ON;");
   db.exec("PRAGMA synchronous = NORMAL;");

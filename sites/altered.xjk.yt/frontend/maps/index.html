@@ -7,9 +7,9 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@400;500;600;700&family=Manrope:wght@400;500;700&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="../altered-hub.css" />
-  <link rel="stylesheet" href="maps.css" />
-  <link rel="icon" href="../favicon.svg" type="image/svg+xml" />
+  <link rel="stylesheet" href="/altered-hub.css" />
+  <link rel="stylesheet" href="/maps/maps.css?v=20260426-alteration-groups" />
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
 </head>
 <body>
   <nav class="site-nav" id="site-nav" aria-label="Main navigation">
@@ -43,9 +43,9 @@
   </div>
 
   <div class="solids-layer" aria-hidden="true">
-    <img class="solid solid-1" src="../bannerbuilder/assets/solids/Dodecahedron.png" alt="" />
-    <img class="solid solid-2" src="../bannerbuilder/assets/solids/Icosahedron.png" alt="" />
-    <img class="solid solid-3" src="../bannerbuilder/assets/solids/Octahedron.png" alt="" />
+    <img class="solid solid-1" src="/bannerbuilder/assets/solids/Dodecahedron.png" alt="" />
+    <img class="solid solid-2" src="/bannerbuilder/assets/solids/Icosahedron.png" alt="" />
+    <img class="solid solid-3" src="/bannerbuilder/assets/solids/Octahedron.png" alt="" />
   </div>
 
   <main class="maps-shell">
@@ -79,50 +79,140 @@
     </section>
 
     <section class="controls-shell" aria-label="Map filters">
-      <div class="controls-primary">
+      <div class="controls-toolbar">
         <label class="search-wrap" for="map-search">
-          <span class="search-label">Search</span>
-          <input type="search" id="map-search" class="search-input" placeholder="Map name, author, WR holder, UID, campaign..." />
+          <span class="visually-hidden">Search</span>
+          <svg class="search-icon" width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" aria-hidden="true">
+            <circle cx="7" cy="7" r="5"/>
+            <path d="m11 11 3.5 3.5"/>
+          </svg>
+          <input type="search" id="map-search" class="search-input" placeholder="Search map name, author, WR holder, UID, campaign..." />
         </label>
-        <button class="clear-btn" id="clear-filters" type="button">Clear Filters</button>
+        <div class="toolbar-cluster">
+          <label class="utility-wrap" for="map-number-filter">
+            <span class="visually-hidden">Map number</span>
+            <input id="map-number-filter" class="compact-input" type="number" min="1" max="25" placeholder="Map #" />
+          </label>
+          <label class="utility-wrap" for="map-sort">
+            <span class="visually-hidden">Sort</span>
+            <select id="map-sort" class="sort-select">
+              <option value="random">Random</option>
+              <option value="newest">Newest</option>
+              <option value="name">Name</option>
+              <option value="wr_ms">WR Time</option>
+              <option value="author_time">Author Time</option>
+              <option value="wr_updated_at">Latest WR</option>
+              <option value="change_count">Most Changes</option>
+            </select>
+          </label>
+          <button class="filter-toggle-btn" id="filter-toggle" type="button" aria-expanded="false" aria-controls="filter-panel">
+            <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" aria-hidden="true">
+              <path d="M2 4h12M4 8h8M6 12h4"/>
+            </svg>
+            <span>Filters</span>
+            <span class="filter-toggle-badge" id="filter-toggle-badge" hidden>0</span>
+          </button>
+          <button class="clear-btn" id="clear-filters" type="button" hidden>Reset</button>
+        </div>
       </div>
 
-      <div class="filter-grid">
-        <select id="season-filter" class="sort-select">
-          <option value="">Season: All</option>
-        </select>
-        <select id="year-filter" class="sort-select">
-          <option value="">Year: All</option>
-        </select>
-        <select id="alteration-filter" class="sort-select">
-          <option value="">Alteration: All</option>
-        </select>
-        <select id="status-filter" class="sort-select">
-          <option value="">Status: All</option>
-        </select>
-        <select id="wr-filter" class="sort-select">
-          <option value="">WR: Any</option>
-        </select>
-        <input id="map-number-filter" class="search-input compact-input" type="number" min="1" max="25" placeholder="Map #" />
-        <select id="environment-filter" class="sort-select">
-          <option value="">Environment: All</option>
-        </select>
-        <select id="map-type-filter" class="sort-select">
-          <option value="">Map Type: All</option>
-        </select>
-        <select id="map-sort" class="sort-select">
-          <option value="newest">Sort: Newest</option>
-          <option value="name">Sort: Name</option>
-          <option value="wr_ms">Sort: WR Time</option>
-          <option value="author_time">Sort: Author Time</option>
-          <option value="wr_updated_at">Sort: Latest WR</option>
-          <option value="change_count">Sort: Most Changes</option>
-        </select>
+      <div class="filter-panel" id="filter-panel" hidden>
+        <div class="filter-dropdown-grid">
+          <div class="filter-dropdown" data-dropdown-key="season">
+            <button type="button" class="filter-dropdown-trigger" id="season-filter-trigger" aria-expanded="false" aria-haspopup="listbox" aria-controls="season-filter-panel">
+              <span class="filter-dropdown-label">Season</span>
+              <span class="filter-dropdown-value" id="season-filter-summary">All</span>
+              <svg class="filter-dropdown-chev" width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" aria-hidden="true"><path d="M3 4.5 6 7.5 9 4.5"/></svg>
+            </button>
+            <div class="filter-dropdown-panel" id="season-filter-panel" role="listbox" aria-labelledby="season-filter-trigger">
+              <div class="filter-list" id="season-filter-list"></div>
+            </div>
+          </div>
+
+          <div class="filter-dropdown" data-dropdown-key="year">
+            <button type="button" class="filter-dropdown-trigger" id="year-filter-trigger" aria-expanded="false" aria-haspopup="listbox" aria-controls="year-filter-panel">
+              <span class="filter-dropdown-label">Year</span>
+              <span class="filter-dropdown-value" id="year-filter-summary">All</span>
+              <svg class="filter-dropdown-chev" width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" aria-hidden="true"><path d="M3 4.5 6 7.5 9 4.5"/></svg>
+            </button>
+            <div class="filter-dropdown-panel" id="year-filter-panel" role="listbox" aria-labelledby="year-filter-trigger">
+              <div class="filter-list" id="year-filter-list"></div>
+            </div>
+          </div>
+
+          <div class="filter-dropdown" data-dropdown-key="other">
+            <button type="button" class="filter-dropdown-trigger" id="other-filter-trigger" aria-expanded="false" aria-haspopup="listbox" aria-controls="other-filter-panel">
+              <span class="filter-dropdown-label">Other</span>
+              <span class="filter-dropdown-value" id="other-filter-summary">All</span>
+              <svg class="filter-dropdown-chev" width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" aria-hidden="true"><path d="M3 4.5 6 7.5 9 4.5"/></svg>
+            </button>
+            <div class="filter-dropdown-panel" id="other-filter-panel" role="listbox" aria-labelledby="other-filter-trigger">
+              <input type="search" id="other-tag-search" class="filter-tag-search" placeholder="Filter other tags..." />
+              <div class="filter-list filter-list--scroll" id="other-filter-list"></div>
+            </div>
+          </div>
+
+          <div class="filter-dropdown filter-dropdown--wide" data-dropdown-key="alteration">
+            <button type="button" class="filter-dropdown-trigger" id="alteration-filter-trigger" aria-expanded="false" aria-haspopup="listbox" aria-controls="alteration-filter-panel">
+              <span class="filter-dropdown-label">Alterations</span>
+              <span class="filter-dropdown-value" id="alteration-filter-summary">All</span>
+              <svg class="filter-dropdown-chev" width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" aria-hidden="true"><path d="M3 4.5 6 7.5 9 4.5"/></svg>
+            </button>
+            <div class="filter-dropdown-panel filter-dropdown-panel--wide" id="alteration-filter-panel" role="listbox" aria-labelledby="alteration-filter-trigger">
+              <input type="search" id="alteration-tag-search" class="filter-tag-search" placeholder="Filter alterations..." />
+              <div class="filter-list filter-list--scroll" id="alteration-filter-list"></div>
+            </div>
+          </div>
+
+          <div class="filter-dropdown" data-dropdown-key="status">
+            <button type="button" class="filter-dropdown-trigger" id="status-filter-trigger" aria-expanded="false" aria-haspopup="listbox" aria-controls="status-filter-panel">
+              <span class="filter-dropdown-label">Status</span>
+              <span class="filter-dropdown-value" id="status-filter-summary">All</span>
+              <svg class="filter-dropdown-chev" width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" aria-hidden="true"><path d="M3 4.5 6 7.5 9 4.5"/></svg>
+            </button>
+            <div class="filter-dropdown-panel" id="status-filter-panel" role="listbox" aria-labelledby="status-filter-trigger">
+              <div class="filter-list" id="status-filter-list"></div>
+            </div>
+          </div>
+
+          <div class="filter-dropdown" data-dropdown-key="wr">
+            <button type="button" class="filter-dropdown-trigger" id="wr-filter-trigger" aria-expanded="false" aria-haspopup="listbox" aria-controls="wr-filter-panel">
+              <span class="filter-dropdown-label">WR State</span>
+              <span class="filter-dropdown-value" id="wr-filter-summary">All</span>
+              <svg class="filter-dropdown-chev" width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" aria-hidden="true"><path d="M3 4.5 6 7.5 9 4.5"/></svg>
+            </button>
+            <div class="filter-dropdown-panel" id="wr-filter-panel" role="listbox" aria-labelledby="wr-filter-trigger">
+              <div class="filter-list" id="wr-filter-list"></div>
+            </div>
+          </div>
+
+          <div class="filter-dropdown" data-dropdown-key="environment">
+            <button type="button" class="filter-dropdown-trigger" id="environment-filter-trigger" aria-expanded="false" aria-haspopup="listbox" aria-controls="environment-filter-panel">
+              <span class="filter-dropdown-label">Environment</span>
+              <span class="filter-dropdown-value" id="environment-filter-summary">All</span>
+              <svg class="filter-dropdown-chev" width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" aria-hidden="true"><path d="M3 4.5 6 7.5 9 4.5"/></svg>
+            </button>
+            <div class="filter-dropdown-panel" id="environment-filter-panel" role="listbox" aria-labelledby="environment-filter-trigger">
+              <div class="filter-list filter-list--scroll" id="environment-filter-list"></div>
+            </div>
+          </div>
+
+          <div class="filter-dropdown" data-dropdown-key="mapType">
+            <button type="button" class="filter-dropdown-trigger" id="map-type-filter-trigger" aria-expanded="false" aria-haspopup="listbox" aria-controls="map-type-filter-panel">
+              <span class="filter-dropdown-label">Map Type</span>
+              <span class="filter-dropdown-value" id="map-type-filter-summary">All</span>
+              <svg class="filter-dropdown-chev" width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" aria-hidden="true"><path d="M3 4.5 6 7.5 9 4.5"/></svg>
+            </button>
+            <div class="filter-dropdown-panel" id="map-type-filter-panel" role="listbox" aria-labelledby="map-type-filter-trigger">
+              <div class="filter-list filter-list--scroll" id="map-type-filter-list"></div>
+            </div>
+          </div>
+        </div>
       </div>
 
       <div class="results-bar">
         <p class="results-summary" id="results-summary">Loading map catalog...</p>
-        <div class="active-filters" id="active-filters"></div>
+        <div class="active-filters" id="active-filters" hidden></div>
       </div>
     </section>
 
@@ -163,8 +253,8 @@
     </footer>
   </main>
 
-  <script src="../altered-paths.js"></script>
-  <script src="../altered-hub.js"></script>
-  <script src="maps.js?v=20260316-filtered"></script>
+  <script src="/altered-paths.js"></script>
+  <script src="/altered-hub.js"></script>
+  <script src="/maps/maps.js?v=20260503-displayname-cache-temp-names"></script>
 </body>
 </html>

@@ -270,10 +270,14 @@ MapParseResult BuildMapResult(string mapUid, CGameCtnChallenge challenge)
         });
     }
 
+    var authorInfo = ReadObjectProperty(challenge, "AuthorInfo");
+
     return new MapParseResult
     {
         MapUid = mapUid,
         MapName = challenge.MapName,
+        AuthorLogin = ReadStringProperty(authorInfo, "AuthorLogin") ?? ReadStringProperty(challenge, "AuthorLogin"),
+        AuthorNickname = ReadStringProperty(authorInfo, "AuthorNickname") ?? ReadStringProperty(challenge, "AuthorNickname"),
         Elements = elements,
         Signature = new LayoutSignature
         {
@@ -290,6 +294,30 @@ MapParseResult BuildMapResult(string mapUid, CGameCtnChallenge challenge)
             },
         },
     };
+}
+
+static object? ReadObjectProperty(object? target, string propertyName)
+{
+    if (target is null || string.IsNullOrWhiteSpace(propertyName))
+    {
+        return null;
+    }
+
+    try
+    {
+        return target.GetType().GetProperty(propertyName)?.GetValue(target);
+    }
+    catch
+    {
+        return null;
+    }
+}
+
+static string? ReadStringProperty(object? target, string propertyName)
+{
+    var value = ReadObjectProperty(target, propertyName);
+    var text = value?.ToString();
+    return string.IsNullOrWhiteSpace(text) ? null : text;
 }
 
 static string ResolveBlockModel(CGameCtnBlock block)
@@ -733,6 +761,8 @@ sealed class MapParseResult
 {
     public string MapUid { get; init; } = "";
     public string? MapName { get; init; }
+    public string? AuthorLogin { get; init; }
+    public string? AuthorNickname { get; init; }
     public List<ParsedElement> Elements { get; init; } = [];
     public LayoutSignature? Signature { get; init; }
     public string? Error { get; init; }

@@ -76,6 +76,37 @@ function normalizeAccountId(value) {
   return "";
 }
 
+function normalizeRandomSeed(value) {
+  const seed = String(value || "").trim().toLowerCase();
+  if (/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/.test(seed)) {
+    return seed;
+  }
+  return "00000000-0000-4000-8000-000000000000";
+}
+
+function mapStatusWhereClause(status) {
+  if (status === "active") {
+    return "(m.tracked = 1 AND LOWER(COALESCE(m.status, 'live')) != 'paused')";
+  }
+  if (status === "paused") {
+    return "(LOWER(COALESCE(m.status, '')) = 'paused')";
+  }
+  if (status === "idle") {
+    return "(m.tracked = 0)";
+  }
+  return "";
+}
+
+function mapWrStateWhereClause(state) {
+  if (state === "with_wr") {
+    return "(COALESCE(m.wr_ms, 0) > 0)";
+  }
+  if (state === "without_wr") {
+    return "(COALESCE(m.wr_ms, 0) <= 0)";
+  }
+  return "";
+}
+
 function normalizeLooseId(value) {
   const id = String(value || "").trim().toLowerCase();
   if (!id) return "";
@@ -269,6 +300,48 @@ function parseJsonSafe(value, fallback = null) {
   } catch {
     return fallback;
   }
+}
+
+function pickFirstTextFromObjects(objects = [], keys = []) {
+  for (const object of objects) {
+    if (!object || typeof object !== "object") continue;
+    for (const key of keys) {
+      const value = toText(object[key]);
+      if (value) return value;
+    }
+  }
+  return "";
+}
+
+function resolveSavedMapperDisplayName(payload = null, role = "author", accountId = "") {
+  const data = payload && typeof payload === "object" ? payload : {};
+  const sources = [
+    data?.mapDetail,
+    data?.map_detail,
+    data?.campaignMap,
+    data?.campaign_map,
+    data?.map,
+    data,
+  ].filter((value) => value && typeof value === "object");
+  const rolePrefix = role === "submitter" ? "submitter" : "author";
+  const upperPrefix = role === "submitter" ? "Submitter" : "Author";
+  const rawName = pickFirstTextFromObjects(sources, [
+    `${rolePrefix}SavedDisplayName`,
+    `${rolePrefix}_saved_display_name`,
+    `${rolePrefix}SavedName`,
+    `${rolePrefix}_saved_name`,
+    `${rolePrefix}Nickname`,
+    `${rolePrefix}NickName`,
+    `${rolePrefix}_nickname`,
+    `${rolePrefix}Name`,
+    `${rolePrefix}_name`,
+    `${upperPrefix}Nickname`,
+    `${upperPrefix}NickName`,
+    `${upperPrefix}Name`,
+    role === "author" ? "nickname" : "",
+    role === "author" ? "NickName" : "",
+  ]);
+  return sanitizeResolvedDisplayName(rawName, { accountId });
 }
 
 function buildOversizedSignatureFallback({
@@ -507,8 +580,10 @@ function buildCampaignCatalogMetadata(row = {}) {
   });
   const linkedAlterations = extractRowAlterations(row);
   const parsedAlterations =
-    Array.isArray(parsed?.alterationMix) && parsed.alterationMix.length
-      ? parsed.alterationMix
+    Array.isArray(parsed?.alterations) && parsed.alterations.length
+      ? parsed.alterations
+      : Array.isArray(parsed?.alterationMix) && parsed.alterationMix.length
+        ? parsed.alterationMix
       : [parsed?.alteration || ""];
   const alterationNames = uniqueTexts([
     ...linkedAlterations.map((item) => item?.name),
@@ -565,6 +640,7 @@ function buildCampaignCatalogMetadata(row = {}) {
     seasonLabel,
     seasonKey,
     environment: parsed?.environment || null,
+    carType: parsed?.carType || parsed?.environment || null,
     campaignType: parsed?.type || null,
     isCatalog: Boolean(parsed?.season || parsed?.special || alterations.length),
     sortTimestampMs: Number(ordering.sortTimestampMs || 0) || 0,
@@ -2330,10 +2406,53 @@ class AlteredRepository {
       .all()
       .map((row) => row.value)
       .filter(Boolean);
+    const seasonTags = [];
+    const seasonTagMap = new Map();
+    this.listAlterationsCampaigns({ limit: 5000, offset: 0, catalogOnly: true }).rows.forEach((campaign) => {
+      const key = toText(campaign.season_key);
+      const label = toText(campaign.season_label || campaign.display_name || campaign.name);
+      if (!key || !label) return;
+      if (!seasonTagMap.has(key)) {
+        seasonTagMap.set(key, {
+          key,
+          label,
+          campaign_ids: [],
+          campaign_count: 0,
+          map_count: 0,
+          sort_timestamp_ms: Number(campaign.sort_timestamp_ms || 0) || 0,
+        });
+      }
+      const entry = seasonTagMap.get(key);
+      entry.campaign_ids.push(String(campaign.id));
+      entry.campaign_count += 1;
+      entry.map_count += Number(campaign.map_count || 0);
+      entry.sort_timestamp_ms = Math.max(
+        Number(entry.sort_timestamp_ms || 0) || 0,
+        Number(campaign.sort_timestamp_ms || 0) || 0
+      );
+    });
+    seasonTags.push(
+      ...[...seasonTagMap.values()]
+        .map((entry) => ({
+          key: entry.key,
+          label: entry.label,
+          campaign_ids: uniqueBy(entry.campaign_ids, (value) => value),
+          campaign_count: entry.campaign_count,
+          map_count: entry.map_count,
+          sort_timestamp_ms: entry.sort_timestamp_ms,
+        }))
+        .sort((a, b) => {
+          const timeDiff = Number(b.sort_timestamp_ms || 0) - Number(a.sort_timestamp_ms || 0);
+          if (timeDiff !== 0) return timeDiff;
+          return String(a.label || "").localeCompare(String(b.label || ""));
+        })
+        .map(({ sort_timestamp_ms, ...entry }) => entry)
+    );
 
     return {
       seasons,
       years,
+      season_tags: seasonTags,
       environments,
       map_types: mapTypes,
       statuses: ["active", "paused", "idle"],
@@ -2498,15 +2617,26 @@ class AlteredRepository {
     q = "",
     sort = "name",
     campaignIds = [],
+    excludeCampaignIds = [],
     status = "",
+    statuses = [],
+    excludeStatuses = [],
     season = "",
     year = null,
     alterationSlugs = [],
+    excludeAlterationSlugs = [],
     alterationIds = [],
     mapNumber = null,
     environment = "",
+    environments = [],
+    excludeEnvironments = [],
     mapType = "",
+    mapTypes = [],
+    excludeMapTypes = [],
     hasWr = undefined,
+    wrStates = [],
+    excludeWrStates = [],
+    randomSeed = "",
   } = {}) {
     const safeLimit = clampInt(limit, { min: 1, max: 100000, fallback: 50000 });
     const safeOffset = clampInt(offset, { min: 0, max: 2000000, fallback: 0 });
@@ -2515,6 +2645,7 @@ class AlteredRepository {
     const normalizedSeason = toText(season);
     const normalizedEnvironment = toText(environment);
     const normalizedMapType = toText(mapType);
+    const normalizedRandomSeed = normalizeRandomSeed(randomSeed);
     const normalizedMapNumber = clampInt(mapNumber, {
       min: 1,
       max: 999,
@@ -2532,8 +2663,36 @@ class AlteredRepository {
         .filter((value) => /^\d+$/.test(value)),
       (value) => value
     );
+    const normalizedExcludeCampaignIds = uniqueBy(
+      (Array.isArray(excludeCampaignIds) ? excludeCampaignIds : [excludeCampaignIds])
+        .flatMap((value) => String(value || "").split(","))
+        .map((value) => toText(value))
+        .filter((value) => /^\d+$/.test(value)),
+      (value) => value
+    );
+    const normalizedStatuses = uniqueBy(
+      (Array.isArray(statuses) ? statuses : [statuses, status])
+        .flatMap((value) => String(value || "").split(","))
+        .map((value) => toText(value).toLowerCase())
+        .filter((value) => value === "active" || value === "paused" || value === "idle"),
+      (value) => value
+    );
+    const normalizedExcludeStatuses = uniqueBy(
+      (Array.isArray(excludeStatuses) ? excludeStatuses : [excludeStatuses])
+        .flatMap((value) => String(value || "").split(","))
+        .map((value) => toText(value).toLowerCase())
+        .filter((value) => value === "active" || value === "paused" || value === "idle"),
+      (value) => value
+    );
     const normalizedAlterationSlugs = uniqueBy(
       (Array.isArray(alterationSlugs) ? alterationSlugs : [alterationSlugs])
+        .flatMap((value) => String(value || "").split(","))
+        .map((value) => slugifyText(value))
+        .filter(Boolean),
+      (value) => value
+    );
+    const normalizedExcludeAlterationSlugs = uniqueBy(
+      (Array.isArray(excludeAlterationSlugs) ? excludeAlterationSlugs : [excludeAlterationSlugs])
         .flatMap((value) => String(value || "").split(","))
         .map((value) => slugifyText(value))
         .filter(Boolean),
@@ -2544,6 +2703,48 @@ class AlteredRepository {
         .flatMap((value) => String(value || "").split(","))
         .map((value) => clampInt(value, { min: 1, max: 2147483647, fallback: 0 }))
         .filter(Boolean),
+      (value) => value
+    );
+    const normalizedEnvironments = uniqueBy(
+      (Array.isArray(environments) ? environments : [environments, environment])
+        .flatMap((value) => String(value || "").split(","))
+        .map((value) => toText(value))
+        .filter(Boolean),
+      (value) => value.toLowerCase()
+    );
+    const normalizedExcludeEnvironments = uniqueBy(
+      (Array.isArray(excludeEnvironments) ? excludeEnvironments : [excludeEnvironments])
+        .flatMap((value) => String(value || "").split(","))
+        .map((value) => toText(value))
+        .filter(Boolean),
+      (value) => value.toLowerCase()
+    );
+    const normalizedMapTypes = uniqueBy(
+      (Array.isArray(mapTypes) ? mapTypes : [mapTypes, mapType])
+        .flatMap((value) => String(value || "").split(","))
+        .map((value) => toText(value))
+        .filter(Boolean),
+      (value) => value.toLowerCase()
+    );
+    const normalizedExcludeMapTypes = uniqueBy(
+      (Array.isArray(excludeMapTypes) ? excludeMapTypes : [excludeMapTypes])
+        .flatMap((value) => String(value || "").split(","))
+        .map((value) => toText(value))
+        .filter(Boolean),
+      (value) => value.toLowerCase()
+    );
+    const normalizedWrStates = uniqueBy(
+      (Array.isArray(wrStates) ? wrStates : [wrStates])
+        .flatMap((value) => String(value || "").split(","))
+        .map((value) => toText(value).toLowerCase())
+        .filter((value) => value === "with_wr" || value === "without_wr"),
+      (value) => value
+    );
+    const normalizedExcludeWrStates = uniqueBy(
+      (Array.isArray(excludeWrStates) ? excludeWrStates : [excludeWrStates])
+        .flatMap((value) => String(value || "").split(","))
+        .map((value) => toText(value).toLowerCase())
+        .filter((value) => value === "with_wr" || value === "without_wr"),
       (value) => value
     );
 
@@ -2557,6 +2758,14 @@ class AlteredRepository {
           .join(", ")})`
       );
       params.push(...normalizedCampaignIds);
+    }
+    if (normalizedExcludeCampaignIds.length) {
+      whereClauses.push(
+        `CAST(COALESCE(c.external_campaign_id, c.campaign_id) AS TEXT) NOT IN (${normalizedExcludeCampaignIds
+          .map(() => "?")
+          .join(", ")})`
+      );
+      params.push(...normalizedExcludeCampaignIds);
     }
 
     if (normalizedQuery) {
@@ -2573,12 +2782,19 @@ class AlteredRepository {
       params.push(like, like, like, like, like);
     }
 
-    if (normalizedStatus === "active") {
-      whereClauses.push("m.tracked = 1 AND LOWER(COALESCE(m.status, 'live')) != 'paused'");
-    } else if (normalizedStatus === "paused") {
-      whereClauses.push("LOWER(COALESCE(m.status, '')) = 'paused'");
-    } else if (normalizedStatus === "idle") {
-      whereClauses.push("m.tracked = 0");
+    if (normalizedStatuses.length) {
+      const statusClauses = normalizedStatuses.map((value) => mapStatusWhereClause(value)).filter(Boolean);
+      if (statusClauses.length) {
+        whereClauses.push(`(${statusClauses.join(" OR ")})`);
+      }
+    }
+    if (normalizedExcludeStatuses.length) {
+      const excludedStatusClauses = normalizedExcludeStatuses
+        .map((value) => mapStatusWhereClause(value))
+        .filter(Boolean);
+      if (excludedStatusClauses.length) {
+        whereClauses.push(`NOT (${excludedStatusClauses.join(" OR ")})`);
+      }
     }
 
     if (normalizedSeason) {
@@ -2596,20 +2812,53 @@ class AlteredRepository {
       params.push(normalizedMapNumber);
     }
 
-    if (normalizedEnvironment) {
-      whereClauses.push("LOWER(COALESCE(m.map_environment, '')) = LOWER(?)");
-      params.push(normalizedEnvironment);
+    if (normalizedEnvironments.length) {
+      whereClauses.push(
+        `LOWER(COALESCE(m.map_environment, '')) IN (${normalizedEnvironments.map(() => "LOWER(?)").join(", ")})`
+      );
+      params.push(...normalizedEnvironments);
+    }
+    if (normalizedExcludeEnvironments.length) {
+      whereClauses.push(
+        `LOWER(COALESCE(m.map_environment, '')) NOT IN (${normalizedExcludeEnvironments
+          .map(() => "LOWER(?)")
+          .join(", ")})`
+      );
+      params.push(...normalizedExcludeEnvironments);
     }
 
-    if (normalizedMapType) {
-      whereClauses.push("LOWER(COALESCE(m.map_type, '')) = LOWER(?)");
-      params.push(normalizedMapType);
+    if (normalizedMapTypes.length) {
+      whereClauses.push(
+        `LOWER(COALESCE(m.map_type, '')) IN (${normalizedMapTypes.map(() => "LOWER(?)").join(", ")})`
+      );
+      params.push(...normalizedMapTypes);
+    }
+    if (normalizedExcludeMapTypes.length) {
+      whereClauses.push(
+        `LOWER(COALESCE(m.map_type, '')) NOT IN (${normalizedExcludeMapTypes
+          .map(() => "LOWER(?)")
+          .join(", ")})`
+      );
+      params.push(...normalizedExcludeMapTypes);
     }
 
-    if (hasWr === true) {
-      whereClauses.push("COALESCE(m.wr_ms, 0) > 0");
+    if (normalizedWrStates.length) {
+      const wrClauses = normalizedWrStates.map((value) => mapWrStateWhereClause(value)).filter(Boolean);
+      if (wrClauses.length) {
+        whereClauses.push(`(${wrClauses.join(" OR ")})`);
+      }
+    } else if (hasWr === true) {
+      whereClauses.push(mapWrStateWhereClause("with_wr"));
     } else if (hasWr === false) {
-      whereClauses.push("COALESCE(m.wr_ms, 0) <= 0");
+      whereClauses.push(mapWrStateWhereClause("without_wr"));
+    }
+    if (normalizedExcludeWrStates.length) {
+      const excludedWrClauses = normalizedExcludeWrStates
+        .map((value) => mapWrStateWhereClause(value))
+        .filter(Boolean);
+      if (excludedWrClauses.length) {
+        whereClauses.push(`NOT (${excludedWrClauses.join(" OR ")})`);
+      }
     }
 
     if (normalizedAlterationSlugs.length) {
@@ -2624,6 +2873,18 @@ class AlteredRepository {
       );
       params.push(...normalizedAlterationSlugs);
     }
+    if (normalizedExcludeAlterationSlugs.length) {
+      whereClauses.push(
+        `NOT EXISTS (
+          SELECT 1
+          FROM altered_campaign_alterations ca_filter
+          JOIN altered_alterations a_filter ON a_filter.alteration_id = ca_filter.alteration_id
+          WHERE ca_filter.campaign_id = c.campaign_id
+            AND a_filter.slug IN (${normalizedExcludeAlterationSlugs.map(() => "?").join(", ")})
+        )`
+      );
+      params.push(...normalizedExcludeAlterationSlugs);
+    }
 
     if (normalizedAlterationIds.length) {
       whereClauses.push(
@@ -2637,10 +2898,21 @@ class AlteredRepository {
       params.push(...normalizedAlterationIds);
     }
 
+    const orderParams = [];
     let orderBy = "ORDER BY m.name COLLATE NOCASE ASC, m.map_uid ASC";
     if (sort === "newest") {
       orderBy = `ORDER BY
         COALESCE(n.updated_at, m.map_updated_at, m.map_created_at, p.updated_at, c.updated_at, c.created_at, m.updated_at, m.created_at, '') DESC,
+        m.name COLLATE NOCASE ASC,
+        m.map_uid ASC`;
+    } else if (sort === "random" || sort === "seeded_random") {
+      orderBy = `ORDER BY
+        altered_seeded_random(?, m.map_uid) ASC,
+        m.map_uid ASC`;
+      orderParams.push(normalizedRandomSeed);
+    } else if (sort === "campaign_slot" || sort === "position" || sort === "slot") {
+      orderBy = `ORDER BY
+        COALESCE(p.slot, n.map_number, 9999) ASC,
         m.name COLLATE NOCASE ASC,
         m.map_uid ASC`;
     } else if (sort === "wr_ms") {
@@ -2714,6 +2986,10 @@ class AlteredRepository {
           m.map_style AS mapStyle,
           m.map_environment AS mapEnvironment,
           m.author AS author,
+          m.author_display_name AS authorDisplayName,
+          m.submitter AS submitter,
+          m.submitter_display_name AS submitterDisplayName,
+          m.payload_json AS payloadJson,
           m.thumbnail_url AS thumbnailUrl,
           m.download_url AS downloadUrl,
           m.player_count AS playerCount,
@@ -2752,7 +3028,7 @@ class AlteredRepository {
         OFFSET ?
         `
       )
-      .all(...params, safeLimit, safeOffset);
+      .all(...params, ...orderParams, safeLimit, safeOffset);
 
     return {
       total,
@@ -2790,10 +3066,27 @@ class AlteredRepository {
           };
         });
 
+        const payload = parseJsonSafe(row.payloadJson, null);
+        const authorSavedDisplayName = resolveSavedMapperDisplayName(
+          payload,
+          "author",
+          row.author
+        );
+        const submitterSavedDisplayName = resolveSavedMapperDisplayName(
+          payload,
+          "submitter",
+          row.submitter
+        );
+
         return {
           map_uid: row.mapUid,
           name: row.name || row.mapUid,
           author: row.author || "",
+          author_display_name: row.authorDisplayName || null,
+          author_saved_display_name: authorSavedDisplayName || null,
+          submitter: row.submitter || "",
+          submitter_display_name: row.submitterDisplayName || null,
+          submitter_saved_display_name: submitterSavedDisplayName || null,
           thumbnail_url: row.thumbnailUrl || null,
           download_url: row.downloadUrl || null,
           map_type: row.mapType || null,
@@ -2825,9 +3118,11 @@ class AlteredRepository {
           year: Number(row.derivedYear || 0) || campaignMeta.seasonYear || null,
           season_label: campaignMeta.seasonLabel || null,
           season_key: campaignMeta.seasonKey || null,
+          car_type: campaignMeta.carType || null,
+          carType: campaignMeta.carType || null,
           map_number: Number(row.derivedMapNumber || 0) || null,
           map_numbers: parseJsonSafe(row.derivedMapNumbersJson, []) || [],
-          alteration: row.derivedAlterationLabel || campaignMeta.primaryAlteration?.name || null,
+          alteration: campaignMeta.primaryAlteration?.name || row.derivedAlterationLabel || null,
           alterations: mapAlterations,
           campaign_alterations: campaignMeta.alterations,
           slot: Number(row.slot || 0) || 0,
@@ -2971,6 +3266,8 @@ class AlteredRepository {
           alterations: meta.alterations,
           primary_alteration: meta.primaryAlteration || null,
           environment: meta.environment || null,
+          car_type: meta.carType || null,
+          carType: meta.carType || null,
           campaign_type: meta.campaignType || null,
           source_key: sourceKey || null,
           is_catalog: meta.isCatalog,
@@ -3129,9 +3426,11 @@ class AlteredRepository {
       startTimestamp: campaign.startTimestamp || null,
     });
     const alterationNames = uniqueTexts(
-      Array.isArray(parsed?.alterationMix) && parsed.alterationMix.length
-        ? parsed.alterationMix
-        : [parsed?.alteration || ""]
+      Array.isArray(parsed?.alterations) && parsed.alterations.length
+        ? parsed.alterations
+        : Array.isArray(parsed?.alterationMix) && parsed.alterationMix.length
+          ? parsed.alterationMix
+          : [parsed?.alteration || ""]
     );
 
     this.clearCampaignAlterations(safeCampaignId);
@@ -3239,7 +3538,7 @@ class AlteredRepository {
            GROUP BY p.campaign_id
          ) sub ON sub.campaign_id = ca.campaign_id
          GROUP BY a.alteration_id
-         ORDER BY campaignCount DESC, a.name ASC`
+         ORDER BY a.name COLLATE NOCASE ASC`
       )
       .all()
       .map((row) => ({
@@ -5838,12 +6137,20 @@ class AlteredRepository {
       .get(uid);
 
     if (!row) return { exists: false };
+    const payload = parseJsonSafe(row.payloadJson, null);
+    const campaignPayload = parseJsonSafe(row.campaignPayloadJson, null);
+    const map = rowToMap(row);
+    map.authorSavedDisplayName =
+      resolveSavedMapperDisplayName(payload, "author", map.author) || null;
+    map.submitterSavedDisplayName =
+      resolveSavedMapperDisplayName(payload, "submitter", map.submitter) || null;
+
     return {
       exists: true,
       map: {
-        ...rowToMap(row),
-        payload: parseJsonSafe(row.payloadJson, null),
-        campaignPayload: parseJsonSafe(row.campaignPayloadJson, null),
+        ...map,
+        payload,
+        campaignPayload,
         derivedNameCandidate:
           row.derivedOriginalName || row.derivedSanitizedName || row.derivedProposedName
             ? {
@@ -6062,6 +6369,74 @@ class AlteredRepository {
       } catch {}
       return {
         error: error?.message || "Failed to apply resolved display names to altered storage.",
+        updated,
+      };
+    }
+
+    return { updated };
+  }
+
+  updateMapSavedDisplayNames({ namesByMapUid = {} } = {}) {
+    const entries = Object.entries(
+      namesByMapUid && typeof namesByMapUid === "object" ? namesByMapUid : {}
+    )
+      .map(([rawMapUid, rawValue]) => {
+        const value = rawValue && typeof rawValue === "object" ? rawValue : {};
+        const mapUid = toText(rawMapUid);
+        return {
+          mapUid,
+          authorSavedDisplayName: sanitizeResolvedDisplayName(
+            value.authorSavedDisplayName ?? value.author_saved_display_name ?? value.authorNickname,
+            { accountId: value.authorAccountId || "" }
+          ),
+          submitterSavedDisplayName: sanitizeResolvedDisplayName(
+            value.submitterSavedDisplayName ?? value.submitter_saved_display_name ?? "",
+            { accountId: value.submitterAccountId || "" }
+          ),
+        };
+      })
+      .filter((entry) => entry.mapUid && (entry.authorSavedDisplayName || entry.submitterSavedDisplayName));
+    if (!entries.length) return { updated: 0 };
+
+    const readStmt = this.db.prepare(
+      "SELECT payload_json AS payloadJson FROM altered_maps WHERE LOWER(map_uid) = LOWER(?) LIMIT 1"
+    );
+    const updateStmt = this.db.prepare(
+      `
+      UPDATE altered_maps
+      SET payload_json = ?, updated_at = ?
+      WHERE LOWER(map_uid) = LOWER(?)
+      `
+    );
+
+    let updated = 0;
+    const now = new Date().toISOString();
+    try {
+      this.db.exec("BEGIN");
+      for (const entry of entries) {
+        const existing = readStmt.get(entry.mapUid);
+        if (!existing) continue;
+        const payload = parseJsonSafe(existing.payloadJson, {}) || {};
+        const nextPayload =
+          payload && typeof payload === "object" && !Array.isArray(payload) ? { ...payload } : {};
+        if (entry.authorSavedDisplayName) {
+          nextPayload.authorSavedDisplayName = entry.authorSavedDisplayName;
+          nextPayload.authorNickname = entry.authorSavedDisplayName;
+        }
+        if (entry.submitterSavedDisplayName) {
+          nextPayload.submitterSavedDisplayName = entry.submitterSavedDisplayName;
+          nextPayload.submitterNickname = entry.submitterSavedDisplayName;
+        }
+        const result = updateStmt.run(serializeJson(nextPayload), now, entry.mapUid);
+        updated += Number(result?.changes || 0);
+      }
+      this.db.exec("COMMIT");
+    } catch (error) {
+      try {
+        this.db.exec("ROLLBACK");
+      } catch {}
+      return {
+        error: error?.message || "Failed to update saved mapper display names.",
         updated,
       };
     }

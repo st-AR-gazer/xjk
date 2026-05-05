@@ -106,9 +106,19 @@ app.get("/health", (_req, res) => {
   res.type("text").send("ok");
 });
 
-app.get("/api/v1/status", (_req, res) => {
+app.get(
+  [
+    "/status",
+    "/tracker/status",
+    "/api/status",
+    "/api/tracker/status",
+    "/api/v1/status",
+    "/api/v1/tracker/status",
+  ],
+  (_req, res) => {
   res.json(service.getStatus());
-});
+  }
+);
 
 app.post("/api/v1/accounts/enqueue", (req, res) => {
   const accountIds = uniqueAccountIds(req.body?.accountIds || []);
@@ -118,6 +128,19 @@ app.post("/api/v1/accounts/enqueue", (req, res) => {
     ...result,
     requested: accountIds.length,
   });
+});
+
+app.post(["/api/v1/display-names/resolve", "/api/v1/accounts/resolve"], async (req, res) => {
+  const accountIds = uniqueAccountIds(req.body?.accountIds || req.body?.account_ids || []);
+  const result = await service.resolveAccountIds(accountIds, {
+    reason: req.body?.reason || "priority-api",
+    front:
+      req.body?.front === undefined && req.body?.prioritize === undefined
+        ? true
+        : Boolean(req.body?.front || req.body?.prioritize || req.body?.priority),
+  });
+  if (result?.error && !result?.ok) return res.status(400).json(result);
+  return res.json(result);
 });
 
 app.post("/api/v1/sync/run-now", async (req, res) => {

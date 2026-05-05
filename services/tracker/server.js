@@ -174,6 +174,10 @@ app.get("/health", (_req, res) => {
   res.type("text").send("ok");
 });
 
+app.get(["/status", "/tracker/status"], (_req, res) => {
+  res.json(service.getTrackerStatus());
+});
+
 const publicRoutes = createPublicRoutes(service, { realtimeHub });
 const adminRoutes = createAdminRoutes(service, { adminAuth });
 
@@ -184,6 +188,7 @@ app.use("/v1/admin", adminRoutes);
 app.use("/api/v1", publicRoutes);
 app.use("/api", publicRoutes);
 app.use("/v1", publicRoutes);
+app.use(publicRoutes);
 
 function requireAdminPageAuth(req, res, next) {
   const auth = adminAuth.authenticate(req);

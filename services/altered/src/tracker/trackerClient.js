@@ -204,6 +204,22 @@ class TrackerClient {
     );
   }
 
+  async getLeaderboardWrLeaderboards({
+    overallLimit = 300,
+    overallOffset = 0,
+    perBucketLimit = 10,
+    includeBuckets = true,
+  } = {}) {
+    const params = new URLSearchParams({
+      overall_limit: String(Math.max(1, Number(overallLimit) || 300)),
+      overall_offset: String(Math.max(0, Number(overallOffset) || 0)),
+      per_bucket_limit: String(Math.max(1, Number(perBucketLimit) || 10)),
+      tracked_only: "1",
+      include_buckets: includeBuckets === false ? "0" : "1",
+    });
+    return this.request(this.publicBaseUrl, `leaderboards/wrs?${params.toString()}`);
+  }
+
   async getTopWrAccounts(limit = 200) {
     return this.request(
       this.publicBaseUrl,

@@ -122,6 +122,19 @@ function parseBucket(value) {
       expr: "strftime('%Y-%m-%dT%H:%M:00Z', __ts__)",
     };
   }
+  if (
+    raw === "quarter_hour" ||
+    raw === "quarter-hour" ||
+    raw === "quarter" ||
+    raw === "15min" ||
+    raw === "15m"
+  ) {
+    return {
+      key: "quarter_hour",
+      expr:
+        "substr(__ts__, 1, 14) || printf('%02d:00Z', CAST(CAST(substr(__ts__, 15, 2) AS INTEGER) / 15 AS INTEGER) * 15)",
+    };
+  }
   if (raw === "day" || raw === "daily") {
     return {
       key: "day",
@@ -225,6 +238,11 @@ function toTrafficBucket(iso, bucketKey) {
   if (Number.isNaN(date.getTime())) return "";
   if (bucketKey === "day") {
     return date.toISOString().slice(0, 10) + "T00:00:00Z";
+  }
+  if (bucketKey === "quarter_hour") {
+    const minute = Math.floor(date.getUTCMinutes() / 15) * 15;
+    date.setUTCMinutes(minute, 0, 0);
+    return date.toISOString().slice(0, 16) + ":00Z";
   }
   if (bucketKey === "minute") {
     return date.toISOString().slice(0, 16) + ":00Z";
@@ -339,8 +357,8 @@ function mapTrafficSampleDbRow(row = {}) {
   };
 }
 
-function buildTrafficSampleQueryMeta({
-  windowHours = 24,
+function buildTrafficQueryMeta({
+  sinceIso = "",
   projectKey = "",
   service = "",
   direction = "",
@@ -355,10 +373,8 @@ function buildTrafficSampleQueryMeta({
     rawDirection === "incoming" || rawDirection === "outgoing" ? rawDirection : "";
   const safeStatusMin = clampInt(statusMin, { min: 0, max: 999, fallback: 0 });
   const queryText = String(q || "").trim().toLowerCase();
-  const sinceIso = new Date(Date.now() - safeWindowHours * 60 * 60 * 1000).toISOString();
-
-  const clauses = ["datetime(occurred_at) >= datetime(?)"];
-  const args = [sinceIso];
+  const clauses = sinceIso ? ["occurred_at >= ?"] : ["1 = 1"];
+  const args = sinceIso ? [sinceIso] : [];
 
   if (safeProjectKey) {
     clauses.push("project_key = ?");
@@ -397,16 +413,172 @@ function buildTrafficSampleQueryMeta({
   }
 
   return {
-    safeWindowHours,
     safeProjectKey,
     safeService,
     safeDirection,
     safeStatusMin,
     queryText,
-    sinceIso,
+    sinceIso: sinceIso || null,
     clauses,
     args,
   };
+}
+
+function buildTrafficSampleQueryMeta({
+  windowHours = 24,
+  projectKey = "",
+  service = "",
+  direction = "",
+  statusMin = 0,
+  q = "",
+} = {}) {
+  const safeWindowHours = normalizeWindowHours(windowHours, 24);
+  const sinceIso = new Date(Date.now() - safeWindowHours * 60 * 60 * 1000).toISOString();
+  return {
+    safeWindowHours,
+    ...buildTrafficQueryMeta({
+      sinceIso,
+      projectKey,
+      service,
+      direction,
+      statusMin,
+      q,
+    }),
+  };
+}
+
+function buildAllTimeTrafficQueryMeta(options = {}) {
+  return buildTrafficQueryMeta(options);
+}
+
+function toDbNumber(value) {
+  const parsed = Number(value);
+  return Number.isFinite(parsed) ? parsed : 0;
+}
+
+function toDbInt(value) {
+  return Math.max(0, Math.floor(toDbNumber(value)));
+}
+
+function parseJsonObject(value) {
+  const parsed = tryParseJson(value);
+  return parsed && typeof parsed === "object" && !Array.isArray(parsed) ? parsed : {};
+}
+
+function secondsBetweenIso(startValue, endValue) {
+  const startMs = Date.parse(String(startValue || ""));
+  const endMs = Date.parse(String(endValue || ""));
+  if (!Number.isFinite(startMs) || !Number.isFinite(endMs) || endMs <= startMs) return 0;
+  return (endMs - startMs) / 1000;
+}
+
+function mapIngestRunDbRow(row = null) {
+  if (!row) return null;
+  const mapsChecked = toDbInt(row.maps_checked);
+  const wrChanges = toDbInt(row.wr_changes);
+  return {
+    runId: toDbInt(row.ingest_id),
+    status: "finished",
+    provider: row.provider || null,
+    reason: row.reason || null,
+    sourceLabel: row.source_label || null,
+    startedAt: row.started_at || null,
+    finishedAt: row.finished_at || null,
+    mapsConsidered: toDbInt(row.maps_considered),
+    mapsChecked,
+    mapsTotal: toDbInt(row.maps_considered),
+    mapsChanged: wrChanges,
+    wrChanges,
+    note: row.note || null,
+    receivedAt: row.received_at || null,
+    durationSeconds: secondsBetweenIso(row.started_at, row.finished_at),
+  };
+}
+
+function trafficBucketSqlExpression(bucketKey) {
+  if (bucketKey === "day") return "substr(occurred_at, 1, 10) || 'T00:00:00Z'";
+  if (bucketKey === "minute") return "substr(occurred_at, 1, 16) || ':00Z'";
+  if (bucketKey === "quarter_hour") {
+    return "substr(occurred_at, 1, 14) || printf('%02d:00Z', CAST(CAST(substr(occurred_at, 15, 2) AS INTEGER) / 15 AS INTEGER) * 15)";
+  }
+  return "substr(occurred_at, 1, 13) || ':00:00Z'";
+}
+
+function appendTrafficWhere(meta, clauses = [], args = []) {
+  return {
+    clauses: [...meta.clauses, ...clauses],
+    args: [...meta.args, ...args],
+  };
+}
+
+function trafficBucketStepMs(bucketKey) {
+  if (bucketKey === "minute") return 60 * 1000;
+  if (bucketKey === "quarter_hour") return 15 * 60 * 1000;
+  if (bucketKey === "day") return 24 * 60 * 60 * 1000;
+  return 60 * 60 * 1000;
+}
+
+function floorTrafficBucketMs(ms, bucketKey) {
+  const date = new Date(ms);
+  if (Number.isNaN(date.getTime())) return 0;
+  if (bucketKey === "day") {
+    return Date.UTC(date.getUTCFullYear(), date.getUTCMonth(), date.getUTCDate());
+  }
+  if (bucketKey === "hour") {
+    return Date.UTC(date.getUTCFullYear(), date.getUTCMonth(), date.getUTCDate(), date.getUTCHours());
+  }
+  if (bucketKey === "quarter_hour") {
+    const minute = Math.floor(date.getUTCMinutes() / 15) * 15;
+    return Date.UTC(date.getUTCFullYear(), date.getUTCMonth(), date.getUTCDate(), date.getUTCHours(), minute);
+  }
+  return Date.UTC(
+    date.getUTCFullYear(),
+    date.getUTCMonth(),
+    date.getUTCDate(),
+    date.getUTCHours(),
+    date.getUTCMinutes()
+  );
+}
+
+function emptyTrafficTimeseriesPoint(bucket) {
+  return {
+    bucket,
+    requests: 0,
+    incomingRequests: 0,
+    outgoingRequests: 0,
+    nadeoOutgoingRequests: 0,
+    internalOutgoingRequests: 0,
+    publicNonNadeoOutgoingRequests: 0,
+    errorRequests: 0,
+    bytesIn: 0,
+    bytesOut: 0,
+    nadeoTransferBytes: 0,
+    internalTransferBytes: 0,
+    publicNonNadeoTransferBytes: 0,
+    avgDurationMs: 0,
+  };
+}
+
+function fillTrafficTimeseriesBuckets(points = [], { bucketKey = "hour", windowHours = 24 } = {}) {
+  const stepMs = trafficBucketStepMs(bucketKey);
+  const endMs = floorTrafficBucketMs(Date.now(), bucketKey);
+  const startMs = floorTrafficBucketMs(Date.now() - normalizeWindowHours(windowHours, 24) * 60 * 60 * 1000, bucketKey);
+  if (!startMs || !endMs || endMs < startMs || (endMs - startMs) / stepMs > 5000) {
+    return normalizeArray(points);
+  }
+
+  const byBucket = new Map();
+  for (const point of normalizeArray(points)) {
+    if (!point?.bucket) continue;
+    byBucket.set(point.bucket, point);
+  }
+
+  const out = [];
+  for (let cursor = startMs; cursor <= endMs; cursor += stepMs) {
+    const bucket = toTrafficBucket(new Date(cursor).toISOString(), bucketKey);
+    out.push(byBucket.get(bucket) || emptyTrafficTimeseriesPoint(bucket));
+  }
+  return out;
 }
 
 function normalizeDisplayNameEntries(payload = {}) {
@@ -1086,7 +1258,7 @@ class AggregatorRepository {
               occurred_at AS occurredAt,
               is_nadeo_outgoing AS isNadeoOutgoing,
               is_internal_outgoing AS isInternalOutgoing
-            FROM traffic_http_samples
+            FROM traffic_http_samples INDEXED BY idx_traffic_http_samples_occurred
             WHERE ${meta.clauses.join(" AND ")}
             ORDER BY occurred_at ASC, event_id ASC
             `
@@ -1104,27 +1276,103 @@ class AggregatorRepository {
     return this.withTrafficCache(
       cacheKey,
       () => {
-        const rows = this.listTrafficSamples({ windowHours, projectKey });
-        const services = new Set();
-        const sources = new Set();
-        const projects = new Set();
-
-        for (const row of rows) {
-          if (row.service) services.add(row.service);
-          if (row.sourceLabel) sources.add(row.sourceLabel);
-          if (row.projectKey) projects.add(row.projectKey);
-        }
+        const meta = buildTrafficSampleQueryMeta({ windowHours: safeWindowHours, projectKey });
+        const whereSql = meta.clauses.join(" AND ");
+        const services = this.db
+          .prepare(
+            `
+            SELECT DISTINCT service AS value
+            FROM traffic_http_samples INDEXED BY idx_traffic_http_samples_occurred
+            WHERE ${whereSql} AND service IS NOT NULL AND service != ''
+            ORDER BY service ASC
+            `
+          )
+          .all(...meta.args)
+          .map((row) => row.value);
+        const sources = this.db
+          .prepare(
+            `
+            SELECT DISTINCT source_label AS value
+            FROM traffic_http_samples INDEXED BY idx_traffic_http_samples_occurred
+            WHERE ${whereSql} AND source_label IS NOT NULL AND source_label != ''
+            ORDER BY source_label ASC
+            `
+          )
+          .all(...meta.args)
+          .map((row) => row.value);
+        const projects = this.db
+          .prepare(
+            `
+            SELECT DISTINCT project_key AS value
+            FROM traffic_http_samples INDEXED BY idx_traffic_http_samples_occurred
+            WHERE ${whereSql} AND project_key IS NOT NULL AND project_key != ''
+            ORDER BY project_key ASC
+            `
+          )
+          .all(...meta.args)
+          .map((row) => row.value);
 
         return {
           windowHours: safeWindowHours,
           projectKey: safeProjectKey,
-          services: [...services].sort((a, b) => a.localeCompare(b)),
-          sourceLabels: [...sources].sort((a, b) => a.localeCompare(b)),
-          projects: [...projects].sort((a, b) => a.localeCompare(b)),
+          services,
+          sourceLabels: sources,
+          projects,
         };
       },
       { ttlMs: 15000 }
     );
+  }
+
+  getLatestObservedTrafficWindowMeta({
+    windowHours = 24,
+    projectKey = "",
+    service = "",
+    direction = "",
+    statusMin = 0,
+    q = "",
+    extraClauses = [],
+    extraArgs = [],
+  } = {}) {
+    const safeWindowHours = normalizeWindowHours(windowHours, 24);
+    const baseMeta = buildAllTimeTrafficQueryMeta({
+      projectKey,
+      service,
+      direction,
+      statusMin,
+      q,
+    });
+    const latestMeta = appendTrafficWhere(baseMeta, extraClauses, extraArgs);
+    const latest =
+      this.db
+        .prepare(
+          `
+          SELECT MAX(occurred_at) AS latest
+          FROM traffic_http_samples
+          WHERE ${latestMeta.clauses.join(" AND ")}
+          `
+        )
+        .get(...latestMeta.args)?.latest || null;
+    const latestMs = Date.parse(String(latest || ""));
+    if (!Number.isFinite(latestMs)) {
+      return {
+        ...latestMeta,
+        latestObservedAt: null,
+        fallbackSinceIso: null,
+        safeWindowHours,
+      };
+    }
+    const sinceIso = new Date(latestMs - safeWindowHours * 60 * 60 * 1000).toISOString();
+    return {
+      ...appendTrafficWhere(baseMeta, ["occurred_at >= ?", "occurred_at <= ?", ...extraClauses], [
+        sinceIso,
+        latest,
+        ...extraArgs,
+      ]),
+      latestObservedAt: latest,
+      fallbackSinceIso: sinceIso,
+      safeWindowHours,
+    };
   }
 
   getTrafficOverview({ windowHours = 24, projectKey = "", service = "" } = {}) {
@@ -1135,131 +1383,134 @@ class AggregatorRepository {
     return this.withTrafficCache(
       cacheKey,
       () => {
-        const rows = this.listTrafficSamples({ windowHours: safeWindowHours, projectKey, service });
-        const nowMs = Date.now();
-        const last60Boundary = nowMs - 60 * 1000;
-        const last300Boundary = nowMs - 300 * 1000;
-        const totals = {
-      requests: rows.length,
-      incoming: 0,
-      outgoing: 0,
-      nadeoOutgoing: 0,
-      internalOutgoing: 0,
-      publicNonNadeoOutgoing: 0,
-      errors: 0,
-      bytesIn: 0,
-      bytesOut: 0,
-      nadeoTransferBytes: 0,
-      internalTransferBytes: 0,
-      publicNonNadeoTransferBytes: 0,
-      durationMs: 0,
-      status2xx: 0,
-      status3xx: 0,
-      status4xx: 0,
-      status5xx: 0,
-      statusOther: 0,
-    };
+        const meta = buildTrafficSampleQueryMeta({ windowHours: safeWindowHours, projectKey, service });
+        const whereSql = meta.clauses.join(" AND ");
+        const last60Iso = new Date(Date.now() - 60 * 1000).toISOString();
+        const last300Iso = new Date(Date.now() - 300 * 1000).toISOString();
+        const row =
+          this.db
+            .prepare(
+              `
+              WITH filtered AS (
+                SELECT *
+                FROM traffic_http_samples INDEXED BY idx_traffic_http_samples_occurred
+                WHERE ${whereSql}
+              )
+              SELECT
+                COUNT(*) AS requests,
+                SUM(CASE WHEN direction = 'incoming' THEN 1 ELSE 0 END) AS incomingRequests,
+                SUM(CASE WHEN direction = 'outgoing' THEN 1 ELSE 0 END) AS outgoingRequests,
+                SUM(CASE WHEN direction = 'outgoing' AND is_nadeo_outgoing = 1 THEN 1 ELSE 0 END) AS nadeoOutgoingRequests,
+                SUM(CASE WHEN direction = 'outgoing' AND is_internal_outgoing = 1 THEN 1 ELSE 0 END) AS internalOutgoingRequests,
+                SUM(CASE WHEN direction = 'outgoing' AND is_nadeo_outgoing != 1 AND is_internal_outgoing != 1 THEN 1 ELSE 0 END) AS publicNonNadeoOutgoingRequests,
+                SUM(CASE WHEN status_code >= 400 THEN 1 ELSE 0 END) AS errorRequests,
+                SUM(COALESCE(bytes_in, 0)) AS bytesIn,
+                SUM(COALESCE(bytes_out, 0)) AS bytesOut,
+                SUM(CASE WHEN direction = 'outgoing' AND is_nadeo_outgoing = 1 THEN COALESCE(bytes_in, 0) + COALESCE(bytes_out, 0) ELSE 0 END) AS nadeoTransferBytes,
+                SUM(CASE WHEN direction = 'outgoing' AND is_internal_outgoing = 1 THEN COALESCE(bytes_in, 0) + COALESCE(bytes_out, 0) ELSE 0 END) AS internalTransferBytes,
+                SUM(CASE WHEN direction = 'outgoing' AND is_nadeo_outgoing != 1 AND is_internal_outgoing != 1 THEN COALESCE(bytes_in, 0) + COALESCE(bytes_out, 0) ELSE 0 END) AS publicNonNadeoTransferBytes,
+                SUM(COALESCE(duration_ms, 0)) AS durationMs,
+                SUM(CASE WHEN status_code >= 200 AND status_code < 300 THEN 1 ELSE 0 END) AS status2xx,
+                SUM(CASE WHEN status_code >= 300 AND status_code < 400 THEN 1 ELSE 0 END) AS status3xx,
+                SUM(CASE WHEN status_code >= 400 AND status_code < 500 THEN 1 ELSE 0 END) AS status4xx,
+                SUM(CASE WHEN status_code >= 500 THEN 1 ELSE 0 END) AS status5xx,
+                SUM(CASE WHEN status_code < 200 THEN 1 ELSE 0 END) AS statusOther,
+                SUM(CASE WHEN occurred_at >= ? THEN 1 ELSE 0 END) AS requestsLast60s,
+                SUM(CASE WHEN occurred_at >= ? AND direction = 'incoming' THEN 1 ELSE 0 END) AS incomingLast60s,
+                SUM(CASE WHEN occurred_at >= ? AND direction = 'outgoing' THEN 1 ELSE 0 END) AS outgoingLast60s,
+                SUM(CASE WHEN occurred_at >= ? AND direction = 'outgoing' AND is_nadeo_outgoing = 1 THEN 1 ELSE 0 END) AS nadeoOutgoingLast60s,
+                SUM(CASE WHEN occurred_at >= ? AND direction = 'outgoing' AND is_internal_outgoing = 1 THEN 1 ELSE 0 END) AS internalOutgoingLast60s,
+                SUM(CASE WHEN occurred_at >= ? AND direction = 'outgoing' AND is_nadeo_outgoing != 1 AND is_internal_outgoing != 1 THEN 1 ELSE 0 END) AS publicNonNadeoOutgoingLast60s,
+                SUM(CASE WHEN occurred_at >= ? AND status_code >= 400 THEN 1 ELSE 0 END) AS errorsLast60s,
+                SUM(CASE WHEN occurred_at >= ? THEN 1 ELSE 0 END) AS requestsLast300s,
+                SUM(CASE WHEN occurred_at >= ? AND direction = 'outgoing' AND is_nadeo_outgoing = 1 THEN 1 ELSE 0 END) AS nadeoOutgoingLast300s
+              FROM filtered
+              `
+            )
+            .get(
+              ...meta.args,
+              last60Iso,
+              last60Iso,
+              last60Iso,
+              last60Iso,
+              last60Iso,
+              last60Iso,
+              last60Iso,
+              last300Iso,
+              last300Iso
+            ) || {};
+        const groupedTop = ({ keySql, extraClauses = [], extraArgs = [], limit = 12 }) => {
+          const groupMeta = appendTrafficWhere(meta, extraClauses, extraArgs);
+          return this.db
+            .prepare(
+              `
+              SELECT ${keySql} AS key, COUNT(*) AS count
+              FROM traffic_http_samples INDEXED BY idx_traffic_http_samples_occurred
+              WHERE ${groupMeta.clauses.join(" AND ")}
+              GROUP BY key
+              ORDER BY count DESC, key ASC
+              LIMIT ?
+              `
+            )
+            .all(...groupMeta.args, limit)
+            .map((item) => ({ key: item.key, count: Number(item.count || 0) }));
+        };
+
+        const requests = toDbNumber(row.requests);
+        const errorRequests = toDbNumber(row.errorRequests);
         const live = {
-      requestsLast60s: 0,
-      incomingLast60s: 0,
-      outgoingLast60s: 0,
-      nadeoOutgoingLast60s: 0,
-      internalOutgoingLast60s: 0,
-      publicNonNadeoOutgoingLast60s: 0,
-      errorsLast60s: 0,
-      requestsLast300s: 0,
-      nadeoOutgoingLast300s: 0,
-    };
-        const serviceCounts = new Map();
-        const incomingRouteCounts = new Map();
-        const outgoingTargetCounts = new Map();
-
-        for (const row of rows) {
-      if (row.direction === "incoming") totals.incoming += 1;
-      else totals.outgoing += 1;
-      if (row.statusCode >= 400) totals.errors += 1;
-      totals.bytesIn += row.bytesIn;
-      totals.bytesOut += row.bytesOut;
-      totals.durationMs += row.durationMs;
-
-      if (row.statusCode >= 500) totals.status5xx += 1;
-      else if (row.statusCode >= 400) totals.status4xx += 1;
-      else if (row.statusCode >= 300) totals.status3xx += 1;
-      else if (row.statusCode >= 200) totals.status2xx += 1;
-      else totals.statusOther += 1;
-
-      const occurredMs = Date.parse(row.occurredAt || "");
-      const isNadeoOutgoing = row.direction === "outgoing" && isNadeoTargetHost(row.targetHost);
-      const isInternalOutgoing =
-        row.direction === "outgoing" && isPrivateOrLocalTargetHost(row.targetHost);
-      const isPublicNonNadeoOutgoing =
-        row.direction === "outgoing" && !isInternalOutgoing && !isNadeoOutgoing;
-      if (isNadeoOutgoing) totals.nadeoOutgoing += 1;
-      if (isInternalOutgoing) totals.internalOutgoing += 1;
-      if (isPublicNonNadeoOutgoing) totals.publicNonNadeoOutgoing += 1;
-      const transferBytes = Math.max(0, Number(row.bytesIn || 0)) + Math.max(0, Number(row.bytesOut || 0));
-      if (isNadeoOutgoing) totals.nadeoTransferBytes += transferBytes;
-      if (isInternalOutgoing) totals.internalTransferBytes += transferBytes;
-      if (isPublicNonNadeoOutgoing) totals.publicNonNadeoTransferBytes += transferBytes;
-      if (Number.isFinite(occurredMs)) {
-        if (occurredMs >= last300Boundary) {
-          live.requestsLast300s += 1;
-          if (isNadeoOutgoing) live.nadeoOutgoingLast300s += 1;
-        }
-        if (occurredMs >= last60Boundary) {
-          live.requestsLast60s += 1;
-          if (row.direction === "incoming") live.incomingLast60s += 1;
-          else live.outgoingLast60s += 1;
-          if (isNadeoOutgoing) live.nadeoOutgoingLast60s += 1;
-          if (isInternalOutgoing) live.internalOutgoingLast60s += 1;
-          if (isPublicNonNadeoOutgoing) live.publicNonNadeoOutgoingLast60s += 1;
-          if (row.statusCode >= 400) live.errorsLast60s += 1;
-        }
-      }
-
-      const serviceKey = String(row.service || "tracker").trim() || "tracker";
-      serviceCounts.set(serviceKey, (serviceCounts.get(serviceKey) || 0) + 1);
-
-      if (row.direction === "incoming") {
-        const key = `${row.method} ${row.route}`;
-        incomingRouteCounts.set(key, (incomingRouteCounts.get(key) || 0) + 1);
-      } else {
-        const host = row.targetHost || "(unknown)";
-        const key = `${host}${row.targetPath || "/"}`;
-        outgoingTargetCounts.set(key, (outgoingTargetCounts.get(key) || 0) + 1);
-      }
-    }
-
-        const topFromMap = (inputMap, limit = 12) =>
-          [...inputMap.entries()]
-            .sort((a, b) => (b[1] - a[1]) || a[0].localeCompare(b[0]))
-            .slice(0, limit)
-            .map(([key, count]) => ({ key, count: Number(count || 0) }));
+          requestsLast60s: toDbNumber(row.requestsLast60s),
+          incomingLast60s: toDbNumber(row.incomingLast60s),
+          outgoingLast60s: toDbNumber(row.outgoingLast60s),
+          nadeoOutgoingLast60s: toDbNumber(row.nadeoOutgoingLast60s),
+          internalOutgoingLast60s: toDbNumber(row.internalOutgoingLast60s),
+          publicNonNadeoOutgoingLast60s: toDbNumber(row.publicNonNadeoOutgoingLast60s),
+          errorsLast60s: toDbNumber(row.errorsLast60s),
+          requestsLast300s: toDbNumber(row.requestsLast300s),
+          nadeoOutgoingLast300s: toDbNumber(row.nadeoOutgoingLast300s),
+        };
+        const incomingRequests = toDbNumber(row.incomingRequests);
+        const outgoingRequests = toDbNumber(row.outgoingRequests);
+        const nadeoOutgoingRequests = toDbNumber(row.nadeoOutgoingRequests);
+        const internalOutgoingRequests = toDbNumber(row.internalOutgoingRequests);
+        const publicNonNadeoOutgoingRequests = toDbNumber(row.publicNonNadeoOutgoingRequests);
+        const bytesIn = toDbNumber(row.bytesIn);
+        const bytesOut = toDbNumber(row.bytesOut);
+        const nadeoTransferBytes = toDbNumber(row.nadeoTransferBytes);
+        const internalTransferBytes = toDbNumber(row.internalTransferBytes);
+        const publicNonNadeoTransferBytes = toDbNumber(row.publicNonNadeoTransferBytes);
+        const trafficScope = "window";
+        const fallbackLatestObservedAt = null;
+        const fallbackSinceIso = null;
+        const effectiveRequests = requests;
 
         return {
           windowHours: safeWindowHours,
           projectKey: safeProjectKey,
           service: safeService,
-          requests: totals.requests,
-          incomingRequests: totals.incoming,
-          outgoingRequests: totals.outgoing,
-          nadeoOutgoingRequests: totals.nadeoOutgoing,
-          internalOutgoingRequests: totals.internalOutgoing,
-          publicNonNadeoOutgoingRequests: totals.publicNonNadeoOutgoing,
-          errorRequests: totals.errors,
-          errorRatePct: totals.requests > 0 ? (totals.errors / totals.requests) * 100 : 0,
-          avgDurationMs: totals.requests > 0 ? totals.durationMs / totals.requests : 0,
-          bytesIn: totals.bytesIn,
-          bytesOut: totals.bytesOut,
-          nadeoTransferBytes: totals.nadeoTransferBytes,
-          internalTransferBytes: totals.internalTransferBytes,
-          publicNonNadeoTransferBytes: totals.publicNonNadeoTransferBytes,
+          requests: effectiveRequests,
+          incomingRequests,
+          outgoingRequests,
+          nadeoOutgoingRequests,
+          internalOutgoingRequests,
+          publicNonNadeoOutgoingRequests,
+          errorRequests,
+          errorRatePct: effectiveRequests > 0 ? (errorRequests / effectiveRequests) * 100 : 0,
+          avgDurationMs: requests > 0 ? toDbNumber(row.durationMs) / requests : 0,
+          bytesIn,
+          bytesOut,
+          nadeoTransferBytes,
+          internalTransferBytes,
+          publicNonNadeoTransferBytes,
+          trafficScope,
+          fallbackLatestObservedAt,
+          fallbackSinceIso,
           statusCounts: {
-            "2xx": totals.status2xx,
-            "3xx": totals.status3xx,
-            "4xx": totals.status4xx,
-            "5xx": totals.status5xx,
-            other: totals.statusOther,
+            "2xx": toDbNumber(row.status2xx),
+            "3xx": toDbNumber(row.status3xx),
+            "4xx": toDbNumber(row.status4xx),
+            "5xx": toDbNumber(row.status5xx),
+            other: toDbNumber(row.statusOther),
           },
           live: {
             ...live,
@@ -1275,9 +1526,20 @@ class AggregatorRepository {
             requestsPerMinute5mAvg: live.requestsLast300s / 5,
             nadeoOutgoingPerMinute5mAvg: live.nadeoOutgoingLast300s / 5,
           },
-          topServices: topFromMap(serviceCounts, 10),
-          topIncomingRoutes: topFromMap(incomingRouteCounts, 10),
-          topOutgoingTargets: topFromMap(outgoingTargetCounts, 10),
+          topServices: groupedTop({
+            keySql: "COALESCE(NULLIF(service, ''), 'tracker')",
+            limit: 10,
+          }),
+          topIncomingRoutes: groupedTop({
+            keySql: "COALESCE(NULLIF(method, ''), 'GET') || ' ' || COALESCE(NULLIF(route, ''), '/')",
+            extraClauses: ["direction = 'incoming'"],
+            limit: 10,
+          }),
+          topOutgoingTargets: groupedTop({
+            keySql: "COALESCE(NULLIF(target_host, ''), '(unknown)') || COALESCE(NULLIF(target_path, ''), '/')",
+            extraClauses: ["direction = 'outgoing'"],
+            limit: 10,
+          }),
         };
       },
       { ttlMs: 15000 }
@@ -1303,57 +1565,65 @@ class AggregatorRepository {
     return this.withTrafficCache(
       cacheKey,
       () => {
-        const rows = this.listTrafficSamples({
+        const meta = buildTrafficSampleQueryMeta({
           windowHours: safeWindowHours,
           projectKey,
           service,
         });
-        const byBucket = new Map();
-
-        for (const row of rows) {
-          const bucketKey = toTrafficBucket(row.occurredAt, bucketMeta.key);
-          if (!bucketKey) continue;
-          if (!byBucket.has(bucketKey)) {
-            byBucket.set(bucketKey, {
-              bucket: bucketKey,
-              requests: 0,
-              incomingRequests: 0,
-              outgoingRequests: 0,
-              errorRequests: 0,
-              bytesIn: 0,
-              bytesOut: 0,
-              durationMsTotal: 0,
-            });
-          }
-          const item = byBucket.get(bucketKey);
-          item.requests += 1;
-          if (row.direction === "incoming") item.incomingRequests += 1;
-          else item.outgoingRequests += 1;
-          if (row.statusCode >= 400) item.errorRequests += 1;
-          item.bytesIn += row.bytesIn;
-          item.bytesOut += row.bytesOut;
-          item.durationMsTotal += row.durationMs;
-        }
-
-        const points = [...byBucket.values()]
-          .sort((a, b) => String(a.bucket).localeCompare(String(b.bucket)))
+        const bucketSql = trafficBucketSqlExpression(bucketMeta.key);
+        const points = this.db
+          .prepare(
+            `
+            SELECT
+              ${bucketSql} AS bucket,
+              COUNT(*) AS requests,
+              SUM(CASE WHEN direction = 'incoming' THEN 1 ELSE 0 END) AS incomingRequests,
+              SUM(CASE WHEN direction = 'outgoing' THEN 1 ELSE 0 END) AS outgoingRequests,
+              SUM(CASE WHEN direction = 'outgoing' AND is_nadeo_outgoing = 1 THEN 1 ELSE 0 END) AS nadeoOutgoingRequests,
+              SUM(CASE WHEN direction = 'outgoing' AND is_internal_outgoing = 1 THEN 1 ELSE 0 END) AS internalOutgoingRequests,
+              SUM(CASE WHEN direction = 'outgoing' AND is_nadeo_outgoing != 1 AND is_internal_outgoing != 1 THEN 1 ELSE 0 END) AS publicNonNadeoOutgoingRequests,
+              SUM(CASE WHEN status_code >= 400 THEN 1 ELSE 0 END) AS errorRequests,
+              SUM(COALESCE(bytes_in, 0)) AS bytesIn,
+              SUM(COALESCE(bytes_out, 0)) AS bytesOut,
+              SUM(CASE WHEN direction = 'outgoing' AND is_nadeo_outgoing = 1 THEN COALESCE(bytes_in, 0) + COALESCE(bytes_out, 0) ELSE 0 END) AS nadeoTransferBytes,
+              SUM(CASE WHEN direction = 'outgoing' AND is_internal_outgoing = 1 THEN COALESCE(bytes_in, 0) + COALESCE(bytes_out, 0) ELSE 0 END) AS internalTransferBytes,
+              SUM(CASE WHEN direction = 'outgoing' AND is_nadeo_outgoing != 1 AND is_internal_outgoing != 1 THEN COALESCE(bytes_in, 0) + COALESCE(bytes_out, 0) ELSE 0 END) AS publicNonNadeoTransferBytes,
+              AVG(COALESCE(duration_ms, 0)) AS avgDurationMs
+            FROM traffic_http_samples INDEXED BY idx_traffic_http_samples_occurred
+            WHERE ${meta.clauses.join(" AND ")}
+            GROUP BY bucket
+            ORDER BY bucket ASC
+            `
+          )
+          .all(...meta.args)
           .map((item) => ({
             bucket: item.bucket,
-            requests: item.requests,
-            incomingRequests: item.incomingRequests,
-            outgoingRequests: item.outgoingRequests,
-            errorRequests: item.errorRequests,
-            bytesIn: item.bytesIn,
-            bytesOut: item.bytesOut,
-            avgDurationMs: item.requests > 0 ? item.durationMsTotal / item.requests : 0,
+            requests: toDbNumber(item.requests),
+            incomingRequests: toDbNumber(item.incomingRequests),
+            outgoingRequests: toDbNumber(item.outgoingRequests),
+            nadeoOutgoingRequests: toDbNumber(item.nadeoOutgoingRequests),
+            internalOutgoingRequests: toDbNumber(item.internalOutgoingRequests),
+            publicNonNadeoOutgoingRequests: toDbNumber(item.publicNonNadeoOutgoingRequests),
+            errorRequests: toDbNumber(item.errorRequests),
+            bytesIn: toDbNumber(item.bytesIn),
+            bytesOut: toDbNumber(item.bytesOut),
+            nadeoTransferBytes: toDbNumber(item.nadeoTransferBytes),
+            internalTransferBytes: toDbNumber(item.internalTransferBytes),
+            publicNonNadeoTransferBytes: toDbNumber(item.publicNonNadeoTransferBytes),
+            avgDurationMs: toDbNumber(item.avgDurationMs),
           }));
+
+        const filledPoints = fillTrafficTimeseriesBuckets(points, {
+          bucketKey: bucketMeta.key,
+          windowHours: safeWindowHours,
+        });
 
         return {
           bucket: bucketMeta.key,
           windowHours: safeWindowHours,
           projectKey: safeProjectKey,
           service: safeService,
-          points,
+          points: filledPoints,
         };
       },
       { ttlMs: 15000 }
@@ -1387,62 +1657,62 @@ class AggregatorRepository {
     return this.withTrafficCache(
       cacheKey,
       () => {
-        const rows = this.listTrafficSamples({
+        const meta = buildTrafficSampleQueryMeta({
           windowHours: safeWindowHours,
           projectKey,
           service,
           direction: safeDirection,
         });
-
-        const grouped = new Map();
-        for (const row of rows) {
-          let key = "";
-          if (safeDimension === "nadeo_route") {
-            if (!row.isNadeoOutgoing) continue;
-            key = `${row.method || "GET"} ${row.targetPath || row.route || "/"}`;
-          } else if (safeDimension === "status") {
-            key = row.statusGroup || "other";
-          } else if (safeDimension === "service") {
-            key = row.service || "tracker";
-          } else if (safeDimension === "method") {
-            key = row.method || "GET";
-          } else if (safeDimension === "route") {
-            key = `${row.method} ${row.route}`;
-          } else {
-            const host = row.targetHost || "(unknown)";
-            key = `${host}${row.targetPath || "/"}`;
-          }
-
-          if (!grouped.has(key)) {
-            grouped.set(key, {
-              key,
-              requests: 0,
-              errorRequests: 0,
-              bytesIn: 0,
-              bytesOut: 0,
-              durationMsTotal: 0,
-            });
-          }
-          const item = grouped.get(key);
-          item.requests += 1;
-          if (row.statusCode >= 400) item.errorRequests += 1;
-          item.bytesIn += row.bytesIn;
-          item.bytesOut += row.bytesOut;
-          item.durationMsTotal += row.durationMs;
+        let keySql = "COALESCE(NULLIF(target_host, ''), '(unknown)') || COALESCE(NULLIF(target_path, ''), '/')";
+        let extraClauses = [];
+        if (safeDimension === "nadeo_route") {
+          keySql = "COALESCE(NULLIF(method, ''), 'GET') || ' ' || COALESCE(NULLIF(target_path, ''), NULLIF(route, ''), '/')";
+          extraClauses = ["is_nadeo_outgoing = 1"];
+        } else if (safeDimension === "status") {
+          keySql = "COALESCE(NULLIF(status_group, ''), 'other')";
+        } else if (safeDimension === "service") {
+          keySql = "COALESCE(NULLIF(service, ''), 'tracker')";
+        } else if (safeDimension === "method") {
+          keySql = "COALESCE(NULLIF(method, ''), 'GET')";
+        } else if (safeDimension === "route") {
+          keySql = "COALESCE(NULLIF(method, ''), 'GET') || ' ' || COALESCE(NULLIF(route, ''), '/')";
         }
+        const readTopItems = (queryMeta, { useIndex = true } = {}) =>
+          this.db
+            .prepare(
+              `
+              SELECT
+                ${keySql} AS key,
+                COUNT(*) AS requests,
+                SUM(CASE WHEN status_code >= 400 THEN 1 ELSE 0 END) AS errorRequests,
+                SUM(COALESCE(bytes_in, 0)) AS bytesIn,
+                SUM(COALESCE(bytes_out, 0)) AS bytesOut,
+                AVG(COALESCE(duration_ms, 0)) AS avgDurationMs
+              FROM traffic_http_samples${useIndex ? " INDEXED BY idx_traffic_http_samples_occurred" : ""}
+              WHERE ${queryMeta.clauses.join(" AND ")}
+              GROUP BY key
+              ORDER BY requests DESC, key ASC
+              LIMIT ?
+              `
+            )
+            .all(...queryMeta.args, safeLimit)
+            .map((item) => {
+              const requests = toDbNumber(item.requests);
+              const errorRequests = toDbNumber(item.errorRequests);
+              return {
+                key: item.key,
+                requests,
+                errorRequests,
+                errorRatePct: requests > 0 ? (errorRequests / requests) * 100 : 0,
+                bytesIn: toDbNumber(item.bytesIn),
+                bytesOut: toDbNumber(item.bytesOut),
+                avgDurationMs: toDbNumber(item.avgDurationMs),
+              };
+            });
 
-        const items = [...grouped.values()]
-          .sort((a, b) => (b.requests - a.requests) || a.key.localeCompare(b.key))
-          .slice(0, safeLimit)
-          .map((item) => ({
-            key: item.key,
-            requests: item.requests,
-            errorRequests: item.errorRequests,
-            errorRatePct: item.requests > 0 ? (item.errorRequests / item.requests) * 100 : 0,
-            bytesIn: item.bytesIn,
-            bytesOut: item.bytesOut,
-            avgDurationMs: item.requests > 0 ? item.durationMsTotal / item.requests : 0,
-          }));
+        const topMeta = appendTrafficWhere(meta, extraClauses);
+        const items = readTopItems(topMeta);
+        const source = "traffic-database-window";
 
         return {
           windowHours: safeWindowHours,
@@ -1450,6 +1720,7 @@ class AggregatorRepository {
           service: safeService,
           direction: safeDirection,
           dimension: safeDimension,
+          source,
           items,
         };
       },
@@ -1494,64 +1765,75 @@ class AggregatorRepository {
     return this.withTrafficCache(
       cacheKey,
       () => {
-        const rows = this.listTrafficSamples({
+        const meta = buildTrafficSampleQueryMeta({
           windowHours: safeWindowHours,
           projectKey,
           service,
           direction: safeDirection,
-        }).filter((row) => {
-          if (row.statusCode < safeStatusMin) return false;
-          if (!queryText) return true;
-          const haystack = [
-            row.method,
-            row.route,
-            row.targetHost,
-            row.targetPath,
-            row.service,
-            row.projectKey,
-            row.sourceLabel,
-            row.statusCode,
-          ]
-            .map((part) => String(part || "").toLowerCase())
-            .join(" ");
-          return haystack.includes(queryText);
+          statusMin: safeStatusMin,
+          q: queryText,
         });
-
-        const sortedRows = [...rows].sort((a, b) => {
-          const aTs = Date.parse(a.occurredAt || "");
-          const bTs = Date.parse(b.occurredAt || "");
-          const safeATs = Number.isFinite(aTs) ? aTs : 0;
-          const safeBTs = Number.isFinite(bTs) ? bTs : 0;
-          if (safeBTs !== safeATs) return safeBTs - safeATs;
-          return Number(b.durationMs || 0) - Number(a.durationMs || 0);
-        });
-
-        const total = sortedRows.length;
+        const whereSql = meta.clauses.join(" AND ");
+        const total = toDbNumber(
+          this.db
+            .prepare(
+              `
+              SELECT COUNT(*) AS count
+              FROM traffic_http_samples INDEXED BY idx_traffic_http_samples_occurred
+              WHERE ${whereSql}
+              `
+            )
+            .get(...meta.args)?.count
+        );
         const totalPages = Math.max(1, Math.ceil(total / safeLimit));
         const clampedPage = Math.max(1, Math.min(requestedPage, totalPages));
         const clampedOffset = Math.max(0, (clampedPage - 1) * safeLimit);
-        const pageRows = sortedRows.slice(clampedOffset, clampedOffset + safeLimit);
+        const pageRows = this.db
+          .prepare(
+            `
+            SELECT
+              project_key AS projectKey,
+              source_label AS sourceLabel,
+              direction,
+              service,
+              component,
+              method,
+              route,
+              target_host AS targetHost,
+              target_path AS targetPath,
+              status_code AS statusCode,
+              status_group AS statusGroup,
+              duration_ms AS durationMs,
+              bytes_in AS bytesIn,
+              bytes_out AS bytesOut,
+              occurred_at AS occurredAt,
+              is_nadeo_outgoing AS isNadeoOutgoing,
+              is_internal_outgoing AS isInternalOutgoing
+            FROM traffic_http_samples INDEXED BY idx_traffic_http_samples_occurred
+            WHERE ${whereSql}
+            ORDER BY occurred_at DESC, duration_ms DESC
+            LIMIT ? OFFSET ?
+            `
+          )
+          .all(...meta.args, safeLimit, clampedOffset)
+          .map((row) => mapTrafficSampleDbRow(row));
 
-        const byStatus = new Map();
-        const byRoute = new Map();
-        const byTarget = new Map();
-        for (const row of sortedRows) {
-          const statusKey = String(row.statusCode || 0);
-          byStatus.set(statusKey, (byStatus.get(statusKey) || 0) + 1);
-          if (row.direction === "incoming") {
-            const key = `${row.method} ${row.route}`;
-            byRoute.set(key, (byRoute.get(key) || 0) + 1);
-          } else {
-            const key = `${row.targetHost || "(unknown)"}${row.targetPath || "/"}`;
-            byTarget.set(key, (byTarget.get(key) || 0) + 1);
-          }
-        }
-
-        const mapTop = (map, cap = 8) =>
-          [...map.entries()]
-            .sort((a, b) => (b[1] - a[1]) || a[0].localeCompare(b[0]))
-            .slice(0, cap)
-            .map(([key, count]) => ({ key, count: Number(count || 0) }));
+        const topSummary = ({ keySql, extraClauses = [], limit = 8 }) => {
+          const topMeta = appendTrafficWhere(meta, extraClauses);
+          return this.db
+            .prepare(
+              `
+              SELECT ${keySql} AS key, COUNT(*) AS count
+              FROM traffic_http_samples INDEXED BY idx_traffic_http_samples_occurred
+              WHERE ${topMeta.clauses.join(" AND ")}
+              GROUP BY key
+              ORDER BY count DESC, key ASC
+              LIMIT ?
+              `
+            )
+            .all(...topMeta.args, limit)
+            .map((row) => ({ key: String(row.key || ""), count: Number(row.count || 0) }));
+        };
 
         const items = pageRows.map((row) => ({
           occurredAt: row.occurredAt,
@@ -1588,9 +1870,20 @@ class AggregatorRepository {
           totalPages,
           items,
           summary: {
-            statusCounts: mapTop(byStatus, 12),
-            topIncomingRoutes: mapTop(byRoute, 8),
-            topOutgoingTargets: mapTop(byTarget, 8),
+            statusCounts: topSummary({
+              keySql: "CAST(COALESCE(status_code, 0) AS TEXT)",
+              limit: 12,
+            }),
+            topIncomingRoutes: topSummary({
+              keySql: "COALESCE(NULLIF(method, ''), 'GET') || ' ' || COALESCE(NULLIF(route, ''), '/')",
+              extraClauses: ["direction = 'incoming'"],
+              limit: 8,
+            }),
+            topOutgoingTargets: topSummary({
+              keySql: "COALESCE(NULLIF(target_host, ''), '(unknown)') || COALESCE(NULLIF(target_path, ''), '/')",
+              extraClauses: ["direction = 'outgoing'"],
+              limit: 8,
+            }),
           },
         };
       },
@@ -2218,6 +2511,684 @@ class AggregatorRepository {
     };
   }
 
+  getPreferredProject(projectKeys = []) {
+    const keys = normalizeArray(projectKeys).map((key) => normalizeProjectKey(key)).filter(Boolean);
+    for (const key of keys) {
+      const row =
+        this.db
+          .prepare(
+            `
+            SELECT
+              project_key AS projectKey,
+              display_name AS displayName,
+              source_label AS sourceLabel,
+              first_seen_at AS firstSeenAt,
+              last_seen_at AS lastSeenAt
+            FROM projects
+            WHERE project_key = ?
+            LIMIT 1
+            `
+          )
+          .get(key) || null;
+      if (row) return row;
+    }
+    return null;
+  }
+
+  getLatestProjectInstance(projectKey) {
+    const safeProjectKey = normalizeProjectKey(projectKey);
+    if (!safeProjectKey) return null;
+    const row =
+      this.db
+        .prepare(
+          `
+          SELECT
+            project_key AS projectKey,
+            instance_id AS instanceId,
+            instance_name AS instanceName,
+            source_label AS sourceLabel,
+            status,
+            registered_at AS registeredAt,
+            last_heartbeat_at AS lastHeartbeatAt,
+            meta_json AS metaJson
+          FROM project_instances
+          WHERE project_key = ?
+          ORDER BY last_heartbeat_at DESC, instance_id ASC
+          LIMIT 1
+          `
+        )
+        .get(safeProjectKey) || null;
+    if (!row) return null;
+    return {
+      ...row,
+      meta: parseJsonObject(row.metaJson),
+      metaJson: undefined,
+    };
+  }
+
+  getLatestIngestRun(projectKey) {
+    const safeProjectKey = normalizeProjectKey(projectKey);
+    if (!safeProjectKey) return null;
+    return mapIngestRunDbRow(
+      this.db
+        .prepare(
+          `
+          SELECT *
+          FROM ingest_runs
+          WHERE project_key = ?
+          ORDER BY
+            CASE WHEN LOWER(COALESCE(provider, '')) LIKE '%nadeo%' THEN 0 ELSE 1 END,
+            finished_at DESC,
+            ingest_id DESC
+          LIMIT 1
+          `
+        )
+        .get(safeProjectKey) || null
+    );
+  }
+
+  getIngestRunTotals(projectKey) {
+    const safeProjectKey = normalizeProjectKey(projectKey);
+    if (!safeProjectKey) {
+      return {
+        totalRuns: 0,
+        totalChecked: 0,
+        totalChanges: 0,
+        latestFinishedAt: null,
+      };
+    }
+    const row =
+      this.db
+        .prepare(
+          `
+          SELECT
+            COUNT(*) AS totalRuns,
+            COALESCE(SUM(maps_checked), 0) AS totalChecked,
+            COALESCE(SUM(wr_changes), 0) AS totalChanges,
+            MAX(finished_at) AS latestFinishedAt
+          FROM ingest_runs
+          WHERE project_key = ?
+          `
+        )
+        .get(safeProjectKey) || {};
+    return {
+      totalRuns: toDbInt(row.totalRuns),
+      totalChecked: toDbInt(row.totalChecked),
+      totalChanges: toDbInt(row.totalChanges),
+      latestFinishedAt: row.latestFinishedAt || null,
+    };
+  }
+
+  getProjectMapStats(projectKey) {
+    const safeProjectKey = normalizeProjectKey(projectKey);
+    if (!safeProjectKey) {
+      return {
+        trackedMaps: 0,
+        totalChecks: 0,
+        totalChanges: 0,
+        latestCheckedAt: null,
+        latestChangedAt: null,
+      };
+    }
+    const row =
+      this.db
+        .prepare(
+          `
+          SELECT
+            COUNT(*) AS trackedMaps,
+            COALESCE(SUM(check_count), 0) AS totalChecks,
+            COALESCE(SUM(change_count), 0) AS totalChanges,
+            MAX(latest_checked_at) AS latestCheckedAt,
+            MAX(last_changed_at) AS latestChangedAt
+          FROM project_maps
+          WHERE project_key = ?
+          `
+        )
+        .get(safeProjectKey) || {};
+    return {
+      trackedMaps: toDbInt(row.trackedMaps),
+      totalChecks: toDbInt(row.totalChecks),
+      totalChanges: toDbInt(row.totalChanges),
+      latestCheckedAt: row.latestCheckedAt || null,
+      latestChangedAt: row.latestChangedAt || null,
+    };
+  }
+
+  buildDbTrackerEntry(key, projectKeys = []) {
+    const project = this.getPreferredProject(projectKeys);
+    if (!project) {
+      return {
+        ok: false,
+        configured: false,
+        status: null,
+        error: "No database snapshot found.",
+        source: "database",
+      };
+    }
+
+    const instance = this.getLatestProjectInstance(project.projectKey);
+    const meta = instance?.meta || {};
+    const latestRun = this.getLatestIngestRun(project.projectKey);
+    const totals = this.getIngestRunTotals(project.projectKey);
+    const mapStats = this.getProjectMapStats(project.projectKey);
+    const mode = key === "leaderboard" ? "leaderboard" : "wr";
+    const provider = latestRun?.provider || meta.provider || null;
+    const enabled = Boolean(project || instance);
+
+    return {
+      ok: true,
+      configured: true,
+      status: {
+        source: "database",
+        projectKey: project.projectKey,
+        projectName: project.displayName || project.projectKey,
+        sourceLabel: project.sourceLabel || instance?.sourceLabel || null,
+        snapshotAt: project.lastSeenAt || instance?.lastHeartbeatAt || latestRun?.finishedAt || null,
+        runtime: {
+          enabled,
+          running: false,
+          timerActive: false,
+          provider,
+          providerReady: Boolean(provider),
+          mode,
+          tickSeconds: toDbInt(meta.tickSeconds),
+          totalRuns: totals.totalRuns,
+          totalChecked: totals.totalChecked,
+          totalChanges: totals.totalChanges,
+          lastRun: latestRun,
+          lastError: meta.lastError || null,
+          aggregatorEnabled: true,
+        },
+        latestRun,
+        summary: {
+          trackedMaps: mapStats.trackedMaps,
+          totalChecks: mapStats.totalChecks || totals.totalChecked,
+          totalChanges: mapStats.totalChanges || totals.totalChanges,
+          latestCheckedAt: mapStats.latestCheckedAt || latestRun?.finishedAt || null,
+          latestWrAt: mapStats.latestChangedAt || null,
+        },
+        instance: instance
+          ? {
+              instanceId: instance.instanceId,
+              instanceName: instance.instanceName,
+              status: instance.status,
+              lastHeartbeatAt: instance.lastHeartbeatAt,
+              sourceLabel: instance.sourceLabel || null,
+            }
+          : null,
+      },
+      error: null,
+      baseUrl: null,
+      source: "database",
+    };
+  }
+
+  getDisplayNameTrackerSnapshot() {
+    const project = this.getPreferredProject([
+      "prod-tracker-displayname",
+      "local-tracker-displayname",
+      "altered-mapper-displayname",
+    ]);
+    if (!project) {
+      return {
+        ok: false,
+        configured: false,
+        status: null,
+        error: "No displayname database snapshot found.",
+        source: "database",
+      };
+    }
+    const instance = this.getLatestProjectInstance(project.projectKey);
+    const meta = instance?.meta || {};
+    const stats =
+      this.db
+        .prepare(
+          `
+          SELECT
+            (SELECT COUNT(*) FROM accounts) AS accounts,
+            (SELECT COUNT(*) FROM account_display_name_current) AS displayNames,
+            (SELECT MAX(observed_at) FROM account_display_name_current) AS latestObservedAt,
+            (SELECT COUNT(*) FROM aggregator_events WHERE event_type = 'displayname.sync') AS syncRuns,
+            (SELECT MAX(occurred_at) FROM aggregator_events WHERE event_type = 'displayname.sync') AS latestSyncAt
+          `
+        )
+        .get() || {};
+    return {
+      ok: true,
+      configured: true,
+      status: {
+        source: "database",
+        projectKey: project.projectKey,
+        projectName: project.displayName || project.projectKey,
+        sourceLabel: project.sourceLabel || instance?.sourceLabel || null,
+        enabled: Boolean(project || instance),
+        schedulerEnabled: Boolean(project || instance),
+        maintenanceIntervalSeconds: toDbInt(meta.maintenanceIntervalSeconds || meta.tickSeconds),
+        staleAfterSeconds: toDbInt(meta.staleAfterSeconds),
+        batchSize: toDbInt(meta.batchSize),
+        maxAccountsPerCycle: toDbInt(meta.maxAccountsPerCycle),
+        minRequestGapMs: toDbInt(meta.minRequestGapMs),
+        queueSize: toDbInt(meta.queueSize),
+        lastRunAt: meta.lastRunAt || stats.latestSyncAt || project.lastSeenAt || null,
+        lastFinishedAt: meta.lastFinishedAt || stats.latestSyncAt || project.lastSeenAt || null,
+        lastError: meta.lastError || null,
+        lastSummary: {
+          accountsKnown: toDbInt(stats.accounts),
+          displayNames: toDbInt(stats.displayNames),
+          latestObservedAt: stats.latestObservedAt || null,
+          syncRuns: toDbInt(stats.syncRuns),
+          latestSyncAt: stats.latestSyncAt || null,
+        },
+      },
+      error: null,
+      baseUrl: null,
+      source: "database",
+    };
+  }
+
+  getClubTrackerSnapshot() {
+    const project = this.getPreferredProject(["prod-tracker-club", "local-tracker-club"]);
+    const instance = project ? this.getLatestProjectInstance(project.projectKey) : null;
+    const club =
+      this.db
+        .prepare(
+          `
+          SELECT
+            c.club_id AS clubId,
+            c.club_name AS clubName,
+            c.source_label AS sourceLabel,
+            c.first_seen_at AS firstSeenAt,
+            c.last_synced_at AS lastSyncedAt,
+            c.payload_json AS payloadJson,
+            (
+              (SELECT COUNT(*) FROM club_campaign_maps ccm WHERE ccm.club_id = c.club_id) +
+              (SELECT COUNT(*) FROM club_upload_maps cum WHERE cum.club_id = c.club_id)
+            ) AS mapCount,
+            (SELECT COUNT(*) FROM club_members cm WHERE cm.club_id = c.club_id) AS memberCount
+          FROM clubs c
+          ORDER BY
+            mapCount DESC,
+            memberCount DESC,
+            CASE WHEN c.source_label = 'prod' THEN 0 ELSE 1 END,
+            c.last_synced_at DESC,
+            c.club_id ASC
+          LIMIT 1
+          `
+        )
+        .get() || null;
+    if (!project && !club) {
+      return {
+        ok: false,
+        configured: false,
+        status: null,
+        error: "No club database snapshot found.",
+        source: "database",
+      };
+    }
+    const clubId = toDbInt(club?.clubId);
+    const stats = clubId
+      ? this.db
+          .prepare(
+            `
+            SELECT
+              (SELECT COUNT(*) FROM club_campaigns WHERE club_id = ?) AS campaigns,
+              (SELECT COUNT(*) FROM club_campaign_maps WHERE club_id = ?) AS campaignMaps,
+              (SELECT COUNT(*) FROM club_uploads WHERE club_id = ?) AS uploads,
+              (SELECT COUNT(*) FROM club_upload_maps WHERE club_id = ?) AS uploadMaps,
+              (SELECT COUNT(*) FROM club_members WHERE club_id = ?) AS members,
+              (SELECT MAX(last_synced_at) FROM club_campaign_maps WHERE club_id = ?) AS latestCampaignMapAt,
+              (SELECT MAX(last_synced_at) FROM club_upload_maps WHERE club_id = ?) AS latestUploadMapAt
+            `
+          )
+          .get(clubId, clubId, clubId, clubId, clubId, clubId, clubId) || {}
+      : {};
+    return {
+      ok: true,
+      configured: true,
+      status: {
+        source: "database",
+        projectKey: project?.projectKey || null,
+        projectName: project?.displayName || project?.projectKey || null,
+        sourceLabel: project?.sourceLabel || club?.sourceLabel || instance?.sourceLabel || null,
+        enabled: Boolean(project || club || instance),
+        clubId: clubId || null,
+        clubName: club?.clubName || null,
+        lastIngestAt:
+          club?.lastSyncedAt ||
+          stats.latestCampaignMapAt ||
+          stats.latestUploadMapAt ||
+          project?.lastSeenAt ||
+          instance?.lastHeartbeatAt ||
+          null,
+        lastError: instance?.meta?.lastError || null,
+        lastSummary: {
+          campaigns: toDbInt(stats.campaigns),
+          campaignMaps: toDbInt(stats.campaignMaps),
+          uploads: toDbInt(stats.uploads),
+          uploadMaps: toDbInt(stats.uploadMaps),
+          members: toDbInt(stats.members),
+        },
+      },
+      error: null,
+      baseUrl: null,
+      source: "database",
+    };
+  }
+
+  getTrackerStatusSnapshots() {
+    return {
+      source: "database",
+      trackers: {
+        wr: this.buildDbTrackerEntry("wr", ["prod-tracker-main", "local-tracker-main"]),
+        leaderboard: this.buildDbTrackerEntry("leaderboard", [
+          "prod-tracker-leaderboard",
+          "local-tracker-leaderboard",
+        ]),
+        displayname: this.getDisplayNameTrackerSnapshot(),
+        club: this.getClubTrackerSnapshot(),
+      },
+    };
+  }
+
+  getNadeoGuardrailSnapshot({ windowHours = 24, projectKey = "", service = "" } = {}) {
+    const safeWindowHours = normalizeWindowHours(windowHours, 24);
+    const overview = this.getTrafficOverview({
+      windowHours: safeWindowHours,
+      projectKey,
+      service,
+    });
+    const live = overview?.live || {};
+    const traffic = {
+      source: "traffic-database",
+      available: toDbNumber(overview.nadeoOutgoingRequests) > 0 || toDbNumber(live.nadeoOutgoingPerSecond) > 0,
+      requests: toDbInt(overview.nadeoOutgoingRequests),
+      requestsPerSecond: toDbNumber(live.nadeoOutgoingPerSecond),
+      requestsPerMinute: toDbNumber(live.nadeoOutgoingPerMinute),
+      transferBytes: toDbInt(overview.nadeoTransferBytes),
+    };
+
+    const wrSnapshot = this.buildDbTrackerEntry("wr", ["prod-tracker-main", "local-tracker-main"]);
+    const runtime = wrSnapshot?.status?.runtime || {};
+    const latestRun = runtime.lastRun || wrSnapshot?.status?.latestRun || null;
+    const recentRequests = toDbInt(latestRun?.mapsChecked);
+    const durationSeconds = toDbNumber(latestRun?.durationSeconds);
+    const trackerRps = durationSeconds > 0 && recentRequests > 0 ? recentRequests / durationSeconds : 0;
+    const tracker = {
+      source: "tracker-database",
+      available: Boolean(wrSnapshot?.ok && (toDbInt(runtime.totalChecked) > 0 || recentRequests > 0)),
+      requests: toDbInt(runtime.totalChecked) || recentRequests,
+      recentRequests,
+      requestsPerSecond: trackerRps,
+      requestsPerMinute: trackerRps * 60,
+      transferBytes: null,
+      provider: runtime.provider || latestRun?.provider || null,
+      running: Boolean(runtime.running),
+      lastRunStartedAt: latestRun?.startedAt || null,
+      lastRunFinishedAt: latestRun?.finishedAt || null,
+      projectKey: wrSnapshot?.status?.projectKey || null,
+    };
+
+    const effective = traffic.available
+      ? {
+          ...traffic,
+          source: tracker.available ? "traffic-database+tracker-database" : traffic.source,
+          requestsPerSecond:
+            traffic.requestsPerSecond > 0 ? traffic.requestsPerSecond : tracker.requestsPerSecond || 0,
+          requestsPerMinute:
+            traffic.requestsPerMinute > 0 ? traffic.requestsPerMinute : tracker.requestsPerMinute || 0,
+          provider: tracker.provider || null,
+          running: tracker.running || false,
+          lastRunStartedAt: tracker.lastRunStartedAt || null,
+          lastRunFinishedAt: tracker.lastRunFinishedAt || null,
+          projectKey: tracker.projectKey || null,
+        }
+      : tracker.available
+        ? tracker
+        : traffic;
+    return {
+      windowHours: safeWindowHours,
+      traffic,
+      tracker,
+      trackerError: wrSnapshot?.ok ? null : wrSnapshot?.error || "WR tracker database snapshot unavailable.",
+      effective,
+    };
+  }
+
+  getAlteredDashboardSummary({ syncRunsLimit = 12, pollRunsLimit = 20 } = {}) {
+    const safeSyncRunsLimit = clampInt(syncRunsLimit, { min: 1, max: 100, fallback: 12 });
+    const safePollRunsLimit = clampInt(pollRunsLimit, { min: 1, max: 100, fallback: 20 });
+    const club =
+      this.db
+        .prepare(
+          `
+          SELECT
+            c.club_id AS clubId,
+            c.club_name AS clubName,
+            c.source_label AS sourceLabel,
+            c.first_seen_at AS firstSeenAt,
+            c.last_synced_at AS lastSyncedAt,
+            c.payload_json AS payloadJson,
+            (
+              (SELECT COUNT(*) FROM club_campaign_maps ccm WHERE ccm.club_id = c.club_id) +
+              (SELECT COUNT(*) FROM club_upload_maps cum WHERE cum.club_id = c.club_id)
+            ) AS mapCount,
+            (SELECT COUNT(*) FROM club_members cm WHERE cm.club_id = c.club_id) AS memberCount
+          FROM clubs c
+          ORDER BY
+            mapCount DESC,
+            memberCount DESC,
+            CASE WHEN c.source_label = 'prod' THEN 0 ELSE 1 END,
+            c.last_synced_at DESC,
+            c.club_id ASC
+          LIMIT 1
+          `
+        )
+        .get() || null;
+    const clubId = toDbInt(club?.clubId);
+    const clubStats = clubId
+      ? this.db
+          .prepare(
+            `
+            SELECT
+              (SELECT COUNT(*) FROM club_campaigns WHERE club_id = ?) AS campaigns,
+              (SELECT COUNT(*) FROM club_campaign_maps WHERE club_id = ?) AS campaignMaps,
+              (SELECT COUNT(*) FROM club_uploads WHERE club_id = ?) AS uploads,
+              (SELECT COUNT(*) FROM club_upload_maps WHERE club_id = ?) AS uploadMaps,
+              (SELECT COUNT(*) FROM club_members WHERE club_id = ?) AS members
+            `
+          )
+          .get(clubId, clubId, clubId, clubId, clubId) || {}
+      : {};
+    const hookEvents = this.db
+      .prepare(
+        `
+        SELECT
+          event_id AS eventId,
+          occurred_at AS occurredAt,
+          source_label AS sourceLabel,
+          payload_json AS payloadJson,
+          detail_1 AS detail1,
+          detail_2 AS detail2,
+          detail_3 AS detail3
+        FROM aggregator_events
+        WHERE event_type = 'club.snapshot'
+        ORDER BY
+          occurred_at DESC,
+          event_id DESC
+        LIMIT 50
+        `
+      )
+      .all();
+    const syncRuns = hookEvents.map((event) => {
+      const payload = parseJsonObject(event.payloadJson);
+      const mapsSeen = toDbInt(payload.campaignMapsSeen) + toDbInt(payload.uploadMapsSeen);
+      return {
+        runId: event.eventId,
+        status: "finished",
+        startedAt: event.occurredAt || null,
+        finishedAt: event.occurredAt || null,
+        mapsSeen,
+        mapsInserted: 0,
+        mapsUpdated: mapsSeen,
+        note: [event.detail1, event.detail2, event.detail3].filter(Boolean).join(" | "),
+        sourceLabel: event.sourceLabel || null,
+      };
+    }).sort((left, right) => {
+      const leftMaps = toDbInt(left.mapsSeen);
+      const rightMaps = toDbInt(right.mapsSeen);
+      if (leftMaps !== rightMaps) return rightMaps - leftMaps;
+      return String(right.finishedAt || "").localeCompare(String(left.finishedAt || ""));
+    }).slice(0, safeSyncRunsLimit);
+    if (!syncRuns.length && club) {
+      syncRuns.push({
+        runId: "club",
+        status: "finished",
+        startedAt: club.lastSyncedAt || null,
+        finishedAt: club.lastSyncedAt || null,
+        mapsSeen: toDbInt(clubStats.campaignMaps) + toDbInt(clubStats.uploadMaps),
+        mapsInserted: 0,
+        mapsUpdated: toDbInt(clubStats.campaignMaps) + toDbInt(clubStats.uploadMaps),
+        note: "database club snapshot",
+        sourceLabel: club.sourceLabel || null,
+      });
+    }
+
+    const pollRuns = this.db
+      .prepare(
+        `
+        SELECT *
+        FROM ingest_runs
+        WHERE project_key IN ('prod-tracker-main', 'prod-tracker-leaderboard', 'local-tracker-main', 'local-tracker-leaderboard')
+        ORDER BY
+          CASE WHEN source_label = 'prod' THEN 0 ELSE 1 END,
+          finished_at DESC,
+          ingest_id DESC
+        LIMIT ?
+        `
+      )
+      .all(safePollRunsLimit)
+      .map((row) => mapIngestRunDbRow(row))
+      .filter(Boolean);
+    const latestPollRun = pollRuns[0] || null;
+    const latestSyncRun = syncRuns[0] || null;
+    const mapsLoaded = toDbInt(clubStats.campaignMaps) + toDbInt(clubStats.uploadMaps);
+
+    return {
+      source: "database",
+      altered: {
+        hook: club
+          ? {
+              enabled: true,
+              clubId: clubId || null,
+              clubName: club.clubName || "Altered",
+              autoTrackNewMaps: true,
+              trackedCount: mapsLoaded,
+              mapCount: mapsLoaded,
+              lastSyncedAt: club.lastSyncedAt || null,
+              latestRun: latestSyncRun,
+              sourceLabel: club.sourceLabel || null,
+            }
+          : null,
+        syncRuns,
+        liveStatus: {
+          monitor: {
+            enabled: true,
+            running: false,
+            discoveryRunning: false,
+            discoveryEnabled: true,
+            lastFinishedAt: latestSyncRun?.finishedAt || club?.lastSyncedAt || null,
+            nextRunAt: null,
+            lastError: null,
+            lastSummary: {
+              campaignsLoaded: toDbInt(clubStats.campaigns) + toDbInt(clubStats.uploads),
+              mapsLoaded,
+              membersLoaded: toDbInt(clubStats.members),
+            },
+          },
+        },
+        opsOverview: {
+          scheduler: {
+            enabled: true,
+            tickSeconds: 0,
+            source: "database",
+          },
+        },
+        pollRuns,
+      },
+      warnings: [],
+      degraded: false,
+      latestPollRun,
+    };
+  }
+
+  getAlteredCheckHistory({ q = "", mapUid = "", limit = 120 } = {}) {
+    const safeLimit = clampInt(limit, { min: 1, max: 500, fallback: 120 });
+    const safeMapUid = String(mapUid || "").trim();
+    const queryText = String(q || "").trim().toLowerCase();
+    const clauses = ["1 = 1"];
+    const args = [];
+    if (safeMapUid) {
+      clauses.push("me.map_uid = ?");
+      args.push(safeMapUid);
+    }
+    if (queryText) {
+      clauses.push(
+        `(
+          LOWER(COALESCE(me.map_name, mr.map_name, '')) LIKE ?
+          OR LOWER(COALESCE(me.map_uid, '')) LIKE ?
+          OR LOWER(COALESCE(me.old_holder, '')) LIKE ?
+          OR LOWER(COALESCE(me.new_holder, '')) LIKE ?
+        )`
+      );
+      args.push(`%${queryText}%`, `%${queryText}%`, `%${queryText}%`, `%${queryText}%`);
+    }
+    return this.db
+      .prepare(
+        `
+        SELECT
+          me.event_id AS eventId,
+          me.ingest_id AS runId,
+          me.project_key AS projectKey,
+          me.map_uid AS mapUid,
+          COALESCE(me.map_name, mr.map_name, me.map_uid) AS mapName,
+          me.checked_at AS checkedAt,
+          me.changed AS changed,
+          me.old_wr_time AS oldWrMs,
+          me.new_wr_time AS newWrMs,
+          me.old_holder AS oldWrHolder,
+          me.new_holder AS newWrHolder,
+          me.note AS note
+        FROM map_events me
+        LEFT JOIN map_registry mr ON mr.map_uid = me.map_uid
+        WHERE ${clauses.join(" AND ")}
+        ORDER BY
+          CASE WHEN me.project_key LIKE 'prod-%' THEN 0 ELSE 1 END,
+          me.checked_at DESC,
+          me.event_id DESC
+        LIMIT ?
+        `
+      )
+      .all(...args, safeLimit)
+      .map((row) => ({
+        eventId: toDbInt(row.eventId),
+        runId: toDbInt(row.runId),
+        projectKey: row.projectKey || null,
+        mapUid: row.mapUid || null,
+        mapName: row.mapName || row.mapUid || "Unknown map",
+        checkedAt: row.checkedAt || null,
+        changed: Boolean(Number(row.changed || 0)),
+        oldWrMs: row.oldWrMs === null || row.oldWrMs === undefined ? null : toDbInt(row.oldWrMs),
+        newWrMs: row.newWrMs === null || row.newWrMs === undefined ? null : toDbInt(row.newWrMs),
+        oldWrHolder: row.oldWrHolder || null,
+        newWrHolder: row.newWrHolder || null,
+        error:
+          row.note && String(row.note).toLowerCase().startsWith("error:")
+            ? String(row.note).replace(/^error:\s*/i, "")
+            : null,
+        note: row.note || null,
+      }));
+  }
+
   getMetricsOverview() {
     try {
     const base = this.getMeta();
@@ -2758,7 +3729,7 @@ class AggregatorRepository {
             COALESCE(
               (
                 SELECT COUNT(*)
-                FROM project_maps pm NOT INDEXED
+                FROM project_maps pm
                 WHERE pm.project_key = p.project_key
               ),
               0
@@ -2766,7 +3737,7 @@ class AggregatorRepository {
             COALESCE(
               (
                 SELECT SUM(pm.check_count)
-                FROM project_maps pm NOT INDEXED
+                FROM project_maps pm
                 WHERE pm.project_key = p.project_key
               ),
               0
@@ -2774,19 +3745,19 @@ class AggregatorRepository {
             COALESCE(
               (
                 SELECT SUM(pm.change_count)
-                FROM project_maps pm NOT INDEXED
+                FROM project_maps pm
                 WHERE pm.project_key = p.project_key
               ),
               0
             ) AS totalChanges,
             (
               SELECT MAX(pm.latest_checked_at)
-              FROM project_maps pm NOT INDEXED
+              FROM project_maps pm
               WHERE pm.project_key = p.project_key
             ) AS latestCheckedAt,
             (
               SELECT MAX(ir.finished_at)
-              FROM ingest_runs ir NOT INDEXED
+              FROM ingest_runs ir
               WHERE ir.project_key = p.project_key
             ) AS latestRunAt
           FROM projects p

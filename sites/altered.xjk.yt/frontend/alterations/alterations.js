@@ -1,3 +1,4 @@
+(() => {
 const API = {
   stats: "/api/v1/alterations/stats",
   alterations: "/api/v1/alterations/types",
@@ -841,3 +842,4 @@ window.addEventListener("popstate", async () => {
 });
 
 bootstrap();
+})();

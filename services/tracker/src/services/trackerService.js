@@ -93,6 +93,22 @@ class TrackerService {
     return this.repository.getLeaderboardFeed(limit);
   }
 
+  getLeaderboardWrLeaderboards({
+    overallLimit = 300,
+    overallOffset = 0,
+    perBucketLimit = 10,
+    trackedOnly = true,
+    includeBuckets = true,
+  } = {}) {
+    return this.repository.getLeaderboardWrLeaderboards({
+      overallLimit,
+      overallOffset,
+      perBucketLimit,
+      trackedOnly,
+      includeBuckets,
+    });
+  }
+
   getMapInfo(mapUid) {
     return this.repository.getMapInfo(mapUid);
   }
@@ -124,11 +140,15 @@ class TrackerService {
 
   getTrackerStatus() {
     const runtime = this.trackerEngine ? this.trackerEngine.getStatus() : null;
+    const trackedDueNow = this.repository.countDueTrackedMaps({
+      nowIso: new Date().toISOString(),
+      maxCheckIntervalSeconds: Number(runtime?.maxCheckIntervalSeconds || 0),
+    });
     return {
       runtime,
       latestRun: this.repository.getLatestTrackerRun(),
       summary: this.repository.getSummary(),
-      trackedDueNow: this.getTrackedMapsApi({ q: "", limit: 500 }).filter((map) => map.dueNow).length,
+      trackedDueNow,
     };
   }
 

@@ -117,6 +117,11 @@ const DEFAULT_SITE_DIR = path.join(__dirname, "..", "..", "..", "sites", "altere
 const DEFAULT_DATA_DIR = path.join(DEFAULT_SITE_DIR, "data");
 const DEFAULT_DB_FILE = path.join(DEFAULT_DATA_DIR, "altered-service.sqlite");
 const DEFAULT_SERVER_DB_FILE = path.join(DEFAULT_SITE_DIR, "data_server", "altered-service.sqlite");
+const DEFAULT_ALTERATION_GROUPS_FILE = path.resolve(
+  __dirname,
+  "..",
+  "alteration-groups.local.json"
+);
 const FRONTEND_DIR = resolvePathFromCwd(
   process.env.FRONTEND_DIR || path.join(DEFAULT_SITE_DIR, "frontend"),
   path.join(DEFAULT_SITE_DIR, "frontend")
@@ -131,6 +136,10 @@ const DATA_DIR = resolveAlteredDataDir({
   defaultDir: DEFAULT_DATA_DIR,
   dbFile: DB_FILE,
 });
+const ALTERED_ALTERATION_GROUPS_FILE = resolvePathFromCwd(
+  process.env.ALTERED_ALTERATION_GROUPS_FILE || DEFAULT_ALTERATION_GROUPS_FILE,
+  DEFAULT_ALTERATION_GROUPS_FILE
+);
 const TRACKER_DOTENV_FALLBACK = parseEnvFile(
   path.join(__dirname, "..", "..", "tracker", ".env")
 );
@@ -382,8 +391,8 @@ const ALTERED_MAPPER_SYNC_PRIORITY_REFRESH_SECONDS = clampInt(
   { min: 30, max: 86400, fallback: 600 }
 );
 const ALTERED_MAPPER_SYNC_CACHE_TTL_SECONDS = clampInt(
-  process.env.ALTERED_MAPPER_SYNC_CACHE_TTL_SECONDS || 86400,
-  { min: 0, max: 30 * 24 * 60 * 60, fallback: 86400 }
+  process.env.ALTERED_MAPPER_SYNC_CACHE_TTL_SECONDS || 14 * 24 * 60 * 60,
+  { min: 0, max: 30 * 24 * 60 * 60, fallback: 14 * 24 * 60 * 60 }
 );
 const ALTERED_MAPPER_SYNC_PRIORITY_CACHE_TTL_SECONDS = clampInt(
   process.env.ALTERED_MAPPER_SYNC_PRIORITY_CACHE_TTL_SECONDS || 1800,
@@ -430,6 +439,7 @@ export {
   FRONTEND_DIR,
   DATA_DIR,
   DB_FILE,
+  ALTERED_ALTERATION_GROUPS_FILE,
   ADMIN_TOKEN,
   TRACKER_PUBLIC_BASE_URL,
   TRACKER_ADMIN_BASE_URL,

@@ -7,9 +7,9 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@400;500;600;700&family=Manrope:wght@400;500;700&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="../altered-hub.css" />
-  <link rel="stylesheet" href="./season.css" />
-  <link rel="icon" href="../favicon.svg" type="image/svg+xml" />
+  <link rel="stylesheet" href="/altered-hub.css" />
+  <link rel="stylesheet" href="/season/season.css" />
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
 </head>
 <body>
   <!-- Nav Bar -->
@@ -44,9 +44,9 @@
   </div>
 
   <div class="solids-layer" aria-hidden="true">
-        <img class="solid solid-1" src="../bannerbuilder/assets/solids/Dodecahedron.png" alt="" />
-        <img class="solid solid-2" src="../bannerbuilder/assets/solids/Icosahedron.png" alt="" />
-        <img class="solid solid-3" src="../bannerbuilder/assets/solids/Octahedron.png" alt="" />
+        <img class="solid solid-1" src="/bannerbuilder/assets/solids/Dodecahedron.png" alt="" />
+        <img class="solid solid-2" src="/bannerbuilder/assets/solids/Icosahedron.png" alt="" />
+        <img class="solid solid-3" src="/bannerbuilder/assets/solids/Octahedron.png" alt="" />
   </div>
 
   <main class="season-shell">
@@ -86,6 +86,7 @@
     <div class="controls-bar" id="controls-bar">
       <input type="search" id="map-search" class="search-input" placeholder="Search maps, authors, WR holders&hellip;" />
       <select id="map-sort" class="sort-select">
+        <option value="campaign_slot">Sort: Campaign Position</option>
         <option value="name">Sort: Name</option>
         <option value="wr_ms">Sort: WR Time</option>
         <option value="author_time">Sort: Author Time</option>
@@ -121,8 +122,8 @@
     </footer>
   </main>
 
-  <script src="../altered-paths.js"></script>
-  <script src="../altered-hub.js"></script>
-  <script src="./season.js?v=20260315-nonstandard"></script>
+  <script src="/altered-paths.js"></script>
+  <script src="/altered-hub.js"></script>
+  <script src="/season/season.js?v=20260425-position"></script>
 </body>
 </html>

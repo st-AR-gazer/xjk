@@ -1,4 +1,6 @@
-﻿function normalizeAccountId(value) {
+import { resolveKnownDisplayName } from "../../../shared/displayNameResolution.js";
+
+function normalizeAccountId(value) {
   const accountId = String(value || "").trim().toLowerCase();
   if (!accountId) return "";
   if (/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/.test(accountId)) {
@@ -9,6 +11,20 @@
 
 function uniqueAccountIds(values = []) {
   return [...new Set((Array.isArray(values) ? values : []).map(normalizeAccountId).filter(Boolean))];
+}
+
+function mergeKnownDisplayNames(accountIds = [], namesByAccountId = {}) {
+  const merged = {
+    ...(namesByAccountId && typeof namesByAccountId === "object" ? namesByAccountId : {}),
+  };
+  for (const accountId of uniqueAccountIds(accountIds)) {
+    if (merged[accountId]) continue;
+    const knownDisplayName = resolveKnownDisplayName(accountId);
+    if (knownDisplayName) {
+      merged[accountId] = knownDisplayName;
+    }
+  }
+  return merged;
 }
 
 function normalizeInstanceId(value) {
@@ -368,6 +384,16 @@ class DisplayNameTrackerService {
         unchanged: 0,
       };
     }
+    if (!this.aggregatorBaseUrl) {
+      return {
+        accepted: 0,
+        inserted: 0,
+        updated: 0,
+        unchanged: 0,
+        skipped: true,
+        error: "Aggregator base URL is not configured.",
+      };
+    }
 
     const payload = await this.requestJson(`${this.aggregatorBaseUrl}/ingest/display-names`, {
       method: "POST",
@@ -385,6 +411,129 @@ class DisplayNameTrackerService {
     });
 
     return payload?.ingest || {};
+  }
+
+  async resolveAccountIds(accountIds = [], { reason = "priority-api", front = true } = {}) {
+    if (!this.enabled) {
+      return { error: "Displayname tracker is disabled.", namesByAccountId: {} };
+    }
+    if (!this.oauthClient?.isConfigured?.()) {
+      return {
+        error: "Trackmania OAuth credentials are not configured for displayname tracker.",
+        namesByAccountId: {},
+      };
+    }
+
+    const normalized = uniqueAccountIds(accountIds);
+    if (!normalized.length) {
+      return {
+        ok: true,
+        requested: 0,
+        resolved: 0,
+        namesByAccountId: {},
+        missingAccountIds: [],
+        queueRemaining: this.pendingAccountIds.size,
+      };
+    }
+
+    this.enqueueAccountIds(normalized, { front });
+
+    try {
+      const knownNamesByAccountId = mergeKnownDisplayNames(normalized, {});
+      const fetchAccountIds = normalized.filter((accountId) => !knownNamesByAccountId[accountId]);
+      let result = {
+        ok: true,
+        requested: 0,
+        resolved: 0,
+        namesByAccountId: {},
+      };
+      let fetchError = "";
+      if (fetchAccountIds.length) {
+        result = await this.oauthClient.getDisplayNames(fetchAccountIds);
+      }
+      if (!result?.ok) {
+        fetchError = result?.error || "Displayname fetch failed.";
+      }
+      if (fetchError && !Object.keys(knownNamesByAccountId).length) {
+        return {
+          error: fetchError,
+          namesByAccountId: {},
+          missingAccountIds: normalized,
+          queueRemaining: this.pendingAccountIds.size,
+        };
+      }
+
+      const namesByAccountId = mergeKnownDisplayNames(normalized, {
+        ...knownNamesByAccountId,
+        ...(result?.namesByAccountId || {}),
+      });
+      let ingest = {
+        accepted: 0,
+        inserted: 0,
+        updated: 0,
+        unchanged: 0,
+      };
+      let ingestError = "";
+      try {
+        ingest = await this.ingestDisplayNames(namesByAccountId, {
+          source: `${this.sourceLabel}:${reason}`,
+        });
+        if (ingest?.error) ingestError = ingest.error;
+      } catch (error) {
+        ingestError = error?.message || "Display-name aggregator ingest failed.";
+        this.logger.warn(`[tracker-displayname] priority ingest failed: ${ingestError}`);
+      }
+
+      const resolvedAccountIds = uniqueAccountIds(Object.keys(namesByAccountId));
+      for (const accountId of resolvedAccountIds) {
+        this.pendingAccountIds.delete(accountId);
+      }
+      const missingAccountIds = normalized.filter((accountId) => !namesByAccountId[accountId]);
+
+      const summary = {
+        reason,
+        requested: normalized.length,
+        resolved: resolvedAccountIds.length,
+        accepted: Number(ingest.accepted || 0),
+        inserted: Number(ingest.inserted || 0),
+        updated: Number(ingest.updated || 0),
+        unchanged: Number(ingest.unchanged || 0),
+        queueRemaining: this.pendingAccountIds.size,
+        finishedAt: new Date().toISOString(),
+      };
+      this.lastSummary = summary;
+      this.lastFinishedAt = summary.finishedAt;
+      this.lastError = ingestError || fetchError || null;
+      await this.sendInstanceState({
+        register: false,
+        status: ingestError || fetchError ? "degraded" : "online",
+      });
+
+      return {
+        ok: true,
+        ...summary,
+        namesByAccountId,
+        missingAccountIds,
+        ...(fetchError ? { fetchError } : {}),
+        ...(ingestError ? { ingestError } : {}),
+      };
+    } catch (error) {
+      const message = error?.message || "Displayname priority resolution failed.";
+      this.lastError = message;
+      this.lastFinishedAt = new Date().toISOString();
+      this.lastSummary = {
+        error: message,
+        queueRemaining: this.pendingAccountIds.size,
+        finishedAt: this.lastFinishedAt,
+      };
+      await this.sendInstanceState({ register: false, status: "error" });
+      return {
+        error: message,
+        namesByAccountId: {},
+        missingAccountIds: normalized,
+        queueRemaining: this.pendingAccountIds.size,
+      };
+    }
   }
 
   async runSync({
@@ -439,7 +588,9 @@ class DisplayNameTrackerService {
         return { error: result?.error || "Displayname fetch failed." };
       }
 
-      const ingest = await this.ingestDisplayNames(result.namesByAccountId, {
+      const namesByAccountId = mergeKnownDisplayNames(cycleIds, result.namesByAccountId);
+      const resolvedAccountIds = uniqueAccountIds(Object.keys(namesByAccountId));
+      const ingest = await this.ingestDisplayNames(namesByAccountId, {
         source: `${this.sourceLabel}:${reason}`,
       });
 
@@ -450,13 +601,15 @@ class DisplayNameTrackerService {
       const summary = {
         reason,
         requested: Number(result.requested || cycleIds.length),
-        resolved: Number(result.resolved || 0),
+        resolved: resolvedAccountIds.length,
         accepted: Number(ingest.accepted || 0),
         inserted: Number(ingest.inserted || 0),
         updated: Number(ingest.updated || 0),
         unchanged: Number(ingest.unchanged || 0),
         queueRemaining: this.pendingAccountIds.size,
         finishedAt: new Date().toISOString(),
+        namesByAccountId,
+        missingAccountIds: cycleIds.filter((accountId) => !namesByAccountId[accountId]),
       };
       this.lastSummary = summary;
       this.lastFinishedAt = summary.finishedAt;

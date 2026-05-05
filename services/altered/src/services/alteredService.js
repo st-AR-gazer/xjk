@@ -45,6 +45,10 @@ import {
 import { parseGbxMapLayouts } from "./gbxMapLayoutParser.js";
 import { buildMapViewerDiffPayload } from "./mapViewerDiff.js";
 import {
+  applyAlterationGrouping,
+  createAlterationGroupingStore,
+} from "./alterationGrouping.js";
+import {
   DATA_DIR,
   DB_FILE,
   ALTERED_MAP_COPY_BACKFILL_BATCH_SIZE,
@@ -55,6 +59,7 @@ import {
 import { buildPublicApiCatalog, PUBLIC_API_ENDPOINTS } from "../publicApi/catalog.js";
 import {
   hasResolvedDisplayName,
+  resolveKnownDisplayName,
   sanitizeResolvedDisplayName,
 } from "../../../shared/displayNameResolution.js";
 
@@ -72,7 +77,8 @@ const DEFAULT_MAPPER_PRIORITY_BATCH_SIZE = 25;
 const DEFAULT_MAPPER_PRIORITY_TOP_LIMIT = 250;
 const DEFAULT_MAPPER_PRIORITY_REFRESH_SECONDS = 600;
 const DEFAULT_MAPPER_REQUEST_GAP_MS = 5000;
-const DEFAULT_MAPPER_CACHE_TTL_SECONDS = 86400;
+const DISPLAY_NAME_CACHE_TTL_SECONDS = 14 * 24 * 60 * 60;
+const DEFAULT_MAPPER_CACHE_TTL_SECONDS = DISPLAY_NAME_CACHE_TTL_SECONDS;
 const DEFAULT_MAPPER_PRIORITY_CACHE_TTL_SECONDS = 1800;
 const DEFAULT_MAPPER_KNOWN_ACCOUNTS_REFRESH_SECONDS = 900;
 const VIEW_PRIORITY_ACCOUNT_TTL_MS = 5 * 60 * 1000;
@@ -1740,6 +1746,7 @@ class AlteredService {
     liveMonitorConfig = {},
     mapperNameSyncConfig = {},
     mapCopyConfig = {},
+    alterationGroupingConfig = {},
     logger = console,
   }) {
     this.repository = repository;
@@ -1750,6 +1757,10 @@ class AlteredService {
     this.liveClient = liveClient;
     this.mapperNameClient = mapperNameClient;
     this.logger = logger;
+    this.alterationGroupingStore = createAlterationGroupingStore({
+      filePath: alterationGroupingConfig?.filePath || "",
+      logger,
+    });
 
     this.alterationsSync = {
       running: false,
@@ -2037,7 +2048,7 @@ class AlteredService {
     };
 
     this.playerNamesCache = new Map();
-    this.playerNamesCacheTtlMs = 15 * 60 * 1000;
+    this.playerNamesCacheTtlMs = DISPLAY_NAME_CACHE_TTL_SECONDS * 1000;
 
     this.mapCopy = {
       dataDir: toText(mapCopyConfig.dataDir || DATA_DIR) || DATA_DIR,
@@ -2375,7 +2386,10 @@ class AlteredService {
     });
   }
 
-  async resolvePlayerNamesByAccountIds(accountIds = [], { chunkSize = 100 } = {}) {
+  async resolvePlayerNamesByAccountIds(
+    accountIds = [],
+    { chunkSize = 100, external = true } = {}
+  ) {
     const normalizedAccountIds = [];
     const seen = new Set();
     for (const rawAccountId of asArray(accountIds)) {
@@ -2414,6 +2428,15 @@ class AlteredService {
     }
 
     const unresolvedAfterLocal = unresolved.filter((accountId) => !namesByAccountId[accountId]);
+    if (!external) {
+      if (unresolvedAfterLocal.length) {
+        this.queuePriorityDisplayNameLookups(unresolvedAfterLocal, {
+          source: "public-resolution",
+        });
+      }
+      return namesByAccountId;
+    }
+
     let unresolvedAfterAggregator = unresolvedAfterLocal;
 
     if (unresolvedAfterLocal.length && this.aggregatorClient?.isConfigured?.()) {
@@ -2439,41 +2462,122 @@ class AlteredService {
       );
     }
 
-    const syncExternallyResolvedNames = () => {
+    let unresolvedAfterKnown = unresolvedAfterAggregator;
+    for (const accountId of unresolvedAfterAggregator) {
+      const displayName = sanitizeResolvedDisplayName(resolveKnownDisplayName(accountId), {
+        accountId,
+      });
+      if (!displayName) continue;
+      namesByAccountId[accountId] = displayName;
+      externallyResolvedNamesByAccountId[accountId] = displayName;
+      this.cachePlayerName(accountId, displayName);
+    }
+    unresolvedAfterKnown = unresolvedAfterAggregator.filter(
+      (accountId) => !namesByAccountId[accountId]
+    );
+
+    let unresolvedAfterDisplaynameRelay = unresolvedAfterKnown;
+    if (
+      unresolvedAfterKnown.length &&
+      this.shouldUseDisplaynameRelay() &&
+      typeof this.trackerDisplaynameClient?.resolveAccountIds === "function"
+    ) {
+      const relayResult = await this.trackerDisplaynameClient.resolveAccountIds(
+        unresolvedAfterKnown,
+        {
+          front: true,
+          reason: "altered-public-resolution",
+        }
+      );
+      if (relayResult?.ok) {
+        const relayPayload = relayResult.data || {};
+        const relayNamesByAccountId =
+          relayPayload.namesByAccountId && typeof relayPayload.namesByAccountId === "object"
+            ? relayPayload.namesByAccountId
+            : {};
+        for (const [rawAccountId, rawDisplayName] of Object.entries(relayNamesByAccountId)) {
+          const accountId = normalizeAccountId(rawAccountId);
+          const displayName = sanitizeResolvedDisplayName(rawDisplayName, { accountId });
+          if (!accountId || !displayName) continue;
+          namesByAccountId[accountId] = displayName;
+          externallyResolvedNamesByAccountId[accountId] = displayName;
+          this.cachePlayerName(accountId, displayName);
+        }
+
+        this.trackerIntegrations.displaynameRelayAvailable = true;
+        this.trackerIntegrations.lastDisplaynameRelayError =
+          relayPayload.ingestError || null;
+        this.trackerIntegrations.lastDisplaynameRelay = {
+          at: new Date().toISOString(),
+          reason: "altered-public-resolution",
+          requested: Number(relayPayload.requested || unresolvedAfterKnown.length),
+          resolved: Number(
+            relayPayload.resolved || Object.keys(relayNamesByAccountId).length || 0
+          ),
+          accepted: Number(relayPayload.accepted || 0),
+          inserted: Number(relayPayload.inserted || 0),
+          updated: Number(relayPayload.updated || 0),
+          unchanged: Number(relayPayload.unchanged || 0),
+          queueRemaining: Number(relayPayload.queueRemaining || 0),
+        };
+      } else if (relayResult?.error) {
+        this.trackerIntegrations.lastDisplaynameRelayError = relayResult.error;
+        this.logger.warn(
+          `[altered-displayname] tracker-displayname resolve warning: ${relayResult.error}`
+        );
+      }
+
+      unresolvedAfterDisplaynameRelay = unresolvedAfterKnown.filter(
+        (accountId) => !namesByAccountId[accountId]
+      );
+    }
+
+    const syncExternallyResolvedNames = async () => {
       const syncedAccountIds = Object.keys(externallyResolvedNamesByAccountId);
-      if (!syncedAccountIds.length || typeof this.repository?.upsertMapperNames !== "function") {
+      if (!syncedAccountIds.length) {
         return;
       }
-      const upsert = this.repository.upsertMapperNames({
-        accountIds: syncedAccountIds,
-        namesByAccountId: externallyResolvedNamesByAccountId,
-        source: "public-displayname-lookup",
-      });
-      if (upsert?.error) {
-        this.logger.warn(`[altered-displayname] local mapper sync warning: ${upsert.error}`);
-      } else if (typeof this.repository?.updateMapMapperDisplayNames === "function") {
-        const mapLinks = this.repository.updateMapMapperDisplayNames({
+      if (typeof this.repository?.upsertMapperNames === "function") {
+        const upsert = this.repository.upsertMapperNames({
+          accountIds: syncedAccountIds,
           namesByAccountId: externallyResolvedNamesByAccountId,
+          source: "public-displayname-lookup",
         });
-        if (mapLinks?.error) {
-          this.logger.warn(
-            `[altered-displayname] map display-name sync warning: ${mapLinks.error}`
-          );
+        if (upsert?.error) {
+          this.logger.warn(`[altered-displayname] local mapper sync warning: ${upsert.error}`);
+        } else if (typeof this.repository?.updateMapMapperDisplayNames === "function") {
+          const mapLinks = this.repository.updateMapMapperDisplayNames({
+            namesByAccountId: externallyResolvedNamesByAccountId,
+          });
+          if (mapLinks?.error) {
+            this.logger.warn(
+              `[altered-displayname] map display-name sync warning: ${mapLinks.error}`
+            );
+          }
         }
+      }
+      try {
+        await this.ingestDisplayNamesToAggregator(externallyResolvedNamesByAccountId, {
+          source: "public-displayname-lookup",
+        });
+      } catch (error) {
+        this.logger.warn(
+          `[altered-displayname] aggregator display-name sync warning: ${error?.message || error}`
+        );
       }
     };
 
-    if (!unresolvedAfterAggregator.length || !this.trackerClient?.getPlayerNames) {
-      if (unresolvedAfterAggregator.length) {
-        this.queuePriorityDisplayNameLookups(unresolvedAfterAggregator, {
+    if (!unresolvedAfterDisplaynameRelay.length || !this.trackerClient?.getPlayerNames) {
+      if (unresolvedAfterDisplaynameRelay.length) {
+        this.queuePriorityDisplayNameLookups(unresolvedAfterDisplaynameRelay, {
           source: "public-resolution",
         });
       }
-      syncExternallyResolvedNames();
+      await syncExternallyResolvedNames();
       return namesByAccountId;
     }
 
-    const namesResult = await this.trackerClient.getPlayerNames(unresolvedAfterAggregator, {
+    const namesResult = await this.trackerClient.getPlayerNames(unresolvedAfterDisplaynameRelay, {
       chunkSize,
     });
     const fromTracker =
@@ -2490,13 +2594,13 @@ class AlteredService {
       this.cachePlayerName(accountId, displayName);
     }
 
-    const stillUnresolved = unresolvedAfterAggregator.filter((accountId) => !namesByAccountId[accountId]);
+    const stillUnresolved = unresolvedAfterDisplaynameRelay.filter((accountId) => !namesByAccountId[accountId]);
     if (stillUnresolved.length) {
       this.queuePriorityDisplayNameLookups(stillUnresolved, {
         source: "public-resolution",
       });
     }
-    syncExternallyResolvedNames();
+    await syncExternallyResolvedNames();
 
     return namesByAccountId;
   }
@@ -3240,11 +3344,24 @@ class AlteredService {
 
   getAlterationsMapFilters() {
     const filters = this.repository.getAlterationsMapFilters();
+    const configuredAlterations = this.getConfiguredAlterations();
     return {
       ...filters,
-      alterations: this.repository.listAlterations(),
+      alterations: configuredAlterations.alterations,
+      alteration_groups: configuredAlterations.categories,
+      alteration_grouping: {
+        loaded: configuredAlterations.loaded,
+        alias_count: configuredAlterations.alias_count,
+        error: configuredAlterations.error,
+      },
       generatedAt: new Date().toISOString(),
     };
+  }
+
+  getConfiguredAlterations() {
+    const alterations = this.repository.listAlterations();
+    const snapshot = this.alterationGroupingStore?.getSnapshot?.() || null;
+    return applyAlterationGrouping(alterations, snapshot);
   }
 
   async getAlterationsMaps({
@@ -3253,15 +3370,26 @@ class AlteredService {
     q = "",
     sort = "name",
     campaignIds = [],
+    excludeCampaignIds = [],
     status = "",
+    statuses = [],
+    excludeStatuses = [],
     season = "",
     year = null,
     alterationSlugs = [],
+    excludeAlterationSlugs = [],
     alterationIds = [],
     mapNumber = null,
     environment = "",
+    environments = [],
+    excludeEnvironments = [],
     mapType = "",
+    mapTypes = [],
+    excludeMapTypes = [],
     hasWr = undefined,
+    wrStates = [],
+    excludeWrStates = [],
+    randomSeed = "",
   } = {}) {
     const safeLimit = clampInt(limit, { min: 1, max: 100000, fallback: 50000 });
     const safeOffset = clampInt(offset, { min: 0, max: 2000000, fallback: 0 });
@@ -3272,8 +3400,22 @@ class AlteredService {
         .filter((value) => /^\d+$/.test(value)),
       (value) => value
     );
+    const normalizedExcludeCampaignIds = uniqueBy(
+      (Array.isArray(excludeCampaignIds) ? excludeCampaignIds : [excludeCampaignIds])
+        .flatMap((value) => String(value || "").split(","))
+        .map((value) => value.trim())
+        .filter((value) => /^\d+$/.test(value)),
+      (value) => value
+    );
     const normalizedAlterationSlugs = uniqueBy(
       (Array.isArray(alterationSlugs) ? alterationSlugs : [alterationSlugs])
+        .flatMap((value) => String(value || "").split(","))
+        .map((value) => value.trim())
+        .filter(Boolean),
+      (value) => value.toLowerCase()
+    );
+    const normalizedExcludeAlterationSlugs = uniqueBy(
+      (Array.isArray(excludeAlterationSlugs) ? excludeAlterationSlugs : [excludeAlterationSlugs])
         .flatMap((value) => String(value || "").split(","))
         .map((value) => value.trim())
         .filter(Boolean),
@@ -3292,15 +3434,26 @@ class AlteredService {
       q,
       sort,
       campaignIds: normalizedCampaignIds,
+      excludeCampaignIds: normalizedExcludeCampaignIds,
       status,
+      statuses,
+      excludeStatuses,
       season,
       year,
       alterationSlugs: normalizedAlterationSlugs,
+      excludeAlterationSlugs: normalizedExcludeAlterationSlugs,
       alterationIds: normalizedAlterationIds,
       mapNumber,
       environment,
+      environments,
+      excludeEnvironments,
       mapType,
+      mapTypes,
+      excludeMapTypes,
       hasWr,
+      wrStates,
+      excludeWrStates,
+      randomSeed,
     });
     const holderAccountIds = this.collectHolderAccountIds(maps, [
       "wr_account_id",
@@ -3389,12 +3542,13 @@ class AlteredService {
   }
 
   getSimilarityWeightWorkspace() {
+    const configuredAlterations = this.getConfiguredAlterations();
     return {
       generatedAt: new Date().toISOString(),
       defaults: buildSimilarityWeightProfile(DEFAULT_SIMILARITY_WEIGHT_PROFILE),
       scopedRules: this.repository.listSimilarityWeightRules(),
       campaignOverrides: this.repository.listSimilarityCampaignWeightOverrides(),
-      alterations: this.repository.listAlterations(),
+      alterations: configuredAlterations.alterations,
       alterationRegexLibrary: listKnownAlterationRegexLibrary(),
       alterationRegexBehavior: listKnownAlterationRegexBehavior(),
     };
@@ -3624,10 +3778,16 @@ class AlteredService {
   }
 
   getAlterationTypes() {
-    const alterations = this.repository.listAlterations();
+    const configuredAlterations = this.getConfiguredAlterations();
     return {
-      alterations,
-      count: alterations.length,
+      alterations: configuredAlterations.alterations,
+      alteration_groups: configuredAlterations.categories,
+      alteration_grouping: {
+        loaded: configuredAlterations.loaded,
+        alias_count: configuredAlterations.alias_count,
+        error: configuredAlterations.error,
+      },
+      count: configuredAlterations.alterations.length,
       generatedAt: new Date().toISOString(),
     };
   }
@@ -3714,7 +3874,49 @@ class AlteredService {
     let wrSource = "altered-db";
 
     if (!resolvedWrOverall.length) {
-      const trackerMapsResult = await this.trackerClient.getTrackedMaps(60000);
+      const trackerWrResult = await trackerCoverageClient.getLeaderboardWrLeaderboards({
+        overallLimit: safeOverallLimit + safeOverallOffset,
+        overallOffset: 0,
+        perBucketLimit: safePerBucketLimit,
+        includeBuckets: safeIncludeBuckets,
+      });
+      const trackerWrPayload = trackerWrResult?.ok ? trackerWrResult.data || {} : {};
+      const trackerWrOverall = Array.isArray(trackerWrPayload?.overall)
+        ? trackerWrPayload.overall
+        : [];
+      if (trackerWrOverall.length) {
+        resolvedWrOverall = trackerWrOverall.slice(
+          safeOverallOffset,
+          safeOverallOffset + safeOverallLimit
+        );
+        resolvedWrBySeasonRows = Array.isArray(trackerWrPayload?.bySeasonRows)
+          ? trackerWrPayload.bySeasonRows
+          : Array.isArray(trackerWrPayload?.by_season_rows)
+            ? trackerWrPayload.by_season_rows
+            : [];
+        resolvedWrByCampaignRows = Array.isArray(trackerWrPayload?.byCampaignRows)
+          ? trackerWrPayload.byCampaignRows
+          : Array.isArray(trackerWrPayload?.by_campaign_rows)
+            ? trackerWrPayload.by_campaign_rows
+            : [];
+        resolvedWrBySlotRows = Array.isArray(trackerWrPayload?.bySlotRows)
+          ? trackerWrPayload.bySlotRows
+          : Array.isArray(trackerWrPayload?.by_slot_rows)
+            ? trackerWrPayload.by_slot_rows
+            : [];
+        wrSummaryOverride = {
+          unique_players: Number(trackerWrPayload?.summary?.uniquePlayers || trackerWrOverall.length),
+          total_wrs: Number(
+            trackerWrPayload?.summary?.totalWrs ||
+              trackerWrOverall.reduce((sum, row) => sum + Number(row?.wr_count || 0), 0)
+          ),
+        };
+        wrSource = trackerWrPayload?.source || "tracker-leaderboard-rank-one";
+      }
+    }
+
+    if (!resolvedWrOverall.length) {
+      const trackerMapsResult = await trackerCoverageClient.getTrackedMaps(60000);
       if (trackerMapsResult?.ok) {
         const fallback = buildWrLeaderboardsFromTrackerMaps(trackerMapsResult?.data?.maps || []);
         if (fallback.overall.length) {
@@ -3750,7 +3952,10 @@ class AlteredService {
       wrBySlotRows: resolvedWrBySlotRows,
     });
     const namesByAccountId = wrAccountIds.length
-      ? await this.resolvePlayerNamesByAccountIds(wrAccountIds, { chunkSize: 100 })
+      ? await this.resolvePlayerNamesByAccountIds(wrAccountIds, {
+          chunkSize: 100,
+          external: wrSource !== "tracker-leaderboard-rank-one",
+        })
       : {};
 
     const namedRows = mergeWrDisplayNamesFromTracker({
@@ -4633,6 +4838,36 @@ class AlteredService {
       limit: safeWrHistoryLimit,
     });
     const map = mapInfo.map;
+    const authorAccountId = normalizeAccountId(map.author);
+    const submitterAccountId = normalizeAccountId(map.submitter);
+    const authorDisplayName =
+      sanitizeResolvedDisplayName(map.authorDisplayName, { accountId: authorAccountId }) ||
+      this.getCachedPlayerName(authorAccountId) ||
+      null;
+    const submitterDisplayName =
+      sanitizeResolvedDisplayName(map.submitterDisplayName, { accountId: submitterAccountId }) ||
+      this.getCachedPlayerName(submitterAccountId) ||
+      null;
+    const pendingMapperNameAccountIds = [];
+    const collectPendingMapperName = (accountId, displayName) => {
+      const safeAccountId = normalizeAccountId(accountId);
+      if (
+        !safeAccountId ||
+        hasResolvedDisplayName(displayName, { accountId: safeAccountId })
+      ) {
+        return;
+      }
+      pendingMapperNameAccountIds.push(safeAccountId);
+    };
+    collectPendingMapperName(authorAccountId, authorDisplayName);
+    collectPendingMapperName(submitterAccountId, submitterDisplayName);
+    const priorityAccountIds = uniqueBy(pendingMapperNameAccountIds, (accountId) => accountId);
+    if (priorityAccountIds.length) {
+      this.queuePriorityDisplayNameLookups(priorityAccountIds, {
+        source: "public-map-detail",
+      });
+    }
+
     const derived = deriveMapMetadata(map);
 
     return {
@@ -4651,10 +4886,12 @@ class AlteredService {
         fileUrl: derived.fileUrl,
         thumbnailUrl: derived.thumbnailUrl || map.thumbnailUrl || null,
         author: map.author || null,
-        authorDisplayName: map.authorDisplayName || null,
+        authorDisplayName,
+        authorSavedDisplayName: map.authorSavedDisplayName || null,
         authorScore: Number(map.authorMs || 0),
         submitter: map.submitter || null,
-        submitterDisplayName: map.submitterDisplayName || null,
+        submitterDisplayName,
+        submitterSavedDisplayName: map.submitterSavedDisplayName || null,
         goldScore: Number(map.goldMs || 0),
         silverScore: Number(map.silverMs || 0),
         bronzeScore: Number(map.bronzeMs || 0),
@@ -6259,6 +6496,7 @@ class AlteredService {
 
     const records = [];
     const upsertRecords = [];
+    const savedDisplayNamesByMapUid = {};
     const summary = {
       total: normalizedMaps.length,
       reused: 0,
@@ -6405,6 +6643,7 @@ class AlteredService {
         .map((map) => ({
           mapUid: resolveMapUid(map),
           name: toText(map?.name || map?.mapName || map?.title || resolveMapUid(map)),
+          author: normalizeAccountId(map?.author || map?.authorAccountId || map?.author_account_id),
           downloadUrl: resolveMapDownloadUrl(map),
           campaignName: resolveMapCampaignName(map),
           slot: resolveMapSlot(map),
@@ -6583,6 +6822,15 @@ class AlteredService {
 
         for (const map of parserBatch) {
           const parsed = parsedByUid.get(map.mapUid.toLowerCase()) || null;
+          const parsedAuthorNickname = sanitizeResolvedDisplayName(parsed?.authorNickname, {
+            accountId: parsed?.authorLogin || map.author || "",
+          });
+          if (parsedAuthorNickname) {
+            savedDisplayNamesByMapUid[map.mapUid] = {
+              authorSavedDisplayName: parsedAuthorNickname,
+              authorAccountId: parsed?.authorLogin || map.author || "",
+            };
+          }
           let signature = parsed?.signature || null;
           let sourceError = toText(parsed?.error) || null;
           if (!signature) {
@@ -6637,6 +6885,14 @@ class AlteredService {
     const upsert = this.repository.upsertMapContentSignatures({
       records: upsertRecords,
     });
+    if (Object.keys(savedDisplayNamesByMapUid).length) {
+      const savedNames = this.repository.updateMapSavedDisplayNames({
+        namesByMapUid: savedDisplayNamesByMapUid,
+      });
+      if (savedNames?.error) {
+        this.logger.warn(`[altered-signatures] saved mapper nickname sync warning: ${savedNames.error}`);
+      }
+    }
     reportSignatureProgress({
       phase: "complete",
       total: normalizedMaps.length,
@@ -10819,7 +11075,17 @@ class AlteredService {
       };
     }
 
-    const namesResult = await this.getDisplayNamesFromAggregator(normalizedAccountIds);
+    const runNamesByAccountId =
+      run?.data?.namesByAccountId && typeof run.data.namesByAccountId === "object"
+        ? run.data.namesByAccountId
+        : {};
+    const namesResult = Object.keys(runNamesByAccountId).length
+      ? {
+          ok: true,
+          namesByAccountId: runNamesByAccountId,
+          resolved: Object.keys(runNamesByAccountId).length,
+        }
+      : await this.getDisplayNamesFromAggregator(normalizedAccountIds);
     if (!namesResult?.ok) {
       const message = namesResult?.error || "Tracker-displayname sync completed but names could not be read.";
       this.trackerIntegrations.lastDisplaynameRelayError = message;

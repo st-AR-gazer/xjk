@@ -248,6 +248,12 @@ const WEEKLY_SHORTS_BY_TITLE = new Map(
 
 const ALTERATION_ALIASES = new Map(
   Object.entries({
+    "100x boost": "100x Booster",
+    "100xbooster": "100x Booster",
+    "100x booster": "100x Booster",
+    "all 1up": "1Up",
+    antiboost: "Antiboost",
+    "anti boost": "Antiboost",
     dirt: "Dirt",
     dirty: "Dirt",
     flooded: "Flooded",
@@ -273,9 +279,11 @@ const ALTERATION_ALIASES = new Map(
     "slot-trak": "Slot-Trak",
     "slot track": "Slot-Trak",
     surfaceless: "Surfaceless",
+    undrwater: "Underwater",
     underwater: "Underwater",
     uw: "Underwater",
     reverse: "Reverse",
+    rev: "Reverse",
     short: "Short",
     "no grip": "No-Grip",
     "no-grip": "No-Grip",
@@ -292,12 +300,118 @@ const ALTERATION_ALIASES = new Map(
     yeet: "YEET",
     deet: "YEET Down",
     "there and back": "There and Back",
+    "there&back": "There and Back",
+    "there back": "There and Back",
     boomerang: "There and Back",
     checkpointless: "Checkpointless",
     cpless: "Checkpointless",
+    "cp less": "Checkpointless",
+    magna: "Magnet",
     sttf: "Straight to the Finish",
+    stts: "Straight to the Start",
     "straight to the finish": "Straight to the Finish",
+    "straight to the start": "Straight to the Start",
+    "sky finish": "Sky is the Finish",
+    "sky is the finish": "Sky is the Finish",
+    "cp1 end": "CP1 is End",
+    "cp1 is end": "CP1 is End",
+    "cp1 kept": "CP1 Kept",
+    "cp1 to start": "CP1 to Start",
+    cpfull: "CPFull",
+    "cp full": "CPFull",
+    "cp bump": "CP Bump",
+    "cp boost": "CP Boost",
+    "cp is engineoff": "CP is EngineOff",
+    "cps 90°": "CPs Rotated 90",
+    "cps 90": "CPs Rotated 90",
+    "cps rotated 90": "CPs Rotated 90",
+    "cruise control": "Cruise",
+    "ice short": "Ice Short",
+    iceshort: "Ice Short",
+    wetplastic: "Wet Plastic",
+    "wet plastic": "Wet Plastic",
+    weticywood: "Wet Icy Wood",
+    pureweticywood: "Wet Icy Wood",
+    "weticywood pure": "Wet Icy Wood",
+    "wet icy wood pure": "Wet Icy Wood",
+    "pure wet icy wood": "Wet Icy Wood",
+    "wet icy wood": "Wet Icy Wood",
+    "wet icy plastic": "Wet Icy Plastic",
+    "wet wood": "Wet Wood",
+    "wet wood yrd": "Wet Wood",
+    "wet wood rrd": "Wet Wood",
+    "random dank": "Random Dankness",
+    rngboost: "RNG Booster",
+    "rng boost": "RNG Booster",
+    "effect planes": "Effect Planes",
+    "red effects": "Red Effects",
+    "reverse boost": "Reverse Boost",
+    carswitch: "Carswitch",
+    "car switch": "Carswitch",
+    "4carswitch": "4 Carswitch",
+    "4 carswitch": "4 Carswitch",
+    "4cs": "4 Carswitch",
+    "4 car choice": "4 Car Choice",
+    "4cs planes": "4 Carswitch Planes",
+    "4 carswitch planes": "4 Carswitch Planes",
+    "4carswitch planes": "4 Carswitch Planes",
+    "4 carswitch straight to the finish": "4 Carswitch Straight to the Finish",
+    "4carswitch sttf": "4 Carswitch Straight to the Finish",
+    "fewest blocks": "Fewest Blocks",
+    "floor-fin": "Floor-Fin",
+    "floor fin": "Floor-Fin",
+    "ground clippers": "Ground Clippers",
+    "mini rpg": "Mini RPG",
+    "no items": "No Items",
+    "ring cp": "Ring CP",
+    "select del": "Select Del",
+    "to the top": "To The Top",
+    "yeet down": "YEET Down",
+    "yeet max-up": "YEET Max-Up",
+    "yeet max up": "YEET Max-Up",
+    "yeet puzzle": "YEET Puzzle",
+    "yeet reverse": "YEET Reverse",
+    "yeet there&back": "YEET There and Back",
+    "yeet there back": "YEET There and Back",
+    "yeet there and back": "YEET There and Back",
+    yeetrandmpuzzle: "YEET Random Puzzle",
     "official nadeo map": "Unaltered Nadeo",
+  })
+);
+
+const ALTERATION_SEQUENCE_ALIASES = new Map(
+  Object.entries({
+    "4 carswitch straight to the finish": ["4 Carswitch", "Straight to the Finish"],
+    "4carswitch sttf": ["4 Carswitch", "Straight to the Finish"],
+    "deet to the top": ["YEET Down", "To The Top"],
+    "cp1 end reverse": ["CP1 is End", "Reverse"],
+    "cp1 is end reverse": ["CP1 is End", "Reverse"],
+    "rev cp1 end": ["Reverse", "CP1 is End"],
+    "cpless reverse": ["Checkpointless", "Reverse"],
+    "cplessrev ¬gate": ["Checkpointless", "Reverse"],
+    "checkpointless reverse": ["Checkpointless", "Reverse"],
+    "ice reverse": ["Ice", "Reverse"],
+    "ice rev": ["Ice", "Reverse"],
+    "ice rev reactor": ["Ice", "Reverse", "Reactor"],
+    "ice reverse reactor": ["Ice", "Reverse", "Reactor"],
+    "magnet reverse": ["Magnet", "Reverse"],
+    "magnet rev": ["Magnet", "Reverse"],
+    "plastic reverse": ["Plastic", "Reverse"],
+    "sky finish reverse": ["Sky is the Finish", "Reverse"],
+    "sky is the finish reverse": ["Sky is the Finish", "Reverse"],
+    "underwater reverse": ["Underwater", "Reverse"],
+    "undrwater reverse": ["Underwater", "Reverse"],
+    "unw reverse": ["Underwater", "Reverse"],
+    "yeet reverse": ["YEET", "Reverse"],
+    "yeet puzzle": ["YEET", "Puzzle"],
+    "yeet there back": ["YEET", "There and Back"],
+    "yeet there&back": ["YEET", "There and Back"],
+    "yeet there and back": ["YEET", "There and Back"],
+    "yeet random puzzle": ["YEET", "Random", "Puzzle"],
+    yeetrandmpuzzle: ["YEET", "Random", "Puzzle"],
+    "road dirt": ["Road", "Dirt"],
+    "race sttf": ["Straight to the Finish"],
+    "terrain sttf": ["Terrain", "Straight to the Finish"],
   })
 );
 
@@ -430,12 +544,19 @@ function normalizeColorRange(color) {
 }
 
 function normalizeTrainingAlterations(parts = []) {
+  return normalizeTrainingAlterationFields(parts).alterations;
+}
+
+function normalizeTrainingAlterationFields(parts = []) {
   const out = [];
+  let carType = null;
   for (const part of parts) {
     if (!part) continue;
-    out.push(...splitAlterationTail(part));
+    const parsed = parseAlterationTail(part);
+    out.push(...parsed.alterations);
+    carType ||= parsed.carType;
   }
-  return uniqueLower(out);
+  return normalizeAlterationFields(uniqueLower(out).join(" + "), { carType });
 }
 
 function buildColorMappedProposedName(value = "") {
@@ -452,11 +573,12 @@ function parseColorMappedFields(sanitizedName) {
     const year = normalizeYear(seasonalCombinedMatch.groups.year);
     const mapNumbers = normalizeColorRange(seasonalCombinedMatch.groups.color);
     if (season && year && mapNumbers.length) {
+      const alterationFields = normalizeTrainingAlterationFields([seasonalCombinedMatch.groups.tail]);
       return {
         season,
         year,
         mapNumbers,
-        alterationMix: normalizeTrainingAlterations([seasonalCombinedMatch.groups.tail]),
+        ...alterationFields,
         parserPattern: "seasonal-color-combined",
         proposedName: buildColorMappedProposedName(name),
       };
@@ -476,11 +598,12 @@ function parseColorMappedFields(sanitizedName) {
     const year = normalizeYear(match.groups.year);
     const mapNumbers = normalizeColorRange(match.groups.color);
     if (!season || !year || !mapNumbers.length) continue;
+    const alterationFields = normalizeTrainingAlterationFields([match.groups.tail]);
     return {
       season,
       year,
       mapNumbers,
-      alterationMix: normalizeTrainingAlterations([match.groups.tail]),
+      ...alterationFields,
       parserPattern: entry.parserPattern,
       proposedName: buildColorMappedProposedName(name),
     };
@@ -497,11 +620,12 @@ function parseTrainingFields(sanitizedName) {
   if (colorMatch?.groups?.color) {
     const mapNumbers = normalizeColorRange(colorMatch.groups.color);
     if (mapNumbers.length) {
+      const alterationFields = normalizeTrainingAlterationFields(["Combined"]);
       return {
         season: "Training",
         year: normalizeTrainingYear(null),
         mapNumbers,
-        alterationMix: normalizeTrainingAlterations(["Combined"]),
+        ...alterationFields,
         parserPattern: "training-color-combined",
         proposedName: buildColorMappedProposedName(name),
       };
@@ -571,11 +695,12 @@ function parseTrainingFields(sanitizedName) {
     const mapNumbers = normalizeTrainingMapNumbers(entry.mapKeys.map((key) => match.groups[key]));
     if (!mapNumbers.length) continue;
     const tails = entry.tailKeys.map((key) => match.groups[key]).filter(Boolean);
+    const alterationFields = normalizeTrainingAlterationFields(tails);
     return {
       season: "Training",
       year: normalizeTrainingYear(null),
       mapNumbers,
-      alterationMix: normalizeTrainingAlterations(tails),
+      ...alterationFields,
       parserPattern: entry.parserPattern,
     };
   }
@@ -584,11 +709,15 @@ function parseTrainingFields(sanitizedName) {
   if (beforeSeasonMatch?.groups?.map) {
     const mapNumbers = normalizeTrainingMapNumbers([beforeSeasonMatch.groups.map]);
     if (mapNumbers.length) {
+      const alterationFields = normalizeTrainingAlterationFields([
+        beforeSeasonMatch.groups.tail,
+        beforeSeasonMatch.groups.postTail,
+      ]);
       return {
         season: "Training",
         year: normalizeTrainingYear(null),
         mapNumbers,
-        alterationMix: normalizeTrainingAlterations([beforeSeasonMatch.groups.tail, beforeSeasonMatch.groups.postTail]),
+        ...alterationFields,
         parserPattern: "training-prefix-before-season",
       };
     }
@@ -599,11 +728,12 @@ function parseTrainingFields(sanitizedName) {
     const mapNumbers = normalizeTrainingMapNumbers([prefixMatch.groups.map]);
     const tail = toText(prefixMatch.groups.tail || "").replace(/^[\s|:-]+/, "").trim();
     if (mapNumbers.length) {
+      const alterationFields = normalizeTrainingAlterationFields([tail]);
       return {
         season: "Training",
         year: normalizeTrainingYear(null),
         mapNumbers,
-        alterationMix: normalizeTrainingAlterations([tail]),
+        ...alterationFields,
         parserPattern: "training-prefix",
       };
     }
@@ -613,11 +743,12 @@ function parseTrainingFields(sanitizedName) {
   if (numberBeforeDashMatch?.groups?.map) {
     const mapNumbers = normalizeTrainingMapNumbers([numberBeforeDashMatch.groups.map]);
     if (mapNumbers.length) {
+      const alterationFields = normalizeTrainingAlterationFields([numberBeforeDashMatch.groups.tail]);
       return {
         season: "Training",
         year: normalizeTrainingYear(null),
         mapNumbers,
-        alterationMix: normalizeTrainingAlterations([numberBeforeDashMatch.groups.tail]),
+        ...alterationFields,
         parserPattern: "training-number-before-dash",
       };
     }
@@ -627,11 +758,12 @@ function parseTrainingFields(sanitizedName) {
   if (tailBeforeDashMatch?.groups?.map) {
     const mapNumbers = normalizeTrainingMapNumbers([tailBeforeDashMatch.groups.map]);
     if (mapNumbers.length) {
+      const alterationFields = normalizeTrainingAlterationFields([tailBeforeDashMatch.groups.tail]);
       return {
         season: "Training",
         year: normalizeTrainingYear(null),
         mapNumbers,
-        alterationMix: normalizeTrainingAlterations([tailBeforeDashMatch.groups.tail]),
+        ...alterationFields,
         parserPattern: "training-tail-before-dash",
       };
     }
@@ -702,6 +834,62 @@ function normalizeAlterationToken(token) {
   return ALTERATION_ALIASES.get(collapsed) || ALTERATION_ALIASES.get(noDash) || cleaned;
 }
 
+function normalizeAlterationLookupKey(token) {
+  return cleanAlterationToken(token)
+    .toLowerCase()
+    .replace(/[_]/g, " ")
+    .replace(/-/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+function normalizeCarTypeToken(token) {
+  const key = normalizeAliasValue(token);
+  if (!key) return null;
+  return ENVIRONMENT_BY_TOKEN.get(key) || null;
+}
+
+function carTypeFromSpecialCampaign(label) {
+  const normalized = normalizeAliasValue(label);
+  if (normalized.startsWith("snow discovery")) return "Snow";
+  if (normalized.startsWith("rally discovery")) return "Rally";
+  if (normalized.startsWith("desert discovery")) return "Desert";
+  return null;
+}
+
+function consumeLeadingCarType(value) {
+  const tokens = tokenizeCampaignName(value);
+  if (!tokens.length) {
+    return {
+      carType: null,
+      remainder: "",
+    };
+  }
+  const match = matchAliasFromTokens(tokens, ENVIRONMENT_BY_TOKEN);
+  if (!match) {
+    return {
+      carType: null,
+      remainder: normalizeWhitespace(value),
+    };
+  }
+  return {
+    carType: match.value,
+    remainder: tokens.slice(match.consumed).join(" "),
+  };
+}
+
+function splitAlterationPart(part) {
+  const cleaned = cleanAlterationToken(part);
+  if (!cleaned) return [];
+  const key = normalizeAlterationLookupKey(cleaned);
+  const sequence = ALTERATION_SEQUENCE_ALIASES.get(key);
+  if (Array.isArray(sequence) && sequence.length) {
+    return uniqueLower(sequence.map((item) => normalizeAlterationToken(item)).filter(Boolean));
+  }
+  const normalized = normalizeAlterationToken(cleaned);
+  return normalized ? [normalized] : [];
+}
+
 function normalizeAliasValue(value) {
   return normalizeWhitespace(toText(value))
     .toLowerCase()
@@ -737,8 +925,17 @@ function matchAliasFromTokens(tokens = [], aliasMap = new Map()) {
 }
 
 function splitAlterationTail(tail) {
+  return parseAlterationTail(tail).alterations;
+}
+
+function parseAlterationTail(tail) {
   const raw = normalizeWhitespace(toText(tail));
-  if (!raw) return [];
+  if (!raw) {
+    return {
+      alterations: [],
+      carType: null,
+    };
+  }
 
   let normalized = raw;
   if (normalized.startsWith("(") && normalized.endsWith(")")) {
@@ -749,6 +946,7 @@ function splitAlterationTail(tail) {
     .replace(/\]\s+\(/g, "], (")
     .replace(/\)\s+\[/g, "), [")
     .replace(/\)\s+\(/g, "), (")
+    .replace(/\bcp\s*\/\s*boost\b/gi, "CP Boost")
     .replace(/\bfeat(?:uring)?\b/gi, ",")
     .replace(/\bft\b/gi, ",")
     .replace(/\s+\+\s+/g, ",")
@@ -757,10 +955,74 @@ function splitAlterationTail(tail) {
     .replace(/\s*;\s*/g, ",")
     .replace(/\s+\|\s+/g, ",")
     .replace(/\s+-\s+/g, ",");
-  return normalized
-    .split(",")
-    .map((part) => normalizeAlterationToken(part))
-    .filter(Boolean);
+  let carType = null;
+  const alterations = [];
+  for (const rawPart of normalized.split(",")) {
+    const part = cleanAlterationToken(rawPart);
+    if (!part) continue;
+    const carOnly = normalizeCarTypeToken(part);
+    if (carOnly) {
+      carType ||= carOnly;
+      continue;
+    }
+    const consumed = consumeLeadingCarType(part);
+    const tailPart = cleanAlterationToken(consumed.remainder);
+    if (consumed.carType) {
+      carType ||= consumed.carType;
+      if (!tailPart) continue;
+    }
+    alterations.push(...splitAlterationPart(tailPart || part));
+  }
+  return {
+    alterations: uniqueLower(alterations),
+    carType,
+  };
+}
+
+function normalizeAlterationFields(tail, { carType = null, fallbackAlteration = null } = {}) {
+  const parsed = parseAlterationTail(tail);
+  const alterations = uniqueLower(
+    parsed.alterations.length
+      ? parsed.alterations
+      : fallbackAlteration
+        ? splitAlterationPart(fallbackAlteration)
+        : []
+  );
+  const alteration =
+    alterations.length === 1
+      ? alterations[0]
+      : alterations.length > 1
+        ? alterations.join(" + ")
+        : null;
+  return {
+    alteration,
+    alterationMix: alterations,
+    alterations,
+    carType: parsed.carType || carType || null,
+  };
+}
+
+function mergeAlterationFields(fields = []) {
+  const alterations = uniqueLower(
+    fields.flatMap((field) => {
+      if (Array.isArray(field?.alterations)) return field.alterations;
+      if (Array.isArray(field?.alterationMix)) return field.alterationMix;
+      return field?.alteration ? [field.alteration] : [];
+    })
+  );
+  const carType = fields.map((field) => field?.carType || field?.environment || null).find(Boolean) || null;
+  const alteration =
+    alterations.length === 1
+      ? alterations[0]
+      : alterations.length > 1
+        ? alterations.join(" + ")
+        : null;
+  return {
+    alteration,
+    alterationMix: alterations,
+    alterations,
+    carType,
+  };
 }
 
 function uniqueLower(items = []) {
@@ -962,15 +1224,16 @@ function parseCompetitionCampaignStandardizedFields(rawCampaignName) {
 
   const aliasMatch = COMPETITION_CAMPAIGN_ALIAS_BY_NAME.get(normalizeAliasValue(sanitizedName)) || null;
   if (aliasMatch) {
+    const alterationFields = normalizeAlterationFields(aliasMatch.alteration || "");
     return {
       sanitizedName,
       parserPattern: "competition-campaign-alias",
       season: aliasMatch.season || null,
       year: aliasMatch.year || null,
-      alteration: aliasMatch.alteration || null,
-      alterationMix: aliasMatch.alteration ? [aliasMatch.alteration] : [],
+      ...alterationFields,
       type: aliasMatch.type || null,
       environment: null,
+      carType: null,
       special: aliasMatch.season ? null : aliasMatch.type || null,
     };
   }
@@ -983,17 +1246,19 @@ function parseCompetitionCampaignStandardizedFields(rawCampaignName) {
     const season = normalizeSeason(compactMatch.groups.season);
     const year = normalizeYear(compactMatch.groups.year);
     const alteration = formatCampaignAlterationLabel(compactMatch.groups.tail || "");
-    const alterationMix = uniqueLower(splitAlterationTail(compactMatch.groups.tail || ""));
+    const alterationFields = normalizeAlterationFields(compactMatch.groups.tail || "", {
+      fallbackAlteration: alteration,
+    });
     if (type && season && year) {
       return {
         sanitizedName,
         parserPattern: "competition-campaign-compact",
         season,
         year,
-        alteration,
-        alterationMix: alterationMix.length ? alterationMix : alteration ? [alteration] : [],
+        ...alterationFields,
         type,
         environment: null,
+        carType: alterationFields.carType || null,
         special: null,
       };
     }
@@ -1007,17 +1272,19 @@ function parseCompetitionCampaignStandardizedFields(rawCampaignName) {
     const season = normalizeSeason(fullMatch.groups.season);
     const year = normalizeYear(fullMatch.groups.year);
     const alteration = formatCampaignAlterationLabel(fullMatch.groups.tail || "");
-    const alterationMix = uniqueLower(splitAlterationTail(fullMatch.groups.tail || ""));
+    const alterationFields = normalizeAlterationFields(fullMatch.groups.tail || "", {
+      fallbackAlteration: alteration,
+    });
     if (type && season && year) {
       return {
         sanitizedName,
         parserPattern: "competition-campaign-full",
         season,
         year,
-        alteration,
-        alterationMix: alterationMix.length ? alterationMix : alteration ? [alteration] : [],
+        ...alterationFields,
         type,
         environment: null,
+        carType: alterationFields.carType || null,
         special: null,
       };
     }
@@ -1030,17 +1297,19 @@ function parseCompetitionCampaignStandardizedFields(rawCampaignName) {
     const type = normalizeCompetitionType(tmwcMatch.groups.type);
     const year = normalizeYear(tmwcMatch.groups.year);
     const alteration = formatCampaignAlterationLabel(tmwcMatch.groups.tail || "");
-    const alterationMix = uniqueLower(splitAlterationTail(tmwcMatch.groups.tail || ""));
+    const alterationFields = normalizeAlterationFields(tmwcMatch.groups.tail || "", {
+      fallbackAlteration: alteration,
+    });
     if (type && year) {
       return {
         sanitizedName,
         parserPattern: "competition-campaign-year-only",
         season: null,
         year,
-        alteration,
-        alterationMix: alterationMix.length ? alterationMix : alteration ? [alteration] : [],
+        ...alterationFields,
         type,
         environment: null,
+        carType: alterationFields.carType || null,
         special: type,
       };
     }
@@ -1055,20 +1324,22 @@ function parseCompetitionMapAlterationFields(rawName) {
 
   const easyModeMatch = sanitizedName.match(/^(?<title>.+?)\s+\[(?<tail>easy mode)\]$/i);
   if (easyModeMatch?.groups) {
+    const alterationFields = normalizeAlterationFields(easyModeMatch.groups.tail);
     return {
       sanitizedName,
       canonicalTitle: sanitizeMapName(easyModeMatch.groups.title) || sanitizedName,
-      alterationMix: ["Easy Mode"],
+      ...alterationFields,
       parserPattern: "competition-map-easy-mode",
     };
   }
 
   const podiumMatch = sanitizedName.match(/^(?<title>.+?)\s+-\s+(?<tail>podium)$/i);
   if (podiumMatch?.groups) {
+    const alterationFields = normalizeAlterationFields(podiumMatch.groups.tail);
     return {
       sanitizedName,
       canonicalTitle: sanitizeMapName(podiumMatch.groups.title) || sanitizedName,
-      alterationMix: ["Podium"],
+      ...alterationFields,
       parserPattern: "competition-map-podium",
     };
   }
@@ -1087,8 +1358,10 @@ function parseCampaignStandardizedFields(rawCampaignName, { startTimestamp = nul
     day: null,
     alteration: null,
     alterationMix: [],
+    alterations: [],
     type: null,
     environment: null,
+    carType: null,
     special: null,
   };
   if (!sanitizedName) return defaultOut;
@@ -1137,26 +1410,33 @@ function parseCampaignStandardizedFields(rawCampaignName, { startTimestamp = nul
   if (specialMatch) {
     const remaining = tokens.slice(specialMatch.consumed);
     const environmentMatch = matchAliasFromTokens(remaining, ENVIRONMENT_BY_TOKEN);
-    const environment = environmentMatch ? environmentMatch.value : null;
-    const alterationTail = remaining.slice(environmentMatch ? environmentMatch.consumed : 0).join(" ");
+    const environment =
+      (environmentMatch ? environmentMatch.value : null) ||
+      carTypeFromSpecialCampaign(specialMatch.value.label);
+    const afterEnvironment = remaining.slice(environmentMatch ? environmentMatch.consumed : 0);
+    const typeMatch = matchAliasFromTokens(afterEnvironment, TYPE_BY_TOKEN);
+    const alterationTail = afterEnvironment.slice(typeMatch ? typeMatch.consumed : 0).join(" ");
     const startYear = normalizeYear(new Date(startTimestamp || "").getUTCFullYear());
     const year = specialMatch.value.defaultYear || startYear || null;
     const weeklyIndexOnly =
-      specialMatch.value.label === "Weekly Shorts" &&
+      (specialMatch.value.label === "Weekly Shorts" || specialMatch.value.label === "Weekly Grands") &&
       /^\d{1,3}$/.test(normalizeWhitespace(alterationTail || ""));
-    const alteration = weeklyIndexOnly ? null : formatCampaignAlterationLabel(alterationTail);
-    const alterationMix = weeklyIndexOnly
-      ? []
-      : uniqueLower(splitAlterationTail(alterationTail));
+    const ignorableTail = /^(?:old)$/i.test(normalizeWhitespace(alterationTail || ""));
+    const fallbackAlteration = weeklyIndexOnly ? null : formatCampaignAlterationLabel(alterationTail);
+    const alterationFields = weeklyIndexOnly || ignorableTail
+      ? { alteration: null, alterationMix: [], alterations: [], carType: environment || null }
+      : normalizeAlterationFields(alterationTail, {
+          carType: environment,
+          fallbackAlteration,
+        });
     return {
       sanitizedName,
       parserPattern: "campaign-special-prefix",
       season: specialMatch.value.label,
       year,
-      alteration,
-      alterationMix: alterationMix.length ? alterationMix : alteration ? [alteration] : [],
-      type: null,
-      environment,
+      ...alterationFields,
+      type: typeMatch ? typeMatch.value : null,
+      environment: alterationFields.carType || environment || null,
       special: specialMatch.value.label,
     };
   }
@@ -1176,18 +1456,19 @@ function parseCampaignStandardizedFields(rawCampaignName, { startTimestamp = nul
     const environmentMatch = matchAliasFromTokens(afterType, ENVIRONMENT_BY_TOKEN);
     const afterEnvironment = afterType.slice(environmentMatch ? environmentMatch.consumed : 0);
     const alterationTail = afterEnvironment.join(" ");
-    const alteration = formatCampaignAlterationLabel(alterationTail);
-    const alterationMix = uniqueLower(splitAlterationTail(alterationTail));
+    const alterationFields = normalizeAlterationFields(alterationTail, {
+      carType: environmentMatch ? environmentMatch.value : null,
+      fallbackAlteration: formatCampaignAlterationLabel(alterationTail),
+    });
 
     return {
       sanitizedName,
       parserPattern: "campaign-season-year-combined-token",
       season: combinedSeason,
       year: combinedYear,
-      alteration,
-      alterationMix: alterationMix.length ? alterationMix : alteration ? [alteration] : [],
+      ...alterationFields,
       type: typeMatch ? typeMatch.value : null,
-      environment: environmentMatch ? environmentMatch.value : null,
+      environment: alterationFields.carType || (environmentMatch ? environmentMatch.value : null),
       special: null,
     };
   }
@@ -1207,18 +1488,19 @@ function parseCampaignStandardizedFields(rawCampaignName, { startTimestamp = nul
   const environmentMatch = matchAliasFromTokens(afterType, ENVIRONMENT_BY_TOKEN);
   const afterEnvironment = afterType.slice(environmentMatch ? environmentMatch.consumed : 0);
   const alterationTail = afterEnvironment.join(" ");
-  const alteration = formatCampaignAlterationLabel(alterationTail);
-  const alterationMix = uniqueLower(splitAlterationTail(alterationTail));
+  const alterationFields = normalizeAlterationFields(alterationTail, {
+    carType: environmentMatch ? environmentMatch.value : null,
+    fallbackAlteration: formatCampaignAlterationLabel(alterationTail),
+  });
 
   return {
     sanitizedName,
     parserPattern: "campaign-season-year-prefix",
     season: seasonMatch.value,
     year,
-    alteration,
-    alterationMix: alterationMix.length ? alterationMix : alteration ? [alteration] : [],
+    ...alterationFields,
     type: typeMatch ? typeMatch.value : null,
-    environment: environmentMatch ? environmentMatch.value : null,
+    environment: alterationFields.carType || (environmentMatch ? environmentMatch.value : null),
     special: null,
   };
 }
@@ -1329,6 +1611,8 @@ function parseStandardizedFields(rawName) {
     mapNumber: null,
     mapNumbers: [],
     alterationMix: [],
+    alterations: [],
+    carType: null,
     proposedName: null,
   };
   if (!sanitizedName) return defaultOut;
@@ -1338,7 +1622,7 @@ function parseStandardizedFields(rawName) {
     const season = normalizeSeason(prefixMatch.groups.season);
     const year = normalizeYear(prefixMatch.groups.year);
     const mapNumber = normalizeMapNumber(prefixMatch.groups.map);
-    const alterationMix = splitAlterationTail(prefixMatch.groups.tail || "");
+    const alterationFields = normalizeAlterationFields(prefixMatch.groups.tail || "");
     return {
       sanitizedName,
       parserPattern: "season-year-map-prefix",
@@ -1346,7 +1630,7 @@ function parseStandardizedFields(rawName) {
       year,
       mapNumber,
       mapNumbers: mapNumber ? [mapNumber] : [],
-      alterationMix,
+      ...alterationFields,
       proposedName: null,
     };
   }
@@ -1356,7 +1640,7 @@ function parseStandardizedFields(rawName) {
     const season = normalizeSeason(suffixMatch.groups.season);
     const year = normalizeYear(suffixMatch.groups.year);
     const mapNumber = normalizeMapNumber(suffixMatch.groups.map);
-    const alterationMix = splitAlterationTail(suffixMatch.groups.tail || "");
+    const alterationFields = normalizeAlterationFields(suffixMatch.groups.tail || "");
     return {
       sanitizedName,
       parserPattern: "season-year-map-suffix",
@@ -1364,7 +1648,7 @@ function parseStandardizedFields(rawName) {
       year,
       mapNumber,
       mapNumbers: mapNumber ? [mapNumber] : [],
-      alterationMix,
+      ...alterationFields,
       proposedName: null,
     };
   }
@@ -1373,7 +1657,7 @@ function parseStandardizedFields(rawName) {
   if (springCodeMatch?.groups?.code) {
     const decoded = parseSpring2020Code(springCodeMatch.groups.code);
     if (decoded) {
-      const alterationMix = splitAlterationTail(springCodeMatch.groups.tail || "");
+      const alterationFields = normalizeAlterationFields(springCodeMatch.groups.tail || "");
       return {
         sanitizedName,
         parserPattern: "spring-2020-code",
@@ -1381,7 +1665,7 @@ function parseStandardizedFields(rawName) {
         year: decoded.year,
         mapNumber: decoded.mapNumber,
         mapNumbers: decoded.mapNumber ? [decoded.mapNumber] : [],
-        alterationMix,
+        ...alterationFields,
         proposedName: null,
       };
     }
@@ -1396,7 +1680,10 @@ function parseStandardizedFields(rawName) {
       year: colorMapped.year,
       mapNumber: colorMapped.mapNumbers[0] || null,
       mapNumbers: colorMapped.mapNumbers,
+      alteration: colorMapped.alteration || null,
       alterationMix: colorMapped.alterationMix,
+      alterations: colorMapped.alterations || colorMapped.alterationMix || [],
+      carType: colorMapped.carType || null,
       proposedName: colorMapped.proposedName || null,
     };
   }
@@ -1410,7 +1697,10 @@ function parseStandardizedFields(rawName) {
       year: training.year,
       mapNumber: training.mapNumbers[0] || null,
       mapNumbers: training.mapNumbers,
+      alteration: training.alteration || null,
       alterationMix: training.alterationMix,
+      alterations: training.alterations || training.alterationMix || [],
+      carType: training.carType || null,
       proposedName: training.proposedName || null,
     };
   }
@@ -1580,6 +1870,8 @@ function buildMapNameCandidate(map = {}) {
       mapNumbers: [weeklyShortsEntry.mapNumber],
       alteration: null,
       alterationMix: [],
+      alterations: [],
+      carType: null,
       automationState: "matched",
       requiresRegex: false,
       sourceVersion: SOURCE_VERSION,
@@ -1609,6 +1901,8 @@ function buildMapNameCandidate(map = {}) {
       mapNumbers: [weeklyGrandWeek],
       alteration: null,
       alterationMix: [],
+      alterations: [],
+      carType: null,
       automationState: "matched",
       requiresRegex: false,
       sourceVersion: SOURCE_VERSION,
@@ -1632,11 +1926,20 @@ function buildMapNameCandidate(map = {}) {
   });
   const mapNumbers = mapNumbersResult.mapNumbers;
   const alterationMix = uniqueLower([
-    ...(Array.isArray(campaignParsed.alterationMix) ? campaignParsed.alterationMix : []),
-    ...(Array.isArray(competitionMapParsed?.alterationMix) ? competitionMapParsed.alterationMix : []),
-    ...(Array.isArray(parsedFilename.alterationMix) ? parsedFilename.alterationMix : []),
-    ...(Array.isArray(parsed.alterationMix) ? parsed.alterationMix : []),
+    ...(Array.isArray(campaignParsed.alterations) ? campaignParsed.alterations : campaignParsed.alterationMix || []),
+    ...(Array.isArray(competitionMapParsed?.alterations)
+      ? competitionMapParsed.alterations
+      : competitionMapParsed?.alterationMix || []),
+    ...(Array.isArray(parsedFilename.alterations) ? parsedFilename.alterations : parsedFilename.alterationMix || []),
+    ...(Array.isArray(parsed.alterations) ? parsed.alterations : parsed.alterationMix || []),
   ]);
+  const carType =
+    campaignParsed.carType ||
+    parsedFilename.carType ||
+    parsed.carType ||
+    competitionMapParsed?.carType ||
+    campaignParsed.environment ||
+    null;
   const season =
     campaignParsed.season ||
     parsedFilename.season ||
@@ -1710,6 +2013,8 @@ function buildMapNameCandidate(map = {}) {
     mapNumbers,
     alteration: alteration || null,
     alterationMix,
+    alterations: alterationMix,
+    carType: carType || null,
     parserWarning,
     automationState,
     requiresRegex: mapNumbers.length === 0,
@@ -1935,6 +2240,7 @@ export {
   SOURCE_VERSION,
   WEEKLY_SHORTS_CANONICAL_MAPS,
   sanitizeMapName,
+  parseAlterationTail,
   parseStandardizedFields,
   parseCampaignStandardizedFields,
   resolveCanonicalWeeklyShortsWeek,
