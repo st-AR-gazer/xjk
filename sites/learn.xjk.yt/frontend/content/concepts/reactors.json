@@ -1,0 +1,8 @@
+{
+  "title": "Reactors",
+  "area": "special-forces",
+  "type": "force",
+  "summary": "Reactor effects that modify gravity, flight, ground behavior, and route possibilities.",
+  "tags": ["reactor", "force"],
+  "relatedConcepts": ["reactor-up", "reactor-down"]
+}

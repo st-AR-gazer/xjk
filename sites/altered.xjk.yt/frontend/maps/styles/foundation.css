@@ -1,0 +1,299 @@
+.maps-shell {
+  position: relative;
+  z-index: 1;
+  max-width: 1240px;
+  margin: 0 auto;
+  padding-right: 1.5rem;
+  padding-bottom: 3rem;
+  padding-left: 1.5rem;
+}
+
+.maps-hero {
+  position: relative;
+  overflow: hidden;
+  min-height: 220px;
+  margin-bottom: 2rem;
+  border: 1px solid var(--border);
+  border-radius: 22px;
+  background:
+    radial-gradient(circle at 18% 16%, rgba(34, 204, 238, 0.16), transparent 34%),
+    radial-gradient(circle at 84% 78%, rgba(34, 136, 238, 0.12), transparent 32%),
+    linear-gradient(160deg, rgba(8, 14, 28, 0.95), rgba(4, 8, 18, 0.98));
+}
+
+.maps-hero-glow {
+  position: absolute;
+  inset: 0;
+  background:
+    linear-gradient(120deg, rgba(255, 255, 255, 0.05), transparent 35%),
+    linear-gradient(300deg, rgba(34, 204, 238, 0.08), transparent 40%);
+  pointer-events: none;
+}
+
+.maps-hero-content {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  min-height: 220px;
+  padding: 1.75rem;
+}
+
+.maps-badge {
+  display: inline-flex;
+  width: fit-content;
+  padding: 0.28rem 0.7rem;
+  margin-bottom: 0.65rem;
+  border: 1px solid rgba(34, 204, 238, 0.4);
+  border-radius: 999px;
+  background: rgba(34, 204, 238, 0.1);
+  color: var(--cyan);
+  font-family: "Chakra Petch", "Trebuchet MS", sans-serif;
+  font-size: 0.68rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.maps-title {
+  margin: 0;
+  font-size: clamp(2.2rem, 6vw, 3.8rem);
+  line-height: 1;
+  background: linear-gradient(135deg, var(--ink) 24%, var(--cyan) 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.maps-sub {
+  max-width: 620px;
+  margin: 0.55rem 0 0;
+  color: var(--ink-dim);
+  font-size: 0.95rem;
+}
+
+.stats-row {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 0.75rem;
+  margin-bottom: 2rem;
+}
+
+.stat {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+  padding: 1rem;
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  background: var(--surface);
+  text-align: center;
+}
+
+.stat-value {
+  color: var(--ink);
+  font-family: "Chakra Petch", "Trebuchet MS", sans-serif;
+  font-size: 1.8rem;
+  font-weight: 700;
+}
+
+.stat-label {
+  color: var(--ink-muted);
+  font-size: 0.68rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.controls-shell {
+  margin-bottom: 1.3rem;
+  padding: 0.85rem;
+  border: 1px solid var(--border);
+  border-radius: 18px;
+  background: linear-gradient(160deg, rgba(8, 14, 28, 0.95), rgba(4, 8, 18, 0.98));
+}
+
+.visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+.controls-toolbar {
+  display: flex;
+  gap: 0.6rem;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.search-wrap {
+  position: relative;
+  display: flex;
+  flex: 1 1 320px;
+  align-items: center;
+  min-width: 0;
+}
+
+.search-icon {
+  position: absolute;
+  left: 0.85rem;
+  color: var(--ink-muted);
+  pointer-events: none;
+}
+
+.search-input,
+.sort-select,
+.compact-input {
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.03);
+  color: var(--ink);
+  outline: none;
+  transition:
+    border-color 0.15s ease,
+    background 0.15s ease,
+    box-shadow 0.15s ease;
+}
+
+.search-input:focus,
+.sort-select:focus,
+.compact-input:focus {
+  border-color: var(--border-hover);
+  background: rgba(34, 204, 238, 0.04);
+  box-shadow: 0 0 0 3px rgba(34, 204, 238, 0.08);
+}
+
+.search-input {
+  width: 100%;
+  height: 40px;
+  padding: 0 0.95rem 0 2.25rem;
+  font-family: "Manrope", "Segoe UI", sans-serif;
+  font-size: 0.92rem;
+}
+
+.compact-input {
+  width: 100%;
+  height: 40px;
+  padding: 0 0.85rem;
+  font-family: "Manrope", "Segoe UI", sans-serif;
+  font-size: 0.88rem;
+}
+
+.sort-select {
+  height: 40px;
+  padding: 0 2rem 0 0.85rem;
+  font-family: "Chakra Petch", "Trebuchet MS", sans-serif;
+  font-size: 0.8rem;
+  letter-spacing: 0.04em;
+  cursor: pointer;
+  appearance: none;
+  -webkit-appearance: none;
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='10' height='10' viewBox='0 0 10 10' fill='none' stroke='%237e96b0' stroke-width='1.5' stroke-linecap='round'><path d='M2.5 4 5 6.5 7.5 4'/></svg>");
+  background-repeat: no-repeat;
+  background-position: right 0.7rem center;
+}
+
+.sort-select option {
+  background: #09101f;
+}
+
+.toolbar-cluster {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.utility-wrap {
+  display: flex;
+  align-items: center;
+  min-width: 0;
+}
+
+.utility-wrap .compact-input {
+  width: 96px;
+}
+
+.clear-btn {
+  height: 40px;
+  padding: 0 0.85rem;
+  border: 1px solid transparent;
+  border-radius: 10px;
+  background: transparent;
+  color: var(--ink-dim);
+  font-family: "Chakra Petch", "Trebuchet MS", sans-serif;
+  font-size: 0.76rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition:
+    color 0.15s ease,
+    border-color 0.15s ease;
+}
+
+.clear-btn:hover {
+  color: var(--ink);
+  border-color: var(--border-hover);
+}
+
+.filter-toggle-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.45rem;
+  height: 40px;
+  padding: 0 0.95rem;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.03);
+  color: var(--ink);
+  font-family: "Chakra Petch", "Trebuchet MS", sans-serif;
+  font-size: 0.78rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition:
+    border-color 0.15s ease,
+    background 0.15s ease,
+    color 0.15s ease;
+}
+
+.filter-toggle-btn:hover {
+  border-color: var(--border-hover);
+  background: rgba(34, 204, 238, 0.06);
+}
+
+.filter-toggle-btn[aria-expanded="true"] {
+  border-color: rgba(34, 204, 238, 0.4);
+  background: rgba(34, 204, 238, 0.1);
+  color: var(--cyan);
+}
+
+.filter-toggle-btn.has-active {
+  border-color: rgba(34, 204, 238, 0.36);
+  color: var(--cyan);
+}
+
+.filter-toggle-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 20px;
+  height: 20px;
+  padding: 0 0.32rem;
+  border-radius: 999px;
+  background: var(--cyan);
+  color: #021018;
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0;
+}
+
+.filter-toggle-badge[hidden] {
+  display: none;
+}

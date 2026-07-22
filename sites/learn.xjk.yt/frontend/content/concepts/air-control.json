@@ -1,0 +1,8 @@
+{
+  "title": "Air Control",
+  "area": "techniques",
+  "type": "technique",
+  "summary": "Input influence while airborne, including steering carryover, cancellation, and landing setup.",
+  "tags": ["air", "control"],
+  "relatedConcepts": ["vehicle-stability", "ledge-grab"]
+}

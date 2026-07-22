@@ -1,0 +1,8 @@
+{
+  "title": "Wheel Contact",
+  "area": "grip-contact",
+  "type": "concept",
+  "summary": "How many wheels are touching useful ground, wall, edge, or mixed surfaces, and what that contact allows.",
+  "tags": ["contact", "grip"],
+  "relatedConcepts": ["floatiness", "speed-retention"]
+}

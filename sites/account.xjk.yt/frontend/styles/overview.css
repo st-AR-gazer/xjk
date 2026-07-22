@@ -1,0 +1,596 @@
+/*
+ * Overview: account console. A single framed console holding the identity
+ * terminus (left) and a threaded status line of stops (right).
+ */
+#panel-overview .overview-console {
+  position: relative;
+  isolation: isolate;
+  display: grid;
+  gap: clamp(20px, 1.6vw, 32px);
+  min-height: 0;
+  padding: clamp(22px, 1.9vw, 34px);
+  border: 1px solid rgba(255, 255, 255, 0.13);
+  border-radius: 6px;
+  background:
+    radial-gradient(ellipse at 16% 12%, rgba(255, 255, 255, 0.045), transparent 40%),
+    radial-gradient(ellipse at 88% 90%, rgba(132, 204, 22, 0.03), transparent 42%),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.02), rgba(0, 0, 0, 0.14)), rgba(3, 6, 8, 0.74);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.04),
+    inset 0 -1px 0 rgba(0, 0, 0, 0.5),
+    0 24px 70px rgba(0, 0, 0, 0.28);
+}
+
+/* Faint transit texture tying the two halves together. */
+#panel-overview .overview-console-grid {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  opacity: 0.5;
+  border-radius: inherit;
+  background:
+    linear-gradient(90deg, transparent 0 8%, rgba(255, 255, 255, 0.05) 8% 92%, transparent 92%) 0 22% / 100% 1px
+      no-repeat,
+    linear-gradient(90deg, transparent 0 8%, rgba(255, 255, 255, 0.035) 8% 92%, transparent 92%) 0 82% / 100% 1px
+      no-repeat,
+    linear-gradient(135deg, transparent 0 49%, rgba(255, 255, 255, 0.045) 49% 51%, transparent 51%) 62% 50% / 26% 60%
+      no-repeat;
+}
+
+#panel-overview .overview-console > .overview-terminus,
+#panel-overview .overview-console > .overview-line {
+  position: relative;
+  z-index: 1;
+  min-width: 0;
+  min-height: 0;
+}
+
+/* Left: identity terminus */
+#panel-overview .overview-terminus {
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr);
+  gap: clamp(14px, 1.4vw, 22px);
+  padding: clamp(18px, 1.5vw, 26px);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 5px;
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.03), rgba(255, 255, 255, 0.008)), rgba(5, 8, 11, 0.72);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.04);
+}
+
+#panel-overview .overview-terminus-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+#panel-overview .overview-terminus-body {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  align-items: center;
+  align-content: center;
+  gap: clamp(18px, 1.8vw, 30px);
+}
+
+#panel-overview .overview-avatar-shell {
+  position: relative;
+  align-self: center;
+  justify-self: center;
+}
+
+#panel-overview .overview-profile-avatar {
+  position: relative;
+  display: grid;
+  place-items: center;
+  width: clamp(140px, 11.5vw, 212px);
+  aspect-ratio: 1;
+  border: 1px dashed rgba(255, 255, 255, 0.34);
+  border-radius: 50%;
+  color: rgba(255, 255, 255, 0.7);
+  background: radial-gradient(circle, rgba(255, 255, 255, 0.07) 0 36%, transparent 37%), rgba(255, 255, 255, 0.018);
+  box-shadow:
+    inset 0 0 0 1px rgba(255, 255, 255, 0.035),
+    0 0 0 9px rgba(255, 255, 255, 0.012);
+}
+
+#panel-overview .overview-profile-avatar.has-image {
+  border-style: solid;
+  border-color: color-mix(in srgb, var(--accent), transparent 55%);
+}
+
+#panel-overview .overview-profile-avatar img {
+  position: relative;
+  z-index: 1;
+  width: calc(100% - 16px);
+  height: calc(100% - 16px);
+  border-radius: 50%;
+  object-fit: cover;
+}
+
+#panel-overview .overview-avatar-placeholder {
+  display: grid;
+  place-items: center;
+  width: 56%;
+  height: 56%;
+}
+
+#panel-overview .overview-avatar-placeholder svg {
+  width: 100%;
+  height: 100%;
+}
+
+#panel-overview .overview-profile-avatar.has-image .overview-avatar-placeholder {
+  display: none;
+}
+
+#panel-overview .overview-avatar-edit {
+  position: absolute;
+  right: 6px;
+  bottom: 6px;
+  display: grid;
+  place-items: center;
+  width: 46px;
+  height: 46px;
+  border: 1px solid color-mix(in srgb, var(--accent), transparent 40%);
+  border-radius: 50%;
+  color: var(--accent);
+  background: radial-gradient(circle, var(--accent-soft) 0 40%, transparent 41%), #05080b;
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.4);
+  cursor: pointer;
+  transition:
+    border-color 150ms ease,
+    background 150ms ease,
+    transform 150ms ease;
+}
+
+#panel-overview .overview-avatar-edit:hover {
+  border-color: var(--accent);
+  transform: translateY(-1px);
+}
+
+#panel-overview .overview-avatar-edit svg {
+  width: 22px;
+  height: 22px;
+}
+
+#panel-overview .overview-terminus-copy {
+  min-width: 0;
+}
+
+#panel-overview .overview-nick-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-width: 0;
+}
+
+#panel-overview .overview-terminus-copy h2 {
+  margin: 0;
+  overflow: hidden;
+  color: #f7f7f7;
+  font-size: clamp(30px, 2.3vw, 48px);
+  font-weight: 600;
+  line-height: 1;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+#panel-overview .overview-nick-edit {
+  flex: 0 0 auto;
+  min-height: 32px;
+  padding: 5px 10px;
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  border-radius: 5px;
+  color: var(--text-muted);
+  background: rgba(0, 0, 0, 0.2);
+  cursor: pointer;
+  font-size: 12px;
+}
+
+#panel-overview .overview-nick-edit:hover {
+  border-color: var(--accent);
+  color: var(--accent);
+  background: var(--accent-soft);
+}
+
+#panel-overview .overview-nick-form {
+  display: grid;
+  grid-template-columns: minmax(160px, 1fr) auto auto auto;
+  gap: 8px;
+  max-width: 620px;
+  margin-top: 12px;
+}
+
+#panel-overview .overview-nick-form[hidden] {
+  display: none !important;
+}
+
+#panel-overview .overview-nick-form input {
+  min-width: 0;
+  min-height: 38px;
+  padding: 8px 11px;
+  border: 1px solid color-mix(in srgb, var(--accent), transparent 42%);
+  border-radius: 5px;
+  color: #ffffff;
+  background: rgba(0, 0, 0, 0.26);
+  font-family: "Inter", system-ui, sans-serif;
+  font-size: 15px;
+}
+
+#panel-overview .overview-nick-form .btn {
+  min-height: 38px;
+  padding: 7px 12px;
+  font-size: 12px;
+}
+
+#panel-overview .overview-username {
+  margin: 10px 0 0;
+  color: var(--accent);
+  font-family: "Space Mono", ui-monospace, monospace;
+  font-size: clamp(13px, 0.95vw, 16px);
+}
+
+#panel-overview .overview-terminus-copy .session-actions {
+  margin-top: 24px;
+}
+
+#panel-overview .overview-terminus-copy .btn {
+  min-height: 42px;
+  padding: 9px 18px;
+  font-size: 15px;
+}
+
+#panel-overview .overview-avatar-note {
+  margin-top: 12px;
+  color: var(--danger);
+  font-family: "Space Mono", ui-monospace, monospace;
+  font-size: 11px;
+  line-height: 1.35;
+}
+
+#panel-overview .overview-avatar-note:empty {
+  display: none;
+  margin: 0;
+}
+
+#panel-overview .overview-technical {
+  align-self: end;
+  min-width: 0;
+  margin-top: clamp(16px, 2vh, 24px);
+  padding-top: 14px;
+  border-top: 1px solid rgba(255, 255, 255, 0.09);
+}
+
+#panel-overview .overview-technical summary {
+  display: inline-flex;
+  align-items: center;
+  min-height: 32px;
+  padding: 6px 10px;
+  border: 1px solid rgba(255, 255, 255, 0.13);
+  border-radius: 5px;
+  color: var(--text-muted);
+  cursor: pointer;
+  font-family: "Space Mono", ui-monospace, monospace;
+  font-size: 12px;
+}
+
+#panel-overview .overview-technical dl {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 9px;
+  margin: 12px 0 0;
+}
+
+#panel-overview .overview-technical dl div {
+  min-width: 0;
+  padding: 10px 12px 10px 26px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 5px;
+  background:
+    radial-gradient(circle at 12px 16px, #05080b 0 3px, rgba(255, 255, 255, 0.5) 3px 5px, transparent 6px),
+    linear-gradient(135deg, rgba(255, 255, 255, 0.035), transparent 70%);
+}
+
+#panel-overview .overview-technical dt {
+  color: var(--text-dim);
+  font-family: "Space Mono", ui-monospace, monospace;
+  font-size: 10px;
+  text-transform: uppercase;
+}
+
+#panel-overview .overview-technical dd {
+  margin: 6px 0 0;
+  overflow: hidden;
+  color: #f0f0f0;
+  font-family: "Space Mono", ui-monospace, monospace;
+  font-size: 12px;
+  line-height: 1.25;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* Right: threaded status line */
+#panel-overview .overview-line {
+  display: flex;
+  flex-direction: column;
+  gap: clamp(12px, 1.8vh, 24px);
+  padding: clamp(4px, 0.8vw, 12px) 4px clamp(4px, 0.8vw, 12px) 0;
+}
+
+#panel-overview .overview-line::before {
+  content: "";
+  position: absolute;
+  left: 20px;
+  top: 8px;
+  bottom: 8px;
+  width: 4px;
+  border-radius: 999px;
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.3), rgba(255, 255, 255, 0.1));
+}
+
+/* Each stop is a full-height band so 2 or 3 stops always fill the column. */
+#panel-overview .overview-line-stop {
+  position: relative;
+  display: flex;
+  flex: 1 1 0;
+  flex-direction: column;
+  padding: clamp(8px, 1.2vh, 18px) 0 clamp(8px, 1.2vh, 18px) 54px;
+  min-width: 0;
+}
+
+/* Faint platform divider between adjacent bands. */
+#panel-overview .overview-line-stop + .overview-line-stop::before {
+  content: "";
+  position: absolute;
+  left: 54px;
+  right: 0;
+  top: calc(clamp(12px, 1.8vh, 24px) / -2);
+  height: 1px;
+  background: rgba(255, 255, 255, 0.08);
+}
+
+#panel-overview .overview-node {
+  position: absolute;
+  left: 12px;
+  top: 50%;
+  width: 20px;
+  height: 20px;
+  transform: translateY(-50%);
+  border: 3px solid rgba(255, 255, 255, 0.66);
+  border-radius: 50%;
+  background: #05080b;
+  box-shadow: 0 0 0 5px #05080b;
+}
+
+#panel-overview .overview-line-content {
+  display: flex;
+  flex: 1 1 auto;
+  flex-direction: column;
+  gap: 14px;
+  min-height: 0;
+}
+
+/* The data body of each band grows to fill, so tiles/items are tall, not
+   short content floating in a big band. */
+#panel-overview .overview-session-readout {
+  flex: 1 1 auto;
+  min-height: 0;
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-template-rows: minmax(0, 1fr);
+  gap: 12px;
+}
+
+#panel-overview .overview-line-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  min-height: 32px;
+}
+
+#panel-overview .overview-line-head .card-kicker {
+  font-size: 12px;
+}
+
+#panel-overview .overview-line-head .btn {
+  min-height: 34px;
+  padding: 6px 15px;
+  font-size: 13px;
+}
+
+#panel-overview .overview-payload {
+  align-self: stretch;
+  margin-top: auto;
+  padding-top: 0;
+  border-top: 0;
+}
+
+#panel-overview .overview-payload .json-display {
+  margin-top: 10px;
+  max-height: clamp(120px, 20vh, 220px);
+  overflow: auto;
+}
+
+/* Identity stats: member-since / last-active chips under the username. */
+#panel-overview .overview-identity-stats {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+  margin: 12px 0 0;
+}
+
+#panel-overview .overview-identity-stats div {
+  min-width: 0;
+  padding: 8px 12px 8px 24px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 5px;
+  background:
+    radial-gradient(circle at 11px 14px, #05080b 0 3px, rgba(255, 255, 255, 0.5) 3px 5px, transparent 6px),
+    linear-gradient(135deg, rgba(255, 255, 255, 0.035), transparent 70%);
+}
+
+#panel-overview .overview-identity-stats dt {
+  color: var(--text-dim);
+  font-family: "Space Mono", ui-monospace, monospace;
+  font-size: 10px;
+  text-transform: uppercase;
+}
+
+#panel-overview .overview-identity-stats dd {
+  margin: 5px 0 0;
+  overflow: hidden;
+  color: #f0f0f0;
+  font-family: "Space Mono", ui-monospace, monospace;
+  font-size: 12px;
+  line-height: 1.2;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* Access stop: elevated-access call-to-action + resolution note. */
+#panel-overview .overview-access-admin {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-top: 12px;
+  padding: 10px 14px;
+  border: 1px solid color-mix(in srgb, var(--accent), transparent 55%);
+  border-radius: 5px;
+  background: linear-gradient(90deg, var(--accent-soft), transparent 78%);
+  color: var(--accent);
+  transition:
+    border-color 150ms ease,
+    background 150ms ease;
+}
+
+#panel-overview .overview-access-admin:hover {
+  border-color: var(--accent);
+  background: var(--accent-soft);
+}
+
+#panel-overview .overview-access-admin span {
+  color: var(--text-muted);
+  font-family: "Space Mono", ui-monospace, monospace;
+  font-size: 10px;
+  text-transform: uppercase;
+}
+
+#panel-overview .overview-access-admin strong {
+  font-size: 13px;
+  font-weight: 600;
+}
+
+/* Session readout: three bold station tiles that fill the band height. */
+#panel-overview .overview-session-readout div {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  min-width: 0;
+  min-height: clamp(80px, 11vh, 120px);
+  padding: 14px 12px 14px 26px;
+  border: 1px solid rgba(255, 255, 255, 0.11);
+  border-radius: 5px;
+  background:
+    radial-gradient(circle at 13px 50%, #05080b 0 3.5px, rgba(255, 255, 255, 0.6) 3.5px 5.5px, transparent 6.5px),
+    linear-gradient(135deg, rgba(255, 255, 255, 0.045), transparent 68%);
+}
+
+#panel-overview .overview-session-readout span {
+  color: var(--text-dim);
+  font-family: "Space Mono", ui-monospace, monospace;
+  font-size: 10.5px;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+
+#panel-overview .overview-session-readout strong {
+  display: block;
+  margin-top: 9px;
+  overflow: hidden;
+  color: rgba(255, 255, 255, 0.9);
+  font-family: "Space Mono", ui-monospace, monospace;
+  font-size: clamp(14px, 1vw, 17px);
+  font-weight: 500;
+  line-height: 1.15;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+#panel-overview .overview-action-note {
+  margin: 10px 2px 0;
+  color: var(--danger);
+  font-family: "Space Mono", ui-monospace, monospace;
+  font-size: 11px;
+  line-height: 1.35;
+}
+
+#panel-overview .overview-action-note:empty {
+  display: none;
+}
+
+/* Layout: desktop console vs. stacked */
+@media (min-width: 1221px) {
+  #panel-overview.is-active {
+    display: block;
+    height: clamp(540px, calc(100dvh - 318px), 660px);
+    max-height: none;
+    overflow: hidden;
+    padding: 0;
+  }
+
+  #panel-overview .overview-console {
+    grid-template-columns: minmax(560px, 1.12fr) minmax(360px, 0.88fr);
+    height: 100%;
+  }
+}
+
+@media (max-width: 1220px) {
+  #panel-overview.is-active {
+    display: block;
+    align-content: start;
+    height: auto;
+    max-height: none;
+    overflow: visible;
+    padding: 0;
+  }
+
+  #panel-overview .overview-console {
+    grid-template-columns: 1fr;
+  }
+
+  #panel-overview .overview-console-grid {
+    display: none;
+  }
+
+  #panel-overview .overview-line {
+    justify-content: flex-start;
+    gap: 22px;
+  }
+}
+
+@media (max-width: 640px) {
+  #panel-overview .overview-terminus-body {
+    grid-template-columns: 1fr;
+    justify-items: center;
+    text-align: center;
+  }
+
+  #panel-overview .overview-terminus-copy .session-actions {
+    justify-content: center;
+  }
+
+  #panel-overview .overview-session-readout {
+    grid-template-columns: 1fr;
+  }
+
+  #panel-overview .overview-nick-row {
+    justify-content: center;
+  }
+
+  #panel-overview .overview-nick-form {
+    grid-template-columns: 1fr;
+  }
+}

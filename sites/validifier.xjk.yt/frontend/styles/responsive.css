@@ -1,0 +1,80 @@
+@media (max-width: 900px) {
+  .app-container {
+    grid-template-columns: 1fr;
+  }
+
+  .sidebar {
+    height: auto;
+    position: relative;
+  }
+
+  .workspace-grid,
+  .workspace-grid-submission,
+  .live-grid,
+  .submission-grid,
+  .track-grid,
+  .summary-strip-two,
+  .live-summary-strip,
+  .api-note-grid,
+  .artifact-meta {
+    grid-template-columns: 1fr;
+  }
+
+  .result-meta,
+  .summary-strip,
+  .track-meta {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 780px) {
+  .content-area {
+    padding: 1.5rem 1rem;
+  }
+
+  .record-row-top,
+  .section-bar,
+  .section-bar-actions,
+  .workspace-block-head,
+  .actions,
+  .recent-history-head,
+  .live-ticker-head,
+  .live-feed-item-top,
+  .live-record-row-head,
+  .live-map-card-head,
+  .live-map-record-head {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .record-row-left,
+  .record-row-pills,
+  .live-record-row-inline,
+  .live-map-counts {
+    align-items: flex-start;
+    justify-content: flex-start;
+  }
+
+  .tab-count {
+    align-self: flex-start;
+  }
+
+  .map-controls-toolbar {
+    align-items: stretch;
+  }
+
+  .map-track-switch {
+    width: 100%;
+  }
+
+  .map-track-chip,
+  .map-toolbar-select {
+    width: 100%;
+  }
+
+  .btn,
+  .btn-primary,
+  .btn-outline {
+    width: 100%;
+  }
+}

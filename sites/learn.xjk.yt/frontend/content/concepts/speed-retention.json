@@ -1,0 +1,8 @@
+{
+  "title": "Speed Retention",
+  "area": "speed-momentum",
+  "type": "concept",
+  "summary": "Keeping speed that a surface, turn, landing, or force would normally remove.",
+  "tags": ["speed", "momentum"],
+  "relatedConcepts": ["speed-cap", "wheel-contact", "penalty-surfaces"]
+}

@@ -1,0 +1,80 @@
+/* Runtime host (embedded runtime UI) */
+.runtime-host {
+  --runtime-color: var(--accent);
+  display: grid;
+}
+
+.runtime-host--wr {
+  --runtime-color: var(--wr);
+}
+.runtime-host--leaderboard {
+  --runtime-color: var(--leaderboard);
+}
+.runtime-host--displayname {
+  --runtime-color: var(--displayname);
+}
+.runtime-host--club {
+  --runtime-color: var(--club);
+}
+
+.runtime-frame-card {
+  position: relative;
+  overflow: hidden;
+  min-height: calc(100vh - 220px);
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  border-top: 2px solid color-mix(in srgb, var(--runtime-color), transparent 35%);
+  border-radius: 5px;
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.016), rgba(0, 0, 0, 0.045) 100%), var(--bg-panel);
+}
+
+.runtime-frame-card.is-loading::before {
+  content: "";
+  position: absolute;
+  top: calc(50% - 40px);
+  left: 50%;
+  width: 42px;
+  height: 42px;
+  border: 3px solid color-mix(in srgb, var(--runtime-color), transparent 76%);
+  border-top-color: var(--runtime-color);
+  border-radius: 50%;
+  transform: translateX(-50%);
+  animation: trk-spin 900ms linear infinite;
+}
+
+.runtime-frame-card.is-loading::after {
+  content: attr(data-loading-label);
+  position: absolute;
+  top: calc(50% + 16px);
+  left: 0;
+  right: 0;
+  color: var(--text-muted);
+  font-family: "Space Mono", ui-monospace, monospace;
+  font-size: 12px;
+  text-align: center;
+}
+
+@keyframes trk-spin {
+  to {
+    transform: translateX(-50%) rotate(360deg);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .runtime-frame-card.is-loading::before {
+    animation-duration: 2.4s;
+  }
+}
+
+.runtime-frame {
+  display: block;
+  width: 100%;
+  height: 100%;
+  min-height: calc(100vh - 220px);
+  border: 0;
+  opacity: 1;
+  transition: opacity 200ms ease;
+}
+
+.runtime-frame-card.is-loading .runtime-frame {
+  opacity: 0;
+}

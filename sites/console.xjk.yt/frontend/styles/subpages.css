@@ -1,0 +1,187 @@
+/* Reserved console routes */
+.sub-hero-sub {
+  color: var(--text-muted);
+}
+
+.sub-placeholder {
+  width: min(100%, 640px);
+  margin: 0 auto;
+  display: grid;
+  gap: 12px;
+  justify-items: start;
+  padding: 26px;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  border-radius: 5px;
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.016), rgba(0, 0, 0, 0.045) 100%), var(--bg-panel);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.035),
+    inset 0 -1px 0 rgba(0, 0, 0, 0.24);
+}
+
+.sub-placeholder__badge {
+  padding: 3px 9px;
+  border: 1px solid rgba(154, 236, 53, 0.4);
+  border-radius: 3px;
+  color: color-mix(in srgb, var(--accent), white 22%);
+  background: rgba(154, 236, 53, 0.08);
+  font-family: "Space Mono", ui-monospace, monospace;
+  font-size: 10px;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+
+.sub-placeholder h2 {
+  font-size: 20px;
+  font-weight: 600;
+}
+
+.sub-placeholder p {
+  max-width: 60ch;
+  color: var(--text-muted);
+  font-size: 14px;
+  line-height: 1.55;
+}
+
+.sub-placeholder__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 6px;
+}
+
+.con-back-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 38px;
+  padding: 8px 16px;
+  border: 1px solid var(--border-medium);
+  border-radius: 4px;
+  color: var(--text-main);
+  background: rgba(0, 0, 0, 0.22);
+  font-size: 13.5px;
+  transition:
+    border-color 150ms ease,
+    background 150ms ease,
+    color 150ms ease;
+}
+
+.con-back-btn:hover {
+  border-color: var(--accent);
+  color: var(--accent);
+  background: var(--accent-soft);
+}
+
+.con-back-btn--primary {
+  border-color: var(--accent);
+  color: var(--accent);
+  background: linear-gradient(90deg, var(--accent-soft), transparent 72%), rgba(0, 0, 0, 0.2);
+  font-weight: 600;
+}
+
+.con-back-btn--primary:hover {
+  color: #ffffff;
+  background: var(--accent-soft);
+}
+
+/* Bingo runtime topbar (adds a route subnav to the shared topbar) */
+.console-shell--runtime .con-topbar {
+  grid-template-columns: auto auto minmax(0, 1fr) auto;
+}
+
+.con-subnav {
+  justify-self: start;
+  display: flex;
+  gap: 8px;
+}
+
+.con-subnav__link {
+  padding: 6px 12px;
+  border: 1px solid var(--border-medium);
+  border-radius: 4px;
+  color: var(--text-muted);
+  background: rgba(0, 0, 0, 0.22);
+  font-family: "Space Mono", ui-monospace, monospace;
+  font-size: 12px;
+  transition:
+    border-color 150ms ease,
+    color 150ms ease,
+    background 150ms ease;
+}
+
+.con-subnav__link:hover,
+.con-subnav__link.is-active {
+  border-color: var(--accent);
+  color: var(--accent);
+  background: var(--accent-soft);
+}
+
+@media (max-width: 680px) {
+  .con-subnav {
+    display: none;
+  }
+}
+
+/* Status text tones used by console runtime scripts. */
+.status-text--ok {
+  color: var(--accent);
+}
+.status-text--warn {
+  color: #fb923c;
+}
+.status-text--bad {
+  color: #ff5f57;
+}
+
+.con-topbar {
+  border-bottom-color: rgba(255, 255, 255, 0.06);
+  box-shadow: 0 14px 30px -18px color-mix(in srgb, var(--accent), transparent 55%);
+}
+
+.con-topbar::after {
+  content: "";
+  position: absolute;
+  right: 0;
+  bottom: -1px;
+  left: 0;
+  height: 9px;
+  z-index: 1;
+  pointer-events: none;
+  background:
+    radial-gradient(circle at 12px 50%, var(--accent) 0 3px, var(--bg-main) 3px 4.4px, transparent 5px),
+    radial-gradient(circle at calc(100% - 12px) 50%, var(--accent) 0 3px, var(--bg-main) 3px 4.4px, transparent 5px),
+    linear-gradient(
+        90deg,
+        transparent 0,
+        color-mix(in srgb, var(--accent), transparent 55%) 2.5%,
+        var(--accent) 50%,
+        color-mix(in srgb, var(--accent), transparent 55%) 97.5%,
+        transparent 100%
+      )
+      center / 100% 2px no-repeat;
+  opacity: 0.7;
+}
+
+.con-brand {
+  position: relative;
+  border-color: color-mix(in srgb, var(--accent), transparent 72%);
+  opacity: 0.86;
+}
+
+.con-brand::after {
+  content: "";
+  position: absolute;
+  top: -3px;
+  right: -3px;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--accent);
+  box-shadow: 0 0 8px color-mix(in srgb, var(--accent), transparent 40%);
+}
+
+.con-brand:hover {
+  border-color: var(--accent);
+  background: color-mix(in srgb, var(--accent), transparent 86%);
+  opacity: 1;
+}

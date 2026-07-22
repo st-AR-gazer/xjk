@@ -1,0 +1,107 @@
+/* Responsive */
+@media (max-width: 1100px) {
+  .today-grid,
+  .middle-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .info-bar {
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  }
+}
+
+@media (max-width: 720px) {
+  .cotd-topbar {
+    grid-template-columns: auto minmax(0, 1fr) auto;
+    gap: 8px;
+    padding-right: 12px;
+    padding-left: 12px;
+  }
+
+  .cotd-status {
+    display: none;
+  }
+
+  .cotd-topnav {
+    gap: 4px;
+  }
+
+  .cotd-topnav a {
+    padding-right: 8px;
+    padding-left: 8px;
+  }
+
+  .cotd-main {
+    padding: 14px 12px 12px;
+  }
+
+  .cotd-hero::before,
+  .cotd-hero::after {
+    opacity: 0.3;
+  }
+
+  .latest-body {
+    grid-template-columns: 1fr;
+  }
+
+  .metric-row {
+    grid-template-columns: 1fr;
+  }
+
+  .history-list {
+    grid-template-columns: 1fr;
+  }
+}
+
+.cotd-topbar {
+  border-bottom-color: rgba(255, 255, 255, 0.06);
+  box-shadow: 0 14px 30px -18px color-mix(in srgb, var(--accent), transparent 55%);
+}
+
+.cotd-topbar::after {
+  content: "";
+  position: absolute;
+  right: 0;
+  bottom: -1px;
+  left: 0;
+  height: 9px;
+  z-index: 1;
+  pointer-events: none;
+  background:
+    radial-gradient(circle at 12px 50%, var(--accent) 0 3px, var(--bg-main) 3px 4.4px, transparent 5px),
+    radial-gradient(circle at calc(100% - 12px) 50%, var(--accent) 0 3px, var(--bg-main) 3px 4.4px, transparent 5px),
+    linear-gradient(
+        90deg,
+        transparent 0,
+        color-mix(in srgb, var(--accent), transparent 55%) 2.5%,
+        var(--accent) 50%,
+        color-mix(in srgb, var(--accent), transparent 55%) 97.5%,
+        transparent 100%
+      )
+      center / 100% 2px no-repeat;
+  opacity: 0.7;
+}
+
+.cotd-brand {
+  position: relative;
+  border-color: color-mix(in srgb, var(--accent), transparent 72%);
+  opacity: 0.86;
+}
+
+.cotd-brand::after {
+  content: "";
+  position: absolute;
+  top: -3px;
+  right: -3px;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--accent);
+  box-shadow: 0 0 8px color-mix(in srgb, var(--accent), transparent 40%);
+}
+
+.cotd-brand:hover {
+  border-color: var(--accent);
+  background: color-mix(in srgb, var(--accent), transparent 86%);
+  opacity: 1;
+}

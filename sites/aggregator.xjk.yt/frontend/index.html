@@ -1,0 +1,554 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <link rel="stylesheet" href="/shared/xjk-core/chrome-prepaint.css?v=2" data-xjk-chrome-prepaint />
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>aggregator.xjk.yt</title>
+    <meta name="description" content="Maps, names, clubs, and tracker events." />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Condensed:wght@400;500;600;700&family=Inter:wght@400;500;600;700&family=Space+Mono:wght@400;700&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="./styles/foundation.css?v=2" />
+    <link rel="stylesheet" href="./styles/navigation.css?v=2" />
+    <link rel="stylesheet" href="./styles/data-panels.css?v=2" />
+    <link rel="stylesheet" href="./styles/metrics.css?v=2" />
+    <link rel="stylesheet" href="./styles/responsive.css?v=2" />
+    <link rel="icon" href="/favicon.svg?v=2" type="image/svg+xml" />
+  </head>
+  <body>
+    <div class="backdrop" aria-hidden="true"></div>
+
+    <div class="agg-shell">
+      <header class="agg-topbar">
+        <a class="agg-brand" data-link="main" href="https://xjk.yt/" aria-label="Go to xjk main hub">
+          <img class="agg-brand-logo" src="./assets/xjk.svg?v=2" alt="" decoding="async" />
+        </a>
+
+        <div class="agg-status" id="serviceStatus">
+          <span class="status-dot" aria-hidden="true"></span>
+          <span class="status-copy">
+            <strong>aggregator</strong>
+            <small id="statusLine">Loading...</small>
+          </span>
+        </div>
+
+        <div class="agg-account-slot" data-xjk-account-widget-slot="topbar" aria-label="xjk account"></div>
+      </header>
+
+      <main class="agg-main">
+        <section class="agg-hero" aria-labelledby="aggTitle">
+          <div class="hero-copy">
+            <h1 id="aggTitle"><span class="hero-accent">aggregator</span>.xjk.yt</h1>
+            <p>maps, names, clubs, and tracker events</p>
+          </div>
+        </section>
+
+        <nav class="agg-rail tab-nav" aria-label="Dashboard sections">
+          <button class="tab-btn rail-stop is-active" data-tab="events" type="button">
+            <span aria-hidden="true"></span>
+            <strong>Events</strong>
+          </button>
+          <button class="tab-btn rail-stop" data-tab="projects" type="button">
+            <span aria-hidden="true"></span>
+            <strong>Projects</strong>
+          </button>
+          <button class="tab-btn rail-stop" data-tab="names" type="button">
+            <span aria-hidden="true"></span>
+            <strong>Names</strong>
+          </button>
+          <button class="tab-btn rail-stop" data-tab="clubs" type="button">
+            <span aria-hidden="true"></span>
+            <strong>Clubs</strong>
+          </button>
+          <button class="tab-btn rail-stop" data-tab="database" type="button">
+            <span aria-hidden="true"></span>
+            <strong>Database</strong>
+          </button>
+          <button class="tab-btn rail-stop" data-tab="metrics" type="button">
+            <span aria-hidden="true"></span>
+            <strong>Metrics</strong>
+          </button>
+        </nav>
+
+        <div class="tab-panel is-active" id="tab-events">
+          <div class="events-layout">
+            <section class="panel-card">
+              <div class="section-bar">
+                <h2>Recent events</h2>
+                <span class="tab-count" id="eventsCount">&mdash;</span>
+              </div>
+
+              <div class="toolbar">
+                <span class="toolbar-label">Project</span>
+                <select id="eventsProjectFilter" class="form-select">
+                  <option value="">All projects</option>
+                </select>
+                <span class="toolbar-label">Source</span>
+                <select id="eventsSourceFilter" class="form-select">
+                  <option value="">All sources</option>
+                </select>
+                <span class="toolbar-label">Event</span>
+                <select id="eventsTypeFilter" class="form-select">
+                  <option value="">All events</option>
+                </select>
+              </div>
+
+              <div class="toolbar">
+                <span class="toolbar-label">Range</span>
+                <select id="eventsRangeFilter" class="form-select">
+                  <option value="1h">Last 1 hour</option>
+                  <option value="6h">Last 6 hours</option>
+                  <option value="24h" selected>Last 24 hours</option>
+                  <option value="7d">Last 7 days</option>
+                  <option value="30d">Last 30 days</option>
+                  <option value="all">All time</option>
+                  <option value="custom">Custom</option>
+                </select>
+                <span class="toolbar-label">From</span>
+                <input id="eventsFrom" class="form-input" type="datetime-local" disabled />
+                <span class="toolbar-label">To</span>
+                <input id="eventsTo" class="form-input" type="datetime-local" disabled />
+              </div>
+
+              <div class="toolbar">
+                <span class="toolbar-label">Search</span>
+                <input id="eventsQuery" class="form-input" type="text" placeholder="map, account id, holder..." />
+                <label class="check-label">
+                  <input type="checkbox" id="eventsChangedOnly" />
+                  <span>Changed only</span>
+                </label>
+                <label class="check-label">
+                  <input type="checkbox" id="eventsIncludeSystem" />
+                  <span>Include system</span>
+                </label>
+                <button id="eventsApply" class="btn btn-coral" type="button">Apply</button>
+                <button id="eventsReset" class="btn btn-outline" type="button">Reset</button>
+                <button id="eventsRefresh" class="btn btn-outline" type="button">Refresh</button>
+              </div>
+
+              <div class="table-wrap">
+                <table class="data-table">
+                  <thead>
+                    <tr>
+                      <th>Time</th>
+                      <th>Project</th>
+                      <th>Item</th>
+                      <th>Event</th>
+                      <th>Changed</th>
+                    </tr>
+                  </thead>
+                  <tbody id="eventsBody"></tbody>
+                </table>
+              </div>
+
+              <div class="pagination" id="eventsPagination">
+                <button class="page-btn" id="eventsFirst" type="button">&laquo; First</button>
+                <button class="page-btn" id="eventsPrev" type="button">&larr; Prev</button>
+                <span class="page-info" id="eventsPageInfo">Page 1</span>
+                <button class="page-btn" id="eventsNext" type="button">Next &rarr;</button>
+                <button class="page-btn" id="eventsLast" type="button">Last &raquo;</button>
+                <span class="toolbar-label">Page size</span>
+                <select id="eventsPageSize" class="form-select" style="max-width: 104px">
+                  <option value="25" selected>25</option>
+                  <option value="50">50</option>
+                  <option value="100">100</option>
+                </select>
+                <span class="toolbar-label">Go to page</span>
+                <input id="eventsPageJump" class="form-input" type="number" min="1" value="1" style="width: 92px" />
+                <button class="page-btn" id="eventsPageGo" type="button">Go</button>
+              </div>
+            </section>
+
+            <aside class="stat-rail" aria-label="Global summary">
+              <section class="stat-card">
+                <p class="card-kicker">Projects</p>
+                <strong class="stat-card-value" id="mProjects">&mdash;</strong>
+                <small>tracked in the cache</small>
+              </section>
+              <section class="stat-card">
+                <p class="card-kicker">Maps</p>
+                <strong class="stat-card-value" id="mMaps">&mdash;</strong>
+                <small>known map instances</small>
+              </section>
+              <section class="stat-card">
+                <p class="card-kicker">Events</p>
+                <strong class="stat-card-value" id="mEvents">&mdash;</strong>
+                <small>recorded change events</small>
+              </section>
+              <section class="stat-card">
+                <p class="card-kicker">Latest</p>
+                <strong class="stat-card-value stat-card-value--small" id="mLatestEvent">&mdash;</strong>
+                <small>most recent event</small>
+              </section>
+            </aside>
+          </div>
+        </div>
+
+        <div class="tab-panel" id="tab-projects">
+          <section class="panel-card">
+            <div class="section-bar">
+              <h2>Projects</h2>
+              <span class="tab-count" id="mapsCount">&mdash;</span>
+            </div>
+
+            <div class="toolbar">
+              <span class="toolbar-label">Project</span>
+              <select id="projectSelect" class="form-select"></select>
+              <label class="check-label">
+                <input type="checkbox" id="changedOnly" />
+                <span>Changed only</span>
+              </label>
+              <button id="refreshProject" class="btn btn-outline" type="button">Refresh</button>
+            </div>
+
+            <div class="toolbar">
+              <span class="toolbar-label">Instances</span>
+              <span id="projectInstances" class="toolbar-note">&mdash;</span>
+            </div>
+
+            <div class="table-wrap">
+              <table class="data-table">
+                <thead>
+                  <tr>
+                    <th id="projectCol1">Map</th>
+                    <th id="projectCol2">Checks</th>
+                    <th id="projectCol3">Changes</th>
+                    <th id="projectCol4">Last Checked</th>
+                  </tr>
+                </thead>
+                <tbody id="projectMapsBody"></tbody>
+              </table>
+            </div>
+
+            <div class="pagination" id="mapsPagination">
+              <button class="page-btn" id="mapsPrev" type="button">&larr; Prev</button>
+              <span class="page-info" id="mapsPageInfo">Page 1</span>
+              <button class="page-btn" id="mapsNext" type="button">Next &rarr;</button>
+            </div>
+          </section>
+        </div>
+
+        <div class="tab-panel" id="tab-names">
+          <section class="panel-card">
+            <div class="section-bar">
+              <h2>Display names cache</h2>
+              <span class="tab-count" id="namesCount">&mdash;</span>
+            </div>
+
+            <div class="table-wrap">
+              <table class="data-table">
+                <thead>
+                  <tr>
+                    <th>Account</th>
+                    <th>Name</th>
+                    <th>Observed / Last Seen</th>
+                  </tr>
+                </thead>
+                <tbody id="namesBody"></tbody>
+              </table>
+            </div>
+
+            <div class="pagination" id="namesPagination">
+              <button class="page-btn" id="namesPrev" type="button">&larr; Prev</button>
+              <span class="page-info" id="namesPageInfo">Page 1</span>
+              <button class="page-btn" id="namesNext" type="button">Next &rarr;</button>
+            </div>
+          </section>
+        </div>
+
+        <div class="tab-panel" id="tab-clubs">
+          <section class="panel-card">
+            <div class="section-bar">
+              <h2>Club snapshot lookup</h2>
+            </div>
+
+            <div class="toolbar">
+              <span class="toolbar-label">Club ID</span>
+              <input id="clubId" class="form-input" type="number" value="24231" min="1" style="width: 120px" />
+              <button id="loadClub" class="btn btn-coral" type="button">Load Club</button>
+            </div>
+
+            <pre id="clubSummary" class="json-display" style="margin-top: 0.6rem">No club data loaded.</pre>
+          </section>
+        </div>
+
+        <div class="tab-panel" id="tab-database">
+          <section class="panel-card">
+            <div class="section-bar">
+              <h2>Database explorer</h2>
+            </div>
+
+            <div class="toolbar">
+              <span class="toolbar-label">Table</span>
+              <select id="dbTableSelect" class="form-select"></select>
+              <span id="dbTableStats" class="toolbar-note">&mdash;</span>
+              <button id="dbRefreshTables" class="btn btn-outline" type="button">Refresh Tables</button>
+            </div>
+
+            <div class="toolbar">
+              <span class="toolbar-label">Sort</span>
+              <select id="dbSortBy" class="form-select"></select>
+              <select id="dbSortDir" class="form-select">
+                <option value="desc">Desc</option>
+                <option value="asc">Asc</option>
+              </select>
+              <span class="toolbar-label">Rows</span>
+              <select id="dbLimit" class="form-select">
+                <option value="25">25</option>
+                <option value="50" selected>50</option>
+                <option value="100">100</option>
+                <option value="200">200</option>
+              </select>
+              <button id="dbPrev" class="btn btn-outline" type="button">Prev</button>
+              <button id="dbNext" class="btn btn-outline" type="button">Next</button>
+              <button id="dbReloadRows" class="btn btn-coral" type="button">Reload Rows</button>
+            </div>
+
+            <div id="dbSchemaPills" class="pill-wrap" aria-label="Table schema"></div>
+
+            <div class="table-wrap" style="margin-top: 0.6rem">
+              <table class="data-table">
+                <thead id="dbRowsHead"></thead>
+                <tbody id="dbRowsBody"></tbody>
+              </table>
+            </div>
+          </section>
+        </div>
+
+        <div class="tab-panel" id="tab-metrics">
+          <section class="panel-card">
+            <div class="section-bar">
+              <h2>Metrics</h2>
+            </div>
+
+            <div class="metrics-grid">
+              <div class="metric-chip">
+                <span class="metric-label">Instances Online</span>
+                <span class="metric-value" id="metricOnlineInstances">&mdash;</span>
+              </div>
+              <div class="metric-chip">
+                <span class="metric-label">Offline / Stale Instances</span>
+                <span class="metric-value" id="metricOfflineInstances">&mdash;</span>
+              </div>
+              <div class="metric-chip">
+                <span class="metric-label">Ingest Runs</span>
+                <span class="metric-value" id="metricIngestRuns">&mdash;</span>
+              </div>
+              <div class="metric-chip">
+                <span class="metric-label">Changed Events</span>
+                <span class="metric-value" id="metricChangedEvents">&mdash;</span>
+              </div>
+              <div class="metric-chip">
+                <span class="metric-label">Checks (24h)</span>
+                <span class="metric-value" id="metricChecks24h">&mdash;</span>
+              </div>
+              <div class="metric-chip">
+                <span class="metric-label">Changes (24h)</span>
+                <span class="metric-value" id="metricChanges24h">&mdash;</span>
+              </div>
+              <div class="metric-chip">
+                <span class="metric-label">Change Rate (24h)</span>
+                <span class="metric-value" id="metricChangeRate24h">&mdash;</span>
+              </div>
+              <div class="metric-chip">
+                <span class="metric-label">Maps Checked (24h)</span>
+                <span class="metric-value" id="metricMapsChecked24h">&mdash;</span>
+              </div>
+              <div class="metric-chip">
+                <span class="metric-label">Tracked Maps</span>
+                <span class="metric-value" id="metricTrackedMaps">&mdash;</span>
+              </div>
+              <div class="metric-chip">
+                <span class="metric-label">Stale Maps (&gt;24h)</span>
+                <span class="metric-value" id="metricStaleMaps24h">&mdash;</span>
+              </div>
+              <div class="metric-chip">
+                <span class="metric-label">Avg Run Duration (24h)</span>
+                <span class="metric-value" id="metricAvgRunDuration24h">&mdash;</span>
+              </div>
+              <div class="metric-chip">
+                <span class="metric-label">Name Coverage</span>
+                <span class="metric-value" id="metricNameCoverage">&mdash;</span>
+              </div>
+              <div class="metric-chip">
+                <span class="metric-label">Name Updates (24h)</span>
+                <span class="metric-value" id="metricNameUpdates24h">&mdash;</span>
+              </div>
+              <div class="metric-chip">
+                <span class="metric-label">Stale Names (&gt;20d)</span>
+                <span class="metric-value" id="metricStaleNames20d">&mdash;</span>
+              </div>
+              <div class="metric-chip">
+                <span class="metric-label">DB Size</span>
+                <span class="metric-value" id="metricDbSize">&mdash;</span>
+              </div>
+            </div>
+
+            <div class="name-progress-card" aria-live="polite">
+              <div class="name-progress-head">
+                <h3>Displayname Match Progress</h3>
+                <span class="name-progress-state" id="metricNameCoverageState">&mdash;</span>
+              </div>
+              <div class="name-progress-grid">
+                <div class="name-progress-stat">
+                  <span class="name-progress-label">Matched</span>
+                  <span class="name-progress-value" id="metricDisplayNamesMatched">&mdash;</span>
+                </div>
+                <div class="name-progress-stat">
+                  <span class="name-progress-label">Total Accounts</span>
+                  <span class="name-progress-value" id="metricDisplayNamesTotal">&mdash;</span>
+                </div>
+                <div class="name-progress-stat">
+                  <span class="name-progress-label">Missing</span>
+                  <span class="name-progress-value" id="metricDisplayNamesMissing">&mdash;</span>
+                </div>
+                <div class="name-progress-stat">
+                  <span class="name-progress-label">Coverage</span>
+                  <span class="name-progress-value" id="metricDisplayNamesCoverage">&mdash;</span>
+                </div>
+              </div>
+              <div
+                class="name-progress-track"
+                role="progressbar"
+                aria-label="Displayname coverage"
+                aria-valuemin="0"
+                aria-valuemax="100"
+                aria-valuenow="0"
+              >
+                <span class="name-progress-fill" id="metricDisplayNamesCoverageBar"></span>
+              </div>
+            </div>
+
+            <div class="name-progress-card" aria-live="polite">
+              <div class="name-progress-head">
+                <h3>Global Leaderboard Coverage</h3>
+                <span class="name-progress-state" id="metricLeaderboardCoverageState">&mdash;</span>
+              </div>
+              <div class="name-progress-grid">
+                <div class="name-progress-stat">
+                  <span class="name-progress-label">WR Known</span>
+                  <span class="name-progress-value" id="metricLeaderboardWrKnown">&mdash;</span>
+                </div>
+                <div class="name-progress-stat">
+                  <span class="name-progress-label">Any Rows</span>
+                  <span class="name-progress-value" id="metricLeaderboardAnyRows">&mdash;</span>
+                </div>
+                <div class="name-progress-stat">
+                  <span class="name-progress-label">Fuller LB</span>
+                  <span class="name-progress-value" id="metricLeaderboardExtended">&mdash;</span>
+                </div>
+                <div class="name-progress-stat">
+                  <span class="name-progress-label">Stored Rows</span>
+                  <span class="name-progress-value" id="metricLeaderboardRowsStored">&mdash;</span>
+                </div>
+              </div>
+              <div
+                class="name-progress-track"
+                role="progressbar"
+                aria-label="Leaderboard fuller coverage"
+                aria-valuemin="0"
+                aria-valuemax="100"
+                aria-valuenow="0"
+              >
+                <span class="name-progress-fill" id="metricLeaderboardCoverageBar"></span>
+              </div>
+            </div>
+
+            <div class="chart-card">
+              <h3>Leaderboard Coverage Snapshot</h3>
+              <div class="coverage-bars" id="metricLeaderboardCoverageBars" aria-live="polite"></div>
+            </div>
+
+            <div class="toolbar">
+              <span class="toolbar-label">Bucket</span>
+              <select id="metricBucket" class="form-select">
+                <option value="hour">Hour</option>
+                <option value="day">Day</option>
+              </select>
+              <span class="toolbar-label">Window</span>
+              <select id="metricWindowHours" class="form-select">
+                <option value="24">24h</option>
+                <option value="72">72h</option>
+                <option value="168" selected>7d</option>
+                <option value="720">30d</option>
+              </select>
+              <button id="metricRefresh" class="btn btn-outline" type="button">Refresh Metrics</button>
+            </div>
+
+            <div class="chart-card">
+              <h3>Checks / Changes</h3>
+              <svg
+                id="eventsChart"
+                class="chart-svg"
+                viewBox="0 0 680 210"
+                preserveAspectRatio="none"
+                role="img"
+                aria-label="Event checks and changes chart"
+              ></svg>
+            </div>
+
+            <div class="chart-card">
+              <h3>Ingest Runs / Maps Checked / Avg Run Seconds</h3>
+              <svg
+                id="runsChart"
+                class="chart-svg"
+                viewBox="0 0 680 210"
+                preserveAspectRatio="none"
+                role="img"
+                aria-label="Ingest runs and maps checked chart"
+              ></svg>
+            </div>
+
+            <div class="chart-card">
+              <h3>Display Name Updates</h3>
+              <svg
+                id="namesChart"
+                class="chart-svg"
+                viewBox="0 0 680 210"
+                preserveAspectRatio="none"
+                role="img"
+                aria-label="Display name updates chart"
+              ></svg>
+            </div>
+
+            <div class="chart-card">
+              <h3>Top Projects (checks / changes / maps)</h3>
+              <div class="table-wrap" style="margin-top: 0.45rem">
+                <table class="data-table">
+                  <thead>
+                    <tr>
+                      <th>Project</th>
+                      <th>Checks</th>
+                      <th>Changes</th>
+                      <th>Maps</th>
+                    </tr>
+                  </thead>
+                  <tbody id="metricTopProjectsBody"></tbody>
+                </table>
+              </div>
+            </div>
+          </section>
+        </div>
+
+        <footer class="foot">
+          <span class="foot-mark">aggregator.xjk.yt</span>
+          <nav aria-label="Hub navigation">
+            <a data-link="main" href="https://xjk.yt/">Main</a>
+            <a data-link="trackers" href="https://trackers.xjk.yt/">Trackers</a>
+            <a data-link="altered" href="https://altered.xjk.yt/">Altered</a>
+            <a data-link="tools" href="https://tools.xjk.yt/">Tools</a>
+            <a href="/api/">API</a>
+          </nav>
+        </footer>
+      </main>
+    </div>
+
+    <script type="module" src="app.js?v=2"></script>
+    <script type="module" src="/shared/xjk-core/sidenav-boot.js?v=2" data-xjk-sidenav="aggregator"></script>
+    <script type="module" src="/shared/xjk-core/topbar-loader.js?v=2" data-xjk-topbar="aggregator"></script>
+  </body>
+</html>

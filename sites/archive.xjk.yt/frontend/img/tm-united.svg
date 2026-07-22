@@ -1,0 +1,23 @@
+<svg viewBox="0 0 400 240" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="g" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#080618"/>
+      <stop offset="55%" stop-color="#301268"/>
+      <stop offset="100%" stop-color="#6830c0"/>
+    </linearGradient>
+  </defs>
+  <rect width="400" height="240" fill="url(#g)"/>
+  <polygon points="0,0    400,0    400,20  0,20"   fill="rgba(255,220,50,0.15)"/>
+  <polygon points="0,22   400,22   400,42  0,42"   fill="rgba(150,90,30,0.15)"/>
+  <polygon points="0,44   400,44   400,64  0,64"   fill="rgba(60,180,255,0.13)"/>
+  <polygon points="0,66   400,66   400,86  0,86"   fill="rgba(60,200,80,0.13)"/>
+  <polygon points="0,88   400,88   400,108 0,108"  fill="rgba(255,80,20,0.15)"/>
+  <polygon points="0,110  400,110  400,130 0,130"  fill="rgba(200,200,230,0.13)"/>
+  <polygon points="270,0 400,0 400,240 310,240" fill="rgba(255,255,255,0.04)"/>
+  <rect x="0" y="228" width="400" height="12" fill="rgba(80,20,160,0.5)"/>
+  <rect x="0" y="228" width="80" height="12" fill="rgba(180,80,255,0.4)"/>
+  <text x="396" y="230" text-anchor="end" font-family="monospace" font-size="72" font-weight="700" fill="rgba(255,255,255,0.05)" letter-spacing="-4">2006</text>
+  <text x="16" y="152" font-family="monospace" font-size="9" font-weight="700" fill="rgba(255,255,255,0.4)" letter-spacing="3">TRACKMANIA</text>
+  <text x="16" y="185" font-family="monospace" font-size="32" font-weight="700" fill="rgba(255,255,255,0.90)" letter-spacing="2">UNITED</text>
+  <text x="16" y="212" font-family="monospace" font-size="10" font-weight="700" fill="rgba(200,140,255,0.7)" letter-spacing="3">ALL 6 ENVIRONMENTS</text>
+</svg>

@@ -1,0 +1,327 @@
+.hook-panel {
+  background:
+    radial-gradient(520px 220px at 96% 0%, rgba(34, 153, 238, 0.15), transparent 72%),
+    radial-gradient(620px 260px at 0% 0%, rgba(34, 204, 238, 0.12), transparent 72%), var(--panel);
+}
+
+.hook-status,
+.hook-run {
+  margin: 0.55rem 0 0;
+  color: var(--ink-soft);
+  font-size: 0.9rem;
+}
+
+.hook-grid {
+  margin-top: 0.78rem;
+  display: grid;
+  gap: 0.62rem;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+}
+
+.hook-map-card {
+  min-width: 0;
+}
+
+.hook-map-list {
+  margin: 0.2rem 0 0;
+  padding: 0;
+  list-style: none;
+  display: grid;
+  gap: 0.44rem;
+  max-height: 360px;
+  overflow: auto;
+}
+
+.hook-map-list li {
+  border: 1px solid rgba(190, 205, 255, 0.18);
+  border-radius: 10px;
+  padding: 0.5rem 0.58rem;
+  background: rgba(255, 255, 255, 0.03);
+  display: grid;
+  gap: 0.35rem;
+}
+
+.hook-map-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+}
+
+.hook-map-meta {
+  color: var(--ink-soft);
+  font-size: 0.83rem;
+}
+
+.hook-map-actions {
+  display: flex;
+  gap: 0.38rem;
+}
+
+.hook-action {
+  min-height: 28px;
+  border-radius: 9px;
+  border: 1px solid rgba(190, 205, 255, 0.24);
+  background: rgba(255, 255, 255, 0.04);
+  color: var(--ink);
+  cursor: pointer;
+  font-size: 0.78rem;
+  font-family: "Chakra Petch", "Trebuchet MS", sans-serif;
+  padding: 0 0.5rem;
+  letter-spacing: 0.04em;
+}
+
+.hook-action:hover {
+  border-color: rgba(34, 153, 238, 0.55);
+}
+.construction p {
+  margin: 0.7rem 0 0;
+  color: var(--ink-soft);
+}
+
+.chip {
+  border: 1px solid rgba(34, 204, 238, 0.45);
+  color: var(--warn);
+  background: rgba(34, 204, 238, 0.13);
+  border-radius: 999px;
+  min-height: 1.5rem;
+  padding: 0.18rem 0.55rem;
+  display: inline-flex;
+  align-items: center;
+  font-size: 0.74rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  font-family: "Chakra Petch", "Trebuchet MS", sans-serif;
+  text-decoration: none;
+}
+.monitor-section {
+  margin-top: 0.85rem;
+  border: 1px solid rgba(190, 205, 255, 0.12);
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.015);
+  overflow: hidden;
+}
+
+.monitor-section[open] {
+  border-color: rgba(190, 205, 255, 0.18);
+}
+
+.monitor-section-head {
+  padding: 0.65rem 0.85rem;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  transition: background 0.15s ease;
+}
+
+.monitor-section-head:hover {
+  background: rgba(34, 204, 238, 0.04);
+}
+
+.monitor-section-head h3 {
+  margin: 0;
+  font-size: 0.95rem;
+}
+
+.monitor-section-body {
+  padding: 0 0.85rem 0.85rem;
+}
+
+.monitor-section summary::marker,
+.monitor-section summary::-webkit-details-marker {
+  color: var(--cyan, #22ccee);
+}
+.diag-stats-row {
+  margin-top: 0.85rem;
+  display: grid;
+  gap: 0.6rem;
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+}
+
+.diag-stat-card {
+  border: 1px solid rgba(190, 205, 255, 0.16);
+  border-radius: 12px;
+  padding: 0.7rem 0.8rem;
+  background: linear-gradient(135deg, rgba(34, 204, 238, 0.06), rgba(17, 102, 221, 0.04));
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+}
+
+.diag-stat-label {
+  font-size: 0.7rem;
+  color: var(--ink-soft, #abc4d8);
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+  font-family: "Chakra Petch", "Trebuchet MS", sans-serif;
+}
+
+.diag-stat-value {
+  font-size: 1.35rem;
+  font-family: "Chakra Petch", "Trebuchet MS", sans-serif;
+  font-weight: 700;
+  background: linear-gradient(135deg, var(--ink, #e8f4ff) 20%, #33ffff 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+.diag-charts-grid {
+  margin-top: 0.85rem;
+  display: grid;
+  gap: 0.62rem;
+  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+}
+
+.diag-chart-card {
+  min-width: 0;
+}
+
+.diag-chart-card h3 {
+  font-size: 0.95rem;
+}
+
+.diag-chart-controls {
+  margin-top: 0.45rem;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 0.5rem;
+}
+
+.diag-chart-control {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+}
+
+.diag-chart-control span {
+  font-size: 0.7rem;
+  color: var(--ink-soft, #abc4d8);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.diag-chart-control select {
+  min-height: 32px;
+  border-radius: 8px;
+  border: 1px solid rgba(190, 205, 255, 0.2);
+  background: rgba(255, 255, 255, 0.04);
+  color: var(--ink, #e8f4ff);
+  padding: 0.25rem 0.45rem;
+  font: inherit;
+  font-size: 0.78rem;
+}
+
+.diag-canvas-wrap {
+  margin-top: 0.5rem;
+  width: 100%;
+  border: 1px solid rgba(190, 205, 255, 0.1);
+  border-radius: 10px;
+  background: rgba(0, 0, 0, 0.15);
+  padding: 0.5rem;
+  overflow: hidden;
+}
+
+.diag-canvas-wrap canvas {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+
+.diag-canvas-wrap-square {
+  max-width: 320px;
+  margin-left: auto;
+  margin-right: auto;
+}
+.activity-log-grid {
+  margin-top: 0.85rem;
+  display: grid;
+  gap: 0.62rem;
+  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+}
+
+.activity-log-grid .ops-log {
+  margin-top: 0.4rem;
+  max-height: 480px;
+  overflow: auto;
+}
+
+.activity-log-grid .ops-log li {
+  font-size: 0.82rem;
+}
+.naming-table td {
+  vertical-align: top;
+}
+
+.naming-primary {
+  display: block;
+  font-size: 0.88rem;
+  font-weight: 500;
+}
+
+.naming-secondary {
+  display: block;
+  font-size: 0.76rem;
+  color: var(--ink-soft, #abc4d8);
+  margin-top: 0.15rem;
+}
+
+.naming-pills {
+  display: flex;
+  gap: 0.3rem;
+  flex-wrap: wrap;
+}
+
+.naming-pill {
+  display: inline-flex;
+  align-items: center;
+  min-height: 1.2rem;
+  border-radius: 999px;
+  border: 1px solid rgba(34, 204, 238, 0.3);
+  padding: 0 0.4rem;
+  font-size: 0.68rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--cyan, #22ccee);
+  background: rgba(34, 204, 238, 0.1);
+}
+
+.naming-pill.match {
+  border-color: rgba(51, 255, 255, 0.45);
+  color: var(--ok);
+  background: rgba(51, 255, 255, 0.12);
+}
+
+.naming-pill.unmatched {
+  border-color: rgba(17, 102, 221, 0.45);
+  color: var(--bad);
+  background: rgba(17, 102, 221, 0.1);
+}
+
+.naming-actions {
+  display: grid;
+  gap: 0.3rem;
+}
+
+.naming-manual-input {
+  min-height: 32px;
+  border-radius: 8px;
+  border: 1px solid rgba(190, 205, 255, 0.2);
+  background: rgba(255, 255, 255, 0.04);
+  color: var(--ink, #e8f4ff);
+  padding: 0.3rem 0.5rem;
+  font: inherit;
+  font-size: 0.82rem;
+  width: 100%;
+}
+
+.naming-actions-row {
+  display: flex;
+  gap: 0.3rem;
+}
+
+.naming-actions-row .btn-lite {
+  min-height: 28px;
+  padding: 0.2rem 0.5rem;
+  font-size: 0.72rem;
+}

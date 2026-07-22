@@ -1,0 +1,210 @@
+/* Drop cards */
+.cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 14px;
+  margin-bottom: 14px;
+}
+
+.dropcard {
+  --drop-accent: var(--theme-accent, var(--accent));
+  --drop-soft: var(--theme-drop-a, rgba(168, 85, 247, 0.15));
+  position: relative;
+  isolation: isolate;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 7px;
+  min-height: 148px;
+  margin-bottom: 0;
+  padding: 22px 18px 18px 82px;
+  overflow: hidden;
+  border: 2px dashed color-mix(in srgb, var(--drop-accent) 56%, transparent);
+  border-radius: 5px;
+  background:
+    linear-gradient(90deg, var(--drop-soft), transparent 46%),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.016), rgba(0, 0, 0, 0.045) 100%), var(--bg-panel);
+  cursor: pointer;
+  transition:
+    border-color 150ms ease,
+    background 150ms ease,
+    box-shadow 150ms ease,
+    transform 150ms ease;
+}
+
+.dropcard::before {
+  content: "\2191";
+  position: absolute;
+  top: 50%;
+  left: 22px;
+  z-index: 1;
+  display: grid;
+  place-items: center;
+  width: 42px;
+  height: 48px;
+  border: 1px solid color-mix(in srgb, var(--drop-accent) 68%, transparent);
+  border-radius: 4px;
+  color: color-mix(in srgb, var(--drop-accent), white 18%);
+  background: color-mix(in srgb, var(--drop-accent) 10%, var(--bg-panel-solid));
+  box-shadow:
+    inset 0 0 0 1px rgba(0, 0, 0, 0.35),
+    0 0 16px color-mix(in srgb, var(--drop-accent) 16%, transparent);
+  font-family: "Space Mono", ui-monospace, monospace;
+  font-size: 25px;
+  font-weight: 700;
+  line-height: 1;
+  transform: translateY(-50%);
+  transition:
+    border-color 150ms ease,
+    color 150ms ease,
+    background 150ms ease,
+    box-shadow 150ms ease,
+    transform 150ms ease;
+}
+
+.dropcard::after {
+  content: "DROP ZONE";
+  position: absolute;
+  top: 11px;
+  right: 11px;
+  z-index: 1;
+  padding: 3px 6px;
+  border: 1px solid color-mix(in srgb, var(--drop-accent) 42%, transparent);
+  border-radius: 3px;
+  color: color-mix(in srgb, var(--drop-accent), white 16%);
+  background: rgba(2, 4, 6, 0.76);
+  font-family: "Space Mono", ui-monospace, monospace;
+  font-size: 8.5px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  line-height: 1.25;
+  text-transform: uppercase;
+  pointer-events: none;
+}
+
+.dropcard > * {
+  position: relative;
+  z-index: 1;
+}
+
+/* Single stand-alone dropcards keep spacing when not inside .cards. */
+.shell > .dropcard {
+  margin-bottom: 14px;
+}
+
+.dropcard input[type="file"] {
+  display: none;
+}
+
+.dropcard.optional {
+  border-color: rgba(255, 255, 255, 0.3);
+}
+
+.dropcard.optional::after {
+  content: "OPTIONAL DROP";
+  border-color: rgba(255, 255, 255, 0.2);
+  color: var(--text-muted);
+}
+
+.dropcard:hover,
+.dropcard:focus-visible {
+  border-color: var(--theme-drop-hover-border, var(--accent));
+  background:
+    linear-gradient(90deg, color-mix(in srgb, var(--drop-accent) 20%, transparent), transparent 52%),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.024), rgba(0, 0, 0, 0.04) 100%), var(--bg-panel);
+  box-shadow:
+    inset 0 0 0 1px color-mix(in srgb, var(--drop-accent) 12%, transparent),
+    0 0 22px color-mix(in srgb, var(--drop-accent) 16%, transparent);
+  transform: translateY(-1px);
+}
+
+.dropcard:hover::before,
+.dropcard:focus-visible::before {
+  border-color: var(--drop-accent);
+  color: #f5f5f5;
+  box-shadow:
+    inset 0 0 0 1px rgba(0, 0, 0, 0.35),
+    0 0 20px color-mix(in srgb, var(--drop-accent) 26%, transparent);
+}
+
+.dropcard.ready {
+  border-style: solid;
+  border-color: var(--theme-drop-ready-border, rgba(112, 216, 95, 0.72));
+  background:
+    linear-gradient(90deg, rgba(112, 216, 95, 0.13), transparent 48%),
+    linear-gradient(180deg, rgba(112, 216, 95, 0.035), rgba(0, 0, 0, 0.045) 100%), var(--bg-panel);
+}
+
+.dropcard.ready::before {
+  content: "\2713";
+  border-color: rgba(112, 216, 95, 0.72);
+  color: color-mix(in srgb, var(--ok), white 18%);
+  background: rgba(112, 216, 95, 0.1);
+  box-shadow:
+    inset 0 0 0 1px rgba(0, 0, 0, 0.35),
+    0 0 18px rgba(112, 216, 95, 0.18);
+}
+
+.dropcard.ready::after {
+  content: "FILE SELECTED";
+  border-color: rgba(112, 216, 95, 0.42);
+  color: color-mix(in srgb, var(--ok), white 15%);
+}
+
+.dropcard.dragover {
+  border-style: solid;
+  border-color: var(--theme-drop-drag-border, var(--accent));
+  background:
+    repeating-linear-gradient(
+      -45deg,
+      color-mix(in srgb, var(--drop-accent) 12%, transparent) 0 8px,
+      transparent 8px 16px
+    ),
+    linear-gradient(90deg, color-mix(in srgb, var(--drop-accent) 22%, transparent), transparent 58%), var(--bg-panel);
+  box-shadow:
+    inset 0 0 0 1px color-mix(in srgb, var(--drop-accent) 30%, transparent),
+    0 0 28px color-mix(in srgb, var(--drop-accent) 24%, transparent);
+  transform: translateY(-1px) scale(1.006);
+}
+
+.dropcard.dragover::before {
+  content: "\2193";
+  border-color: var(--drop-accent);
+  color: var(--bg-main);
+  background: color-mix(in srgb, var(--drop-accent), white 10%);
+  transform: translateY(-50%) scale(1.08);
+}
+
+.dropcard.dragover::after {
+  content: "RELEASE TO UPLOAD";
+  border-color: var(--drop-accent);
+  color: var(--bg-main);
+  background: color-mix(in srgb, var(--drop-accent), white 12%);
+}
+
+.card-title {
+  padding-right: 76px;
+  font-size: 15.5px;
+  font-weight: 600;
+  line-height: 1.15;
+}
+
+.card-copy {
+  color: var(--text-muted);
+  font-size: 13px;
+  line-height: 1.45;
+}
+
+.card-meta {
+  margin-top: 4px;
+  overflow: hidden;
+  color: var(--text-dim);
+  font-family: "Space Mono", ui-monospace, monospace;
+  font-size: 11px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.dropcard.ready .card-meta {
+  color: color-mix(in srgb, var(--ok), white 15%);
+}

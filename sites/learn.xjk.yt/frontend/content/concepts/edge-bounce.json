@@ -1,0 +1,8 @@
+{
+  "title": "Edge Bounce",
+  "area": "block-geometry",
+  "type": "geometry",
+  "summary": "A bounce produced by block edges or corners, often used to gain height or escape a pool.",
+  "tags": ["edge", "bounce"],
+  "relatedConcepts": ["overwall", "wheel-contact"]
+}

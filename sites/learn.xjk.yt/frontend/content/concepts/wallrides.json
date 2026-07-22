@@ -1,0 +1,8 @@
+{
+  "title": "Wallrides",
+  "area": "block-geometry",
+  "type": "geometry",
+  "summary": "Driving on wall surfaces, including entry, holding, loss of speed, and exit jumps.",
+  "tags": ["wall", "geometry"],
+  "relatedConcepts": ["wheel-contact", "quarterpipe"]
+}

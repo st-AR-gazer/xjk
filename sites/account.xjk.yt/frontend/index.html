@@ -1,0 +1,412 @@
+<!doctype html>
+<html lang="en" data-accent="white" data-density="comfortable" data-motion="full">
+  <head>
+    <link rel="stylesheet" href="/shared/xjk-core/chrome-prepaint.css?v=2" data-xjk-chrome-prepaint />
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>account.xjk.yt</title>
+    <meta name="description" content="Shared xjk identity, session, and preferences." />
+    <link rel="icon" href="./favicon.svg?v=2" type="image/svg+xml" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Condensed:wght@400;500;600;700&family=Inter:wght@400;500;600;700&family=Space+Mono:wght@400;700&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="./styles/foundation.css?v=2" />
+    <link rel="stylesheet" href="./styles/panel-layout.css?v=2" />
+    <link rel="stylesheet" href="./styles/panel-controls.css?v=2" />
+    <link rel="stylesheet" href="./styles/panel-spaces.css?v=2" />
+    <link rel="stylesheet" href="./styles/panel-responsive.css?v=2" />
+    <link rel="stylesheet" href="./styles/overview.css?v=2" />
+    <link rel="stylesheet" href="./styles/appearance.css?v=2" />
+  </head>
+
+  <body>
+    <div class="backdrop" aria-hidden="true"></div>
+    <div class="account-shell">
+      <header class="account-topbar"></header>
+
+      <main class="account-main">
+        <section class="account-hero" aria-labelledby="accountTitle">
+          <div class="ghost-rail ghost-rail--left" aria-hidden="true"></div>
+          <div class="hero-copy">
+            <h1 id="accountTitle">account.xjk.yt</h1>
+            <p id="heroSessionLine">shared identity for xjk spaces</p>
+          </div>
+          <div class="ghost-rail ghost-rail--right" aria-hidden="true"></div>
+        </section>
+
+        <nav class="account-rail" aria-label="Account sections">
+          <button class="rail-stop is-active" type="button" data-tab-target="overview">
+            <span aria-hidden="true"></span>
+            <strong>Profile</strong>
+          </button>
+          <button class="rail-stop" type="button" data-tab-target="appearance">
+            <span aria-hidden="true"></span>
+            <strong>Preferences</strong>
+          </button>
+        </nav>
+
+        <section class="panel is-active" id="panel-overview">
+          <div class="overview-console">
+            <div class="overview-console-grid" aria-hidden="true"></div>
+
+            <section class="overview-terminus" aria-labelledby="identityDisplayName">
+              <div class="overview-terminus-head">
+                <p class="card-kicker" id="overviewMeta">Trackmania identity</p>
+                <span class="card-state" id="sessionStateValue">Signed out</span>
+              </div>
+
+              <div class="overview-terminus-body">
+                <div class="overview-avatar-shell">
+                  <div class="overview-profile-avatar" id="overviewProfileAvatar">
+                    <img id="overviewProfileImage" alt="" hidden />
+                    <span class="overview-avatar-placeholder" aria-hidden="true">
+                      <svg
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        stroke-width="1.55"
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                      >
+                        <circle cx="12" cy="8" r="3.5"></circle>
+                        <path d="M5 20a7 7 0 0 1 14 0"></path>
+                      </svg>
+                    </span>
+                  </div>
+                  <label class="overview-avatar-edit" for="overviewAvatarInput" title="Upload profile picture">
+                    <svg
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      stroke-width="1.9"
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                      aria-hidden="true"
+                    >
+                      <path
+                        d="M5 8h2.5l1.2-1.8h6.6L16.5 8H19a1.5 1.5 0 0 1 1.5 1.5v8A1.5 1.5 0 0 1 19 19H5a1.5 1.5 0 0 1-1.5-1.5v-8A1.5 1.5 0 0 1 5 8Z"
+                      ></path>
+                      <circle cx="12" cy="13" r="3.1"></circle>
+                    </svg>
+                    <span class="sr-only">Upload profile picture</span>
+                  </label>
+                  <input class="sr-only" id="overviewAvatarInput" type="file" accept="image/*" />
+                </div>
+
+                <div class="overview-terminus-copy">
+                  <div class="overview-nick-row">
+                    <h2 id="identityDisplayName">Not signed in</h2>
+                    <button class="overview-nick-edit" id="nicknameEditButton" type="button" hidden>Edit</button>
+                  </div>
+                  <form class="overview-nick-form" id="nicknameForm" hidden>
+                    <label class="sr-only" for="nicknameInput">Nickname</label>
+                    <input id="nicknameInput" type="text" maxlength="40" autocomplete="off" spellcheck="false" />
+                    <button class="btn btn-primary" type="submit">Save</button>
+                    <button class="btn" id="nicknameCancelButton" type="button">Cancel</button>
+                    <button class="btn" id="nicknameResetButton" type="button">Use Ubisoft</button>
+                  </form>
+                  <p class="overview-username" id="identityUsername">Guest</p>
+                  <dl class="overview-identity-stats">
+                    <div>
+                      <dt>Member since</dt>
+                      <dd id="identityMemberSince">-</dd>
+                    </div>
+                    <div>
+                      <dt>Last active</dt>
+                      <dd id="identityLastActive">-</dd>
+                    </div>
+                  </dl>
+                  <div class="session-actions">
+                    <a class="btn btn-primary" id="loginButton" href="/auth/ubisoft/login">Log in with Ubisoft</a>
+                  </div>
+                  <p class="overview-avatar-note" id="overviewAvatarNote" role="status" aria-live="polite"></p>
+                </div>
+              </div>
+              <details class="overview-technical">
+                <summary>Technical details</summary>
+                <dl>
+                  <div>
+                    <dt>Account role</dt>
+                    <dd id="identityRolesDetail">Guest</dd>
+                  </div>
+                  <div>
+                    <dt>xjk account</dt>
+                    <dd id="identityXjkIdDetail">-</dd>
+                  </div>
+                  <div>
+                    <dt>Ubisoft account</dt>
+                    <dd id="identityUbisoftIdDetail">-</dd>
+                  </div>
+                </dl>
+              </details>
+            </section>
+
+            <div class="overview-line" role="list">
+              <section class="overview-line-stop overview-line-stop--access" role="listitem">
+                <span class="overview-node" aria-hidden="true"></span>
+                <div class="overview-line-content">
+                  <div class="overview-line-head">
+                    <p class="card-kicker">Access</p>
+                    <button class="btn overview-logout-button" id="overviewLogoutButton" type="button" disabled>
+                      Log out
+                    </button>
+                  </div>
+                  <div class="overview-session-readout">
+                    <div><span>Session</span><strong id="overviewSessionState">Signed out</strong></div>
+                    <div><span>Level</span><strong id="overviewAccessLevel">Guest</strong></div>
+                    <div><span>Expires</span><strong id="overviewSessionExpires">-</strong></div>
+                  </div>
+                  <p class="overview-action-note" id="overviewActionNote" role="status" aria-live="polite"></p>
+                  <a class="overview-access-admin" id="overviewAdminRow" href="#" hidden>
+                    <span>Elevated access</span>
+                    <strong>Open Map Admin</strong>
+                  </a>
+                </div>
+              </section>
+
+              <section class="overview-line-stop overview-line-stop--data" role="listitem">
+                <span class="overview-node" aria-hidden="true"></span>
+                <div class="overview-line-content">
+                  <div class="overview-line-head">
+                    <p class="card-kicker">Security &amp; data</p>
+                    <button class="btn" id="downloadSnapshotButtonData" type="button">Export data</button>
+                  </div>
+                  <details class="overview-technical overview-payload">
+                    <summary>Raw session data</summary>
+                    <pre class="json-display" id="sessionPayload">Loading session...</pre>
+                  </details>
+                </div>
+              </section>
+            </div>
+          </div>
+        </section>
+
+        <section class="panel" id="panel-appearance">
+          <div class="appearance-console">
+            <section class="account-card appearance-editor">
+              <div class="appearance-editor-head">
+                <p class="card-kicker">Preferences</p>
+                <h2>Interface profile</h2>
+                <p id="appearanceMeta">Applies to all xjk spaces.</p>
+              </div>
+
+              <div class="preference-stack">
+                <section class="appearance-control preference-row preference-row--accent">
+                  <div class="preference-row-head">
+                    <div>
+                      <p class="card-kicker">Accent</p>
+                      <h3>Route color</h3>
+                    </div>
+                    <div class="control-readout">
+                      <span>Selected</span>
+                      <strong id="accentReadout">White</strong>
+                    </div>
+                  </div>
+                  <div class="swatch-group" id="accentSwatches" role="radiogroup" aria-label="Accent color"></div>
+                  <label class="sr-only" for="appearanceAccent">Accent color</label>
+                  <select id="appearanceAccent">
+                    <option value="white">White</option>
+                    <option value="lime">Lime</option>
+                    <option value="cyan">Blue</option>
+                    <option value="teal">Cyan</option>
+                    <option value="red">Red</option>
+                    <option value="orange">Orange</option>
+                    <option value="purple">Violet</option>
+                  </select>
+                </section>
+
+                <section class="appearance-control preference-row">
+                  <div class="preference-row-head">
+                    <div>
+                      <p class="card-kicker">Density</p>
+                      <h3>Panel spacing</h3>
+                    </div>
+                    <div class="control-readout">
+                      <span>Spacing</span>
+                      <strong id="densityReadout">Comfortable</strong>
+                    </div>
+                  </div>
+                  <div class="segmented-control" id="densitySegments" aria-label="Density"></div>
+                  <label class="sr-only" for="appearanceDensity">Density</label>
+                  <select id="appearanceDensity">
+                    <option value="comfortable">Comfortable</option>
+                    <option value="compact">Compact</option>
+                    <option value="spacious">Balanced</option>
+                  </select>
+                </section>
+
+                <section class="appearance-control preference-row">
+                  <div class="preference-row-head">
+                    <div>
+                      <p class="card-kicker">Motion</p>
+                      <h3>Animation level</h3>
+                    </div>
+                    <div class="control-readout">
+                      <span>Animation</span>
+                      <strong id="motionReadout">On</strong>
+                    </div>
+                  </div>
+                  <div class="segmented-control" id="motionSegments" aria-label="Motion"></div>
+                  <label class="sr-only" for="appearanceMotion">Motion</label>
+                  <select id="appearanceMotion">
+                    <option value="full">Full</option>
+                    <option value="reduced">Reduced</option>
+                    <option value="off">Off</option>
+                  </select>
+                </section>
+              </div>
+            </section>
+
+            <section class="account-card appearance-preview-card">
+              <div class="appearance-preview-head">
+                <div>
+                  <p class="card-kicker">Live preview</p>
+                  <h3>xjk account surface</h3>
+                </div>
+                <span id="appearanceStatusPill">Saved</span>
+              </div>
+
+              <div class="preference-preview-shell" aria-hidden="true">
+                <div class="preference-preview-map">
+                  <span></span>
+                  <i></i>
+                  <span></span>
+                  <i></i>
+                  <span></span>
+                </div>
+                <div class="preference-preview-panel">
+                  <b></b>
+                  <strong id="appearancePreviewTitle">Interface profile</strong>
+                  <small id="appearancePreviewMeta">Comfortable / On</small>
+                  <em></em>
+                  <em></em>
+                  <em></em>
+                </div>
+              </div>
+
+              <dl class="appearance-status-grid">
+                <div>
+                  <dt>Status</dt>
+                  <dd id="appearanceSaveStateValue">Saved</dd>
+                </div>
+                <div>
+                  <dt>Storage</dt>
+                  <dd id="appearanceStorageValue">Account</dd>
+                </div>
+                <div>
+                  <dt>Last saved</dt>
+                  <dd id="appearanceUpdatedValue">-</dd>
+                </div>
+                <div>
+                  <dt>Active</dt>
+                  <dd id="appearanceActiveValue">White / Comfortable / On</dd>
+                </div>
+              </dl>
+            </section>
+          </div>
+
+          <div class="toolbar appearance-savebar">
+            <span class="toolbar-note" id="appearanceHint">Sign in to store appearance centrally.</span>
+            <button class="btn" id="clearPreferencesButton" type="button">Clear saved profile</button>
+            <button class="btn btn-primary" id="saveAppearanceButton" type="button">Save appearance</button>
+            <button class="btn" id="resetAppearanceButton" type="button">Reset draft</button>
+          </div>
+        </section>
+
+        <section class="panel" id="panel-spaces">
+          <div class="space-header">
+            <div>
+              <p class="card-kicker">Spaces</p>
+              <h2 id="spacePanelTitle">Space settings</h2>
+              <p class="toolbar-note" id="spacePanelMeta">Shared sign-in, local space controls.</p>
+            </div>
+          </div>
+
+          <div class="space-grid">
+            <section class="account-card space-summary">
+              <div class="space-summary-head">
+                <div class="space-summary-icon" id="spaceSummaryIcon" aria-hidden="true"></div>
+                <div>
+                  <h3 id="spaceSummaryTitle">Learn</h3>
+                  <p id="spaceSummaryText">Shared identity for the selected xjk space.</p>
+                </div>
+              </div>
+
+              <dl class="identity-list">
+                <div class="identity-row">
+                  <dt>Login model</dt>
+                  <dd id="spaceLoginMode">Shared xjk identity</dd>
+                </div>
+                <div class="identity-row">
+                  <dt>Local settings</dt>
+                  <dd id="spaceSettingsMode">Per-space</dd>
+                </div>
+                <div class="identity-row">
+                  <dt>Role source</dt>
+                  <dd id="spaceRoleMode">Resolved inside the app</dd>
+                </div>
+              </dl>
+
+              <div class="space-summary-map" aria-hidden="true">
+                <span></span>
+                <i></i>
+                <span></span>
+                <i></i>
+                <span></span>
+                <i></i>
+                <span></span>
+              </div>
+
+              <div class="space-selector-shell">
+                <span>Switch space</span>
+                <div class="space-pills" id="spacePills" aria-label="Choose xjk space"></div>
+              </div>
+
+              <p class="space-note" id="spaceNote">
+                The shared account gets you in. Space-specific controls stay with each xjk space.
+              </p>
+            </section>
+
+            <section class="account-card space-route-card">
+              <h3 id="spaceRouteTitle">Open space</h3>
+              <p id="spaceRouteText">Jump into the selected xjk space with the same browser session.</p>
+              <div class="space-route-visual" aria-hidden="true">
+                <span></span>
+                <i></i>
+                <span></span>
+                <i></i>
+                <span></span>
+              </div>
+              <dl class="identity-list route-list">
+                <div class="identity-row">
+                  <dt>Destination</dt>
+                  <dd id="spaceRouteHost">learn.xjk.yt</dd>
+                </div>
+                <div class="identity-row">
+                  <dt>Session</dt>
+                  <dd>Same browser</dd>
+                </div>
+              </dl>
+              <div class="toolbar">
+                <a class="btn btn-primary" id="spaceOpenLink" href="https://learn.xjk.yt/">Open space</a>
+                <button class="btn" id="spaceJumpAccountButton" type="button">Back to identity</button>
+              </div>
+              <div class="space-route-status" aria-label="Space route status">
+                <div><span>Auth</span><strong>Shared</strong></div>
+                <div><span>Prefs</span><strong>Account</strong></div>
+                <div><span>Roles</span><strong>Per-space</strong></div>
+              </div>
+            </section>
+          </div>
+        </section>
+      </main>
+    </div>
+
+    <script type="module" src="./app.js?v=2"></script>
+    <script type="module" src="/shared/xjk-core/sidenav-boot.js?v=2" data-xjk-sidenav="account"></script>
+    <script type="module" src="/shared/xjk-core/topbar-loader.js?v=2" data-xjk-topbar="account"></script>
+  </body>
+</html>

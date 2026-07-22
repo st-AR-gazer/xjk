@@ -1,0 +1,79 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <link rel="stylesheet" href="/shared/xjk-core/chrome-prepaint.css?v=2" data-xjk-chrome-prepaint />
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>xjk / altered / admin login</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@500;600;700&family=Manrope:wght@400;500;700&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="../../hub-styles/foundation.css?v=2" />
+    <link rel="stylesheet" href="../../hub-styles/overview.css?v=2" />
+    <link rel="stylesheet" href="../../hub-styles/activity.css?v=2" />
+    <link rel="stylesheet" href="../../hub-styles/responsive.css?v=2" />
+    <link rel="stylesheet" href="../../hub-styles/subpages.css?v=2" />
+    <link rel="stylesheet" href="./login.css?v=2" />
+    <link rel="icon" href="../../favicon.svg?v=2" type="image/svg+xml" />
+  </head>
+  <body>
+    <div class="backdrop" aria-hidden="true">
+      <div class="geo-mesh"></div>
+      <div class="orb orb-1"></div>
+      <div class="orb orb-2"></div>
+      <div class="orb orb-3"></div>
+    </div>
+
+    <div class="solids-layer" aria-hidden="true">
+      <img class="solid solid-1" src="../../bannerbuilder/assets/solids/Dodecahedron.png?v=2" alt="" />
+      <img class="solid solid-2" src="../../bannerbuilder/assets/solids/Icosahedron.png?v=2" alt="" />
+      <img class="solid solid-3" src="../../bannerbuilder/assets/solids/Octahedron.png?v=2" alt="" />
+    </div>
+
+    <main class="shell login-shell">
+      <section class="hero panel login-card">
+        <div class="hero-top">
+          <span class="tag">Admin Access</span>
+          <span id="loginChip" class="login-chip">Allowlisted Ubisoft Accounts</span>
+        </div>
+        <h1>Sign In To Altered Admin</h1>
+        <p id="loginCopy" class="login-copy">Use your approved Ubisoft account to access the admin dashboard.</p>
+        <div id="loginState" class="login-status login-status-loading" role="status" aria-live="polite">
+          Checking login status...
+        </div>
+        <form id="tokenLoginForm" class="token-login-form" autocomplete="off" hidden>
+          <label for="adminToken">Admin token</label>
+          <input id="adminToken" name="adminToken" type="password" autocomplete="off" spellcheck="false" required />
+          <button id="tokenLoginButton" class="btn btn-primary" type="submit">Create Secure Session</button>
+        </form>
+        <div class="cta-row login-actions">
+          <a id="loginButton" class="btn btn-primary" href="/auth/ubisoft/login?return_to=%2Fadmin%2F"
+            >Continue with Ubisoft</a
+          >
+          <a class="btn btn-secondary" href="/admin/">Open Admin</a>
+        </div>
+        <p class="login-footnote">Approved accounts continue straight into the admin dashboard after callback.</p>
+      </section>
+    </main>
+
+    <script src="/shared/xjk-core/local-path-rewriter.js?v=2"></script>
+    <script src="../../altered-paths.js?v=2"></script>
+    <script src="../../altered-hub.js?v=2"></script>
+    <script src="./login.js?v=2"></script>
+    <script
+      type="module"
+      src="/shared/xjk-core/sidenav-boot.js?v=2"
+      data-xjk-sidenav="altered"
+      data-xjk-page="admin/login"
+    ></script>
+    <script
+      type="module"
+      src="/shared/xjk-core/topbar-loader.js?v=2"
+      data-xjk-topbar="altered"
+      data-xjk-page="admin/login"
+    ></script>
+  </body>
+</html>

@@ -1,0 +1,29 @@
+{
+  "all": true,
+  "clean": true,
+  "exclude": [
+    "**/*.test.{js,mjs,cjs}",
+    "**/test/**",
+    "**/tests/**",
+    "**/node_modules/**",
+    "**/data/**",
+    "**/data_server/**",
+    "**/generated/**",
+    "**/vendor/**",
+    "services/altered/tools/**",
+    "sites/learn.xjk.yt/frontend/scripts/mock-data.js",
+    "sites/tools.xjk.yt/*/tools/**",
+    "sites/tools.xjk.yt/.runtime-licenses/**"
+  ],
+  "exclude-after-remap": true,
+  "extension": [".js", ".mjs", ".cjs"],
+  "include": [
+    "config/**/*.{js,mjs,cjs}",
+    "deploy/**/*.{js,mjs,cjs}",
+    "scripts/**/*.{js,mjs,cjs}",
+    "services/**/*.{js,mjs,cjs}",
+    "sites/**/*.{js,mjs,cjs}"
+  ],
+  "reports-dir": "coverage",
+  "temp-directory": "coverage/tmp"
+}

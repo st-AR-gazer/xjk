@@ -1,0 +1,22 @@
+<svg viewBox="0 0 400 240" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="g" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#120002"/>
+      <stop offset="55%" stop-color="#600010"/>
+      <stop offset="100%" stop-color="#b80020"/>
+    </linearGradient>
+  </defs>
+  <rect width="400" height="240" fill="url(#g)"/>
+  <circle cx="200" cy="108" r="70" stroke="rgba(255,60,60,0.20)" stroke-width="2" fill="none"/>
+  <ellipse cx="200" cy="108" rx="35" ry="70" stroke="rgba(255,60,60,0.15)" stroke-width="1.5" fill="none"/>
+  <line x1="130" y1="108" x2="270" y2="108" stroke="rgba(255,60,60,0.15)" stroke-width="1.5"/>
+  <line x1="140" y1="78"  x2="260" y2="78"  stroke="rgba(255,60,60,0.10)" stroke-width="1"/>
+  <line x1="140" y1="138" x2="260" y2="138" stroke="rgba(255,60,60,0.10)" stroke-width="1"/>
+  <polygon points="200,52 206,68 224,68 210,78 215,95 200,85 185,95 190,78 176,68 194,68" fill="rgba(255,220,0,0.35)"/>
+  <rect x="0" y="228" width="400" height="12" fill="rgba(140,0,15,0.5)"/>
+  <rect x="0" y="228" width="80" height="12" fill="rgba(255,50,50,0.4)"/>
+  <text x="396" y="230" text-anchor="end" font-family="monospace" font-size="72" font-weight="700" fill="rgba(255,255,255,0.05)" letter-spacing="-4">2006</text>
+  <text x="16" y="22" font-family="monospace" font-size="9" font-weight="700" fill="rgba(255,255,255,0.4)" letter-spacing="3">TRACKMANIA</text>
+  <text x="16" y="192" font-family="monospace" font-size="16" font-weight="700" fill="rgba(255,255,255,0.88)" letter-spacing="1">NATIONS ESWC</text>
+  <text x="16" y="215" font-family="monospace" font-size="10" font-weight="700" fill="rgba(255,80,80,0.7)" letter-spacing="3">FREE TO PLAY</text>
+</svg>

@@ -1,0 +1,198 @@
+.tool-howto {
+  --tool-howto-accent: var(--theme-accent, var(--accent, #a855f7));
+  box-sizing: border-box;
+  width: 100%;
+  margin: 0 0 16px;
+  overflow: clip;
+  border: 1px solid rgba(255, 255, 255, 0.13);
+  border-radius: 5px;
+  background:
+    linear-gradient(90deg, color-mix(in srgb, var(--tool-howto-accent) 7%, transparent), transparent 58%),
+    rgba(5, 8, 11, 0.72);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.025);
+  color: #f2f2f2;
+}
+
+.tool-howto[open] {
+  border-color: color-mix(in srgb, var(--tool-howto-accent) 38%, rgba(255, 255, 255, 0.13));
+}
+
+.tool-howto > summary {
+  box-sizing: border-box;
+  display: grid;
+  grid-template-columns: 30px minmax(0, 1fr) 20px;
+  align-items: center;
+  gap: 11px;
+  min-height: 52px;
+  padding: 8px 14px;
+  color: #f2f2f2;
+  cursor: pointer;
+  list-style: none;
+  user-select: none;
+}
+
+.tool-howto > summary::-webkit-details-marker {
+  display: none;
+}
+
+.tool-howto > summary:hover {
+  background: color-mix(in srgb, var(--tool-howto-accent) 6%, transparent);
+}
+
+.tool-howto > summary:focus-visible {
+  outline: 1px solid var(--tool-howto-accent);
+  outline-offset: -2px;
+}
+
+.tool-howto-marker {
+  display: grid;
+  place-items: center;
+  width: 28px;
+  height: 28px;
+  border: 1px solid color-mix(in srgb, var(--tool-howto-accent) 58%, transparent);
+  border-radius: 50%;
+  color: color-mix(in srgb, var(--tool-howto-accent), white 15%);
+  background: color-mix(in srgb, var(--tool-howto-accent) 9%, rgba(0, 0, 0, 0.45));
+  font-family: "Space Mono", ui-monospace, monospace;
+  font-size: 12px;
+  font-style: normal;
+  font-weight: 700;
+  line-height: 1;
+}
+
+.tool-howto-label {
+  display: grid;
+  gap: 2px;
+  min-width: 0;
+}
+
+.tool-howto-kicker {
+  color: color-mix(in srgb, var(--tool-howto-accent), white 22%);
+  font-family: "Space Mono", ui-monospace, monospace;
+  font-size: 9px;
+  letter-spacing: 0.1em;
+  line-height: 1.2;
+  text-transform: uppercase;
+}
+
+.tool-howto-label strong {
+  color: #f2f2f2;
+  font-family: "IBM Plex Sans Condensed", "Roboto Condensed", "Inter", system-ui, sans-serif;
+  font-size: 15px;
+  font-weight: 600;
+  line-height: 1.2;
+}
+
+.tool-howto-toggle {
+  position: relative;
+  width: 18px;
+  height: 18px;
+  color: var(--tool-howto-accent);
+}
+
+.tool-howto-toggle::before,
+.tool-howto-toggle::after {
+  content: "";
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 12px;
+  height: 1px;
+  background: currentColor;
+  transform: translate(-50%, -50%);
+  transition:
+    opacity 150ms ease,
+    transform 150ms ease;
+}
+
+.tool-howto-toggle::after {
+  transform: translate(-50%, -50%) rotate(90deg);
+}
+
+.tool-howto[open] .tool-howto-toggle::after {
+  opacity: 0;
+  transform: translate(-50%, -50%);
+}
+
+.tool-howto-body {
+  box-sizing: border-box;
+  padding: 15px 17px 17px 55px;
+  border-top: 1px solid rgba(255, 255, 255, 0.09);
+  background: rgba(0, 0, 0, 0.18);
+}
+
+.tool-howto-body ol {
+  display: grid;
+  gap: 10px;
+  margin: 0;
+  padding: 0;
+  color: #b8b8b8;
+  counter-reset: tool-howto-step;
+  font-family: "IBM Plex Sans Condensed", "Roboto Condensed", "Inter", system-ui, sans-serif;
+  font-size: 13.5px;
+  line-height: 1.5;
+  list-style: none;
+}
+
+.tool-howto-body li {
+  box-sizing: border-box;
+  position: relative;
+  min-height: 22px;
+  padding: 1px 0 0 31px;
+  counter-increment: tool-howto-step;
+}
+
+.tool-howto-body li::before {
+  content: counter(tool-howto-step);
+  position: absolute;
+  top: 0;
+  left: 0;
+  display: grid;
+  place-items: center;
+  width: 21px;
+  height: 21px;
+  border: 1px solid color-mix(in srgb, var(--tool-howto-accent) 42%, transparent);
+  border-radius: 50%;
+  color: color-mix(in srgb, var(--tool-howto-accent), white 20%);
+  font-family: "Space Mono", ui-monospace, monospace;
+  font-size: 9px;
+  font-weight: 700;
+  line-height: 1;
+}
+
+.tool-howto-tip {
+  margin: 14px 0 0;
+  padding: 9px 11px;
+  border-left: 2px solid color-mix(in srgb, var(--tool-howto-accent) 65%, transparent);
+  color: #a8a8a8;
+  background: color-mix(in srgb, var(--tool-howto-accent) 5%, transparent);
+  font-family: "Space Mono", ui-monospace, monospace;
+  font-size: 10.5px;
+  line-height: 1.55;
+}
+
+.modal > .tool-howto {
+  margin-bottom: 13px;
+}
+
+@media (max-width: 560px) {
+  .tool-howto > summary {
+    min-height: 48px;
+    padding: 7px 11px;
+  }
+
+  .tool-howto-body {
+    padding: 13px 12px 15px;
+  }
+
+  .tool-howto-body ol {
+    font-size: 13px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .tool-howto-toggle::before,
+  .tool-howto-toggle::after {
+    transition: none;
+  }
+}

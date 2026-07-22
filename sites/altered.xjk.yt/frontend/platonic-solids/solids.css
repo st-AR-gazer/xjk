@@ -1,0 +1,334 @@
+:root {
+  --bg-0: #05070d;
+  --bg-1: #0b1220;
+  --ink: #ecfcff;
+  --ink-soft: #abc4d8;
+  --line: rgba(34, 153, 238, 0.3);
+  --panel: rgba(9, 14, 25, 0.9);
+  color-scheme: dark;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  margin: 0;
+  min-height: 100%;
+  font-family: "Manrope", "Segoe UI", sans-serif;
+  color: var(--ink);
+  background:
+    radial-gradient(920px 580px at 92% -10%, rgba(34, 153, 238, 0.18), transparent 58%),
+    radial-gradient(760px 500px at -8% 92%, rgba(34, 204, 238, 0.14), transparent 62%),
+    linear-gradient(156deg, var(--bg-0), var(--bg-1));
+}
+
+.page {
+  width: min(1360px, 100% - 2rem);
+  margin: 0 auto;
+  padding: 1.2rem 0 1.8rem;
+}
+
+.panel {
+  border: 1px solid var(--line);
+  border-radius: 18px;
+  background: var(--panel);
+  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.34);
+}
+
+.hero {
+  padding: 0.95rem;
+}
+
+.hero-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 0.65rem;
+  flex-wrap: wrap;
+}
+
+.tag {
+  font-family: "Chakra Petch", "Trebuchet MS", sans-serif;
+  font-size: 0.74rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  padding: 0.26rem 0.56rem;
+  color: var(--ink-soft);
+}
+
+.chip {
+  text-decoration: none;
+  color: var(--ink);
+  border: 1px solid rgba(190, 210, 255, 0.24);
+  border-radius: 999px;
+  min-height: 30px;
+  padding: 0.24rem 0.54rem;
+  display: inline-flex;
+  align-items: center;
+  font-family: "Chakra Petch", "Trebuchet MS", sans-serif;
+  font-size: 0.78rem;
+  letter-spacing: 0.05em;
+  background: rgba(255, 255, 255, 0.04);
+}
+
+h1,
+h2 {
+  margin: 0;
+  font-family: "Chakra Petch", "Trebuchet MS", sans-serif;
+}
+
+h1 {
+  margin-top: 0.7rem;
+  font-size: clamp(1.5rem, 3.4vw, 2.3rem);
+}
+
+.hero p {
+  margin: 0.45rem 0 0;
+  color: var(--ink-soft);
+  max-width: 90ch;
+}
+
+.workspace {
+  margin-top: 0.85rem;
+  display: grid;
+  gap: 0.75rem;
+  grid-template-columns: minmax(0, 390px) minmax(0, 1fr);
+}
+
+.controls {
+  padding: 0.82rem;
+  align-self: start;
+}
+
+.controls h2 {
+  margin-bottom: 0.62rem;
+}
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.34rem;
+  margin-bottom: 0.58rem;
+}
+
+.field span {
+  color: var(--ink-soft);
+  font-size: 0.76rem;
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+}
+
+.field input,
+.field select {
+  min-height: 38px;
+  border-radius: 10px;
+  border: 1px solid rgba(190, 205, 255, 0.22);
+  background: rgba(10, 16, 30, 0.85);
+  color: var(--ink);
+  padding: 0.45rem 0.56rem;
+  font: inherit;
+}
+
+.field input:focus,
+.field select:focus {
+  outline: none;
+  border-color: rgba(34, 204, 238, 0.5);
+}
+
+.field input[type="number"] {
+  background: rgba(10, 16, 30, 0.85);
+}
+
+.field select {
+  appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' fill='none'%3E%3Cpath d='M1 1.5l5 5 5-5' stroke='%2333ffff' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+  background-position: right 0.65rem center;
+  background-size: 0.7rem;
+  background-repeat: no-repeat;
+  padding-right: 1.8rem;
+}
+
+.field select option {
+  background: #0d1528;
+  color: #ecfcff;
+}
+
+.field input[type="range"] {
+  padding: 0.25rem 0.2rem;
+}
+.ctrl-section {
+  padding-bottom: 0.6rem;
+  margin-bottom: 0.6rem;
+  border-bottom: 1px solid rgba(34, 153, 238, 0.15);
+}
+
+.ctrl-section:last-of-type {
+  border-bottom: none;
+  margin-bottom: 0.2rem;
+}
+
+.ctrl-label {
+  margin: 0 0 0.5rem;
+  font-family: "Chakra Petch", "Trebuchet MS", sans-serif;
+  font-size: 0.68rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: rgba(34, 204, 238, 0.7);
+}
+.range-wrap {
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+}
+
+.range-wrap input[type="range"] {
+  flex: 1;
+  min-width: 0;
+}
+
+.val-input {
+  flex-shrink: 0;
+  width: 3.6rem;
+  min-height: unset !important;
+  height: 28px;
+  padding: 0.1rem 0.25rem !important;
+  text-align: right;
+  font-family: "Chakra Petch", "Trebuchet MS", sans-serif;
+  font-size: 0.72rem;
+  font-weight: 500;
+  color: var(--ink);
+  background: rgba(10, 16, 30, 0.85);
+  border: 1px solid rgba(190, 205, 255, 0.18);
+  border-radius: 6px;
+  letter-spacing: 0.02em;
+  -moz-appearance: textfield;
+}
+
+.val-input::-webkit-inner-spin-button,
+.val-input::-webkit-outer-spin-button {
+  opacity: 1;
+  height: 22px;
+}
+
+.field-row {
+  display: grid;
+  gap: 0.56rem;
+  grid-template-columns: repeat(auto-fit, minmax(96px, 1fr));
+}
+
+.field.check {
+  flex-direction: row;
+  align-items: center;
+  justify-content: space-between;
+  margin-top: 0.25rem;
+}
+
+.field.check input {
+  min-height: auto;
+  width: 19px;
+  height: 19px;
+  accent-color: #33ffff;
+}
+
+.export-section {
+  border: 1px solid rgba(51, 255, 255, 0.18);
+  border-radius: 12px;
+  background: rgba(51, 255, 255, 0.03);
+  padding: 0.6rem;
+  border-bottom: none;
+  margin-bottom: 0.5rem;
+}
+
+.actions {
+  margin-top: 0.6rem;
+  display: grid;
+  gap: 0.45rem;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.btn {
+  min-height: 39px;
+  border-radius: 10px;
+  border: 1px solid transparent;
+  cursor: pointer;
+  color: var(--ink);
+  font-family: "Chakra Petch", "Trebuchet MS", sans-serif;
+  letter-spacing: 0.05em;
+  transition:
+    transform 0.12s ease,
+    filter 0.12s ease;
+}
+
+.btn:hover {
+  transform: translateY(-1px);
+  filter: brightness(1.05);
+}
+
+.btn.secondary {
+  background: rgba(255, 255, 255, 0.06);
+  border-color: rgba(190, 205, 255, 0.22);
+}
+
+.btn.accent {
+  background: linear-gradient(135deg, rgba(17, 102, 221, 0.85), rgba(34, 204, 238, 0.75));
+  border-color: rgba(34, 204, 238, 0.3);
+}
+
+.btn.primary {
+  grid-column: 1 / -1;
+  background: linear-gradient(135deg, rgba(0, 51, 204, 0.95), rgba(51, 255, 255, 0.86));
+  border-color: rgba(206, 223, 255, 0.2);
+}
+
+.btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  transform: none;
+  filter: none;
+}
+
+.status-line {
+  margin: 0.62rem 0 0;
+  color: var(--ink-soft);
+  font-size: 0.84rem;
+}
+
+.viewport {
+  min-height: 640px;
+  overflow: hidden;
+  position: relative;
+  background: #0d1528;
+}
+
+#solidCanvas {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+@media (max-width: 1050px) {
+  .workspace {
+    grid-template-columns: 1fr;
+  }
+
+  .viewport {
+    min-height: 420px;
+  }
+}
+
+@media (max-width: 720px) {
+  .page {
+    width: min(1360px, 100% - 1rem);
+  }
+  .actions {
+    grid-template-columns: 1fr;
+  }
+  .btn.primary {
+    grid-column: auto;
+  }
+}

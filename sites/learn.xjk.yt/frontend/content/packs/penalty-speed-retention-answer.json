@@ -1,0 +1,15 @@
+{
+  "title": "Penalty Speed Retention Answer",
+  "summary": "A compact pack for answering questions about keeping speed on penalty surfaces underwater.",
+  "question": "How can Rally underwater keep speed on penalty?",
+  "pageSlug": "underwater/rally-car/start-trick-and-penalty-wiggles",
+  "cards": [
+    "contexts/underwater-driving-primer",
+    "underwater/rally-car/start-trick-and-penalty-wiggles",
+    "underwater/rally-car/surfaces-and-speed-retention",
+    "underwater/rally-car/floatiness-slopes-and-flowtrick"
+  ],
+  "concepts": ["penalty-surfaces", "speed-retention", "ak-wiggle", "wheel-contact"],
+  "requiredContext": ["contexts/underwater-driving-primer", "underwater/rally-car/mechanics-primer"],
+  "tags": ["penalty", "wiggle", "speed-retention"]
+}

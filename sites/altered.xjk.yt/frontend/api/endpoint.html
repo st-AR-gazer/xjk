@@ -1,0 +1,137 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <link rel="stylesheet" href="/shared/xjk-core/chrome-prepaint.css?v=2" data-xjk-chrome-prepaint />
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Altered Public API Endpoint</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="../styles/foundation.css?v=2" />
+    <link rel="stylesheet" href="../styles/overview-tester.css?v=2" />
+    <link rel="stylesheet" href="../styles/endpoints.css?v=2" />
+    <link rel="stylesheet" href="../styles/responsive.css?v=2" />
+    <link rel="icon" href="../../favicon.svg?v=2" type="image/svg+xml" />
+  </head>
+  <body class="api-docs-page">
+    <div class="docs-shell">
+      <aside class="docs-sidebar">
+        <div class="brand-block">
+          <a class="brand-home" href="../">API Index</a>
+          <h1 id="sidebarTitle">Endpoint</h1>
+        </div>
+
+        <nav class="sidebar-nav" aria-label="Endpoint documentation navigation">
+          <div class="sidebar-group">
+            <p class="sidebar-group-title">Links</p>
+            <a href="../">Back to Index</a>
+            <a id="jsonLink" href="../v1/public/endpoints" target="_blank" rel="noopener noreferrer">Raw JSON</a>
+            <a href="../../">Public Site</a>
+          </div>
+          <div id="otherEndpoints"></div>
+        </nav>
+      </aside>
+
+      <main class="docs-main">
+        <header class="docs-topbar">
+          <div class="topbar-copy">
+            <strong id="topbarSummary">Loading endpoint...</strong>
+          </div>
+          <div class="topbar-actions">
+            <a class="btn ghost" href="../">Index</a>
+            <a id="openEndpointBtn" class="btn primary" href="../" target="_blank" rel="noopener noreferrer"
+              >Open Live</a
+            >
+          </div>
+        </header>
+
+        <!-- Single detail card with two columns -->
+        <section class="doc-section ep-detail-card">
+          <div class="ep-detail-grid">
+            <!-- Left: info + headers + curl -->
+            <div class="ep-col">
+              <div class="ep-head">
+                <span class="section-kicker" id="endpointGroup">Reference</span>
+                <h2 id="endpointTitle">Loading...</h2>
+                <div class="endpoint-meta">
+                  <span id="endpointMethod" class="method-badge get">GET</span>
+                  <span id="endpointAccess" class="status-badge public">public</span>
+                  <span id="endpointStability" class="status-badge existing">existing</span>
+                </div>
+                <p id="endpointDescription" class="ep-desc">Loading...</p>
+              </div>
+
+              <div class="ep-route code-block">
+                <pre><code id="endpointPath">/api/v1/...</code></pre>
+              </div>
+
+              <div class="ep-sub">
+                <span class="ep-sub-label">Headers</span>
+                <div id="headerParams" class="param-table"></div>
+              </div>
+
+              <div class="ep-sub">
+                <span class="ep-sub-label">cURL</span>
+                <div class="code-block">
+                  <pre><code id="endpointCurl">curl "/api/v1/..."</code></pre>
+                </div>
+              </div>
+
+              <div id="requestBodyWrap" class="ep-sub hidden">
+                <span class="ep-sub-label">Request Body</span>
+                <div class="code-block">
+                  <pre><code id="requestBodyExample">{}</code></pre>
+                </div>
+              </div>
+            </div>
+
+            <!-- Right: params + remarks -->
+            <div class="ep-col">
+              <div class="ep-sub">
+                <span class="ep-sub-label">Path Parameters</span>
+                <div id="pathParams" class="param-table"></div>
+              </div>
+
+              <div class="ep-sub">
+                <span class="ep-sub-label">Query Parameters</span>
+                <div id="queryParams" class="param-table"></div>
+              </div>
+
+              <div class="ep-sub">
+                <span class="ep-sub-label">Remarks</span>
+                <div id="endpointRemarks" class="inline-empty">Loading...</div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <section class="doc-section doc-section-compact">
+          <span class="ep-sub-label" style="margin-bottom: 0.35rem; display: block">Responses</span>
+          <div id="exampleResponses" class="ep-responses-grid">
+            <p class="inline-empty">Loading...</p>
+          </div>
+        </section>
+      </main>
+    </div>
+
+    <script src="/shared/xjk-core/local-path-rewriter.js?v=2"></script>
+    <script src="../../altered-paths.js?v=2"></script>
+    <script src="../endpoint.js?v=2" type="module"></script>
+    <script
+      type="module"
+      src="/shared/xjk-core/sidenav-boot.js?v=2"
+      data-xjk-sidenav="altered"
+      data-xjk-page="api"
+    ></script>
+    <script
+      type="module"
+      src="/shared/xjk-core/topbar-loader.js?v=2"
+      data-xjk-topbar="altered"
+      data-xjk-page="api"
+    ></script>
+  </body>
+</html>

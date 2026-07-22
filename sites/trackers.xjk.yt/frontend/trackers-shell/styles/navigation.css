@@ -1,0 +1,130 @@
+/* Rail nav: subway stops */
+.trk-rail {
+  position: relative;
+  display: flex;
+  align-items: center;
+  width: 100%;
+  min-height: 44px;
+  padding: 0 clamp(30px, 7vw, 110px);
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+
+.trk-rail::before {
+  content: "";
+  position: absolute;
+  top: 21px;
+  right: 0;
+  left: 0;
+  height: 2px;
+  background: linear-gradient(
+    90deg,
+    rgba(250, 204, 21, 0.32),
+    rgba(250, 204, 21, 0.5) 18%,
+    rgba(250, 204, 21, 0.28) 50%,
+    rgba(250, 204, 21, 0.5) 82%,
+    rgba(250, 204, 21, 0.32)
+  );
+  opacity: 0.7;
+  pointer-events: none;
+}
+
+.trk-rail::-webkit-scrollbar {
+  display: none;
+}
+
+.rail-stop {
+  position: relative;
+  display: grid;
+  grid-template-columns: auto minmax(0, max-content);
+  justify-content: center;
+  align-items: center;
+  gap: 10px;
+  flex: 1 0 120px;
+  min-height: 44px;
+  padding: 0 10px;
+  color: var(--text-muted);
+  cursor: pointer;
+}
+
+.rail-stop span {
+  position: relative;
+  z-index: 1;
+  width: 13px;
+  height: 13px;
+  border: 3px solid #8f9498;
+  border-radius: 50%;
+  background: var(--bg-main);
+  transition:
+    border-color 150ms ease,
+    box-shadow 150ms ease,
+    transform 150ms ease;
+}
+
+.rail-stop span::after {
+  content: "";
+  position: absolute;
+  inset: 3px;
+  border-radius: 50%;
+  background: transparent;
+}
+
+.rail-stop strong {
+  position: relative;
+  z-index: 2;
+  padding: 0 7px;
+  background: var(--bg-main);
+  box-shadow: 0 0 0 3px var(--bg-main);
+  font-size: 14px;
+  font-weight: 500;
+  line-height: 1.18;
+  white-space: nowrap;
+}
+
+.rail-stop:hover {
+  color: #ffffff;
+}
+
+.rail-stop.is-active {
+  color: #ffffff;
+}
+
+.rail-stop.is-active span {
+  border-color: var(--accent);
+  box-shadow:
+    0 0 0 3px var(--bg-main),
+    0 0 0 5px rgba(250, 204, 21, 0.28),
+    0 0 14px rgba(250, 204, 21, 0.22);
+  transform: scale(1.1);
+}
+
+.rail-stop.is-active span::after {
+  background: var(--accent);
+  box-shadow: 0 0 8px var(--accent-soft);
+}
+
+.rail-stop.is-active strong::after {
+  content: "";
+  position: absolute;
+  right: 0;
+  bottom: -10px;
+  left: 0;
+  height: 2px;
+  background: linear-gradient(90deg, transparent, var(--accent), transparent);
+  opacity: 0.95;
+}
+
+/* Route outlet */
+.route-outlet {
+  min-height: 320px;
+}
+
+.route-boot {
+  padding: 22px;
+  border: 1px dashed rgba(255, 255, 255, 0.18);
+  border-radius: 5px;
+  color: var(--text-muted);
+  font-family: "Space Mono", ui-monospace, monospace;
+  font-size: 13px;
+  text-align: center;
+}

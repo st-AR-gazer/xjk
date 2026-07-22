@@ -1,0 +1,11 @@
+@import url("tracker-shared/public.css");
+
+:root {
+  --accent: #f0bf67;
+  --accent-strong: #ffd98c;
+  --accent-soft: rgba(240, 191, 103, 0.12);
+  --accent-border: rgba(240, 191, 103, 0.42);
+  --accent-glow: rgba(240, 191, 103, 0.18);
+  --border: rgba(240, 191, 103, 0.12);
+  --border-hover: rgba(240, 191, 103, 0.35);
+}

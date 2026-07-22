@@ -1,0 +1,8 @@
+{
+  "title": "Surfaces",
+  "area": "surfaces",
+  "type": "concept",
+  "summary": "Trackmania surface behavior, including normal grip surfaces, ice, plastic, wood, rubber, penalty, and mixed states.",
+  "tags": ["surface", "physics"],
+  "relatedConcepts": ["penalty-surfaces", "plastic-overspeed", "ice-slide"]
+}

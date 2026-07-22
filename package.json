@@ -1,0 +1,37 @@
+{
+  "name": "xjk-platform",
+  "private": true,
+  "type": "module",
+  "engines": {
+    "node": ">=22"
+  },
+  "scripts": {
+    "assets:version": "node scripts/normalize-asset-versions.mjs --write",
+    "catalog:write": "node scripts/generate-platform-catalog.mjs",
+    "check": "npm run check:repository && npm run check:dependencies && npm run check:syntax && npm run check:modules && npm run coverage && npm run lint && npm run check:duplicates && npm run check:bannerbuilder && npm run check:platform && npm run check:assets && npm run check:shared",
+    "check:assets": "node scripts/normalize-asset-versions.mjs",
+    "check:bannerbuilder": "python scripts/check-bannerbuilder.py",
+    "check:duplicates": "jscpd services sites scripts deploy --config .jscpd.json --no-colors --no-tips",
+    "check:dependencies": "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/check-production-dependencies.ps1",
+    "check:modules": "node --experimental-vm-modules scripts/check-javascript-module-links.mjs",
+    "check:platform": "node scripts/check-platform-manifest.mjs && powershell -NoProfile -ExecutionPolicy Bypass -File scripts/check-local-backend-config.ps1 && powershell -NoProfile -ExecutionPolicy Bypass -File scripts/check-local-backend-environment.ps1 && powershell -NoProfile -ExecutionPolicy Bypass -File scripts/check-local-process-ownership.ps1",
+    "check:repository": "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/check-repository-safety.ps1",
+    "check:shared": "npm --prefix sites/shared run check",
+    "check:syntax": "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/check-javascript-syntax.ps1 && powershell -NoProfile -ExecutionPolicy Bypass -File scripts/check-powershell-syntax.ps1",
+    "coverage": "npm run coverage:run && node scripts/report-coverage.mjs",
+    "coverage:baseline:write": "npm run coverage:run && node scripts/report-coverage.mjs --write",
+    "coverage:run": "c8 --all --reporter=text-summary --reporter=json-summary npm test",
+    "format": "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/format-changed.ps1 -Write",
+    "format:check": "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/format-changed.ps1",
+    "format:ci": "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/format-changed.ps1 -All",
+    "lint": "eslint \"{services,sites,scripts,deploy,config,test}/**/*.{js,mjs,cjs}\" --no-error-on-unmatched-pattern",
+    "test": "node --test --test-isolation=none"
+  },
+  "devDependencies": {
+    "acorn": "8.17.0",
+    "c8": "12.0.0",
+    "eslint": "9.39.1",
+    "jscpd": "5.0.12",
+    "prettier": "3.6.2"
+  }
+}

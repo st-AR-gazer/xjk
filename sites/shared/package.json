@@ -1,0 +1,22 @@
+{
+  "private": true,
+  "type": "module",
+  "engines": {
+    "node": ">=22"
+  },
+  "scripts": {
+    "audit:browser": "node ../../scripts/audit-altered-browser.mjs --strict",
+    "build:global-search": "node ../../scripts/build-global-search-index.mjs",
+    "check": "npm run check:global-search && npm run check:site-core && npm run check:global-topbar && npm run check:altered-assets && npm run check:map-layout && npm run check:learn-map-layout && npm run check:tool-theme && npm run check:frontend-hygiene",
+    "check:altered-assets": "node ../../scripts/check-altered-assets.mjs",
+    "check:global-search": "node ../../scripts/check-global-search.mjs",
+    "check:global-topbar": "node ../../scripts/check-global-topbar.mjs",
+    "check:learn-map-layout": "node ../../scripts/check-learn-map-layout.mjs",
+    "check:frontend-hygiene": "node ../../scripts/check-frontend-hygiene.mjs",
+    "check:map-layout": "node ../../scripts/check-map-layout.mjs",
+    "check:site-core": "node ../../scripts/check-site-core.mjs",
+    "check:tool-theme": "node ../../scripts/check-tool-theme.mjs",
+    "format": "powershell -NoProfile -ExecutionPolicy Bypass -File ../../scripts/format-changed.ps1 -Write",
+    "format:check": "powershell -NoProfile -ExecutionPolicy Bypass -File ../../scripts/format-changed.ps1"
+  }
+}

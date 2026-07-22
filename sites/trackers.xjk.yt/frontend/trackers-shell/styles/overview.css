@@ -1,0 +1,268 @@
+/* Overview: header + stats */
+.overview-page {
+  display: grid;
+  gap: 14px;
+}
+
+.page-header {
+  display: grid;
+  gap: 6px;
+  justify-items: center;
+  text-align: center;
+}
+
+.page-header h2 {
+  font-size: 20px;
+  font-weight: 600;
+}
+
+.page-header p {
+  max-width: 74ch;
+  color: var(--text-muted);
+  font-family: "Space Mono", ui-monospace, monospace;
+  font-size: 12px;
+}
+
+.stats-row {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 12px;
+}
+
+.stat-card {
+  min-width: 0;
+  padding: 13px 15px 12px 30px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 5px;
+  background:
+    radial-gradient(
+      circle at 15px 21px,
+      var(--bg-panel-solid) 0 3.5px,
+      rgba(250, 204, 21, 0.6) 3.5px 5.5px,
+      transparent 6.5px
+    ),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.016), rgba(0, 0, 0, 0.045) 100%), var(--bg-panel);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.035),
+    inset 0 -1px 0 rgba(0, 0, 0, 0.24);
+}
+
+.stat-label {
+  display: block;
+  color: var(--text-dim);
+  font-family: "Space Mono", ui-monospace, monospace;
+  font-size: 10px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.stat-value {
+  display: block;
+  margin-top: 4px;
+  font-family: "Space Mono", ui-monospace, monospace;
+  font-size: 22px;
+  font-weight: 700;
+  line-height: 1.1;
+}
+
+.stat-copy {
+  margin-top: 4px;
+  color: var(--text-muted);
+  font-family: "Space Mono", ui-monospace, monospace;
+  font-size: 11px;
+  line-height: 1.45;
+}
+
+.status-text--ok {
+  color: var(--ok);
+}
+
+.status-text--warn {
+  color: var(--warn);
+}
+
+.status-text--bad {
+  color: var(--bad);
+}
+
+/* Overview: runtime cards as stops on a route line */
+.overview-grid {
+  position: relative;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: 14px;
+  padding-top: 30px;
+}
+
+.overview-grid::before {
+  content: "";
+  position: absolute;
+  top: 12px;
+  right: 4px;
+  left: 4px;
+  height: 3px;
+  border-radius: 999px;
+  background: linear-gradient(
+    90deg,
+    rgba(250, 204, 21, 0.5),
+    rgba(56, 189, 248, 0.45) 34%,
+    rgba(244, 114, 182, 0.45) 66%,
+    rgba(74, 222, 128, 0.5)
+  );
+  opacity: 0.6;
+  pointer-events: none;
+}
+
+.overview-card {
+  --runtime-color: var(--accent);
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 9px;
+  min-width: 0;
+  padding: 14px 15px 12px;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  border-radius: 5px;
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.016), rgba(0, 0, 0, 0.045) 100%), var(--bg-panel);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.035),
+    inset 0 -1px 0 rgba(0, 0, 0, 0.24);
+  transition:
+    border-color 150ms ease,
+    transform 150ms ease;
+}
+
+.overview-card::before {
+  content: "";
+  position: absolute;
+  top: -24px;
+  left: 50%;
+  width: 14px;
+  height: 14px;
+  border: 3px solid var(--runtime-color);
+  border-radius: 50%;
+  background: var(--bg-main);
+  box-shadow:
+    0 0 0 3px var(--bg-main),
+    0 0 0 5px color-mix(in srgb, var(--runtime-color), transparent 78%),
+    0 0 12px color-mix(in srgb, var(--runtime-color), transparent 55%);
+  transform: translateX(-50%);
+}
+
+.overview-card--wr {
+  --runtime-color: var(--wr);
+}
+.overview-card--leaderboard {
+  --runtime-color: var(--leaderboard);
+}
+.overview-card--displayname {
+  --runtime-color: var(--displayname);
+}
+.overview-card--club {
+  --runtime-color: var(--club);
+}
+
+.overview-card:hover {
+  border-color: color-mix(in srgb, var(--runtime-color), transparent 45%);
+  transform: translateY(-1px);
+}
+
+.overview-card-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.overview-card-title {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+}
+
+.overview-card-icon {
+  display: grid;
+  place-items: center;
+  width: 34px;
+  height: 34px;
+  border: 1px solid color-mix(in srgb, var(--runtime-color), transparent 55%);
+  border-radius: 5px;
+  color: var(--runtime-color);
+  background: color-mix(in srgb, var(--runtime-color), transparent 93%);
+}
+
+.overview-card-icon svg {
+  width: 18px;
+  height: 18px;
+}
+
+.overview-card-title h3 {
+  color: color-mix(in srgb, var(--runtime-color), white 25%);
+  font-size: 16.5px;
+  font-weight: 600;
+  line-height: 1.1;
+}
+
+.overview-card > p {
+  color: var(--text-muted);
+  font-size: 13px;
+  line-height: 1.45;
+}
+
+.overview-card-meta {
+  overflow: hidden;
+  color: var(--text-dim);
+  font-family: "Space Mono", ui-monospace, monospace;
+  font-size: 10.5px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.overview-card-go {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: auto;
+  padding-top: 10px;
+  border-top: 1px solid rgba(255, 255, 255, 0.09);
+  color: var(--runtime-color);
+  font-family: "Space Mono", ui-monospace, monospace;
+  font-size: 11.5px;
+}
+
+.overview-card:hover .overview-card-go {
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+.status-pill {
+  flex: 0 0 auto;
+  padding: 3px 8px;
+  border: 1px solid var(--border-subtle);
+  border-radius: 3px;
+  color: var(--text-muted);
+  background: rgba(255, 255, 255, 0.035);
+  font-family: "Space Mono", ui-monospace, monospace;
+  font-size: 10px;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.status-pill--ok {
+  border-color: rgba(112, 216, 95, 0.45);
+  color: var(--ok);
+  background: rgba(112, 216, 95, 0.07);
+}
+
+.status-pill--warn {
+  border-color: rgba(251, 146, 60, 0.45);
+  color: var(--warn);
+  background: rgba(251, 146, 60, 0.07);
+}
+
+.status-pill--bad {
+  border-color: rgba(255, 95, 87, 0.5);
+  color: var(--bad);
+  background: rgba(255, 95, 87, 0.08);
+}

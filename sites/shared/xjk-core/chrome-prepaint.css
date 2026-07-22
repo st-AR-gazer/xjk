@@ -1,0 +1,112 @@
+/* Prevent legacy page chrome from painting before the canonical topbar has
+   replaced it. Keeping the host itself in flow avoids any layout shift; only
+   its soon-to-be-replaced children are withheld from the first paint. */
+
+@keyframes xjk-chrome-prepaint-fallback {
+  to {
+    visibility: visible;
+  }
+}
+
+html:not(.xjk-topbar-ready)
+  :is(
+    [data-xjk-topbar-mount],
+    header:has([data-xjk-topbar-actions]),
+    [role="banner"]:has([data-xjk-topbar-actions]),
+    nav.site-nav:has([data-xjk-topbar-actions]),
+    header:has([data-xjk-account-widget-slot="topbar"]),
+    [role="banner"]:has([data-xjk-account-widget-slot="topbar"]),
+    nav.site-nav:has([data-xjk-account-widget-slot="topbar"]),
+    body > nav.site-nav
+  )
+  > *,
+html:not(.xjk-topbar-ready):not(:has(script[data-xjk-topbar="altered"]))
+  :is(
+    body > header,
+    body > .hub-shell > header,
+    body > .learn-shell > header,
+    body > .account-shell > header,
+    body > .agg-shell > header,
+    body > .val-shell > header,
+    body > .app > header,
+    body > .shell > header
+  )
+  > * {
+  --xjk-chrome-prepaint-visibility: hidden;
+  visibility: var(--xjk-chrome-prepaint-visibility);
+  animation: xjk-chrome-prepaint-fallback 1ms 3s forwards;
+}
+
+/* Page styles may draw a legacy transit rail on the reusable header itself.
+   Suppress those pseudo-elements before the canonical stylesheet arrives so
+   they cannot flash for a frame ahead of the shared topbar. */
+html:not(.xjk-topbar-ready)
+  :is(
+    [data-xjk-topbar-mount],
+    header:has([data-xjk-topbar-actions]),
+    [role="banner"]:has([data-xjk-topbar-actions]),
+    nav.site-nav:has([data-xjk-topbar-actions]),
+    header:has([data-xjk-account-widget-slot="topbar"]),
+    [role="banner"]:has([data-xjk-account-widget-slot="topbar"]),
+    nav.site-nav:has([data-xjk-account-widget-slot="topbar"]),
+    body > nav.site-nav
+  )::before,
+html:not(.xjk-topbar-ready)
+  :is(
+    [data-xjk-topbar-mount],
+    header:has([data-xjk-topbar-actions]),
+    [role="banner"]:has([data-xjk-topbar-actions]),
+    nav.site-nav:has([data-xjk-topbar-actions]),
+    header:has([data-xjk-account-widget-slot="topbar"]),
+    [role="banner"]:has([data-xjk-account-widget-slot="topbar"]),
+    nav.site-nav:has([data-xjk-account-widget-slot="topbar"]),
+    body > nav.site-nav
+  )::after,
+html:not(.xjk-topbar-ready):not(:has(script[data-xjk-topbar="altered"]))
+  :is(
+    body > header,
+    body > .hub-shell > header,
+    body > .learn-shell > header,
+    body > .account-shell > header,
+    body > .agg-shell > header,
+    body > .val-shell > header,
+    body > .app > header,
+    body > .shell > header
+  )::before,
+html:not(.xjk-topbar-ready):not(:has(script[data-xjk-topbar="altered"]))
+  :is(
+    body > header,
+    body > .hub-shell > header,
+    body > .learn-shell > header,
+    body > .account-shell > header,
+    body > .agg-shell > header,
+    body > .val-shell > header,
+    body > .app > header,
+    body > .shell > header
+  )::after {
+  content: none !important;
+  display: none !important;
+}
+
+html.xjk-topbar-ready .xjk-global-topbar > * {
+  --xjk-chrome-prepaint-visibility: visible;
+  visibility: visible;
+  animation: none;
+}
+
+/* The shared topbar keeps a reused host's classes. Prevent any page-owned
+   pseudo-element from reappearing over the canonical accent rail. */
+.xjk-global-topbar::before,
+.xjk-global-topbar::after {
+  content: none !important;
+  display: none !important;
+}
+
+/* The sidenav renderer inserts its controls before its independently cached
+   stylesheet necessarily finishes loading. Withhold those controls until the
+   stylesheet is active so native light button chrome cannot flash on reload. */
+html:not(.xjk-sidenav-ready) :is(.xjk-sidenav, .xjk-sidenav-mobile-toggle, .xjk-sidenav-mobile-backdrop) {
+  --xjk-chrome-prepaint-visibility: hidden;
+  visibility: var(--xjk-chrome-prepaint-visibility);
+  animation: xjk-chrome-prepaint-fallback 1ms 3s forwards;
+}

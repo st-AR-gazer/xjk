@@ -1,0 +1,189 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://xjk.yt/schemas/platform-manifest.schema.json",
+  "title": "xjk platform manifest",
+  "type": "object",
+  "required": ["schemaVersion", "assetVersion", "infrastructure", "routing", "sites", "services", "tools"],
+  "properties": {
+    "schemaVersion": { "const": 1 },
+    "assetVersion": { "type": "string", "pattern": "^[A-Za-z0-9._-]+$" },
+    "infrastructure": {
+      "type": "object",
+      "required": ["localGateway", "localhostBrowserProxy", "security"],
+      "properties": {
+        "localGateway": {
+          "type": "object",
+          "required": ["port", "portParameter", "rootSiteId"],
+          "properties": {
+            "port": { "type": "integer", "minimum": 1, "maximum": 65535 },
+            "portParameter": { "type": "string" },
+            "rootSiteId": { "type": "string" }
+          },
+          "additionalProperties": false
+        },
+        "localhostBrowserProxy": {
+          "type": "object",
+          "required": ["port", "managedByStackReset"],
+          "properties": {
+            "port": { "type": "integer", "minimum": 1, "maximum": 65535 },
+            "managedByStackReset": { "type": "boolean" }
+          },
+          "additionalProperties": false
+        },
+        "security": {
+          "type": "object",
+          "required": ["localOnlyOverrides"],
+          "properties": {
+            "localOnlyOverrides": {
+              "type": "array",
+              "items": { "$ref": "#/$defs/localOnlyOverride" }
+            }
+          },
+          "additionalProperties": false
+        }
+      },
+      "additionalProperties": false
+    },
+    "routing": {
+      "type": "object",
+      "required": ["tools", "tracker"],
+      "properties": {
+        "tools": {
+          "type": "object",
+          "required": ["siteId", "rootServiceId"],
+          "properties": {
+            "siteId": { "type": "string" },
+            "rootServiceId": { "type": "string" }
+          },
+          "additionalProperties": false
+        },
+        "tracker": {
+          "type": "object",
+          "required": ["siteId", "rootServiceId", "modes"],
+          "properties": {
+            "siteId": { "type": "string" },
+            "rootServiceId": { "type": "string" },
+            "modes": {
+              "type": "array",
+              "minItems": 1,
+              "items": { "$ref": "#/$defs/trackerMode" }
+            }
+          },
+          "additionalProperties": false
+        }
+      },
+      "additionalProperties": false
+    },
+    "sites": { "type": "array", "items": { "$ref": "#/$defs/site" } },
+    "services": { "type": "array", "items": { "$ref": "#/$defs/service" } },
+    "tools": { "type": "array", "items": { "$ref": "#/$defs/tool" } }
+  },
+  "additionalProperties": false,
+  "$defs": {
+    "localOnlyOverride": {
+      "type": "object",
+      "required": ["serviceId", "environmentVariable", "localValue", "allowedInProduction"],
+      "properties": {
+        "serviceId": { "type": "string" },
+        "environmentVariable": { "type": "string", "pattern": "^[A-Z][A-Z0-9_]*$" },
+        "localValue": { "type": "string" },
+        "allowedInProduction": { "type": "boolean" }
+      },
+      "additionalProperties": false
+    },
+    "site": {
+      "type": "object",
+      "required": ["id", "name", "host", "aliases", "frontend", "visibility"],
+      "properties": {
+        "id": { "type": "string" },
+        "name": { "type": "string" },
+        "host": { "type": "string" },
+        "aliases": { "type": "array", "items": { "type": "string" } },
+        "frontend": { "type": "string" },
+        "visibility": { "enum": ["public", "private"] }
+      },
+      "additionalProperties": false
+    },
+    "trackerMode": {
+      "type": "object",
+      "required": ["path", "serviceId"],
+      "properties": {
+        "path": { "type": "string", "pattern": "^[a-z][a-z0-9-]*$" },
+        "serviceId": { "type": "string" }
+      },
+      "additionalProperties": false
+    },
+    "service": {
+      "type": "object",
+      "required": ["id", "processName", "localName", "cwd", "entry", "runtime", "ports", "health"],
+      "properties": {
+        "id": { "type": "string" },
+        "processName": { "type": "string" },
+        "localName": { "type": "string" },
+        "cwd": { "type": "string" },
+        "entry": { "type": "string" },
+        "runtime": { "enum": ["node", "python"] },
+        "ports": {
+          "type": "object",
+          "required": ["production", "local", "localParameter", "localEnvironmentVariable"],
+          "properties": {
+            "production": { "type": "integer", "minimum": 1, "maximum": 65535 },
+            "local": { "type": "integer", "minimum": 1, "maximum": 65535 },
+            "localParameter": { "type": "string" },
+            "localEnvironmentVariable": { "type": "string", "pattern": "^[A-Z][A-Z0-9_]*$" }
+          },
+          "additionalProperties": false
+        },
+        "health": {
+          "anyOf": [
+            { "type": "null" },
+            {
+              "type": "object",
+              "required": ["path", "required"],
+              "properties": {
+                "path": { "type": "string", "pattern": "^/" },
+                "required": { "type": "boolean" }
+              },
+              "additionalProperties": false
+            }
+          ]
+        }
+      },
+      "additionalProperties": false
+    },
+    "tool": {
+      "type": "object",
+      "required": [
+        "id",
+        "path",
+        "serviceId",
+        "executableName",
+        "runtimeFileId",
+        "listed",
+        "name",
+        "description",
+        "category",
+        "status",
+        "input",
+        "output",
+        "tone"
+      ],
+      "properties": {
+        "id": { "type": "string" },
+        "path": { "type": "string" },
+        "serviceId": { "type": ["string", "null"] },
+        "executableName": { "type": ["string", "null"] },
+        "runtimeFileId": { "type": ["string", "null"] },
+        "listed": { "type": "boolean" },
+        "name": { "type": "string" },
+        "description": { "type": "string" },
+        "category": { "type": "string" },
+        "status": { "type": "string" },
+        "input": { "type": "string" },
+        "output": { "type": "string" },
+        "tone": { "type": "string" }
+      },
+      "additionalProperties": false
+    }
+  }
+}

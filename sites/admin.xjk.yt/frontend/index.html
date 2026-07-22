@@ -1,0 +1,189 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <link rel="stylesheet" href="/shared/xjk-core/chrome-prepaint.css?v=2" data-xjk-chrome-prepaint />
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>xjk / map admin</title>
+    <link rel="icon" href="/favicon.svg?v=2" type="image/svg+xml" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Condensed:wght@400;500;600;700&family=Inter:wght@400;500;600;700&family=Space+Mono:wght@400;700&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="./styles/foundation.css?v=2" />
+    <link rel="stylesheet" href="./styles/workspace.css?v=2" />
+    <link rel="stylesheet" href="./styles/map-editor.css?v=2" />
+    <link rel="stylesheet" href="./styles/responsive.css?v=2" />
+  </head>
+
+  <body>
+    <div class="admin-shell">
+      <header class="topbar">
+        <a class="brand" href="/" data-xjk-site-link="xjk" aria-label="xjk home">
+          <span>admin.xjk.yt</span>
+        </a>
+        <nav class="topnav" aria-label="Admin views">
+          <a href="#map" aria-current="page">Map</a>
+          <a href="#export">Export</a>
+          <a href="/" data-xjk-site-link="xjk">Hub</a>
+        </nav>
+        <div class="top-actions">
+          <p id="statusLine">Ready</p>
+          <button id="undoBtn" type="button" disabled>Undo</button>
+          <button id="copyExportBtn" type="button">Copy Export</button>
+          <div class="admin-account-slot" data-xjk-account-widget-slot="topbar" aria-label="xjk account"></div>
+        </div>
+      </header>
+
+      <main class="editor-layout" id="map">
+        <aside class="library-panel" aria-label="Map objects">
+          <section class="panel-section">
+            <div class="section-head">
+              <h1>Stations</h1>
+              <span id="stationCount">0</span>
+            </div>
+            <div id="stationList" class="object-list"></div>
+          </section>
+
+          <section class="panel-section">
+            <div class="section-head">
+              <h2>Routes</h2>
+              <span id="routeCount">0</span>
+            </div>
+            <div id="routeList" class="object-list"></div>
+          </section>
+        </aside>
+
+        <section class="map-workbench" aria-labelledby="workbenchTitle">
+          <div class="workbench-toolbar">
+            <div>
+              <p class="eyebrow">Grid editor</p>
+              <h2 id="workbenchTitle">xjk network map</h2>
+            </div>
+            <div class="segmented-control" aria-label="Map layers">
+              <label>
+                <input id="showInactiveToggle" type="checkbox" checked />
+                <span>Inactive</span>
+              </label>
+              <label>
+                <input id="showLabelsToggle" type="checkbox" checked />
+                <span>Labels</span>
+              </label>
+            </div>
+          </div>
+          <div class="map-viewport" id="mapViewport">
+            <div class="map-canvas" id="mapCanvas"></div>
+          </div>
+        </section>
+
+        <aside class="inspector-panel" aria-label="Inspector">
+          <section class="panel-section inspector-section">
+            <div class="section-head">
+              <h2 id="inspectorTitle">Station</h2>
+              <span id="selectionBadge">station</span>
+            </div>
+
+            <div class="resolution-controls" aria-label="Map resolution">
+              <label class="field">
+                <span>Resolution</span>
+                <select id="resolutionPreset"></select>
+              </label>
+              <div class="field-row field-row--three">
+                <label class="field">
+                  <span>Width</span>
+                  <input id="gridWidth" type="number" min="400" max="4096" step="10" />
+                </label>
+                <label class="field">
+                  <span>Height</span>
+                  <input id="gridHeight" type="number" min="300" max="4096" step="10" />
+                </label>
+                <label class="field">
+                  <span>Cell</span>
+                  <input id="gridCellSize" type="number" min="2" max="40" step="1" />
+                </label>
+              </div>
+            </div>
+
+            <div id="stationInspector" class="inspector-group">
+              <label class="field">
+                <span>Station</span>
+                <select id="stationSelect"></select>
+              </label>
+              <div class="field-row">
+                <label class="field">
+                  <span>Node X</span>
+                  <input id="stationX" type="number" min="0" step="1" />
+                </label>
+                <label class="field">
+                  <span>Node Y</span>
+                  <input id="stationY" type="number" min="0" step="1" />
+                </label>
+              </div>
+              <div class="field-row">
+                <label class="field">
+                  <span>Label X</span>
+                  <input id="labelX" type="number" min="0" step="1" />
+                </label>
+                <label class="field">
+                  <span>Label Y</span>
+                  <input id="labelY" type="number" min="0" step="1" />
+                </label>
+              </div>
+              <label class="field">
+                <span>Color</span>
+                <input id="stationColor" type="color" />
+              </label>
+              <label class="field">
+                <span>Description</span>
+                <textarea id="stationDescription" rows="3" spellcheck="false"></textarea>
+              </label>
+            </div>
+
+            <div id="routeInspector" class="inspector-group" hidden>
+              <label class="field">
+                <span>Route</span>
+                <select id="routeSelect"></select>
+              </label>
+              <div id="routePointList" class="point-list"></div>
+              <div class="button-row">
+                <button id="addRoutePointBtn" type="button">Add Point</button>
+                <button id="removeRoutePointBtn" type="button">Remove Last</button>
+              </div>
+              <label class="field">
+                <span>Points</span>
+                <textarea id="routePointsText" rows="8" spellcheck="false"></textarea>
+              </label>
+            </div>
+          </section>
+
+          <section class="panel-section export-section" id="export">
+            <div class="section-head">
+              <h2>Generated snapshot</h2>
+              <span id="exportSize">0 B</span>
+            </div>
+            <div class="button-row">
+              <button
+                id="saveExportBtn"
+                type="button"
+                disabled
+                title="Production layout is generated from the site registry"
+              >
+                Registry generated
+              </button>
+              <button id="refreshExportBtn" type="button">Refresh</button>
+              <button id="downloadExportBtn" type="button">Download</button>
+              <button id="resetBtn" type="button">Reset</button>
+            </div>
+            <textarea id="exportText" class="export-text" rows="10" spellcheck="false"></textarea>
+          </section>
+        </aside>
+      </main>
+    </div>
+
+    <script type="module" src="app.js?v=2"></script>
+    <script type="module" src="/shared/xjk-core/sidenav-boot.js?v=2" data-xjk-sidenav="admin"></script>
+    <script type="module" src="/shared/xjk-core/topbar-loader.js?v=2" data-xjk-topbar="admin"></script>
+  </body>
+</html>

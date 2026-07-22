@@ -1,0 +1,14 @@
+title = "xjk repository secret scanning"
+
+[extend]
+useDefault = true
+
+[[rules]]
+id = "generic-api-key"
+
+  [[rules.allowlists]]
+  description = "Allow the deterministic SHA-256 catalog fixture"
+  condition = "AND"
+  regexTarget = "line"
+  paths = ['''services/altered/test/publicApiCatalogExamples\.test\.js$''']
+  regexes = ['''^\s*"public-api-catalog": "[0-9a-f]{64}",?$''']

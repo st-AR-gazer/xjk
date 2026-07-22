@@ -1,0 +1,358 @@
+/* Main + hero */
+.arc-main {
+  width: min(100%, 1540px);
+  margin: 0 auto;
+  padding: 18px 22px 12px;
+  display: grid;
+  gap: 12px;
+}
+
+.arc-hero {
+  position: relative;
+  isolation: isolate;
+  display: grid;
+  align-items: center;
+  justify-items: center;
+  min-height: 96px;
+}
+
+.arc-hero::before,
+.arc-hero::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: min(42%, 520px);
+  z-index: -1;
+  pointer-events: none;
+  opacity: 0.72;
+  background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 560 96'%3E%3Cg fill='none' stroke='%23e8a200' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M6 18H318' stroke-opacity='0.44' stroke-width='2.5'/%3E%3Cpath d='M330 10V26' stroke-opacity='0.44' stroke-width='2.5'/%3E%3Cpath d='M6 38H262' stroke-opacity='0.62' stroke-width='3'/%3E%3Cpath d='M274 30V46' stroke-opacity='0.62' stroke-width='3'/%3E%3Cpath d='M6 58H298' stroke-opacity='0.52' stroke-width='2.5'/%3E%3Cpath d='M310 50V66' stroke-opacity='0.52' stroke-width='2.5'/%3E%3Cpath d='M6 78H230' stroke-opacity='0.34' stroke-width='2.5' stroke-dasharray='9 11'/%3E%3Cpath d='M242 70V86' stroke-opacity='0.34' stroke-width='2.5'/%3E%3C/g%3E%3Cg fill='%23020406' stroke='%23e8a200'%3E%3Ccircle cx='286' cy='18' r='4.5' stroke-opacity='0.46' stroke-width='3'/%3E%3Ccircle cx='230' cy='38' r='6.5' stroke-opacity='0.72' stroke-width='3.5'/%3E%3Ccircle cx='266' cy='58' r='5' stroke-opacity='0.54' stroke-width='3'/%3E%3Ccircle cx='198' cy='78' r='4.5' stroke-opacity='0.38' stroke-width='2.5' stroke-dasharray='3 3'/%3E%3C/g%3E%3Ccircle cx='230' cy='38' r='2.6' fill='%23e8a200' fill-opacity='.85'/%3E%3C/svg%3E")
+    left center / auto 100% no-repeat;
+  -webkit-mask-image: linear-gradient(90deg, #000 0 56%, transparent 88%);
+  mask-image: linear-gradient(90deg, #000 0 56%, transparent 88%);
+}
+
+.arc-hero::before {
+  left: 0;
+}
+
+.arc-hero::after {
+  right: 0;
+  transform: scaleX(-1);
+}
+
+.hero-copy {
+  display: grid;
+  justify-items: center;
+  gap: 3px;
+  text-align: center;
+}
+
+.arc-hero h1 {
+  font-family: "Space Mono", ui-monospace, monospace;
+  font-size: clamp(28px, 2.8vw, 38px);
+  font-weight: 700;
+  line-height: 1.02;
+  letter-spacing: 0.04em;
+}
+
+.arc-hero h1 .hero-accent {
+  color: var(--accent);
+}
+
+.hero-copy p {
+  margin-top: 7px;
+  color: var(--text-muted);
+  font-family: "Space Mono", ui-monospace, monospace;
+  font-size: 13px;
+}
+
+/* Search */
+.arc-filter {
+  display: flex;
+  justify-content: center;
+}
+
+.arc-search {
+  display: grid;
+  grid-template-columns: 16px minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 8px;
+  width: min(100%, 420px);
+  height: 34px;
+  padding: 0 10px;
+  border: 1px solid rgba(232, 162, 0, 0.42);
+  border-radius: 5px;
+  background: var(--bg-control);
+}
+
+.arc-search:focus-within {
+  border-color: var(--accent);
+  box-shadow:
+    0 0 0 1px rgba(232, 162, 0, 0.2),
+    0 0 18px rgba(232, 162, 0, 0.1);
+}
+
+.search-glyph {
+  position: relative;
+  width: 14px;
+  height: 14px;
+  border: 2px solid var(--accent);
+  border-radius: 50%;
+  opacity: 0.85;
+}
+
+.search-glyph::after {
+  content: "";
+  position: absolute;
+  right: -6px;
+  bottom: -4px;
+  width: 7px;
+  height: 2px;
+  border-radius: 1px;
+  background: var(--accent);
+  transform: rotate(45deg);
+}
+
+.arc-search input {
+  min-width: 0;
+  border: 0;
+  outline: 0;
+  color: var(--text-main);
+  background: transparent;
+  font-family: "Space Mono", ui-monospace, monospace;
+  font-size: 13px;
+}
+
+.arc-search input::placeholder {
+  color: #8c8c8c;
+  opacity: 1;
+}
+
+.arc-search kbd {
+  min-width: 19px;
+  padding: 1px 5px;
+  border: 1px solid rgba(255, 255, 255, 0.22);
+  border-radius: 3px;
+  color: #b6b6b6;
+  background: rgba(255, 255, 255, 0.04);
+  font-family: "Space Mono", ui-monospace, monospace;
+  font-size: 11px;
+  line-height: 16px;
+  text-align: center;
+}
+
+/* Catalog: era stops on a vertical line */
+.arc-catalog {
+  padding-top: 6px;
+}
+
+#catalog {
+  position: relative;
+  padding-left: 36px;
+}
+
+#catalog::before {
+  content: "";
+  position: absolute;
+  top: 14px;
+  bottom: 10px;
+  left: 10px;
+  width: 3px;
+  border-radius: 999px;
+  background: linear-gradient(180deg, rgba(232, 162, 0, 0.6), rgba(232, 162, 0, 0.14));
+}
+
+.group {
+  position: relative;
+  margin-bottom: 30px;
+}
+
+.group-head {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  margin-bottom: 14px;
+  min-height: 28px;
+}
+
+.group-head::before {
+  content: "";
+  position: absolute;
+  top: 50%;
+  left: -33px;
+  width: 13px;
+  height: 13px;
+  border: 3px solid var(--accent);
+  border-radius: 50%;
+  background: var(--bg-main);
+  box-shadow:
+    0 0 0 3px var(--bg-main),
+    0 0 0 5px rgba(232, 162, 0, 0.22),
+    0 0 12px rgba(232, 162, 0, 0.2);
+  transform: translateY(-50%);
+}
+
+.group-head::after {
+  content: "";
+  flex: 1 1 auto;
+  height: 1px;
+  background: linear-gradient(90deg, rgba(232, 162, 0, 0.4), rgba(232, 162, 0, 0.05));
+}
+
+.group-head h3 {
+  order: -1;
+  color: var(--accent);
+  font-family: "Space Mono", ui-monospace, monospace;
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.group-head .count {
+  order: 1;
+  color: var(--text-dim);
+  font-family: "Space Mono", ui-monospace, monospace;
+  font-size: 11px;
+  white-space: nowrap;
+}
+
+/* Game cards */
+.games-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(310px, 1fr));
+  gap: 14px;
+}
+
+.game-card {
+  display: grid;
+  grid-template-columns: 112px minmax(0, 1fr);
+  min-height: 140px;
+  overflow: hidden;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  border-radius: 5px;
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.016), rgba(0, 0, 0, 0.045) 100%), var(--bg-panel);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.035),
+    inset 0 -1px 0 rgba(0, 0, 0, 0.24);
+  transition:
+    border-color 150ms ease,
+    background 150ms ease,
+    transform 150ms ease;
+}
+
+.game-card:hover {
+  border-color: rgba(232, 162, 0, 0.55);
+  background: linear-gradient(180deg, rgba(232, 162, 0, 0.03), rgba(0, 0, 0, 0.06) 100%), var(--bg-panel);
+  transform: translateY(-1px);
+}
+
+.game-cover {
+  position: relative;
+  min-height: 100%;
+  overflow: hidden;
+  border-right: 1px solid rgba(255, 255, 255, 0.1);
+  background: rgba(0, 0, 0, 0.35);
+}
+
+.game-cover img {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.game-info {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-width: 0;
+  padding: 12px 13px 11px;
+}
+
+.game-name {
+  overflow: hidden;
+  color: #f4f4f4;
+  font-size: 16px;
+  font-weight: 600;
+  line-height: 1.15;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.game-years {
+  color: var(--text-muted);
+  font-family: "Space Mono", ui-monospace, monospace;
+  font-size: 11.5px;
+}
+
+.game-pills {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+}
+
+.pill {
+  padding: 2px 7px;
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  border-radius: 3px;
+  color: var(--text-muted);
+  background: rgba(255, 255, 255, 0.03);
+  font-family: "Space Mono", ui-monospace, monospace;
+  font-size: 10px;
+  white-space: nowrap;
+}
+
+.pill-count {
+  padding: 2px 7px;
+  border: 1px solid rgba(232, 162, 0, 0.35);
+  border-radius: 3px;
+  color: color-mix(in srgb, var(--accent), white 25%);
+  background: rgba(232, 162, 0, 0.07);
+  font-family: "Space Mono", ui-monospace, monospace;
+  font-size: 10px;
+  white-space: nowrap;
+}
+
+.game-meta {
+  color: var(--text-dim);
+  font-family: "Space Mono", ui-monospace, monospace;
+  font-size: 10.5px;
+}
+
+.game-open {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: auto;
+  color: var(--accent);
+  font-family: "Space Mono", ui-monospace, monospace;
+  font-size: 11.5px;
+}
+
+.game-open::after {
+  content: "->";
+}
+
+.game-card:hover .game-open {
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+.empty-state {
+  padding: 22px;
+  border: 1px dashed rgba(255, 255, 255, 0.18);
+  border-radius: 5px;
+  color: var(--text-muted);
+  font-family: "Space Mono", ui-monospace, monospace;
+  font-size: 13px;
+  text-align: center;
+}
+
+.muted {
+  color: var(--text-dim);
+}

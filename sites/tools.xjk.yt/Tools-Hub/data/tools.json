@@ -1,0 +1,101 @@
+[
+  {
+    "id": "map-cleaner",
+    "name": "Strip Race Validation Ghost",
+    "description": "Upload a map, strip the validation replay, and optionally export cleaned map and extracted ghost files. Clone-enabled maps are accepted, and clone state is always cleared in returned maps.",
+    "category": "Validation",
+    "status": "live",
+    "input": ".Map.Gbx",
+    "output": "Map / Ghost / Zip",
+    "link": "Strip-RaceValidationGhost/",
+    "tone": "cool"
+  },
+  {
+    "id": "ghost-embedder",
+    "name": "Embed Race Validation Ghost",
+    "description": "Upload a map and a ghost/replay source, pick replay ghost index if needed, then download embedded map output.",
+    "category": "Validation",
+    "status": "live",
+    "input": ".Map.Gbx + .Ghost/.Replay.Gbx",
+    "output": "Embedded .Map.Gbx",
+    "link": "Embed-RaceValidationGhost/",
+    "tone": "warm"
+  },
+  {
+    "id": "embedded-checker",
+    "name": "Embedded Blocks And Items Checker",
+    "description": "Check map embedding consistency and inspect missing expected/custom embedded models.",
+    "category": "Inspection",
+    "status": "live",
+    "input": ".Map.Gbx",
+    "output": "JSON report",
+    "link": "Embedded-Blocks-And-Items-Checker/",
+    "tone": "cool"
+  },
+  {
+    "id": "replay-data-extractor",
+    "name": "Extract Replay Data",
+    "description": "Extract structured replay JSON using default projection or a custom request selection.",
+    "category": "Replay",
+    "status": "live",
+    "input": ".Replay.Gbx",
+    "output": "JSON data",
+    "link": "Extract-Replay-Data/",
+    "tone": "cool"
+  },
+  {
+    "id": "medal-time-modifier",
+    "name": "GBX Medal Time Modifier",
+    "description": "Set AT/Gold/Silver/Bronze medal values for a map and download the modified map file.",
+    "category": "Map Editing",
+    "status": "live",
+    "input": ".Map.Gbx + medal values",
+    "output": "Modified .Map.Gbx",
+    "link": "Gbx-Medal-Time-Modifier/",
+    "tone": "warm"
+  },
+  {
+    "id": "map-validation-checker",
+    "name": "Map Validation Checker",
+    "description": "Inspect map validation status with optional replay evidence and manual override support.",
+    "category": "Validation",
+    "status": "live",
+    "input": ".Map.Gbx (+ optional replay/manual)",
+    "output": "JSON verdict",
+    "link": "Map-Validation-Checker/",
+    "tone": "cool"
+  },
+  {
+    "id": "underwater-converter",
+    "name": "Underwater Map Converter",
+    "description": "Convert any Trackmania 2020 map into an underwater variant with automatic environment detection and water carrier placement.",
+    "category": "Map Conversion",
+    "status": "live",
+    "input": ".Map.Gbx",
+    "output": "Underwater .Map.Gbx / Zip",
+    "link": "Underwater-Map-Converter/",
+    "tone": "cool"
+  },
+  {
+    "id": "colorizer",
+    "name": "TM Gradient Color Formatter",
+    "description": "Format Trackmania text with per-letter gradient color codes (supports custom palettes & presets).",
+    "category": "Text",
+    "status": "live",
+    "input": "Text + 2-7 colors",
+    "output": "Formatted gradient string",
+    "link": "Colorizer/",
+    "tone": "warm"
+  },
+  {
+    "id": "clip-to-ghost",
+    "name": "Clip To Ghost",
+    "description": "Export GPS clip RecordData blocks from Trackmania maps into standalone ghost files with optional manifest output.",
+    "category": "Ghost Export",
+    "status": "live",
+    "input": ".Map.Gbx",
+    "output": ".Ghost.Gbx + manifest",
+    "link": "Clip-To-Ghost/",
+    "tone": "cool"
+  }
+]

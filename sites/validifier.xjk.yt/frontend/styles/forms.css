@@ -1,0 +1,103 @@
+/* TOOLBARS & FORMS */
+.toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.55rem;
+  margin-bottom: 0.75rem;
+}
+
+.toolbar-label {
+  font-size: 0.69rem;
+  color: var(--ink-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  font-family: "Manrope", sans-serif;
+  font-weight: 600;
+}
+
+.form-input {
+  background: var(--bg-deep);
+  border: 1px solid var(--border);
+  color: var(--ink);
+  min-height: 42px;
+  padding: 0.55rem 0.72rem;
+  font-family: "Space Mono", monospace;
+  font-size: 0.82rem;
+  width: 100%;
+}
+
+.form-input:hover {
+  border-color: var(--ink-muted);
+}
+.form-input:focus {
+  outline: none;
+  border-color: var(--accent);
+}
+
+.field-hint {
+  margin-top: 0.4rem;
+  font-size: 0.76rem;
+}
+
+.actions {
+  display: flex;
+  gap: 0.55rem;
+  margin-top: auto;
+  padding-top: 0.75rem;
+}
+
+.actions-wrap {
+  flex-wrap: wrap;
+}
+
+.btn {
+  background: transparent;
+  border: 1px solid var(--border);
+  color: var(--ink);
+  padding: 0.42rem 0.8rem;
+  font-family: "Manrope", sans-serif;
+  font-weight: 500;
+  font-size: 0.8rem;
+  cursor: pointer;
+  transition: all 0.2s;
+  text-align: center;
+}
+
+.btn:hover {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+.btn-primary,
+.go {
+  background: var(--accent);
+  color: var(--bg-main);
+  border-color: var(--accent);
+  font-weight: 600;
+}
+
+.btn-primary:hover,
+.go:hover {
+  background: transparent;
+  color: var(--accent);
+}
+
+.btn-outline,
+.secondary-btn {
+  background: transparent;
+  border: 1px solid var(--border);
+  color: var(--ink);
+}
+
+.btn-outline:hover,
+.secondary-btn:hover {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+button:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+  pointer-events: none;
+}

@@ -1,0 +1,177 @@
+@media (min-width: 900px) {
+  .lobby-grid {
+    grid-template-columns: 1.12fr 0.88fr;
+  }
+
+  .lobby-players {
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  }
+
+  .board-layout {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .detail-actions {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .tile-modal__actions {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+@media (max-width: 899px) {
+  body {
+    overflow: auto;
+  }
+
+  .console-shell--runtime {
+    height: auto;
+    min-height: 100vh;
+    overflow: visible;
+  }
+
+  .board-toolbar {
+    align-items: stretch;
+  }
+
+  .board-size-control {
+    width: 100%;
+  }
+
+  .board-size-control input {
+    flex: 1;
+    width: auto;
+  }
+
+  .record-check {
+    width: 100%;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 0.45rem;
+  }
+
+  .record-check__button,
+  .record-check span {
+    width: 100%;
+    max-width: none;
+  }
+
+  .board-pan-hint {
+    width: 100%;
+  }
+
+  .tile-modal__panel {
+    grid-template-columns: 1fr;
+  }
+
+  .room-settings-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .tile-modal__media {
+    min-height: auto;
+    aspect-ratio: var(--thumb-aspect, 16 / 9);
+  }
+
+  .console-shell--runtime {
+    display: block;
+  }
+
+  .console-shell--runtime .console-sidebar {
+    position: fixed;
+    inset: 0 auto 0 0;
+    width: 280px;
+    height: 100dvh;
+    max-height: 100dvh;
+    z-index: 50;
+    transform: translateX(0);
+    box-shadow:
+      0 0 0 1px var(--line),
+      0 18px 42px rgba(0, 0, 0, 0.28);
+  }
+
+  .console-shell--runtime.is-sidebar-hidden .console-sidebar {
+    transform: translateX(-100%);
+    opacity: 0;
+    pointer-events: none;
+  }
+
+  .shell-edge-toggle {
+    top: 0.95rem;
+    left: 0.65rem;
+    width: 22px;
+    height: 48px;
+  }
+
+  .console-shell--runtime:not(.is-sidebar-hidden) .shell-edge-toggle {
+    left: calc(280px - 11px);
+  }
+
+  .console-shell--runtime.is-sidebar-hidden .shell-edge-toggle__glyph {
+    transform: rotate(180deg);
+  }
+
+  .shell-scrim {
+    position: fixed;
+    inset: 0;
+    z-index: 40;
+    display: block;
+    border: 0;
+    background: rgba(0, 0, 0, 0.45);
+  }
+
+  .console-shell--runtime.is-sidebar-hidden .shell-scrim {
+    display: none;
+  }
+
+  .console-shell--runtime .console-main {
+    height: auto;
+    min-height: 100vh;
+    overflow: visible;
+  }
+}
+
+@media (min-width: 1100px) {
+  .console-shell--runtime .console-main {
+    padding-inline: clamp(1.25rem, 2vw, 2rem);
+  }
+
+  .console-route--bingo {
+    max-width: 1320px;
+  }
+
+  .panel {
+    padding: 1.1rem 1.15rem;
+  }
+}
+
+@media (min-width: 1400px) {
+  .console-route--bingo {
+    max-width: 1380px;
+  }
+}
+
+@media (max-width: 640px) {
+  .console-shell--runtime .console-main {
+    padding: 0.85rem 0.85rem 1.5rem;
+  }
+
+  .tile-modal {
+    padding: 0.65rem;
+  }
+
+  .tile-modal__panel {
+    padding: 0.55rem;
+    gap: 0.55rem;
+  }
+
+  .tile-detail-list,
+  .tile-modal__actions {
+    grid-template-columns: 1fr;
+  }
+
+  .room-card__stats {
+    grid-template-columns: 1fr 1fr;
+  }
+}

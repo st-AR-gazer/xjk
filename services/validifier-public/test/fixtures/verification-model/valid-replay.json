@@ -1,0 +1,21 @@
+{
+  "data": {
+    "record": {
+      "record_id": "valid-replay-record",
+      "map_uid": "valid-replay-map",
+      "rank": "7",
+      "verdicts": [
+        {
+          "validation_track": "replay_validation",
+          "state": "complete",
+          "verdict": "VALID",
+          "public_reason_code": "verified",
+          "validated_at": "2026-07-20T14:00:00.000Z",
+          "updated_at": "2026-07-20T14:00:00.000Z",
+          "confidence_bucket": "HIGH",
+          "policy_version": "replay-v3"
+        }
+      ]
+    }
+  }
+}

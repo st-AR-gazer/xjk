@@ -1,0 +1,158 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>xjk / displayname</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@400;500;600;700&family=Manrope:wght@400;500;700&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="/shared/main.css?v=2" />
+    <link rel="stylesheet" href="styles.css?v=2" />
+    <link rel="icon" href="/favicon.svg?v=2" type="image/svg+xml" />
+  </head>
+  <body>
+    <div class="command-center">
+      <header class="command-header">
+        <div>
+          <h1 class="command-title">DISPLAYNAME <span>SYNC</span></h1>
+          <div class="command-meta" id="statusLine">RUNTIME &mdash; LIVE</div>
+        </div>
+        <div style="display: flex; gap: 0.5rem">
+          <a class="neon-btn is-solid" href="admin/login">Admin Console</a>
+        </div>
+      </header>
+
+      <div class="chip-grid">
+        <div class="data-chip">
+          <span class="chip-label">Running</span>
+          <span class="chip-value" id="stat-running">&mdash;</span>
+        </div>
+        <div class="data-chip">
+          <span class="chip-label">Last Finished</span>
+          <span class="chip-value" id="stat-finished" style="font-size: 1rem">&mdash;</span>
+        </div>
+        <div class="data-chip" style="flex: 1">
+          <span class="chip-label">Scheduler State</span>
+          <span class="chip-value" id="stat-scheduler" style="color: var(--accent)">&mdash;</span>
+        </div>
+      </div>
+
+      <div class="view-layer is-active" id="view-sync">
+        <div class="glass-panel" style="flex: 1">
+          <h2 class="form-label" style="margin: 0 0 1rem 0">MANUAL SYNC TERMINAL</h2>
+          <div class="form-group" style="flex: 1; display: flex; flex-direction: column">
+            <span class="form-label">ACCOUNT IDS (COMMA / NEWLINE SEPARATED)</span>
+            <textarea
+              id="accountIds"
+              class="form-textarea"
+              placeholder="d10cdccd-31e7-491f-9504-d72ee3a70de6..."
+              spellcheck="false"
+              style="flex: 1"
+            ></textarea>
+          </div>
+          <div style="display: flex; gap: 1rem; align-items: center; margin-top: 1rem">
+            <button id="enqueueBtn" class="neon-btn is-solid">ENQUEUE IDS</button>
+            <button id="runNowBtn" class="neon-btn">FORCE RUN SYNC</button>
+            <label
+              style="
+                color: var(--accent);
+                font-family: var(--font-mono);
+                font-size: 0.75rem;
+                display: flex;
+                align-items: center;
+                gap: 0.5rem;
+                cursor: pointer;
+              "
+            >
+              <input type="checkbox" id="forceCandidates" /> FORCE CACHE IGNORE
+            </label>
+          </div>
+        </div>
+      </div>
+
+      <div class="view-layer" id="view-config">
+        <div class="glass-panel" style="flex: 1">
+          <h2 class="form-label" style="margin: 0 0 1.5rem 0">
+            RUNTIME CONFIGURATION <span class="status-flag is-active">PERSISTED</span>
+          </h2>
+
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; margin-bottom: 2rem">
+            <div class="form-group">
+              <span class="form-label">GLOBAL STATE</span>
+              <div style="display: flex; gap: 2rem; margin-top: 0.5rem">
+                <label
+                  style="
+                    color: var(--ink);
+                    font-family: var(--font-mono);
+                    font-size: 0.85rem;
+                    display: flex;
+                    align-items: center;
+                    gap: 0.5rem;
+                    cursor: pointer;
+                  "
+                >
+                  <input id="enabled" type="checkbox" /> ENABLED
+                </label>
+                <label
+                  style="
+                    color: var(--ink);
+                    font-family: var(--font-mono);
+                    font-size: 0.85rem;
+                    display: flex;
+                    align-items: center;
+                    gap: 0.5rem;
+                    cursor: pointer;
+                  "
+                >
+                  <input id="schedulerEnabled" type="checkbox" /> SCHEDULER ACTIVE
+                </label>
+              </div>
+            </div>
+            <div></div>
+
+            <div class="form-group">
+              <span class="form-label">MAINTENANCE INTERVAL (S)</span>
+              <input id="maintenanceIntervalSeconds" class="form-input" type="number" min="5" />
+            </div>
+            <div class="form-group">
+              <span class="form-label">STALE AFTER (S)</span>
+              <input id="staleAfterSeconds" class="form-input" type="number" min="0" />
+            </div>
+
+            <div class="form-group">
+              <span class="form-label">BATCH SIZE (MAX 50)</span>
+              <input id="batchSize" class="form-input" type="number" min="1" max="50" />
+            </div>
+            <div class="form-group">
+              <span class="form-label">MAX ACCOUNTS PER CYCLE</span>
+              <input id="maxAccountsPerCycle" class="form-input" type="number" min="1" />
+            </div>
+          </div>
+
+          <div style="margin-top: auto">
+            <button id="saveConfig" class="neon-btn is-solid">COMMIT CONFIGURATION</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="view-layer" id="view-status">
+        <div class="glass-panel" style="flex: 1; display: flex; flex-direction: column">
+          <h2 class="form-label" style="margin: 0 0 1rem 0">RAW JSON INSPECTOR</h2>
+          <pre id="statusJson" class="json-block" style="flex: 1; max-height: none">{}</pre>
+        </div>
+      </div>
+
+      <nav class="dock-container">
+        <button class="dock-btn is-active" data-view="sync">&#x21BB; SYNC</button>
+        <button class="dock-btn" data-view="config">&#x2699; CONFIG</button>
+        <button class="dock-btn" data-view="status">&#x1F4DC; STATE</button>
+      </nav>
+    </div>
+
+    <script type="module" src="app.js?v=2"></script>
+  </body>
+</html>

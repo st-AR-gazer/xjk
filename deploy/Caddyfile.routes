@@ -1,0 +1,382 @@
+(secure_headers) {
+	encode zstd gzip
+	header {
+		Strict-Transport-Security "max-age=31536000; includeSubDomains; preload"
+		X-Content-Type-Options "nosniff"
+		Referrer-Policy "strict-origin-when-cross-origin"
+		-Server
+	}
+}
+
+(favicon_redirect) {
+	@favicon path /favicon.ico
+	redir @favicon /favicon.svg 308
+}
+
+(shared_static) {
+	handle /shared/* {
+		root * {$XJK_SITES_ROOT:D:/srv/xjk/sites}
+		file_server
+	}
+}
+
+(shared_core_static) {
+	handle /shared/xjk-core/* {
+		root * {$XJK_SITES_ROOT:D:/srv/xjk/sites}
+		file_server
+	}
+	handle /shared/xjk-workspace/* {
+		root * {$XJK_SITES_ROOT:D:/srv/xjk/sites}
+		file_server
+	}
+}
+
+{args[0]}xjk.yt, {args[0]}www.xjk.yt {
+	import secure_headers
+	import favicon_redirect
+	import shared_static
+	handle /xjk-account-widget.js {
+		root * {$XJK_SITES_ROOT:D:/srv/xjk/sites}/shared/xjk-core
+		file_server
+	}
+	handle /auth/* {
+		reverse_proxy 127.0.0.1:3038
+	}
+	handle /api/v1/account/* {
+		reverse_proxy 127.0.0.1:3038
+	}
+	handle /account* {
+		reverse_proxy 127.0.0.1:3038
+	}
+	handle /admin {
+		redir https://admin.xjk.yt/ 308
+	}
+	handle /admin/* {
+		redir https://admin.xjk.yt/ 308
+	}
+	root * {$XJK_SITES_ROOT:D:/srv/xjk/sites}/xjk.yt/frontend
+	file_server
+}
+
+{args[0]}account.xjk.yt {
+	import secure_headers
+	import favicon_redirect
+	import shared_static
+	reverse_proxy 127.0.0.1:3038
+}
+
+{args[0]}learn.xjk.yt {
+	import secure_headers
+	import favicon_redirect
+	import shared_static
+	handle /auth/* {
+		reverse_proxy 127.0.0.1:3038
+	}
+	handle /api/v1/account/* {
+		reverse_proxy 127.0.0.1:3038
+	}
+	handle /api/* {
+		reverse_proxy 127.0.0.1:3036
+	}
+	handle {
+		root * {$XJK_SITES_ROOT:D:/srv/xjk/sites}/learn.xjk.yt/frontend
+		file_server
+	}
+}
+
+{args[0]}console.xjk.yt {
+	import secure_headers
+	import favicon_redirect
+	import shared_static
+	@bingoExact path /bingo
+	redir @bingoExact /bingo/ 308
+	@rmcExact path /rmc
+	redir @rmcExact /rmc/ 308
+	@rmsExact path /rms
+	redir @rmsExact /rms/ 308
+	@rmtExact path /rmt
+	redir @rmtExact /rmt/ 308
+	@comingSoonExact path /coming-soon
+	redir @comingSoonExact /coming-soon/ 308
+	handle /auth/* {
+		reverse_proxy 127.0.0.1:3038
+	}
+	handle /api/v1/account/* {
+		reverse_proxy 127.0.0.1:3038
+	}
+	handle /bingo/api/* {
+		reverse_proxy 127.0.0.1:3037
+	}
+	handle /bingo/auth/* {
+		reverse_proxy 127.0.0.1:3037
+	}
+	handle /bingo/events/* {
+		reverse_proxy 127.0.0.1:3037
+	}
+	handle {
+		root * {$XJK_SITES_ROOT:D:/srv/xjk/sites}/console.xjk.yt/frontend
+		file_server
+	}
+}
+
+{args[0]}bingo.xjk.yt {
+	import secure_headers
+	redir https://console.xjk.yt/bingo{uri} 308
+}
+
+{args[0]}archive.xjk.yt {
+	import secure_headers
+	import favicon_redirect
+	import shared_static
+	handle /auth/* {
+		reverse_proxy 127.0.0.1:3038
+	}
+	handle /api/v1/account/* {
+		reverse_proxy 127.0.0.1:3038
+	}
+	root * {$XJK_SITES_ROOT:D:/srv/xjk/sites}/archive.xjk.yt/frontend
+	file_server
+}
+
+{args[0]}altered.xjk.yt {
+	import secure_headers
+	import favicon_redirect
+	import shared_static
+	handle /auth/logout {
+		reverse_proxy 127.0.0.1:3038
+	}
+	handle /api/v1/account/* {
+		reverse_proxy 127.0.0.1:3038
+	}
+	@bannerBuilderExact path /bannerbuilder
+	redir @bannerBuilderExact /bannerbuilder/ 308
+	handle /bannerbuilder* {
+		reverse_proxy 127.0.0.1:3050
+	}
+	reverse_proxy 127.0.0.1:3030
+}
+
+{args[0]}alterednadeo.xjk.yt {
+	import secure_headers
+	redir https://altered.xjk.yt{uri} 308
+}
+
+{args[0]}tracker.xjk.yt {
+	import secure_headers
+	redir https://trackers.xjk.yt/wr{uri} 308
+}
+
+{args[0]}aggregator.xjk.yt {
+	import secure_headers
+	import favicon_redirect
+	import shared_static
+	handle /auth/* {
+		reverse_proxy 127.0.0.1:3038
+	}
+	handle /api/v1/account/* {
+		reverse_proxy 127.0.0.1:3038
+	}
+	reverse_proxy 127.0.0.1:3040
+}
+
+{args[0]}validifier.xjk.yt {
+	import secure_headers
+	import favicon_redirect
+	import shared_static
+	handle /auth/* {
+		reverse_proxy 127.0.0.1:3038
+	}
+	handle /api/v1/account/* {
+		reverse_proxy 127.0.0.1:3038
+	}
+	reverse_proxy 127.0.0.1:3044
+}
+
+{args[0]}cotd.xjk.yt {
+	import secure_headers
+	import favicon_redirect
+	import shared_static
+	handle /auth/* {
+		reverse_proxy 127.0.0.1:3038
+	}
+	handle /api/v1/account/* {
+		reverse_proxy 127.0.0.1:3038
+	}
+	reverse_proxy 127.0.0.1:3045
+}
+
+{args[0]}dash.xjk.yt {
+	import secure_headers
+	import favicon_redirect
+	import shared_static
+	handle /auth/* {
+		reverse_proxy 127.0.0.1:3038
+	}
+	handle /api/v1/account/* {
+		reverse_proxy 127.0.0.1:3038
+	}
+	reverse_proxy 127.0.0.1:3040
+}
+
+{args[0]}admin.xjk.yt {
+	import secure_headers
+	import favicon_redirect
+	import shared_static
+	handle /map-layout.js {
+		root * {$XJK_SITES_ROOT:D:/srv/xjk/sites}/xjk.yt/frontend
+		file_server
+	}
+	handle /favicon.svg {
+		root * {$XJK_SITES_ROOT:D:/srv/xjk/sites}/xjk.yt/frontend
+		file_server
+	}
+	handle /auth/* {
+		reverse_proxy 127.0.0.1:3038
+	}
+	handle /api/v1/account/* {
+		reverse_proxy 127.0.0.1:3038
+	}
+	root * {$XJK_SITES_ROOT:D:/srv/xjk/sites}/admin.xjk.yt/frontend
+	file_server
+}
+
+{args[0]}tracker-displayname.xjk.yt {
+	import secure_headers
+	redir https://trackers.xjk.yt/displayname{uri} 308
+}
+
+{args[0]}tracker-club.xjk.yt {
+	import secure_headers
+	redir https://trackers.xjk.yt/club{uri} 308
+}
+
+{args[0]}trackers.xjk.yt {
+	import secure_headers
+	import favicon_redirect
+	import shared_core_static
+	handle /auth/* {
+		reverse_proxy 127.0.0.1:3038
+	}
+	handle /api/v1/account/* {
+		reverse_proxy 127.0.0.1:3038
+	}
+	root * {$XJK_SITES_ROOT:D:/srv/xjk/sites}/trackers.xjk.yt/frontend
+
+	@wrRuntimeExact path /__runtime/wr
+	redir @wrRuntimeExact /__runtime/wr/ 308
+	handle_path /__runtime/wr/* {
+		reverse_proxy 127.0.0.1:3031
+	}
+
+	@leaderboardRuntimeExact path /__runtime/leaderboard
+	redir @leaderboardRuntimeExact /__runtime/leaderboard/ 308
+	handle_path /__runtime/leaderboard/* {
+		reverse_proxy 127.0.0.1:3043
+	}
+
+	@displaynameRuntimeExact path /__runtime/displayname
+	redir @displaynameRuntimeExact /__runtime/displayname/ 308
+	handle_path /__runtime/displayname/* {
+		reverse_proxy 127.0.0.1:3041
+	}
+
+	@clubRuntimeExact path /__runtime/club
+	redir @clubRuntimeExact /__runtime/club/ 308
+	handle_path /__runtime/club/* {
+		reverse_proxy 127.0.0.1:3042
+	}
+
+	@wrExact path /wr
+	redir @wrExact /wr/ 308
+	@wrIndex path /wr/index.html
+	redir @wrIndex /wr/ 308
+	@wrShell path /wr/
+	handle @wrShell {
+		rewrite * /index.html
+		file_server
+	}
+	handle_path /wr/* {
+		reverse_proxy 127.0.0.1:3031
+	}
+
+	@leaderboardExact path /leaderboard
+	redir @leaderboardExact /leaderboard/ 308
+	@leaderboardIndex path /leaderboard/index.html
+	redir @leaderboardIndex /leaderboard/ 308
+	@leaderboardShell path /leaderboard/
+	handle @leaderboardShell {
+		rewrite * /index.html
+		file_server
+	}
+	handle_path /leaderboard/* {
+		reverse_proxy 127.0.0.1:3043
+	}
+
+	@displaynameExact path /displayname
+	redir @displaynameExact /displayname/ 308
+	@displaynameIndex path /displayname/index.html
+	redir @displaynameIndex /displayname/ 308
+	@displaynameShell path /displayname/
+	handle @displaynameShell {
+		rewrite * /index.html
+		file_server
+	}
+	handle_path /displayname/* {
+		reverse_proxy 127.0.0.1:3041
+	}
+
+	@clubExact path /club
+	redir @clubExact /club/ 308
+	@clubIndex path /club/index.html
+	redir @clubIndex /club/ 308
+	@clubShell path /club/
+	handle @clubShell {
+		rewrite * /index.html
+		file_server
+	}
+	handle_path /club/* {
+		reverse_proxy 127.0.0.1:3042
+	}
+
+	handle /admin* {
+		reverse_proxy 127.0.0.1:3031
+	}
+
+	handle /api/v1* {
+		reverse_proxy 127.0.0.1:3031
+	}
+
+	file_server
+}
+
+{args[0]}plugins.xjk.yt {
+	import secure_headers
+	import favicon_redirect
+	import shared_static
+	handle /auth/* {
+		reverse_proxy 127.0.0.1:3038
+	}
+	handle /api/v1/account/* {
+		reverse_proxy 127.0.0.1:3038
+	}
+	reverse_proxy 127.0.0.1:3020
+}
+
+{args[0]}tools.xjk.yt {
+	import secure_headers
+	import favicon_redirect
+	import shared_core_static
+
+	handle /auth/* {
+		reverse_proxy 127.0.0.1:3038
+	}
+	handle /api/v1/account/* {
+		reverse_proxy 127.0.0.1:3038
+	}
+
+	import Caddyfile.tools.generated
+
+	handle {
+		reverse_proxy 127.0.0.1:3010
+	}
+}

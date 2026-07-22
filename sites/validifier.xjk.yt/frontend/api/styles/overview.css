@@ -1,0 +1,197 @@
+/* Validifier API overview */
+.doc-section {
+  margin-bottom: 0.7rem;
+  padding: 0.8rem 0.9rem;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: var(--panel);
+  box-shadow: var(--shadow);
+}
+
+.doc-section-compact {
+  padding: 0.65rem 0.8rem;
+}
+
+.overview-row {
+  display: flex;
+  justify-content: space-between;
+  gap: 0.8rem;
+  align-items: flex-start;
+}
+
+.overview-info h2 {
+  margin: 0;
+  font-size: 1.08rem;
+}
+
+.lead,
+.inline-empty,
+.endpoint-description,
+.endpoint-note {
+  color: var(--muted);
+  font-size: 0.84rem;
+  line-height: 1.5;
+}
+
+.overview-info .lead {
+  margin: 0.15rem 0 0;
+}
+
+.stat-pills {
+  display: flex;
+  gap: 0.35rem;
+  flex-shrink: 0;
+}
+
+.stat-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.2rem;
+  padding: 0.22rem 0.55rem;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  font-size: 0.72rem;
+  color: var(--muted);
+}
+
+.stat-pill strong {
+  color: var(--ink);
+}
+
+.overview-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.7rem;
+  margin-top: 0.75rem;
+}
+
+.overview-card {
+  display: grid;
+  gap: 0.4rem;
+  padding: 0.75rem;
+  border: 1px solid var(--line);
+  border-radius: 0.7rem;
+  background: var(--panel-soft);
+}
+
+.overview-card-wide {
+  grid-column: 1 / -1;
+}
+
+.overview-label,
+.ep-sub-label,
+.field span {
+  color: var(--muted);
+  font-size: 0.62rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.enum-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.7rem;
+  margin-top: 0.75rem;
+}
+
+.enum-card {
+  display: grid;
+  gap: 0.55rem;
+  padding: 0.75rem;
+  border: 1px solid var(--line);
+  border-radius: 0.7rem;
+  background: var(--panel-soft);
+}
+
+.enum-card h3 {
+  margin: 0;
+  font-size: 0.92rem;
+}
+
+.enum-list {
+  display: flex;
+  gap: 0.35rem;
+  flex-wrap: wrap;
+}
+
+.enum-list-wrap .enum-pill {
+  white-space: nowrap;
+}
+
+.enum-pill {
+  background: rgba(255, 255, 255, 0.04);
+  color: var(--ink);
+  padding: 0.18rem 0.46rem;
+  letter-spacing: 0.03em;
+  text-transform: none;
+}
+
+.tester-summary {
+  cursor: pointer;
+  font-weight: 600;
+  font-size: 0.88rem;
+  color: var(--accent);
+  list-style: none;
+  user-select: none;
+}
+
+.tester-summary::-webkit-details-marker {
+  display: none;
+}
+.tester-summary::marker {
+  content: "";
+}
+
+.tester-summary::before {
+  content: "\25B6\FE0E";
+  display: inline-block;
+  margin-right: 0.4rem;
+  font-size: 0.6rem;
+  transition: transform 0.15s;
+}
+
+details[open] > .tester-summary::before {
+  transform: rotate(90deg);
+}
+
+.tester-form {
+  display: flex;
+  gap: 0.5rem;
+  align-items: end;
+  flex-wrap: wrap;
+  margin-top: 0.55rem;
+}
+
+.field {
+  display: grid;
+  gap: 0.25rem;
+  min-width: 0;
+  flex: 1 1 15rem;
+}
+
+.tester-status {
+  min-height: 1rem;
+  margin: 0.45rem 0 0.35rem;
+  color: var(--accent);
+  font-size: 0.8rem;
+  font-weight: 500;
+}
+
+.code-block {
+  border: 1px solid var(--line);
+  border-radius: 0.65rem;
+  background: #0a0b10;
+  color: #f3f7fb;
+  overflow: hidden;
+}
+
+.code-block pre {
+  margin: 0;
+  padding: 0.55rem 0.7rem 0.65rem;
+  overflow-x: auto;
+  white-space: pre-wrap;
+  word-break: break-word;
+  font-size: 0.76rem;
+  line-height: 1.48;
+}

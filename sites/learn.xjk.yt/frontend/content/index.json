@@ -1,0 +1,1122 @@
+{
+  "version": 2,
+  "site": "learn.xjk.yt",
+  "generatedAt": "2026-05-07T07:41:18.638Z",
+  "contentModel": {
+    "cards": "Human-written markdown pages.",
+    "concepts": "Reusable metadata for search, graph placement, prerequisites, and glossary context.",
+    "packs": "Shareable curated routes that arrange cards around a question."
+  },
+  "defaultSlug": "underwater/rally-car/mechanics-primer",
+  "clusters": [
+    {
+      "id": "speed-momentum",
+      "title": "Speed & Momentum",
+      "accent": "white",
+      "x": 0.5,
+      "y": 0.19,
+      "description": "Acceleration, speed loss, caps, overspeed, and exits."
+    },
+    {
+      "id": "grip-contact",
+      "title": "Grip & Contact",
+      "accent": "silver",
+      "x": 0.31,
+      "y": 0.38,
+      "description": "Noslide, slide states, wheel contact, wall contact, and floatiness."
+    },
+    {
+      "id": "inputs",
+      "title": "Inputs",
+      "accent": "white",
+      "x": 0.69,
+      "y": 0.38,
+      "description": "Steering, gas, brake, releases, taps, AKs, analog ranges, and wiggles."
+    },
+    {
+      "id": "surfaces",
+      "title": "Surfaces",
+      "accent": "silver",
+      "x": 0.18,
+      "y": 0.56,
+      "description": "Road, dirt, grass, ice, plastic, wood, water, penalty, rubber, and mixed contact."
+    },
+    {
+      "id": "vehicles",
+      "title": "Vehicles",
+      "accent": "white",
+      "x": 0.82,
+      "y": 0.56,
+      "description": "Stadium, Rally, Snow, Desert, and car-specific quirks."
+    },
+    {
+      "id": "block-geometry",
+      "title": "Block Geometry",
+      "accent": "silver",
+      "x": 0.34,
+      "y": 0.74,
+      "description": "Walls, loops, bobs, tubes, quarterpipes, borders, slopes, edges, and corners."
+    },
+    {
+      "id": "special-forces",
+      "title": "Special Forces",
+      "accent": "white",
+      "x": 0.66,
+      "y": 0.74,
+      "description": "Boosters, reactors, water, magnets, gravity changes, and non-standard forces."
+    },
+    {
+      "id": "techniques",
+      "title": "Techniques",
+      "accent": "silver",
+      "x": 0.5,
+      "y": 0.54,
+      "description": "Practical mechanics such as speedslides, wallrides, overwalls, bounces, and start tricks."
+    },
+    {
+      "id": "contexts",
+      "title": "Styles & Contexts",
+      "accent": "white",
+      "x": 0.15,
+      "y": 0.25,
+      "description": "Fullspeed, tech, dirt, ice, RPG, trial, kacky, underwater, and question-specific context."
+    },
+    {
+      "id": "practice-analysis",
+      "title": "Practice & Analysis",
+      "accent": "silver",
+      "x": 0.85,
+      "y": 0.25,
+      "description": "Ghosts, inputs, section practice, validation status, and route reading."
+    }
+  ],
+  "concepts": [
+    {
+      "id": "air-control",
+      "title": "Air Control",
+      "area": "techniques",
+      "type": "technique",
+      "summary": "Input influence while airborne, including steering carryover, cancellation, and landing setup.",
+      "tags": ["air", "control"],
+      "relatedConcepts": ["vehicle-stability", "ledge-grab"]
+    },
+    {
+      "id": "ak-wiggle",
+      "title": "AK Wiggle",
+      "area": "inputs",
+      "type": "technique",
+      "summary": "A steering rhythm using action keys or controlled steering values to change speed loss or acceleration behavior.",
+      "tags": ["ak", "wiggle", "inputs"],
+      "relatedConcepts": ["steering-rhythm", "penalty-surfaces"]
+    },
+    {
+      "id": "bobs",
+      "title": "Bobs",
+      "area": "block-geometry",
+      "type": "geometry",
+      "summary": "Banked bob turns where line choice, wall contact, and sliding states define speed retention.",
+      "tags": ["bob", "geometry"],
+      "relatedConcepts": ["ice-slide", "wheel-contact"]
+    },
+    {
+      "id": "edge-bounce",
+      "title": "Edge Bounce",
+      "area": "block-geometry",
+      "type": "geometry",
+      "summary": "A bounce produced by block edges or corners, often used to gain height or escape a pool.",
+      "tags": ["edge", "bounce"],
+      "relatedConcepts": ["overwall", "wheel-contact"]
+    },
+    {
+      "id": "floatiness",
+      "title": "Floatiness",
+      "area": "grip-contact",
+      "type": "concept",
+      "summary": "A light contact feeling where the car is less planted and partial wheel states become more important.",
+      "tags": ["water", "contact"],
+      "relatedConcepts": ["wheel-contact", "flowtrick"]
+    },
+    {
+      "id": "flowtrick",
+      "title": "Flowtrick",
+      "area": "techniques",
+      "type": "technique",
+      "summary": "A weight-shift trick used to return from partial contact without taking the same slowdown.",
+      "tags": ["contact", "technique"],
+      "relatedConcepts": ["floatiness", "wheel-contact"]
+    },
+    {
+      "id": "ice-slide",
+      "title": "Ice Slide",
+      "area": "techniques",
+      "type": "technique",
+      "summary": "A controlled sliding state used when grip is too low or when a surface demands a sliding line.",
+      "tags": ["ice", "slide"],
+      "relatedConcepts": ["surfaces", "wheel-contact"]
+    },
+    {
+      "id": "ledge-grab",
+      "title": "Ledge Grab",
+      "area": "block-geometry",
+      "type": "technique",
+      "summary": "Using rotation and stability to reach or catch ledges that are not reachable through a normal jump arc.",
+      "tags": ["ledge", "transition"],
+      "relatedConcepts": ["air-control", "quarterpipe"]
+    },
+    {
+      "id": "loops",
+      "title": "Loops",
+      "area": "block-geometry",
+      "type": "geometry",
+      "summary": "Loop blocks where speed, gravity, contact, and line angle decide whether the car stays attached.",
+      "tags": ["loop", "geometry"],
+      "relatedConcepts": ["wallrides", "speed-retention"]
+    },
+    {
+      "id": "one-wheel-wallclimb",
+      "title": "One-Wheel Wallclimb",
+      "area": "techniques",
+      "type": "technique",
+      "summary": "A climb state where one wheel holds enough wall contact to lift the car, especially with supportive forces.",
+      "tags": ["wallclimb", "contact"],
+      "relatedConcepts": ["wheel-contact", "overwall"]
+    },
+    {
+      "id": "overwall",
+      "title": "Overwall",
+      "area": "techniques",
+      "type": "technique",
+      "summary": "Climbing or crossing borders, scenery, or block lips by using vehicle contact and angle.",
+      "tags": ["overwall", "technique"],
+      "relatedConcepts": ["wheel-contact", "edge-bounce"]
+    },
+    {
+      "id": "penalty-surfaces",
+      "title": "Penalty Surfaces",
+      "area": "surfaces",
+      "type": "concept",
+      "summary": "Surfaces that reduce or cap speed, with possible bypasses through wiggles, partial contact, or route geometry.",
+      "tags": ["penalty", "surface"],
+      "relatedConcepts": ["speed-cap", "ak-wiggle", "wheel-contact"]
+    },
+    {
+      "id": "plastic-overspeed",
+      "title": "Plastic Overspeed",
+      "area": "surfaces",
+      "type": "concept",
+      "summary": "Plastic-specific speed behavior where overspeed can be gained or retained longer than expected.",
+      "tags": ["plastic", "overspeed"],
+      "relatedConcepts": ["speed-retention", "speed-cap"]
+    },
+    {
+      "id": "poolturns",
+      "title": "Poolturns",
+      "area": "block-geometry",
+      "type": "geometry",
+      "summary": "Pool turn blocks and their inside-wall or wallhug behavior.",
+      "tags": ["pool", "geometry"],
+      "relatedConcepts": ["wallrides", "wheel-contact"]
+    },
+    {
+      "id": "quarterpipe",
+      "title": "Quarterpipe",
+      "area": "block-geometry",
+      "type": "geometry",
+      "summary": "A steep curved transition block that can launch, rotate, or redirect the car.",
+      "tags": ["geometry", "transition"],
+      "relatedConcepts": ["ledge-grab", "wallrides"]
+    },
+    {
+      "id": "rally-car",
+      "title": "Rally Car",
+      "area": "vehicles",
+      "type": "vehicle",
+      "summary": "The Rally vehicle and its car-specific grip, acceleration, stability, and forward/backward behavior.",
+      "tags": ["vehicle", "rally"],
+      "relatedConcepts": ["vehicle-stability", "steering-rhythm"]
+    },
+    {
+      "id": "reactor-down",
+      "title": "Reactor Down",
+      "area": "special-forces",
+      "type": "force",
+      "summary": "Downward reactor behavior that changes ground adherence and force direction.",
+      "tags": ["reactor", "down"],
+      "relatedConcepts": ["reactors"]
+    },
+    {
+      "id": "reactor-up",
+      "title": "Reactor Up",
+      "area": "special-forces",
+      "type": "force",
+      "summary": "Upward reactor behavior, including green and orange variants where control and launch differ.",
+      "tags": ["reactor", "up"],
+      "relatedConcepts": ["reactors", "air-control"]
+    },
+    {
+      "id": "reactors",
+      "title": "Reactors",
+      "area": "special-forces",
+      "type": "force",
+      "summary": "Reactor effects that modify gravity, flight, ground behavior, and route possibilities.",
+      "tags": ["reactor", "force"],
+      "relatedConcepts": ["reactor-up", "reactor-down"]
+    },
+    {
+      "id": "slopes",
+      "title": "Slopes",
+      "area": "block-geometry",
+      "type": "geometry",
+      "summary": "Uphills, downhills, and slanted blocks that change grip, contact, speed, and line choice.",
+      "tags": ["geometry", "slope"],
+      "relatedConcepts": ["floatiness", "speed-retention"]
+    },
+    {
+      "id": "speed-cap",
+      "title": "Speed Cap",
+      "area": "speed-momentum",
+      "type": "concept",
+      "summary": "A surface or state-imposed upper speed that can sometimes be bypassed through contact, inputs, or special forces.",
+      "tags": ["speed", "limit"],
+      "relatedConcepts": ["penalty-surfaces", "plastic-overspeed"]
+    },
+    {
+      "id": "speed-retention",
+      "title": "Speed Retention",
+      "area": "speed-momentum",
+      "type": "concept",
+      "summary": "Keeping speed that a surface, turn, landing, or force would normally remove.",
+      "tags": ["speed", "momentum"],
+      "relatedConcepts": ["speed-cap", "wheel-contact", "penalty-surfaces"]
+    },
+    {
+      "id": "start-trick",
+      "title": "Start Trick",
+      "area": "inputs",
+      "type": "technique",
+      "summary": "A start-line input pattern that improves early acceleration or exit positioning.",
+      "tags": ["start", "inputs"],
+      "relatedConcepts": ["steering-rhythm", "speed-retention"]
+    },
+    {
+      "id": "steering-rhythm",
+      "title": "Steering Rhythm",
+      "area": "inputs",
+      "type": "concept",
+      "summary": "Repeated steering timing, taps, analog motion, or AK changes that produce a useful physics response.",
+      "tags": ["inputs", "steering"],
+      "relatedConcepts": ["ak-wiggle", "start-trick"]
+    },
+    {
+      "id": "surfaces",
+      "title": "Surfaces",
+      "area": "surfaces",
+      "type": "concept",
+      "summary": "Trackmania surface behavior, including normal grip surfaces, ice, plastic, wood, rubber, penalty, and mixed states.",
+      "tags": ["surface", "physics"],
+      "relatedConcepts": ["penalty-surfaces", "plastic-overspeed", "ice-slide"]
+    },
+    {
+      "id": "underwater",
+      "title": "Underwater",
+      "area": "contexts",
+      "type": "context",
+      "summary": "Driving while submerged, where drag, buoyancy feel, contact states, and special physics change normal assumptions.",
+      "tags": ["water", "submerged", "context"],
+      "relatedConcepts": ["water-drag", "wheel-contact", "speed-retention"]
+    },
+    {
+      "id": "vehicle-stability",
+      "title": "Vehicle Stability",
+      "area": "grip-contact",
+      "type": "concept",
+      "summary": "How strongly a car resists rotation, aligns itself, or stays controllable in awkward states.",
+      "tags": ["control", "stability"],
+      "relatedConcepts": ["air-control", "ledge-grab"]
+    },
+    {
+      "id": "wallrides",
+      "title": "Wallrides",
+      "area": "block-geometry",
+      "type": "geometry",
+      "summary": "Driving on wall surfaces, including entry, holding, loss of speed, and exit jumps.",
+      "tags": ["wall", "geometry"],
+      "relatedConcepts": ["wheel-contact", "quarterpipe"]
+    },
+    {
+      "id": "water-drag",
+      "title": "Water Drag",
+      "area": "special-forces",
+      "type": "concept",
+      "summary": "The underwater resistance that changes acceleration, steering trust, speed loss, and recovery timing.",
+      "tags": ["water", "drag"],
+      "relatedConcepts": ["underwater", "speed-retention"]
+    },
+    {
+      "id": "wheel-contact",
+      "title": "Wheel Contact",
+      "area": "grip-contact",
+      "type": "concept",
+      "summary": "How many wheels are touching useful ground, wall, edge, or mixed surfaces, and what that contact allows.",
+      "tags": ["contact", "grip"],
+      "relatedConcepts": ["floatiness", "speed-retention"]
+    }
+  ],
+  "packs": [
+    {
+      "id": "penalty-speed-retention-answer",
+      "title": "Penalty Speed Retention Answer",
+      "summary": "A compact pack for answering questions about keeping speed on penalty surfaces underwater.",
+      "question": "How can Rally underwater keep speed on penalty?",
+      "pageSlug": "underwater/rally-car/start-trick-and-penalty-wiggles",
+      "cards": [
+        "contexts/underwater-driving-primer",
+        "underwater/rally-car/start-trick-and-penalty-wiggles",
+        "underwater/rally-car/surfaces-and-speed-retention",
+        "underwater/rally-car/floatiness-slopes-and-flowtrick"
+      ],
+      "concepts": ["penalty-surfaces", "speed-retention", "ak-wiggle", "wheel-contact"],
+      "requiredContext": ["contexts/underwater-driving-primer", "underwater/rally-car/mechanics-primer"],
+      "tags": ["penalty", "wiggle", "speed-retention"]
+    },
+    {
+      "id": "rally-underwater-primer",
+      "title": "Rally Underwater Primer",
+      "summary": "A shareable learning route for the core Rally underwater mechanics family.",
+      "question": "What should I understand first about Rally underwater?",
+      "pageSlug": "underwater/rally-car/mechanics-primer",
+      "cards": [
+        "contexts/underwater-driving-primer",
+        "underwater/rally-car/mechanics-primer",
+        "underwater/rally-car/start-trick-and-penalty-wiggles",
+        "underwater/rally-car/surfaces-and-speed-retention",
+        "underwater/rally-car/floatiness-slopes-and-flowtrick",
+        "underwater/rally-car/air-control-and-ledge-grabs",
+        "underwater/rally-car/walls-loops-bob-and-poolturns",
+        "underwater/rally-car/reactors-edges-and-overwalls"
+      ],
+      "concepts": ["underwater", "rally-car", "speed-retention", "wheel-contact"],
+      "requiredContext": ["contexts/underwater-driving-primer"],
+      "tags": ["rally", "underwater", "primer"]
+    },
+    {
+      "id": "rally-underwater-transitions",
+      "title": "Rally Underwater Transitions",
+      "summary": "A route for wall, loop, bob, quarterpipe, reactor, and edge interactions.",
+      "question": "How do Rally underwater transitions work?",
+      "pageSlug": "underwater/rally-car/walls-loops-bob-and-poolturns",
+      "cards": [
+        "contexts/underwater-driving-primer",
+        "underwater/rally-car/mechanics-primer",
+        "underwater/rally-car/air-control-and-ledge-grabs",
+        "underwater/rally-car/walls-loops-bob-and-poolturns",
+        "underwater/rally-car/reactors-edges-and-overwalls"
+      ],
+      "concepts": ["wallrides", "loops", "bobs", "reactors", "edge-bounce"],
+      "requiredContext": ["contexts/underwater-driving-primer"],
+      "tags": ["transitions", "geometry", "reactor"]
+    }
+  ],
+  "pages": [
+    {
+      "id": "contexts/underwater-driving-primer",
+      "slug": "contexts/underwater-driving-primer",
+      "title": "Underwater Driving Primer",
+      "summary": "The shared context for underwater cards: water changes drag, contact, gravity feel, steering trust, and recovery timing.",
+      "section": "contexts",
+      "category": "underwater",
+      "type": "context",
+      "contentModel": "card",
+      "difficulty": "context",
+      "difficultyIcon": "C",
+      "status": "draft",
+      "sourceKind": "synthesized",
+      "time": "4 min",
+      "markdown": "/content/cards/contexts/underwater-driving-primer.md",
+      "tags": [
+        "underwater",
+        "context",
+        "physics",
+        "water-drag",
+        "wheel-contact",
+        "vehicle-stability",
+        "speed-retention"
+      ],
+      "concepts": ["underwater", "water-drag", "wheel-contact", "vehicle-stability", "speed-retention"],
+      "packIds": ["rally-underwater-primer"],
+      "prerequisites": [],
+      "related": ["underwater/rally-car/mechanics-primer"],
+      "links": [
+        {
+          "slug": "underwater/rally-car/mechanics-primer",
+          "kind": "related",
+          "weight": 0.72
+        }
+      ],
+      "media": {
+        "diagram": {
+          "type": "image",
+          "label": "Underwater Driving Primer diagram",
+          "src": "/media/mock/posters/contexts-underwater-driving-primer.svg",
+          "alt": "Underwater Driving Primer concept poster"
+        }
+      },
+      "tools": {
+        "input-basic": {
+          "kind": "input-timeline",
+          "title": "Input Timeline"
+        },
+        "ghost-basic": {
+          "kind": "ghost-comparison",
+          "title": "Ghost Comparison"
+        }
+      },
+      "cluster": "contexts",
+      "secondaryClusters": ["grip-contact", "speed-momentum", "vehicles"],
+      "graph": {
+        "primaryCluster": "contexts",
+        "secondaryClusters": ["grip-contact", "speed-momentum", "vehicles"],
+        "weight": 0.72,
+        "orbit": 0.08
+      }
+    },
+    {
+      "id": "underwater/rally-car/air-control-and-ledge-grabs",
+      "slug": "underwater/rally-car/air-control-and-ledge-grabs",
+      "title": "Air Control & Ledge Grabs",
+      "summary": "Rally underwater can keep steering influence after a normal forward jump, and its stability can turn quarterpipe launches into ledge-grab setups.",
+      "section": "underwater",
+      "category": "rally-car",
+      "type": "technique",
+      "contentModel": "card",
+      "difficulty": "advanced",
+      "difficultyIcon": "OOO",
+      "status": "field-note",
+      "sourceKind": "dive-discord-notes",
+      "time": "7 min",
+      "markdown": "/content/cards/underwater/rally-car/air-control-and-ledge-grabs.md",
+      "tags": ["air-control", "ledge-grab", "quarterpipe", "rally", "rally-car", "underwater", "vehicle-stability"],
+      "concepts": ["rally-car", "underwater", "air-control", "vehicle-stability", "ledge-grab", "quarterpipe"],
+      "packIds": ["rally-underwater-primer", "rally-underwater-transitions"],
+      "prerequisites": ["underwater/rally-car/mechanics-primer"],
+      "related": [
+        "underwater/rally-car/mechanics-primer",
+        "underwater/rally-car/walls-loops-bob-and-poolturns",
+        "underwater/rally-car/reactors-edges-and-overwalls"
+      ],
+      "links": [
+        {
+          "slug": "underwater/rally-car/mechanics-primer",
+          "kind": "context",
+          "weight": 0.96
+        },
+        {
+          "slug": "underwater/rally-car/walls-loops-bob-and-poolturns",
+          "kind": "related",
+          "weight": 0.72
+        },
+        {
+          "slug": "underwater/rally-car/reactors-edges-and-overwalls",
+          "kind": "related",
+          "weight": 0.72
+        }
+      ],
+      "media": {
+        "diagram": {
+          "type": "image",
+          "label": "Air Control & Ledge Grabs diagram",
+          "src": "/media/mock/posters/underwater-rally-car-air-control-and-ledge-grabs.svg",
+          "alt": "Air Control & Ledge Grabs concept poster"
+        }
+      },
+      "tools": {
+        "input-basic": {
+          "kind": "input-timeline",
+          "title": "Input Timeline"
+        },
+        "ghost-basic": {
+          "kind": "ghost-comparison",
+          "title": "Ghost Comparison"
+        }
+      },
+      "cluster": "techniques",
+      "secondaryClusters": ["block-geometry", "vehicles", "grip-contact"],
+      "graph": {
+        "primaryCluster": "techniques",
+        "secondaryClusters": ["block-geometry", "vehicles", "grip-contact"],
+        "weight": 0.8,
+        "orbit": 0.78
+      }
+    },
+    {
+      "id": "underwater/rally-car/floatiness-slopes-and-flowtrick",
+      "slug": "underwater/rally-car/floatiness-slopes-and-flowtrick",
+      "title": "Floatiness, Slopes & Flowtrick",
+      "summary": "Rally underwater can keep speed through partial wheel contact, but downhills reduce grip and returning to full contact can require a weight-shift trick.",
+      "section": "underwater",
+      "category": "rally-car",
+      "type": "technique",
+      "contentModel": "card",
+      "difficulty": "advanced",
+      "difficultyIcon": "OOO",
+      "status": "field-note",
+      "sourceKind": "dive-discord-notes",
+      "time": "6 min",
+      "markdown": "/content/cards/underwater/rally-car/floatiness-slopes-and-flowtrick.md",
+      "tags": [
+        "floatiness",
+        "slopes",
+        "flowtrick",
+        "rally",
+        "underwater",
+        "rally-car",
+        "wheel-contact",
+        "speed-retention"
+      ],
+      "concepts": ["underwater", "rally-car", "floatiness", "wheel-contact", "slopes", "flowtrick", "speed-retention"],
+      "packIds": ["rally-underwater-primer", "penalty-speed-retention-answer"],
+      "prerequisites": ["underwater/rally-car/mechanics-primer"],
+      "related": [
+        "underwater/rally-car/mechanics-primer",
+        "underwater/rally-car/surfaces-and-speed-retention",
+        "underwater/rally-car/start-trick-and-penalty-wiggles"
+      ],
+      "links": [
+        {
+          "slug": "underwater/rally-car/mechanics-primer",
+          "kind": "context",
+          "weight": 0.96
+        },
+        {
+          "slug": "underwater/rally-car/surfaces-and-speed-retention",
+          "kind": "related",
+          "weight": 0.72
+        },
+        {
+          "slug": "underwater/rally-car/start-trick-and-penalty-wiggles",
+          "kind": "related",
+          "weight": 0.72
+        }
+      ],
+      "media": {
+        "diagram": {
+          "type": "image",
+          "label": "Floatiness, Slopes & Flowtrick diagram",
+          "src": "/media/mock/posters/underwater-rally-car-floatiness-slopes-and-flowtrick.svg",
+          "alt": "Floatiness, Slopes & Flowtrick concept poster"
+        }
+      },
+      "tools": {
+        "input-basic": {
+          "kind": "input-timeline",
+          "title": "Input Timeline"
+        },
+        "ghost-basic": {
+          "kind": "ghost-comparison",
+          "title": "Ghost Comparison"
+        }
+      },
+      "cluster": "grip-contact",
+      "secondaryClusters": ["surfaces", "speed-momentum", "techniques"],
+      "graph": {
+        "primaryCluster": "grip-contact",
+        "secondaryClusters": ["surfaces", "speed-momentum", "techniques"],
+        "weight": 0.76,
+        "orbit": 0.32
+      }
+    },
+    {
+      "id": "underwater/rally-car/mechanics-primer",
+      "slug": "underwater/rally-car/mechanics-primer",
+      "title": "Rally Underwater Mechanics Primer",
+      "summary": "A compact mental model for Rally car underwater: 100-speed behavior, floaty contact, penalty bypasses, plastic overspeed, and why many tricks are contact tricks.",
+      "section": "underwater",
+      "category": "rally-car",
+      "type": "overview",
+      "contentModel": "card",
+      "difficulty": "reference",
+      "difficultyIcon": "R",
+      "status": "field-note",
+      "sourceKind": "dive-discord-notes",
+      "time": "7 min",
+      "markdown": "/content/cards/underwater/rally-car/mechanics-primer.md",
+      "tags": [
+        "underwater",
+        "rally",
+        "primer",
+        "field-notes",
+        "rally-car",
+        "speed-retention",
+        "wheel-contact",
+        "penalty-surfaces",
+        "steering-rhythm",
+        "plastic-overspeed",
+        "vehicle-stability"
+      ],
+      "concepts": [
+        "underwater",
+        "rally-car",
+        "speed-retention",
+        "wheel-contact",
+        "penalty-surfaces",
+        "steering-rhythm",
+        "plastic-overspeed",
+        "vehicle-stability"
+      ],
+      "packIds": ["rally-underwater-primer", "penalty-speed-retention-answer", "rally-underwater-transitions"],
+      "prerequisites": ["contexts/underwater-driving-primer"],
+      "related": [
+        "contexts/underwater-driving-primer",
+        "underwater/rally-car/start-trick-and-penalty-wiggles",
+        "underwater/rally-car/surfaces-and-speed-retention",
+        "underwater/rally-car/floatiness-slopes-and-flowtrick",
+        "underwater/rally-car/air-control-and-ledge-grabs",
+        "underwater/rally-car/walls-loops-bob-and-poolturns",
+        "underwater/rally-car/reactors-edges-and-overwalls"
+      ],
+      "links": [
+        {
+          "slug": "contexts/underwater-driving-primer",
+          "kind": "context",
+          "weight": 0.96
+        },
+        {
+          "slug": "underwater/rally-car/start-trick-and-penalty-wiggles",
+          "kind": "related",
+          "weight": 0.72
+        },
+        {
+          "slug": "underwater/rally-car/surfaces-and-speed-retention",
+          "kind": "related",
+          "weight": 0.72
+        },
+        {
+          "slug": "underwater/rally-car/floatiness-slopes-and-flowtrick",
+          "kind": "related",
+          "weight": 0.72
+        },
+        {
+          "slug": "underwater/rally-car/air-control-and-ledge-grabs",
+          "kind": "related",
+          "weight": 0.72
+        },
+        {
+          "slug": "underwater/rally-car/walls-loops-bob-and-poolturns",
+          "kind": "related",
+          "weight": 0.72
+        },
+        {
+          "slug": "underwater/rally-car/reactors-edges-and-overwalls",
+          "kind": "related",
+          "weight": 0.72
+        }
+      ],
+      "media": {
+        "diagram": {
+          "type": "image",
+          "label": "Rally Underwater Mechanics Primer diagram",
+          "src": "/media/mock/posters/underwater-rally-car-mechanics-primer.svg",
+          "alt": "Rally Underwater Mechanics Primer concept poster"
+        }
+      },
+      "tools": {
+        "input-basic": {
+          "kind": "input-timeline",
+          "title": "Input Timeline"
+        },
+        "ghost-basic": {
+          "kind": "ghost-comparison",
+          "title": "Ghost Comparison"
+        }
+      },
+      "cluster": "contexts",
+      "secondaryClusters": ["vehicles", "surfaces", "grip-contact", "speed-momentum", "inputs"],
+      "graph": {
+        "primaryCluster": "contexts",
+        "secondaryClusters": ["vehicles", "surfaces", "grip-contact", "speed-momentum", "inputs"],
+        "weight": 0.98,
+        "orbit": 0.42
+      }
+    },
+    {
+      "id": "underwater/rally-car/reactors-edges-and-overwalls",
+      "slug": "underwater/rally-car/reactors-edges-and-overwalls",
+      "title": "Reactors, Edges & Overwalls",
+      "summary": "Rally underwater can use reactor flight, edge bounces, overwalls, and even one-wheel wallclimbs as route tools.",
+      "section": "underwater",
+      "category": "rally-car",
+      "type": "technique",
+      "contentModel": "card",
+      "difficulty": "advanced",
+      "difficultyIcon": "OOO",
+      "status": "field-note",
+      "sourceKind": "dive-discord-notes",
+      "time": "7 min",
+      "markdown": "/content/cards/underwater/rally-car/reactors-edges-and-overwalls.md",
+      "tags": [
+        "reactor",
+        "overwall",
+        "edge-bounce",
+        "rally",
+        "rally-car",
+        "underwater",
+        "reactors",
+        "reactor-up",
+        "reactor-down",
+        "one-wheel-wallclimb"
+      ],
+      "concepts": [
+        "rally-car",
+        "underwater",
+        "reactors",
+        "reactor-up",
+        "reactor-down",
+        "overwall",
+        "edge-bounce",
+        "one-wheel-wallclimb"
+      ],
+      "packIds": ["rally-underwater-primer", "rally-underwater-transitions"],
+      "prerequisites": ["underwater/rally-car/mechanics-primer"],
+      "related": [
+        "underwater/rally-car/mechanics-primer",
+        "underwater/rally-car/air-control-and-ledge-grabs",
+        "underwater/rally-car/walls-loops-bob-and-poolturns"
+      ],
+      "links": [
+        {
+          "slug": "underwater/rally-car/mechanics-primer",
+          "kind": "context",
+          "weight": 0.96
+        },
+        {
+          "slug": "underwater/rally-car/air-control-and-ledge-grabs",
+          "kind": "related",
+          "weight": 0.72
+        },
+        {
+          "slug": "underwater/rally-car/walls-loops-bob-and-poolturns",
+          "kind": "related",
+          "weight": 0.72
+        }
+      ],
+      "media": {
+        "diagram": {
+          "type": "image",
+          "label": "Reactors, Edges & Overwalls diagram",
+          "src": "/media/mock/posters/underwater-rally-car-reactors-edges-and-overwalls.svg",
+          "alt": "Reactors, Edges & Overwalls concept poster"
+        }
+      },
+      "tools": {
+        "input-basic": {
+          "kind": "input-timeline",
+          "title": "Input Timeline"
+        },
+        "ghost-basic": {
+          "kind": "ghost-comparison",
+          "title": "Ghost Comparison"
+        }
+      },
+      "cluster": "special-forces",
+      "secondaryClusters": ["block-geometry", "techniques", "vehicles"],
+      "graph": {
+        "primaryCluster": "special-forces",
+        "secondaryClusters": ["block-geometry", "techniques", "vehicles"],
+        "weight": 0.78,
+        "orbit": 0.92
+      }
+    },
+    {
+      "id": "underwater/rally-car/start-trick-and-penalty-wiggles",
+      "slug": "underwater/rally-car/start-trick-and-penalty-wiggles",
+      "title": "Start Trick & Penalty Wiggles",
+      "summary": "Rally underwater can gain or retain speed through steering rhythm, including start acceleration tricks and penalty-surface wiggles.",
+      "section": "underwater",
+      "category": "rally-car",
+      "type": "technique",
+      "contentModel": "card",
+      "difficulty": "intermediate",
+      "difficultyIcon": "OO",
+      "status": "field-note",
+      "sourceKind": "dive-discord-notes",
+      "time": "6 min",
+      "markdown": "/content/cards/underwater/rally-car/start-trick-and-penalty-wiggles.md",
+      "tags": [
+        "rally",
+        "underwater",
+        "penalty",
+        "wiggle",
+        "inputs",
+        "rally-car",
+        "steering-rhythm",
+        "start-trick",
+        "penalty-surfaces",
+        "speed-retention",
+        "ak-wiggle"
+      ],
+      "concepts": [
+        "rally-car",
+        "underwater",
+        "steering-rhythm",
+        "start-trick",
+        "penalty-surfaces",
+        "speed-retention",
+        "ak-wiggle"
+      ],
+      "packIds": ["rally-underwater-primer", "penalty-speed-retention-answer"],
+      "prerequisites": ["underwater/rally-car/mechanics-primer"],
+      "related": [
+        "underwater/rally-car/mechanics-primer",
+        "underwater/rally-car/surfaces-and-speed-retention",
+        "underwater/rally-car/floatiness-slopes-and-flowtrick"
+      ],
+      "links": [
+        {
+          "slug": "underwater/rally-car/mechanics-primer",
+          "kind": "context",
+          "weight": 0.96
+        },
+        {
+          "slug": "underwater/rally-car/surfaces-and-speed-retention",
+          "kind": "related",
+          "weight": 0.72
+        },
+        {
+          "slug": "underwater/rally-car/floatiness-slopes-and-flowtrick",
+          "kind": "related",
+          "weight": 0.72
+        }
+      ],
+      "media": {
+        "diagram": {
+          "type": "image",
+          "label": "Start Trick & Penalty Wiggles diagram",
+          "src": "/media/mock/posters/underwater-rally-car-start-trick-and-penalty-wiggles.svg",
+          "alt": "Start Trick & Penalty Wiggles concept poster"
+        }
+      },
+      "tools": {
+        "input-basic": {
+          "kind": "input-timeline",
+          "title": "Input Timeline"
+        },
+        "ghost-basic": {
+          "kind": "ghost-comparison",
+          "title": "Ghost Comparison"
+        }
+      },
+      "cluster": "inputs",
+      "secondaryClusters": ["speed-momentum", "surfaces", "vehicles", "techniques"],
+      "graph": {
+        "primaryCluster": "inputs",
+        "secondaryClusters": ["speed-momentum", "surfaces", "vehicles", "techniques"],
+        "weight": 0.82,
+        "orbit": 0.16
+      }
+    },
+    {
+      "id": "underwater/rally-car/surfaces-and-speed-retention",
+      "slug": "underwater/rally-car/surfaces-and-speed-retention",
+      "title": "Surfaces & Speed Retention",
+      "summary": "Rally underwater changes how surfaces feel: normal surfaces are mostly noslide-first, plastic is unusually fast, and penalty can be bypassed with contact or wiggle mechanics.",
+      "section": "underwater",
+      "category": "rally-car",
+      "type": "reference",
+      "contentModel": "card",
+      "difficulty": "reference",
+      "difficultyIcon": "R",
+      "status": "field-note",
+      "sourceKind": "dive-discord-notes",
+      "time": "8 min",
+      "markdown": "/content/cards/underwater/rally-car/surfaces-and-speed-retention.md",
+      "tags": [
+        "surfaces",
+        "rally",
+        "underwater",
+        "plastic",
+        "penalty",
+        "rally-car",
+        "speed-retention",
+        "speed-cap",
+        "penalty-surfaces",
+        "plastic-overspeed",
+        "ice-slide"
+      ],
+      "concepts": [
+        "surfaces",
+        "rally-car",
+        "underwater",
+        "speed-retention",
+        "speed-cap",
+        "penalty-surfaces",
+        "plastic-overspeed",
+        "ice-slide"
+      ],
+      "packIds": ["rally-underwater-primer", "penalty-speed-retention-answer"],
+      "prerequisites": ["underwater/rally-car/mechanics-primer"],
+      "related": [
+        "underwater/rally-car/mechanics-primer",
+        "underwater/rally-car/start-trick-and-penalty-wiggles",
+        "underwater/rally-car/floatiness-slopes-and-flowtrick"
+      ],
+      "links": [
+        {
+          "slug": "underwater/rally-car/mechanics-primer",
+          "kind": "context",
+          "weight": 0.96
+        },
+        {
+          "slug": "underwater/rally-car/start-trick-and-penalty-wiggles",
+          "kind": "related",
+          "weight": 0.72
+        },
+        {
+          "slug": "underwater/rally-car/floatiness-slopes-and-flowtrick",
+          "kind": "related",
+          "weight": 0.72
+        }
+      ],
+      "media": {
+        "diagram": {
+          "type": "image",
+          "label": "Surfaces & Speed Retention diagram",
+          "src": "/media/mock/posters/underwater-rally-car-surfaces-and-speed-retention.svg",
+          "alt": "Surfaces & Speed Retention concept poster"
+        }
+      },
+      "tools": {
+        "input-basic": {
+          "kind": "input-timeline",
+          "title": "Input Timeline"
+        },
+        "ghost-basic": {
+          "kind": "ghost-comparison",
+          "title": "Ghost Comparison"
+        }
+      },
+      "cluster": "surfaces",
+      "secondaryClusters": ["speed-momentum", "grip-contact", "inputs", "vehicles"],
+      "graph": {
+        "primaryCluster": "surfaces",
+        "secondaryClusters": ["speed-momentum", "grip-contact", "inputs", "vehicles"],
+        "weight": 0.78,
+        "orbit": 0.64
+      }
+    },
+    {
+      "id": "underwater/rally-car/walls-loops-bob-and-poolturns",
+      "slug": "underwater/rally-car/walls-loops-bob-and-poolturns",
+      "title": "Walls, Loops, Bob & Poolturns",
+      "summary": "Wallrides and loops lose speed underwater, but wallride exits, diagonal loop lines, bob inside-wall slides, and poolturn wallhugs can still be useful.",
+      "section": "underwater",
+      "category": "rally-car",
+      "type": "reference",
+      "contentModel": "card",
+      "difficulty": "advanced",
+      "difficultyIcon": "OOO",
+      "status": "field-note",
+      "sourceKind": "dive-discord-notes",
+      "time": "8 min",
+      "markdown": "/content/cards/underwater/rally-car/walls-loops-bob-and-poolturns.md",
+      "tags": [
+        "wallrides",
+        "loops",
+        "bob",
+        "poolturns",
+        "rally",
+        "rally-car",
+        "underwater",
+        "bobs",
+        "wheel-contact",
+        "speed-retention"
+      ],
+      "concepts": [
+        "rally-car",
+        "underwater",
+        "wallrides",
+        "loops",
+        "bobs",
+        "poolturns",
+        "wheel-contact",
+        "speed-retention"
+      ],
+      "packIds": ["rally-underwater-primer", "rally-underwater-transitions"],
+      "prerequisites": ["underwater/rally-car/mechanics-primer"],
+      "related": [
+        "underwater/rally-car/mechanics-primer",
+        "underwater/rally-car/air-control-and-ledge-grabs",
+        "underwater/rally-car/reactors-edges-and-overwalls"
+      ],
+      "links": [
+        {
+          "slug": "underwater/rally-car/mechanics-primer",
+          "kind": "context",
+          "weight": 0.96
+        },
+        {
+          "slug": "underwater/rally-car/air-control-and-ledge-grabs",
+          "kind": "related",
+          "weight": 0.72
+        },
+        {
+          "slug": "underwater/rally-car/reactors-edges-and-overwalls",
+          "kind": "related",
+          "weight": 0.72
+        }
+      ],
+      "media": {
+        "diagram": {
+          "type": "image",
+          "label": "Walls, Loops, Bob & Poolturns diagram",
+          "src": "/media/mock/posters/underwater-rally-car-walls-loops-bob-and-poolturns.svg",
+          "alt": "Walls, Loops, Bob & Poolturns concept poster"
+        }
+      },
+      "tools": {
+        "input-basic": {
+          "kind": "input-timeline",
+          "title": "Input Timeline"
+        },
+        "ghost-basic": {
+          "kind": "ghost-comparison",
+          "title": "Ghost Comparison"
+        }
+      },
+      "cluster": "block-geometry",
+      "secondaryClusters": ["grip-contact", "techniques", "speed-momentum"],
+      "graph": {
+        "primaryCluster": "block-geometry",
+        "secondaryClusters": ["grip-contact", "techniques", "speed-momentum"],
+        "weight": 0.78,
+        "orbit": 0.54
+      }
+    }
+  ],
+  "tools": [
+    {
+      "id": "ghost",
+      "title": "Ghost Comparison",
+      "summary": "Compare your run against a top ghost with speed, angle, and input deltas."
+    },
+    {
+      "id": "inputs",
+      "title": "Input Timeline",
+      "summary": "Inspect speed, steer, pitch, and angle timing from a mock input trace."
+    },
+    {
+      "id": "markdown",
+      "title": "Markdown Playground",
+      "summary": "Test Learn directives and inspect the rendered AST output."
+    },
+    {
+      "id": "discord",
+      "title": "Discord Mirror Preview",
+      "summary": "Preview how a Learn page can mirror into Discord from the same AST."
+    },
+    {
+      "id": "export",
+      "title": "Manifest Export",
+      "summary": "View and copy the static manifest JSON currently powering Learn."
+    }
+  ]
+}

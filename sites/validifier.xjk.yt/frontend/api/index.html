@@ -1,0 +1,146 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <link rel="stylesheet" href="/shared/xjk-core/chrome-prepaint.css?v=2" data-xjk-chrome-prepaint />
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Validifier Public API</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@500;600;700&family=Manrope:wght@400;500;600;700&family=Space+Mono:wght@400;700&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="./styles/foundation.css?v=2" />
+    <link rel="stylesheet" href="./styles/overview.css?v=2" />
+    <link rel="stylesheet" href="./styles/endpoints.css?v=2" />
+    <link rel="stylesheet" href="./styles/responsive.css?v=2" />
+    <link rel="icon" href="../favicon.svg?v=2" type="image/svg+xml" />
+  </head>
+  <body class="api-docs-page">
+    <div class="docs-shell">
+      <aside class="docs-sidebar">
+        <div class="brand-block">
+          <a class="brand-home" href="../" data-validifier-home-link>xjk</a>
+          <h1>validifier<span class="brand-dot">.</span> Public API</h1>
+          <p class="brand-copy">Stable public contract for the website, plugin, and future clients.</p>
+        </div>
+
+        <label class="sidebar-search">
+          <input id="searchInput" type="search" placeholder="Search endpoints..." />
+        </label>
+
+        <nav class="sidebar-nav" aria-label="API documentation navigation">
+          <div class="sidebar-group">
+            <p class="sidebar-group-title">Guide</p>
+            <a href="#overview">Overview</a>
+            <a href="#tester">Try It</a>
+          </div>
+          <div id="sidebarGroups"></div>
+          <div class="sidebar-group">
+            <p class="sidebar-group-title">Links</p>
+            <a href="/api/v1/endpoints" target="_blank" rel="noopener noreferrer">Endpoint Catalog JSON</a>
+            <a href="/api/v1">API Root JSON</a>
+            <a href="../">Public Site</a>
+          </div>
+        </nav>
+      </aside>
+
+      <main class="docs-main">
+        <header class="docs-topbar">
+          <div class="topbar-copy">
+            <strong id="topbarSummary">Loading...</strong>
+          </div>
+          <div class="topbar-actions">
+            <button id="resetSearchBtn" class="btn ghost" type="button">Reset</button>
+            <a class="btn primary" href="/api/v1/endpoints" target="_blank" rel="noopener noreferrer">JSON</a>
+            <div class="docs-account-slot" data-xjk-account-widget-slot="topbar" aria-label="xjk account"></div>
+          </div>
+        </header>
+
+        <section id="overview" class="doc-section">
+          <div class="overview-row">
+            <div class="overview-info">
+              <h2>API Reference</h2>
+              <p class="lead">
+                Public read routes for live verification, record detail, map detail, batch lookups, and replay
+                submissions.
+              </p>
+            </div>
+            <div class="stat-pills">
+              <span class="stat-pill"><strong id="statEndpoints">-</strong> endpoints</span>
+              <span class="stat-pill">v<strong id="statVersion">1</strong></span>
+            </div>
+          </div>
+
+          <div class="overview-grid">
+            <article class="overview-card">
+              <span class="overview-label">Base URL</span>
+              <code id="baseUrlValue">https://validifier.xjk.yt/api/v1</code>
+            </article>
+            <article class="overview-card">
+              <span class="overview-label">Auth</span>
+              <p id="authValue">Public read endpoints do not require a secret client token.</p>
+            </article>
+            <article class="overview-card overview-card-wide">
+              <span class="overview-label">Envelope</span>
+              <div class="code-block">
+                <pre id="envelopeBlock">{ "ok": true, "data": ... }</pre>
+              </div>
+            </article>
+          </div>
+
+          <div class="enum-grid">
+            <article class="enum-card">
+              <h3>Tracks</h3>
+              <div id="enumTracks" class="enum-list"></div>
+            </article>
+            <article class="enum-card">
+              <h3>Status</h3>
+              <div id="enumStatuses" class="enum-list"></div>
+            </article>
+            <article class="enum-card">
+              <h3>Reason Codes</h3>
+              <div id="enumReasons" class="enum-list enum-list-wrap"></div>
+            </article>
+          </div>
+        </section>
+
+        <section id="tester" class="doc-section doc-section-compact">
+          <details class="tester-details">
+            <summary class="tester-summary">Try It - Record Detail Lookup</summary>
+            <form id="recordTesterForm" class="tester-form">
+              <label class="field">
+                <span>Record ID</span>
+                <input id="recordIdInput" name="recordId" type="text" placeholder="Paste a known record ID" />
+              </label>
+              <button class="btn primary" type="submit">Run</button>
+            </form>
+            <p id="recordTesterStatus" class="tester-status">No request yet.</p>
+            <div class="code-block">
+              <pre id="recordTesterOutput" class="response-block">Awaiting request.</pre>
+            </div>
+          </details>
+        </section>
+
+        <div id="endpointSections"></div>
+      </main>
+    </div>
+
+    <script src="/shared/xjk-core/local-path-rewriter.js?v=2"></script>
+    <script src="../validifier-paths.js?v=2"></script>
+    <script src="./app.js?v=2" type="module"></script>
+    <script
+      type="module"
+      src="/shared/xjk-core/sidenav-boot.js?v=2"
+      data-xjk-sidenav="validifier"
+      data-xjk-page="api"
+    ></script>
+    <script
+      type="module"
+      src="/shared/xjk-core/topbar-loader.js?v=2"
+      data-xjk-topbar="validifier"
+      data-xjk-page="api"
+    ></script>
+  </body>
+</html>

@@ -1,0 +1,416 @@
+/* ── Navigation Hub ── */
+.nav-hub {
+  margin-top: 1rem;
+}
+
+.nav-hub-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.6rem;
+}
+
+.nav-hub-card {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.75rem;
+  padding: 1rem 1.1rem;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--surface);
+  backdrop-filter: blur(10px);
+  text-decoration: none;
+  transition:
+    border-color 0.2s,
+    transform 0.15s;
+}
+
+.nav-hub-card:hover {
+  border-color: var(--border-hover);
+  transform: translateY(-1px);
+}
+
+.nav-hub-card--primary {
+  background: radial-gradient(ellipse at top right, rgba(34, 153, 238, 0.06), transparent 60%), var(--surface);
+}
+
+.nav-hub-icon {
+  flex-shrink: 0;
+  width: 34px;
+  height: 34px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 8px;
+  background: rgba(34, 204, 238, 0.08);
+  color: var(--cyan);
+}
+
+.nav-hub-card-body {
+  flex: 1;
+  min-width: 0;
+}
+
+.nav-hub-card-title {
+  font-size: 0.92rem;
+  font-weight: 600;
+  color: var(--ink);
+}
+
+.nav-hub-card-desc {
+  margin-top: 0.15rem;
+  font-size: 0.76rem;
+  color: var(--ink-dim);
+  line-height: 1.45;
+}
+
+.nav-hub-arrow {
+  margin-left: auto;
+  align-self: center;
+  color: var(--cyan);
+  font-size: 1.1rem;
+  opacity: 0;
+  transform: translateX(-4px);
+  transition:
+    opacity 0.2s,
+    transform 0.2s;
+}
+
+.nav-hub-card:hover .nav-hub-arrow {
+  opacity: 1;
+  transform: translateX(0);
+}
+
+.nav-hub-extras {
+  grid-column: 1 / -1;
+  display: flex;
+  gap: 0.5rem;
+  justify-content: center;
+  flex-wrap: wrap;
+  padding-top: 0.15rem;
+}
+main {
+  position: relative;
+  z-index: 1;
+}
+.hero-section {
+  min-height: calc(100vh - 88px);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  padding: 3rem 1.5rem 2rem;
+}
+
+.hero-badge {
+  display: inline-block;
+  padding: 0.25rem 0.7rem;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  font-family: "Chakra Petch", "Trebuchet MS", sans-serif;
+  font-size: 0.7rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--ink-muted);
+  margin-bottom: 1.2rem;
+  opacity: 0;
+  transform: translateY(12px);
+  animation: fadeUp 0.6s ease 0.15s forwards;
+}
+
+.hero-title {
+  font-size: clamp(4rem, 13vw, 9rem);
+  font-weight: 700;
+  line-height: 0.92;
+  letter-spacing: -0.03em;
+  background: linear-gradient(135deg, var(--ink) 20%, var(--cyan) 80%, var(--cyan-bright) 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  opacity: 0;
+  transform: translateY(16px);
+  animation: fadeUp 0.7s ease 0.3s forwards;
+}
+
+.hero-sub {
+  margin: 1rem auto 0;
+  max-width: 480px;
+  color: var(--ink-dim);
+  font-size: 1rem;
+  line-height: 1.65;
+  opacity: 0;
+  transform: translateY(12px);
+  animation: fadeUp 0.6s ease 0.5s forwards;
+}
+
+.hero-actions {
+  margin-top: 1.8rem;
+  display: flex;
+  gap: 0.65rem;
+  flex-wrap: wrap;
+  justify-content: center;
+  opacity: 0;
+  transform: translateY(12px);
+  animation: fadeUp 0.6s ease 0.65s forwards;
+}
+
+@keyframes fadeUp {
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 42px;
+  padding: 0.45rem 1.15rem;
+  border: 1px solid transparent;
+  border-radius: 10px;
+  text-decoration: none;
+  color: var(--ink);
+  font-family: "Chakra Petch", "Trebuchet MS", sans-serif;
+  font-size: 0.84rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  cursor: pointer;
+  transition:
+    transform 0.15s,
+    box-shadow 0.2s,
+    border-color 0.2s;
+}
+
+.btn:hover {
+  transform: translateY(-1px);
+}
+
+.btn-primary {
+  border-color: rgba(34, 204, 238, 0.25);
+  background: linear-gradient(135deg, rgba(0, 55, 170, 0.9), rgba(34, 170, 210, 0.8));
+  color: #fff;
+  box-shadow: 0 4px 18px rgba(34, 153, 238, 0.18);
+}
+
+.btn-primary:hover {
+  box-shadow: 0 6px 24px rgba(34, 153, 238, 0.3);
+  border-color: rgba(34, 204, 238, 0.45);
+}
+
+.btn-secondary {
+  border-color: var(--border);
+  background: rgba(255, 255, 255, 0.03);
+  backdrop-filter: blur(8px);
+}
+
+.btn-secondary:hover {
+  border-color: var(--border-hover);
+  box-shadow: 0 2px 12px rgba(34, 204, 238, 0.08);
+}
+
+.btn-sm {
+  min-height: 36px;
+  padding: 0.35rem 0.85rem;
+  font-size: 0.78rem;
+}
+.ribbon {
+  display: flex;
+  height: 88px;
+  overflow: hidden;
+}
+
+.ribbon-panel {
+  flex: 1;
+  position: relative;
+  overflow: visible;
+  text-decoration: none;
+  transition: flex 0.45s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.ribbon-panel img {
+  position: absolute;
+  top: 0;
+  left: -15%;
+  width: 130%;
+  height: 100%;
+  object-fit: cover;
+  opacity: 0.45;
+  transition:
+    opacity 0.4s,
+    transform 0.5s;
+  transform: scale(1.06);
+  -webkit-mask-image: linear-gradient(to right, transparent, black 12%, black 88%, transparent);
+  mask-image: linear-gradient(to right, transparent, black 12%, black 88%, transparent);
+}
+
+.ribbon-panel:first-child img {
+  left: 0;
+  width: 115%;
+  -webkit-mask-image: linear-gradient(to right, black, black 88%, transparent);
+  mask-image: linear-gradient(to right, black, black 88%, transparent);
+}
+
+.ribbon-panel:last-child img {
+  left: -15%;
+  width: 115%;
+  -webkit-mask-image: linear-gradient(to right, transparent, black 12%, black);
+  mask-image: linear-gradient(to right, transparent, black 12%, black);
+}
+
+.ribbon-panel:hover {
+  flex: 2.5;
+}
+
+.ribbon-panel:hover img {
+  opacity: 0.85;
+  transform: scale(1);
+}
+
+.ribbon-label {
+  position: absolute;
+  bottom: 10px;
+  left: 12px;
+  z-index: 2;
+  font-family: "Chakra Petch", "Trebuchet MS", sans-serif;
+  font-size: 0.7rem;
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: #fff;
+  opacity: 0.45;
+  transition: opacity 0.3s;
+  text-shadow: 0 1px 6px rgba(0, 0, 0, 0.6);
+}
+
+.ribbon-panel:hover .ribbon-label {
+  opacity: 1;
+}
+.content {
+  max-width: 1060px;
+  margin: 0 auto;
+  padding: 0 1.5rem;
+}
+
+.hub-stats {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.45rem;
+  margin-top: 0.8rem;
+  padding: 0.4rem 0;
+  font-size: 0.82rem;
+  color: var(--ink-dim);
+}
+
+.hub-stat strong {
+  font-family: "Chakra Petch", "Trebuchet MS", sans-serif;
+  font-weight: 700;
+  color: var(--ink);
+}
+
+.hub-stat-sep {
+  color: var(--ink-muted);
+  user-select: none;
+}
+.spotlight {
+  margin-top: 1rem;
+  padding: 0.9rem 1.1rem;
+  border: 1px solid rgba(34, 204, 238, 0.15);
+  border-radius: var(--radius);
+  background: var(--surface);
+  backdrop-filter: blur(12px);
+  transition: border-color 0.3s;
+}
+
+.spotlight:hover {
+  border-color: rgba(34, 204, 238, 0.28);
+}
+
+.spotlight-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 0.55rem;
+}
+
+.spotlight-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.2rem 0.55rem;
+  border: 1px solid rgba(34, 204, 238, 0.2);
+  border-radius: 999px;
+  font-family: "Chakra Petch", "Trebuchet MS", sans-serif;
+  font-size: 0.66rem;
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--cyan);
+  background: rgba(34, 204, 238, 0.05);
+}
+
+.spotlight-pulse {
+  display: inline-block;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--cyan);
+  animation: pulse 2s ease-in-out infinite;
+}
+
+@keyframes pulse {
+  0%,
+  100% {
+    opacity: 1;
+    box-shadow: 0 0 0 0 rgba(34, 204, 238, 0.45);
+  }
+  50% {
+    opacity: 0.6;
+    box-shadow: 0 0 0 5px rgba(34, 204, 238, 0);
+  }
+}
+
+.spotlight-ago {
+  font-size: 0.7rem;
+  color: var(--ink-muted);
+}
+
+.spotlight-body {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.spotlight-info {
+  display: flex;
+  flex-direction: column;
+  gap: 0.1rem;
+  min-width: 0;
+}
+
+.spotlight-map {
+  font-family: "Chakra Petch", "Trebuchet MS", sans-serif;
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: var(--ink);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.spotlight-player {
+  font-size: 0.82rem;
+  color: var(--ink-dim);
+}
+
+.spotlight-time {
+  font-family: "Chakra Petch", "Trebuchet MS", sans-serif;
+  font-size: 1.65rem;
+  font-weight: 700;
+  color: var(--cyan-bright);
+  white-space: nowrap;
+  line-height: 1;
+  text-shadow: 0 0 16px rgba(34, 204, 238, 0.2);
+  flex-shrink: 0;
+}

@@ -1,0 +1,16 @@
+{
+  "title": "Rally Underwater Transitions",
+  "summary": "A route for wall, loop, bob, quarterpipe, reactor, and edge interactions.",
+  "question": "How do Rally underwater transitions work?",
+  "pageSlug": "underwater/rally-car/walls-loops-bob-and-poolturns",
+  "cards": [
+    "contexts/underwater-driving-primer",
+    "underwater/rally-car/mechanics-primer",
+    "underwater/rally-car/air-control-and-ledge-grabs",
+    "underwater/rally-car/walls-loops-bob-and-poolturns",
+    "underwater/rally-car/reactors-edges-and-overwalls"
+  ],
+  "concepts": ["wallrides", "loops", "bobs", "reactors", "edge-bounce"],
+  "requiredContext": ["contexts/underwater-driving-primer"],
+  "tags": ["transitions", "geometry", "reactor"]
+}

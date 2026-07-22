@@ -1,0 +1,101 @@
+/* Admin responsive layout */
+@media (max-width: 1180px) {
+  :root {
+    --left-width: 248px;
+    --right-width: 320px;
+  }
+
+  .brand span {
+    font-size: 24px;
+  }
+
+  .topbar {
+    grid-template-columns: var(--left-width) minmax(220px, 1fr) minmax(220px, var(--right-width));
+  }
+}
+
+@media (max-width: 940px) {
+  body {
+    overflow: auto;
+  }
+
+  .admin-shell {
+    grid-template-rows: auto minmax(0, 1fr);
+    height: auto;
+    min-height: 100vh;
+  }
+
+  .topbar {
+    display: grid;
+    grid-template-columns: 1fr;
+    height: auto;
+    padding: 0 10px 10px 0;
+  }
+
+  .brand {
+    height: 54px;
+    border-right: 0;
+  }
+
+  .topnav {
+    height: 40px;
+  }
+
+  .top-actions {
+    flex-wrap: wrap;
+    justify-content: flex-start;
+    padding-left: 22px;
+  }
+
+  .top-actions p {
+    flex: 1 1 100%;
+  }
+
+  .top-actions .xjk-search-topbar-actions {
+    margin-left: auto;
+  }
+
+  .editor-layout {
+    grid-template-columns: 1fr;
+  }
+
+  .library-panel,
+  .inspector-panel {
+    display: block;
+    max-height: none;
+    border: 0;
+  }
+
+  .object-list {
+    display: flex;
+    gap: 0;
+    overflow-x: auto;
+    overflow-y: hidden;
+  }
+
+  .object-button {
+    flex: 0 0 210px;
+  }
+
+  .map-workbench {
+    min-height: 640px;
+  }
+
+  .inspector-group {
+    overflow: visible;
+  }
+
+  .export-text {
+    height: 280px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation: none !important;
+    scroll-behavior: auto !important;
+    transition-duration: 0.01ms !important;
+  }
+}

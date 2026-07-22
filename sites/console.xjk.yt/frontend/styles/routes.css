@@ -1,0 +1,313 @@
+/* Intro */
+.con-intro {
+  justify-self: center;
+  color: var(--text-muted);
+  font-family: "Space Mono", ui-monospace, monospace;
+  font-size: 13.5px;
+  text-align: center;
+}
+
+.con-intro-chips {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 8px;
+}
+
+.con-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 5px 11px;
+  border: 1px solid var(--border-subtle);
+  border-radius: 4px;
+  color: var(--text-muted);
+  background: rgba(255, 255, 255, 0.03);
+  font-family: "Space Mono", ui-monospace, monospace;
+  font-size: 11.5px;
+}
+
+.con-chip svg {
+  width: 14px;
+  height: 14px;
+}
+
+.con-chip--accent {
+  border-color: rgba(154, 236, 53, 0.42);
+  color: var(--accent);
+  background: rgba(154, 236, 53, 0.06);
+}
+
+/* Route line: cards as stations */
+.route-line {
+  display: grid;
+  grid-template-columns: 1.3fr 1fr 1fr 1fr 1fr;
+  gap: 14px;
+  align-items: stretch;
+  margin-top: 14px;
+}
+
+.route-stop {
+  --mode-color: var(--accent);
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  padding-top: 32px;
+}
+
+.route-stop--rmc {
+  --mode-color: var(--rmc);
+}
+.route-stop--rms {
+  --mode-color: var(--rms);
+}
+.route-stop--rmt {
+  --mode-color: var(--rmt);
+}
+.route-stop--future {
+  --mode-color: var(--future);
+}
+
+/* Half-segments of the shared line; they extend into the grid gap so the
+   line reads as continuous across stops. */
+.route-stop::before,
+.route-stop::after {
+  content: "";
+  position: absolute;
+  top: 13px;
+  height: 3px;
+  background: linear-gradient(90deg, rgba(154, 236, 53, 0.55), rgba(154, 236, 53, 0.55));
+  border-radius: 999px;
+}
+
+.route-stop::before {
+  left: -8px;
+  right: 50%;
+}
+
+.route-stop::after {
+  left: 50%;
+  right: -8px;
+}
+
+.route-stop:first-child::before,
+.route-stop:last-child::after {
+  display: none;
+}
+
+/* Approach to the open slot is dashed. */
+.route-stop--future::before,
+.route-stop:nth-last-child(2)::after {
+  background: repeating-linear-gradient(90deg, rgba(154, 236, 53, 0.5) 0 9px, transparent 9px 17px);
+  border-radius: 0;
+}
+
+.route-node {
+  position: absolute;
+  top: 7px;
+  left: 50%;
+  z-index: 1;
+  width: 15px;
+  height: 15px;
+  border: 3px solid var(--mode-color);
+  border-radius: 50%;
+  background: var(--bg-main);
+  box-shadow:
+    0 0 0 3px var(--bg-main),
+    0 0 0 5px color-mix(in srgb, var(--mode-color), transparent 78%),
+    0 0 12px color-mix(in srgb, var(--mode-color), transparent 55%);
+  transform: translateX(-50%);
+}
+
+.route-stop--bingo .route-node {
+  width: 19px;
+  height: 19px;
+  top: 5px;
+  box-shadow:
+    0 0 0 3px var(--bg-main),
+    0 0 0 6px rgba(154, 236, 53, 0.26),
+    0 0 18px rgba(154, 236, 53, 0.45);
+}
+
+.route-stop--future .route-node {
+  border-style: dashed;
+  box-shadow: 0 0 0 3px var(--bg-main);
+}
+
+/* Cards */
+.route-card {
+  display: flex;
+  flex: 1 1 auto;
+  flex-direction: column;
+  gap: 10px;
+  min-width: 0;
+  padding: 15px 15px 13px;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  border-radius: 5px;
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.016), rgba(0, 0, 0, 0.045) 100%), var(--bg-panel);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.035),
+    inset 0 -1px 0 rgba(0, 0, 0, 0.24);
+  transition:
+    border-color 150ms ease,
+    background 150ms ease,
+    transform 150ms ease;
+}
+
+.route-card:hover {
+  border-color: color-mix(in srgb, var(--mode-color), transparent 45%);
+  transform: translateY(-1px);
+}
+
+.route-stop--bingo .route-card {
+  border-color: rgba(154, 236, 53, 0.5);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.035),
+    0 0 22px rgba(154, 236, 53, 0.08);
+}
+
+.route-stop--future .route-card {
+  border-style: dashed;
+}
+
+.route-badge {
+  align-self: flex-start;
+  padding: 3px 8px;
+  border: 1px solid color-mix(in srgb, var(--mode-color), transparent 55%);
+  border-radius: 3px;
+  color: var(--mode-color);
+  background: color-mix(in srgb, var(--mode-color), transparent 93%);
+  font-family: "Space Mono", ui-monospace, monospace;
+  font-size: 10px;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+
+.route-badge--live {
+  animation: badge-pulse 2.4s ease-in-out infinite;
+}
+
+@keyframes badge-pulse {
+  0%,
+  100% {
+    box-shadow: 0 0 0 0 rgba(154, 236, 53, 0);
+  }
+  50% {
+    box-shadow: 0 0 10px 0 rgba(154, 236, 53, 0.35);
+  }
+}
+
+.route-card h2 {
+  color: color-mix(in srgb, var(--mode-color), white 22%);
+  font-size: 21px;
+  font-weight: 600;
+  line-height: 1.08;
+}
+
+.route-card > p {
+  color: var(--text-muted);
+  font-family: "Space Mono", ui-monospace, monospace;
+  font-size: 11.5px;
+  line-height: 1.5;
+}
+
+.route-icon {
+  display: grid;
+  flex: 1 1 auto;
+  place-items: center;
+  min-height: 74px;
+  color: var(--mode-color);
+  opacity: 0.9;
+}
+
+.route-icon svg {
+  width: 46px;
+  height: 46px;
+}
+
+/* Decorative mini bingo board. */
+.bingo-board {
+  display: grid;
+  flex: 1 1 auto;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 3px;
+  align-content: center;
+  padding: 8px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 4px;
+  background: rgba(0, 0, 0, 0.3);
+}
+
+.bingo-board span {
+  display: grid;
+  place-items: center;
+  min-height: 26px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 3px;
+  color: var(--text-muted);
+  background: rgba(255, 255, 255, 0.02);
+  font-family: "Space Mono", ui-monospace, monospace;
+  font-size: 10.5px;
+}
+
+.bingo-board .bingo-star {
+  border-color: rgba(154, 236, 53, 0.5);
+  color: var(--accent);
+  background: rgba(154, 236, 53, 0.08);
+  font-size: 13px;
+}
+
+.route-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+}
+
+.route-chips span {
+  padding: 2px 7px;
+  border: 1px solid color-mix(in srgb, var(--mode-color), transparent 62%);
+  border-radius: 3px;
+  color: color-mix(in srgb, var(--mode-color), white 28%);
+  font-family: "Space Mono", ui-monospace, monospace;
+  font-size: 10px;
+  white-space: nowrap;
+}
+
+.route-open {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 4px;
+  padding-top: 10px;
+  border-top: 1px solid rgba(255, 255, 255, 0.09);
+  color: var(--mode-color);
+  font-family: "Space Mono", ui-monospace, monospace;
+  font-size: 12px;
+}
+
+.route-open::after {
+  content: "->";
+}
+
+.route-card:hover .route-open {
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+.route-foot {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  margin: 8px 2px 0;
+  color: var(--text-dim);
+  font-family: "Space Mono", ui-monospace, monospace;
+  font-size: 10.5px;
+}
+
+.route-foot::before {
+  content: "";
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.28);
+}

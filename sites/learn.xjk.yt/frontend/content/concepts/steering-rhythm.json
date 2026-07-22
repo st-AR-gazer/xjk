@@ -1,0 +1,8 @@
+{
+  "title": "Steering Rhythm",
+  "area": "inputs",
+  "type": "concept",
+  "summary": "Repeated steering timing, taps, analog motion, or AK changes that produce a useful physics response.",
+  "tags": ["inputs", "steering"],
+  "relatedConcepts": ["ak-wiggle", "start-trick"]
+}

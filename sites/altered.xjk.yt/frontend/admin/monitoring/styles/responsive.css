@@ -1,0 +1,42 @@
+@media (max-width: 1080px) {
+  .layout {
+    grid-template-columns: 1fr;
+  }
+
+  .sidebar {
+    position: static;
+  }
+
+  .compact-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .live-monitor-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .diag-charts-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .activity-log-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .diag-stats-row {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (max-width: 640px) {
+  .diag-stats-row {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .btn-lite,
+  .btn-main {
+    transition: none;
+  }
+}

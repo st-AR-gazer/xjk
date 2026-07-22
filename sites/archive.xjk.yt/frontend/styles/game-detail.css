@@ -1,0 +1,209 @@
+/* Game detail page */
+.arc-game-page {
+  padding-top: 4px;
+}
+
+.back-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 14px;
+  padding: 6px 12px;
+  border: 1px solid var(--border-medium);
+  border-radius: 4px;
+  color: var(--text-muted);
+  background: rgba(0, 0, 0, 0.22);
+  font-family: "Space Mono", ui-monospace, monospace;
+  font-size: 12px;
+  cursor: pointer;
+}
+
+.back-btn:hover {
+  border-color: var(--accent);
+  color: var(--accent);
+  background: var(--accent-soft);
+}
+
+.gp-cover {
+  position: relative;
+  height: clamp(180px, 26vw, 280px);
+  overflow: hidden;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  border-radius: 5px;
+  background: rgba(0, 0, 0, 0.35);
+}
+
+.gp-cover img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.gp-cover-overlay {
+  position: absolute;
+  right: 12px;
+  bottom: 12px;
+  left: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.gp-franchise,
+.gp-year {
+  padding: 4px 9px;
+  border: 1px solid rgba(232, 162, 0, 0.4);
+  border-radius: 4px;
+  color: color-mix(in srgb, var(--accent), white 25%);
+  background: rgba(2, 4, 6, 0.82);
+  font-family: "Space Mono", ui-monospace, monospace;
+  font-size: 11px;
+}
+
+.gp-meta {
+  margin-top: 14px;
+}
+
+.gp-title {
+  font-size: clamp(22px, 2.2vw, 30px);
+  font-weight: 600;
+  line-height: 1.1;
+}
+
+.gp-pills {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 10px;
+}
+
+.gp-desc {
+  max-width: 74ch;
+  margin-top: 12px;
+  color: var(--text-muted);
+  font-size: 14.5px;
+  line-height: 1.55;
+}
+
+.gp-builds {
+  margin-top: 22px;
+}
+
+.gp-builds-heading {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  margin-bottom: 12px;
+  color: var(--accent);
+  font-family: "Space Mono", ui-monospace, monospace;
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.gp-builds-heading::after {
+  content: "";
+  flex: 1 1 auto;
+  height: 1px;
+  background: linear-gradient(90deg, rgba(232, 162, 0, 0.4), rgba(232, 162, 0, 0.05));
+}
+
+.build-category-head {
+  margin: 16px 0 10px;
+  color: var(--text-muted);
+  font-family: "Space Mono", ui-monospace, monospace;
+  font-size: 12px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.builds {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: 12px;
+}
+
+.build {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 13px 14px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 5px;
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.03), transparent 70%), var(--bg-panel);
+}
+
+.build-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.build-head strong {
+  font-size: 15px;
+  font-weight: 600;
+}
+
+.build-head .muted {
+  font-family: "Space Mono", ui-monospace, monospace;
+  font-size: 11px;
+  white-space: nowrap;
+}
+
+.build-meta {
+  color: var(--text-muted);
+  font-family: "Space Mono", ui-monospace, monospace;
+  font-size: 11px;
+}
+
+.build p.muted {
+  font-size: 12.5px;
+  line-height: 1.45;
+}
+
+.links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 2px;
+}
+
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-height: 32px;
+  padding: 5px 12px;
+  border: 1px solid var(--border-medium);
+  border-radius: 4px;
+  background: rgba(0, 0, 0, 0.22);
+  color: var(--text-main);
+  cursor: pointer;
+  font-size: 13px;
+  transition:
+    border-color 150ms ease,
+    background 150ms ease,
+    color 150ms ease;
+}
+
+.btn:hover {
+  border-color: var(--accent);
+  color: var(--accent);
+  background: var(--accent-soft);
+}
+
+.btn-primary {
+  border-color: var(--accent);
+  color: var(--accent);
+  background: linear-gradient(90deg, var(--accent-soft), transparent 72%), rgba(0, 0, 0, 0.2);
+  font-weight: 600;
+}
+
+.btn-primary:hover {
+  color: #ffffff;
+  background: var(--accent-soft);
+}

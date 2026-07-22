@@ -1,0 +1,8 @@
+{
+  "title": "Underwater",
+  "area": "contexts",
+  "type": "context",
+  "summary": "Driving while submerged, where drag, buoyancy feel, contact states, and special physics change normal assumptions.",
+  "tags": ["water", "submerged", "context"],
+  "relatedConcepts": ["water-drag", "wheel-contact", "speed-retention"]
+}

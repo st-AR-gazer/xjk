@@ -1,0 +1,8 @@
+{
+  "title": "Slopes",
+  "area": "block-geometry",
+  "type": "geometry",
+  "summary": "Uphills, downhills, and slanted blocks that change grip, contact, speed, and line choice.",
+  "tags": ["geometry", "slope"],
+  "relatedConcepts": ["floatiness", "speed-retention"]
+}

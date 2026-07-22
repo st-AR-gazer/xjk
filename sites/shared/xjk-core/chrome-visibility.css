@@ -1,0 +1,80 @@
+/* Opt-in chrome reveal state. Loaded only for pages configured with
+   chrome.revealOnScroll, currently the Altered home page. */
+
+html[data-xjk-chrome-scroll-reveal] .xjk-global-topbar,
+html[data-xjk-chrome-scroll-reveal] .xjk-page-toolbar {
+  visibility: visible;
+  transition:
+    transform 240ms cubic-bezier(0.22, 1, 0.36, 1),
+    opacity 180ms ease,
+    visibility 0s linear;
+  will-change: transform, opacity;
+}
+
+html[data-xjk-chrome-scroll-reveal] .xjk-sidenav {
+  visibility: visible;
+  transition:
+    width 200ms ease,
+    padding 200ms ease,
+    transform 240ms cubic-bezier(0.22, 1, 0.36, 1),
+    opacity 180ms ease,
+    visibility 0s linear;
+  will-change: width, transform, opacity;
+}
+
+html[data-xjk-chrome-scroll-reveal] .xjk-sidenav-mobile-toggle {
+  visibility: visible;
+  transition:
+    transform 220ms cubic-bezier(0.22, 1, 0.36, 1),
+    opacity 160ms ease,
+    visibility 0s linear;
+}
+
+html[data-xjk-chrome-scroll-reveal="hidden"] .xjk-global-topbar,
+html[data-xjk-chrome-scroll-reveal="hidden"] .xjk-page-toolbar {
+  visibility: hidden !important;
+  opacity: 0 !important;
+  pointer-events: none !important;
+  transform: translateY(calc(-100% - 10px)) !important;
+  transition-timing-function: cubic-bezier(0.64, 0, 0.78, 0), ease-in, linear;
+  transition-delay: 0s, 0s, 240ms;
+}
+
+html[data-xjk-chrome-scroll-reveal="hidden"] .xjk-sidenav {
+  visibility: hidden !important;
+  opacity: 0 !important;
+  pointer-events: none !important;
+  transform: translateX(calc(-100% - 8px)) !important;
+  transition-timing-function: ease, ease, cubic-bezier(0.64, 0, 0.78, 0), ease-in, linear;
+  transition-delay: 0s, 0s, 0s, 0s, 240ms;
+}
+
+html[data-xjk-chrome-scroll-reveal="hidden"] .xjk-sidenav-mobile-toggle {
+  visibility: hidden !important;
+  opacity: 0 !important;
+  pointer-events: none !important;
+  transform: translateY(-52px) scale(0.94) !important;
+  transition-timing-function: cubic-bezier(0.64, 0, 0.78, 0), ease-in, linear;
+  transition-delay: 0s, 0s, 220ms;
+}
+
+html[data-xjk-chrome-scroll-reveal="hidden"] .xjk-sidenav-mobile-backdrop {
+  visibility: hidden !important;
+  opacity: 0 !important;
+  pointer-events: none !important;
+}
+
+/* Scroll-reveal chrome overlays the page in both states. Keeping the content
+   gutter at zero prevents the Altered hero from reflowing as the rail enters. */
+html.xjk-has-sidenav[data-xjk-chrome-scroll-reveal] body {
+  padding-left: 0 !important;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html[data-xjk-chrome-scroll-reveal] .xjk-global-topbar,
+  html[data-xjk-chrome-scroll-reveal] .xjk-page-toolbar,
+  html[data-xjk-chrome-scroll-reveal] .xjk-sidenav,
+  html[data-xjk-chrome-scroll-reveal] .xjk-sidenav-mobile-toggle {
+    transition: none !important;
+  }
+}

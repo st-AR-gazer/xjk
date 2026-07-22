@@ -1,0 +1,8 @@
+{
+  "title": "Reactor Up",
+  "area": "special-forces",
+  "type": "force",
+  "summary": "Upward reactor behavior, including green and orange variants where control and launch differ.",
+  "tags": ["reactor", "up"],
+  "relatedConcepts": ["reactors", "air-control"]
+}

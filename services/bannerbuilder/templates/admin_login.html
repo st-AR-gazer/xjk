@@ -1,0 +1,68 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <link
+      rel="stylesheet"
+      href="/shared/xjk-core/chrome-prepaint.css?v=2"
+      data-xjk-chrome-prepaint
+    />
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Admin Login</title>
+
+    <link rel="icon" href="/favicon.svg?v=2" type="image/svg+xml" />
+
+    <link rel="stylesheet" href="../static/css/admin.css?v=2" />
+    <style>
+      .admin-login-shell {
+        display: grid;
+        place-items: center;
+        min-height: calc(100vh - 59px);
+        padding: 1rem;
+      }
+
+      form {
+        background: #29313c;
+        padding: 2rem 2.5rem;
+        border-radius: 12px;
+        box-shadow: 0 6px 18px rgba(0, 0, 0, 0.6);
+        display: flex;
+        flex-direction: column;
+        gap: 1rem;
+        box-sizing: border-box;
+        width: min(400px, 100%);
+        z-index: 1;
+      }
+    </style>
+  </head>
+
+  <body>
+    <main class="admin-login-shell">
+      <form method="post" action="">
+        <h2 style="margin-top: 0">Admin Login</h2>
+
+        {% with msgs = get_flashed_messages(with_categories=true) %} {% if msgs %} {% for cat,msg in msgs %}
+        <div class="flash {{cat}}">{{msg}}</div>
+        {% endfor %} {% endif %} {% endwith %}
+
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
+        <input type="password" name="password" placeholder="Password" required />
+        <button class="btn btn-secondary" type="submit">Enter</button>
+      </form>
+    </main>
+
+    <script defer src="../static/js/admin-shell.js?v=2"></script>
+    <script
+      type="module"
+      src="/shared/xjk-core/sidenav-boot.js?v=2"
+      data-xjk-sidenav="altered"
+      data-xjk-page="bannerbuilder/admin/login"
+    ></script>
+    <script
+      type="module"
+      src="/shared/xjk-core/topbar-loader.js?v=2"
+      data-xjk-topbar="altered"
+      data-xjk-page="bannerbuilder/admin/login"
+    ></script>
+  </body>
+</html>

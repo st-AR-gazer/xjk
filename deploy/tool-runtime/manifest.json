@@ -1,0 +1,198 @@
+{
+  "schemaVersion": 1,
+  "release": {
+    "repository": "st-AR-gazer/xjk",
+    "tag": "tool-runtime-v2.0.0",
+    "asset": "xjk-tool-runtime-v2.0.0-win-x64.zip",
+    "downloadUrl": "https://github.com/st-AR-gazer/xjk/releases/download/tool-runtime-v2.0.0/xjk-tool-runtime-v2.0.0-win-x64.zip",
+    "sha256": "1c88f5d46112158d725c84f66d2bcfd6f97787264eb2419b605a07e171a74d93",
+    "generatedAtUtc": "2026-07-19T00:35:02.7970609Z"
+  },
+  "buildContract": {
+    "platform": "windows-x64",
+    "configuration": "Release",
+    "sourcePolicy": "Every first-party runtime must be built from the recorded committed source revision plus every checksum-pinned source patch declared for that runtime.",
+    "pathPolicy": "Release files must not contain personal, workspace, or workstation-specific absolute paths.",
+    "noticePolicy": "The archive must include the recorded third-party notices and license text."
+  },
+  "files": [
+    {
+      "id": "clip-to-ghost",
+      "kind": "runtime",
+      "archivePath": "tools/Clip-To-Ghost/ClipToGhost.exe",
+      "destinations": ["sites/tools.xjk.yt/Clip-To-Ghost/tools/ClipToGhost.exe"],
+      "sha256": "e0936ae95621adeb3f425a6f10b909800814f725b6e3fa462aadb4d78eb4f520",
+      "source": {
+        "repository": "https://github.com/st-AR-gazer/script-tm_Clip-To-Ghost",
+        "revision": "d1416eccd353fe3cd1feed65e956bcb78a82bc7f",
+        "project": "src/ClipToGhost.csproj"
+      }
+    },
+    {
+      "id": "embed-race-validation-ghost",
+      "kind": "runtime",
+      "archivePath": "tools/Embed-RaceValidationGhost/EmbedRaceValidationGhost.exe",
+      "destinations": ["sites/tools.xjk.yt/Embed-RaceValidationGhost/tools/EmbedRaceValidationGhost.exe"],
+      "sha256": "03f21deec1decab1457d2283c5a8cfc97e682188e6b4f2dc2319640941a876c0",
+      "source": {
+        "repository": "https://github.com/st-AR-gazer/script-tm_Embed-RaceValidationGhost-In-Map-File",
+        "revision": "19e2dbad43303045e65037fa1ce0972eea385242",
+        "project": "EmbedRaceValidationGhost.csproj"
+      }
+    },
+    {
+      "id": "replay-data-extractor",
+      "kind": "runtime",
+      "archivePath": "tools/ReplayDataExtractor/ReplayDataExtractor.exe",
+      "destinations": [
+        "sites/tools.xjk.yt/Embed-RaceValidationGhost/tools/ReplayDataExtractor.exe",
+        "sites/tools.xjk.yt/Extract-Replay-Data/tools/ReplayDataExtractor.exe"
+      ],
+      "sha256": "19345f954b59a6ccbe488f91981ff181715248beea608f2ba1d5e036ab7f7e55",
+      "source": {
+        "repository": "https://github.com/st-AR-gazer/script-tm_Extract-Replay-Data",
+        "revision": "05aebc626f3cc152b045c2bdcd7e8c67343fe936",
+        "project": "ReplayDataExtractor.csproj"
+      }
+    },
+    {
+      "id": "embedded-blocks-and-items-checker",
+      "kind": "runtime",
+      "archivePath": "tools/Embedded-Blocks-And-Items-Checker/EmbeddedBlocksAndItemsChecker.exe",
+      "destinations": ["sites/tools.xjk.yt/Embedded-Blocks-And-Items-Checker/tools/EmbeddedBlocksAndItemsChecker.exe"],
+      "sha256": "afe0aa780f563406f32ada77ead1b60ce2a9ad03b1186cdadea1dd669014325b",
+      "source": {
+        "repository": "https://github.com/st-AR-gazer/script-tm_Embedded-Blocks-And-Items-Checker",
+        "revision": "fde3a5641e6785c1a705cdad5094e88a6301f4c3",
+        "project": "tm_Embedded_Blocks_Items_Checker.csproj"
+      }
+    },
+    {
+      "id": "gbx-medal-time-modifier",
+      "kind": "runtime",
+      "archivePath": "tools/Gbx-Medal-Time-Modifier/GbxMedalTimeModifier.exe",
+      "destinations": ["sites/tools.xjk.yt/Gbx-Medal-Time-Modifier/tools/GbxMedalTimeModifier.exe"],
+      "sha256": "d340c129c8ddfeb7a24d87dde615b23ddf3a44177e3aaee8629510cbf952ddfc",
+      "source": {
+        "repository": "https://github.com/st-AR-gazer/script-tm_Gbx-Medal-Time-Modifier",
+        "revision": "707eac10e7c38b24a99980af142bc3ad3cd7142b",
+        "project": "GbxMedalTimeModifier.csproj"
+      }
+    },
+    {
+      "id": "map-validation-checker",
+      "kind": "runtime",
+      "archivePath": "tools/Map-Validation-Checker/MapValidationChecker.exe",
+      "destinations": ["sites/tools.xjk.yt/Map-Validation-Checker/tools/MapValidationChecker.exe"],
+      "sha256": "2def27b6e4c9839d1c76904f109ecc6edbafa43e5dbff4256f448f2d997067f6",
+      "source": {
+        "repository": "https://github.com/st-AR-gazer/script-tm_Map-Validation-Checker",
+        "revision": "81e436c3aff6773ffcb8b01eba68439acff317d0",
+        "project": "tm_Map-Validation-Checker.csproj"
+      }
+    },
+    {
+      "id": "strip-race-validation-ghost",
+      "kind": "runtime",
+      "archivePath": "tools/Strip-RaceValidationGhost/stripValidationReplay.exe",
+      "destinations": ["sites/tools.xjk.yt/Strip-RaceValidationGhost/tools/stripValidationReplay.exe"],
+      "sha256": "4334f3d2c303eac7cc40f417454b05ed42b41845d7469484ddd056d08ac118e4",
+      "source": {
+        "repository": "https://github.com/st-AR-gazer/script-tm_Strip-RaceValidationGhost",
+        "revision": "dec86bc39588e15e11924d4128be2d5871a671b3",
+        "project": "stripValidationReplay.csproj",
+        "patches": [
+          {
+            "path": "deploy/tool-runtime/patches/strip-race-validation-ghost-same-input-output.patch",
+            "sha256": "164bf3b170bfc89b4219954178139670460606d2624ff69dc6690c6972f028bd"
+          }
+        ]
+      }
+    },
+    {
+      "id": "strip-race-validation-ghost-lzo-runtime",
+      "kind": "native-dependency",
+      "archivePath": "tools/Strip-RaceValidationGhost/liblzo2.dll",
+      "destinations": ["sites/tools.xjk.yt/Strip-RaceValidationGhost/tools/liblzo2.dll"],
+      "sha256": "1e0c3b895a5e275b8cf1b9f59ea7f55dbc8563e947f345cdda0f9107d48edb55",
+      "source": {
+        "repository": "https://github.com/st-AR-gazer/script-tm_Strip-RaceValidationGhost",
+        "revision": "dec86bc39588e15e11924d4128be2d5871a671b3",
+        "project": "stripValidationReplay.csproj",
+        "originPackage": "GBX.NET.LZO",
+        "patches": [
+          {
+            "path": "deploy/tool-runtime/patches/strip-race-validation-ghost-same-input-output.patch",
+            "sha256": "164bf3b170bfc89b4219954178139670460606d2624ff69dc6690c6972f028bd"
+          }
+        ]
+      }
+    },
+    {
+      "id": "gbxlzo",
+      "kind": "third-party-runtime",
+      "archivePath": "tools/Strip-RaceValidationGhost/gbxlzo.exe",
+      "destinations": ["sites/tools.xjk.yt/Strip-RaceValidationGhost/tools/gbxlzo.exe"],
+      "sha256": "d19c6a15997ada1027cf18ae9c15e36ad919e4175a3a7591b7a3542d60ec0d09",
+      "source": {
+        "repository": "https://github.com/GreffMASTER/GBXLZO",
+        "revision": "25b2dbd8066840f9f2eaacf3e99c88639043890d",
+        "project": "src/main.c",
+        "version": "1.1.0",
+        "license": "GPL-2.0",
+        "releaseAsset": "https://github.com/GreffMASTER/GBXLZO/releases/download/1.1.0/GBXLZO_1.1.0_Win32_Linux64.zip"
+      }
+    },
+    {
+      "id": "underwater-map-converter",
+      "kind": "runtime",
+      "destinations": ["sites/tools.xjk.yt/Underwater-Map-Converter/tools/UnderwaterMapConverter.exe"],
+      "sha256": "459875fd2152ae4470b180f2fa0d46ed994abd6c88df8a76845652d59fc8715a",
+      "delivery": {
+        "type": "external-release",
+        "downloadUrl": "https://github.com/st-AR-gazer/script-tm_Underwater-Map-Converter/releases/download/v1.1/UnderwaterMapConverter.exe"
+      },
+      "source": {
+        "repository": "https://github.com/st-AR-gazer/script-tm_Underwater-Map-Converter",
+        "revision": "0f96d809f0275f8e27a5a03c303cebe993e8b18f",
+        "project": "src/UnderwaterMapConverter.csproj",
+        "version": "v1.1"
+      }
+    },
+    {
+      "id": "third-party-notices",
+      "kind": "notice",
+      "archivePath": "licenses/THIRD_PARTY_NOTICES.md",
+      "destinations": ["sites/tools.xjk.yt/.runtime-licenses/THIRD_PARTY_NOTICES.md"],
+      "sha256": "c0f3e05c71d3d82d2d89d17561d25fc57bcba32c52d283fcc20aaeb5331e864a",
+      "source": {
+        "path": "deploy/tool-runtime/notices/THIRD_PARTY_NOTICES.md"
+      }
+    },
+    {
+      "id": "gbxlzo-license",
+      "kind": "notice",
+      "archivePath": "licenses/GPL-2.0.txt",
+      "destinations": ["sites/tools.xjk.yt/.runtime-licenses/GPL-2.0.txt"],
+      "sha256": "8177f97513213526df2cf6184d8ff986c675afb514d4e68a404010521b880643",
+      "source": {
+        "repository": "https://github.com/GreffMASTER/GBXLZO",
+        "revision": "25b2dbd8066840f9f2eaacf3e99c88639043890d",
+        "path": "LICENSE"
+      }
+    },
+    {
+      "id": "gbx-net-lzo-license",
+      "kind": "notice",
+      "archivePath": "licenses/GPL-3.0.txt",
+      "destinations": ["sites/tools.xjk.yt/.runtime-licenses/GPL-3.0.txt"],
+      "sha256": "3972dc9744f6499f0f9b2dbf76696f2ae7ad8af9b23dde66d6af86c9dfb36986",
+      "source": {
+        "repository": "https://github.com/BigBang1112/gbx-net",
+        "package": "GBX.NET.LZO",
+        "version": "2.1.4",
+        "license": "GPL-3.0-or-later"
+      }
+    }
+  ]
+}

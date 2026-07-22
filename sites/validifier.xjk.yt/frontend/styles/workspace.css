@@ -1,0 +1,34 @@
+.lookup-panel,
+.submission-panel,
+.control-panel {
+  display: flex;
+  flex-direction: column;
+}
+
+.toolbar-stack {
+  flex-direction: column;
+  align-items: stretch;
+}
+
+.control-panel .actions {
+  margin-top: auto;
+}
+
+.empty-panel-compact {
+  min-height: 260px;
+  display: grid;
+  place-content: center;
+}
+
+.empty-panel-compact h3 {
+  margin-bottom: 0.4rem;
+  font-size: 1.05rem;
+}
+
+.submission-output-panel {
+  grid-auto-rows: max-content;
+}
+
+.submission-status-panel {
+  margin: 0;
+}

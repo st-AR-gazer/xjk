@@ -1,0 +1,210 @@
+<!doctype html>
+<html lang="en" data-accent="white" data-density="comfortable" data-motion="full">
+  <head>
+    <link rel="stylesheet" href="/shared/xjk-core/chrome-prepaint.css?v=2" data-xjk-chrome-prepaint />
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>learn.xjk.yt</title>
+    <meta name="description" content="Static Trackmania learning map for xjk.yt." />
+    <link rel="icon" href="./favicon.svg?v=2" type="image/svg+xml" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Condensed:wght@400;500;600;700&family=Inter:wght@400;500;600;700&family=Space+Mono:wght@400;700&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="./styles/foundation.css?v=2" />
+    <link rel="stylesheet" href="./styles/knowledge-map.css?v=2" />
+    <link rel="stylesheet" href="./styles/reader-tools.css?v=2" />
+    <link rel="stylesheet" href="./styles/article.css?v=2" />
+    <link rel="stylesheet" href="./styles/library-tree.css?v=2" />
+    <link rel="stylesheet" href="./styles/library-browser.css?v=2" />
+    <link rel="stylesheet" href="./styles/content-tools.css?v=2" />
+    <link rel="stylesheet" href="./styles/routes.css?v=2" />
+    <link rel="stylesheet" href="./styles/view-tools.css?v=2" />
+    <link rel="stylesheet" href="./styles/admin.css?v=2" />
+    <link rel="stylesheet" href="./styles/responsive.css?v=2" />
+  </head>
+  <body>
+    <svg class="learn-icon-sprite" aria-hidden="true" focusable="false" width="0" height="0">
+      <symbol id="learn-icon-map" viewBox="0 0 24 24">
+        <path d="M9 18 3 21V6l6-3 6 3 6-3v15l-6 3-6-3Z"></path>
+        <path d="M9 3v15M15 6v15"></path>
+      </symbol>
+      <symbol id="learn-icon-library" viewBox="0 0 24 24">
+        <path d="M4 19.5V5.8A2.8 2.8 0 0 1 6.8 3H20v16H6.5A2.5 2.5 0 0 0 4 21.5Z"></path>
+        <path d="M8 7h8M8 11h6"></path>
+      </symbol>
+      <symbol id="learn-icon-folder" viewBox="0 0 24 24">
+        <path d="M3.5 6.5h6l2 2h9v9.5a2 2 0 0 1-2 2h-15Z"></path>
+        <path d="M3.5 6.5v-1a1.5 1.5 0 0 1 1.5-1.5h4.4l2 2H19a1.5 1.5 0 0 1 1.5 1.5v1"></path>
+      </symbol>
+      <symbol id="learn-icon-folder-open" viewBox="0 0 24 24">
+        <path d="M3.5 8.5v-3A1.5 1.5 0 0 1 5 4h4.4l2 2H19a1.5 1.5 0 0 1 1.5 1.5v1"></path>
+        <path d="M2.8 9h18.8l-2.2 9.2A2.3 2.3 0 0 1 17.2 20H4.4a1.7 1.7 0 0 1-1.6-2.1Z"></path>
+      </symbol>
+      <symbol id="learn-icon-file-text" viewBox="0 0 24 24">
+        <path d="M6 3.5h8l4 4V20a1.5 1.5 0 0 1-1.5 1.5h-9A1.5 1.5 0 0 1 6 20Z"></path>
+        <path d="M14 3.5V8h4M9 12h6M9 16h6"></path>
+      </symbol>
+      <symbol id="learn-icon-tools" viewBox="0 0 24 24">
+        <path d="M14.7 6.3a4 4 0 0 0 5 5L11.5 19.5a2.1 2.1 0 0 1-3-3L16.7 8.3a4 4 0 0 1-2-2Z"></path>
+        <path d="m6 6 3 3"></path>
+      </symbol>
+      <symbol id="learn-icon-profile" viewBox="0 0 24 24">
+        <circle cx="12" cy="8" r="3.5"></circle>
+        <path d="M5 20a7 7 0 0 1 14 0"></path>
+      </symbol>
+      <symbol id="learn-icon-settings" viewBox="0 0 24 24">
+        <path
+          d="M12 3v3M12 18v3M4.8 6.8l2.1 2.1M17.1 17.1l2.1 2.1M3 12h3M18 12h3M4.8 17.2l2.1-2.1M17.1 6.9l2.1-2.1"
+        ></path>
+        <circle cx="12" cy="12" r="3.2"></circle>
+      </symbol>
+      <symbol id="learn-icon-chevron-left" viewBox="0 0 24 24">
+        <path d="m15 18-6-6 6-6"></path>
+      </symbol>
+      <symbol id="learn-icon-chevron-right" viewBox="0 0 24 24">
+        <path d="m9 18 6-6-6-6"></path>
+      </symbol>
+      <symbol id="learn-icon-lock" viewBox="0 0 24 24">
+        <rect x="5" y="10" width="14" height="10" rx="2"></rect>
+        <path d="M8 10V7a4 4 0 0 1 8 0v3"></path>
+      </symbol>
+      <symbol id="learn-icon-admin" viewBox="0 0 24 24">
+        <path d="M12 3 20 6v5c0 5-3.2 8.7-8 10-4.8-1.3-8-5-8-10V6Z"></path>
+        <path d="m9 12 2 2 4-5"></path>
+      </symbol>
+      <symbol id="learn-icon-help" viewBox="0 0 24 24">
+        <circle cx="12" cy="12" r="9"></circle>
+        <path d="M9.8 9a2.5 2.5 0 1 1 3.7 2.2c-.9.5-1.5 1.1-1.5 2.3"></path>
+        <path d="M12 17h.01"></path>
+      </symbol>
+      <symbol id="learn-icon-log-out" viewBox="0 0 24 24">
+        <path d="M10 5H6a2 2 0 0 0-2 2v10a2 2 0 0 0 2 2h4"></path>
+        <path d="M15 8l4 4-4 4M19 12H9"></path>
+      </symbol>
+      <symbol id="learn-icon-log-in" viewBox="0 0 24 24">
+        <path d="M14 5h4a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2h-4"></path>
+        <path d="m9 8-4 4 4 4M5 12h10"></path>
+      </symbol>
+      <symbol id="learn-icon-search" viewBox="0 0 24 24">
+        <circle cx="11" cy="11" r="7"></circle>
+        <path d="m16.5 16.5 4 4"></path>
+      </symbol>
+      <symbol id="learn-icon-density" viewBox="0 0 24 24">
+        <path d="M4 7h16M4 12h16M4 17h16"></path>
+        <path d="M8 5v4M16 10v4M11 15v4"></path>
+      </symbol>
+      <symbol id="learn-icon-close" viewBox="0 0 24 24">
+        <path d="M6 6l12 12M18 6 6 18"></path>
+      </symbol>
+      <symbol id="learn-icon-check" viewBox="0 0 24 24">
+        <path d="m5 12 4 4L19 6"></path>
+      </symbol>
+      <symbol id="learn-icon-circle" viewBox="0 0 24 24">
+        <circle cx="12" cy="12" r="7"></circle>
+      </symbol>
+      <symbol id="learn-icon-bookmark" viewBox="0 0 24 24">
+        <path d="M7 4h10v16l-5-3-5 3Z"></path>
+      </symbol>
+      <symbol id="learn-icon-bookmark-plus" viewBox="0 0 24 24">
+        <path d="M7 4h10v16l-5-3-5 3Z"></path>
+        <path d="M12 8v6M9 11h6"></path>
+      </symbol>
+      <symbol id="learn-icon-link" viewBox="0 0 24 24">
+        <path d="M10 13a5 5 0 0 0 7.1.2l2.1-2.1a5 5 0 0 0-7.1-7.1L10.9 5.2"></path>
+        <path d="M14 11a5 5 0 0 0-7.1-.2l-2.1 2.1a5 5 0 0 0 7.1 7.1l1.2-1.2"></path>
+      </symbol>
+      <symbol id="learn-icon-message" viewBox="0 0 24 24">
+        <path d="M4 5h16v11H8l-4 4Z"></path>
+        <path d="M8 9h8M8 13h5"></path>
+      </symbol>
+      <symbol id="learn-icon-zoom-in" viewBox="0 0 24 24">
+        <circle cx="10.5" cy="10.5" r="6.5"></circle>
+        <path d="m15.5 15.5 4.5 4.5M10.5 7.5v6M7.5 10.5h6"></path>
+      </symbol>
+      <symbol id="learn-icon-zoom-out" viewBox="0 0 24 24">
+        <circle cx="10.5" cy="10.5" r="6.5"></circle>
+        <path d="m15.5 15.5 4.5 4.5M7.5 10.5h6"></path>
+      </symbol>
+      <symbol id="learn-icon-reset" viewBox="0 0 24 24">
+        <path d="M5 12a7 7 0 1 0 2-4.9"></path>
+        <path d="M5 5v6h6"></path>
+      </symbol>
+      <symbol id="learn-icon-waves" viewBox="0 0 24 24">
+        <path d="M3 9c2 0 2-1.5 4-1.5S9 9 11 9s2-1.5 4-1.5S17 9 21 9"></path>
+        <path d="M3 14c2 0 2-1.5 4-1.5S9 14 11 14s2-1.5 4-1.5S17 14 21 14"></path>
+        <path d="M3 19c2 0 2-1.5 4-1.5S9 19 11 19s2-1.5 4-1.5S17 19 21 19"></path>
+      </symbol>
+      <symbol id="learn-icon-car" viewBox="0 0 24 24">
+        <path d="M4 14h16l-1.8-5.1A3 3 0 0 0 15.4 7H8.6a3 3 0 0 0-2.8 1.9Z"></path>
+        <path d="M5 14v4M19 14v4M7 18h10"></path>
+        <circle cx="8" cy="18" r="1.7"></circle>
+        <circle cx="16" cy="18" r="1.7"></circle>
+      </symbol>
+      <symbol id="learn-icon-snowflake" viewBox="0 0 24 24">
+        <path d="M12 3v18M5 7l14 10M19 7 5 17"></path>
+        <path d="m9 5 3 3 3-3M9 19l3-3 3 3"></path>
+      </symbol>
+      <symbol id="learn-icon-spark" viewBox="0 0 24 24">
+        <path d="M13 2 5 13h6l-1 9 9-12h-6Z"></path>
+      </symbol>
+      <symbol id="learn-icon-sidebar" viewBox="0 0 24 24">
+        <rect x="3" y="4" width="18" height="16" rx="2"></rect>
+        <path d="M9 4v16M13 9l3 3-3 3"></path>
+      </symbol>
+      <symbol id="learn-icon-list" viewBox="0 0 24 24">
+        <path d="M8 6h13M8 12h13M8 18h13"></path>
+        <path d="M3 6h.01M3 12h.01M3 18h.01"></path>
+      </symbol>
+      <symbol id="learn-icon-menu" viewBox="0 0 24 24">
+        <path d="M4 7h16M4 12h16M4 17h16"></path>
+      </symbol>
+      <symbol id="learn-icon-pin" viewBox="0 0 24 24">
+        <path d="m14 4 6 6-4 1.5-4.5 4.5-.5 4-2-2 4-4.5L14.5 8Z"></path>
+        <path d="m4 20 5-5"></path>
+      </symbol>
+      <symbol id="learn-icon-copy" viewBox="0 0 24 24">
+        <rect x="8" y="8" width="11" height="11" rx="2"></rect>
+        <path d="M5 15H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v1"></path>
+      </symbol>
+      <symbol id="learn-icon-code" viewBox="0 0 24 24">
+        <path d="m8 9-4 3 4 3M16 9l4 3-4 3M13 5l-2 14"></path>
+      </symbol>
+      <symbol id="learn-icon-warning" viewBox="0 0 24 24">
+        <path d="M12 3 2 20h20Z"></path>
+        <path d="M12 9v5M12 17h.01"></path>
+      </symbol>
+      <symbol id="learn-icon-image" viewBox="0 0 24 24">
+        <rect x="3" y="5" width="18" height="14" rx="2"></rect>
+        <circle cx="8" cy="10" r="1.5"></circle>
+        <path d="m21 16-5.5-5.5L7 19"></path>
+      </symbol>
+    </svg>
+    <div class="learn-shell" id="learn-shell">
+      <header class="learn-topbar" aria-label="Learn workspace">
+        <div class="learn-topbar-context">
+          <span class="learn-eyebrow">learn.xjk.yt</span>
+          <strong id="topbar-title">/</strong>
+        </div>
+        <div class="learn-topbar-actions" data-xjk-topbar-actions>
+          <div data-xjk-account-widget-slot="topbar" aria-label="xjk account"></div>
+        </div>
+      </header>
+
+      <main id="view-root" class="learn-view-root" tabindex="-1">
+        <section class="learn-loading">
+          <p class="learn-eyebrow">learn.xjk.yt</p>
+          <h1>Loading map</h1>
+        </section>
+      </main>
+    </div>
+
+    <div id="toast" class="learn-toast" role="status" aria-live="polite"></div>
+
+    <script type="module" src="./scripts/app.js?v=2"></script>
+    <script type="module" src="/shared/xjk-core/sidenav-boot.js?v=2" data-xjk-sidenav="learn"></script>
+    <script type="module" src="/shared/xjk-core/topbar-loader.js?v=2" data-xjk-topbar="learn"></script>
+  </body>
+</html>

@@ -1,0 +1,244 @@
+.learn-view-root {
+  overflow: auto;
+  scrollbar-color: rgba(255, 255, 255, 0.22) transparent;
+}
+
+.learn-view-root .learn-view,
+.learn-view-root .lesson-view {
+  min-height: 100%;
+  padding: 20px;
+}
+
+.learn-view-root .learn-view__head {
+  display: flex;
+  align-items: end;
+  justify-content: space-between;
+  gap: 18px;
+  padding-bottom: 16px;
+  border-bottom: 1px solid var(--learn-line);
+}
+
+.learn-view-root .learn-view__head h1,
+.learn-view-root .lesson-header h1 {
+  margin: 6px 0 0;
+  font-family: "Chakra Petch", "Arial Narrow", system-ui, sans-serif;
+  font-size: 58px;
+  line-height: 1;
+}
+
+.learn-view-root .learn-view__head p,
+.learn-view-root .lesson-description,
+.learn-view-root .library-card p,
+.learn-view-root .tool-panel__head p {
+  color: var(--learn-muted);
+  line-height: 1.6;
+}
+
+.learn-view-root .eyebrow,
+.learn-view-root .lesson-kicker {
+  color: var(--learn-muted);
+  font-family: "Space Mono", Consolas, monospace;
+  font-size: 11px;
+  text-transform: uppercase;
+}
+
+.learn-view-root .lesson-view,
+.learn-view-root .library-card,
+.learn-view-root .tool-panel,
+.learn-view-root .markdown-preview,
+.learn-view-root .discord-preview {
+  border: 1px solid var(--learn-line);
+  border-radius: var(--learn-radius);
+  background: linear-gradient(180deg, rgba(18, 18, 18, 0.88), rgba(6, 6, 6, 0.9));
+  box-shadow:
+    var(--learn-shadow),
+    inset 0 1px 0 rgba(255, 255, 255, 0.035);
+}
+
+.learn-view-root .lesson-header,
+.learn-view-root .tool-panel__head,
+.learn-view-root .library-group__head {
+  display: flex;
+  align-items: start;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.learn-view-root .lesson-title-row,
+.learn-view-root .lesson-meta-list,
+.learn-view-root .library-stats,
+.learn-view-root .tool-metrics,
+.learn-view-root .library-grid,
+.learn-view-root .lesson-related-grid,
+.learn-view-root .tools-tabs,
+.learn-view-root .library-controls,
+.learn-view-root .markdown-playground,
+.learn-view-root .discord-editor {
+  display: grid;
+  gap: 12px;
+}
+
+.learn-view-root .lesson-title-row {
+  grid-template-columns: auto minmax(0, 1fr);
+}
+.learn-view-root .lesson-meta-list,
+.learn-view-root .library-stats,
+.learn-view-root .tool-metrics {
+  grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+  margin: 0;
+}
+.learn-view-root .library-grid,
+.learn-view-root .lesson-related-grid,
+.learn-view-root .tools-tabs {
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+}
+.learn-view-root .library-controls {
+  grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
+}
+.learn-view-root .markdown-playground,
+.learn-view-root .discord-editor {
+  grid-template-columns: minmax(260px, 1fr) minmax(260px, 1fr);
+}
+
+.learn-view-root .lesson-meta-list div,
+.learn-view-root .library-stats div,
+.learn-view-root .tool-metrics div,
+.learn-view-root .lesson-related-card,
+.learn-view-root .lesson-nav-card {
+  border: 1px solid var(--learn-line);
+  border-radius: var(--learn-radius);
+  background: rgba(255, 255, 255, 0.035);
+  padding: 12px;
+}
+
+.learn-view-root .lesson-body {
+  max-width: 820px;
+  margin-top: 28px;
+}
+
+.learn-view-root .lesson-body p,
+.learn-view-root .lesson-body li,
+.learn-view-root .markdown-preview p,
+.learn-view-root .markdown-preview li {
+  color: #d8d8d8;
+  line-height: 1.72;
+}
+
+.learn-view-root .lesson-body h2,
+.learn-view-root .lesson-body h3,
+.learn-view-root .markdown-preview h2,
+.learn-view-root .markdown-preview h3 {
+  margin: 28px 0 10px;
+  color: var(--learn-accent);
+  font-size: 15px;
+  text-transform: uppercase;
+}
+
+.learn-view-root .lesson-body code,
+.learn-view-root .markdown-preview code,
+.learn-view-root .lesson-code pre,
+.learn-view-root .markdown-preview pre,
+.learn-view-root .manifest-export {
+  border: 1px solid var(--learn-line);
+  border-radius: var(--learn-radius);
+  background: rgba(0, 0, 0, 0.5);
+  color: var(--learn-text);
+}
+
+.learn-view-root .lesson-code pre,
+.learn-view-root .markdown-preview pre {
+  padding: 14px;
+  overflow: auto;
+}
+
+.learn-view-root input,
+.learn-view-root select,
+.learn-view-root textarea,
+.learn-view-root button {
+  border: 1px solid var(--learn-line);
+  border-radius: var(--learn-radius);
+  background: rgba(255, 255, 255, 0.035);
+  color: var(--learn-text);
+}
+
+.learn-view-root input,
+.learn-view-root select,
+.learn-view-root textarea {
+  min-height: 36px;
+  padding: 8px 10px;
+}
+.learn-view-root button {
+  min-height: 36px;
+  padding: 0 11px;
+}
+
+.learn-view-root .tool-panel {
+  padding: 24px;
+}
+.learn-view-root .tool-chart {
+  min-height: 190px;
+  border: 1px solid var(--learn-line);
+  border-radius: var(--learn-radius);
+  background: #070707;
+  padding: 12px;
+}
+
+.learn-view-root .tool-chart svg {
+  width: 100%;
+  height: 190px;
+  display: block;
+}
+.learn-view-root .tool-chart__line,
+.learn-view-root .ghost-line,
+.learn-view-root .input-steer-line {
+  fill: none;
+  stroke-width: 3;
+}
+.learn-view-root .tool-chart__line--ghost {
+  stroke: var(--learn-muted);
+}
+.learn-view-root .tool-chart__line--you,
+.learn-view-root .tool-chart__line--speed {
+  stroke: var(--learn-accent);
+}
+.learn-view-root .tool-chart__line--steer {
+  stroke: var(--learn-success);
+}
+.learn-view-root .tool-chart__axis {
+  stroke: rgba(255, 255, 255, 0.22);
+}
+.learn-view-root .tool-chart__marker {
+  stroke: var(--learn-amber);
+  stroke-width: 2;
+}
+
+.learn-view-root .timeline-strips {
+  display: grid;
+  grid-template-columns: repeat(24, minmax(0, 1fr));
+  gap: 3px;
+}
+
+.learn-view-root .timeline-strips span {
+  height: calc(18px + var(--level, 0.5) * 30px);
+  align-self: end;
+  border-radius: 3px;
+  background: rgba(255, 255, 255, 0.12);
+}
+
+.learn-view-root .timeline-strips .is-active {
+  background: var(--learn-accent);
+}
+.learn-view-root .tools-tabs button[aria-pressed="true"] {
+  border-color: var(--learn-line-strong);
+  color: var(--learn-accent);
+}
+.learn-view-root .markdown-playground textarea,
+.learn-view-root .manifest-export {
+  min-height: 300px;
+  font-family: "Space Mono", Consolas, monospace;
+}
+.learn-view-root .markdown-preview,
+.learn-view-root .discord-preview {
+  min-height: 300px;
+  padding: 16px;
+}

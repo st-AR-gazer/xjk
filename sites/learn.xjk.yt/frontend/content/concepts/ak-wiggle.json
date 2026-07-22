@@ -1,0 +1,8 @@
+{
+  "title": "AK Wiggle",
+  "area": "inputs",
+  "type": "technique",
+  "summary": "A steering rhythm using action keys or controlled steering values to change speed loss or acceleration behavior.",
+  "tags": ["ak", "wiggle", "inputs"],
+  "relatedConcepts": ["steering-rhythm", "penalty-surfaces"]
+}

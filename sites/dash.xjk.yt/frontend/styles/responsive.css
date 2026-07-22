@@ -1,0 +1,106 @@
+/* ── Utilities ─────────────────────────────────── */
+
+.muted {
+  color: var(--text-muted);
+}
+
+h2 {
+  margin: 0;
+  font-size: 15px;
+  font-weight: 500;
+  color: var(--text-main);
+}
+
+/* ── Responsive ────────────────────────────────── */
+
+@media (max-width: 980px) {
+  .stat-strip-row {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 680px) {
+  .app {
+    padding: 12px 14px 32px;
+  }
+
+  .topbar {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 8px;
+  }
+
+  .toolbar {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .toolbar label {
+    width: 100%;
+  }
+
+  .toolbar select {
+    width: 100%;
+  }
+
+  .tab-btn {
+    padding: 8px 11px;
+    font-size: 11px;
+  }
+
+  .stat-strip-stats {
+    gap: 8px 16px;
+  }
+
+  .stat {
+    min-width: 42%;
+  }
+
+  .stat-strip-row {
+    grid-template-columns: 1fr;
+  }
+
+  .errors-toolbar {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .errors-toolbar label {
+    width: 100%;
+  }
+
+  .logs-toolbar {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .logs-toolbar label {
+    width: 100%;
+  }
+
+  .altered-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .tracker-priority-row {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .tracker-priority-controls {
+    width: 100%;
+  }
+
+  .stat-strip-note {
+    display: none;
+  }
+
+  .sub-tab-btn {
+    padding: 6px 10px;
+    font-size: 10px;
+  }
+
+  .drawer-panel {
+    width: 100vw;
+  }
+}

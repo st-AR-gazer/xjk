@@ -1,0 +1,8 @@
+{
+  "title": "Vehicle Stability",
+  "area": "grip-contact",
+  "type": "concept",
+  "summary": "How strongly a car resists rotation, aligns itself, or stays controllable in awkward states.",
+  "tags": ["control", "stability"],
+  "relatedConcepts": ["air-control", "ledge-grab"]
+}

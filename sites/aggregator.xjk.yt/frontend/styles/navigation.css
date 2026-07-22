@@ -1,0 +1,186 @@
+/* Main + hero */
+.agg-main {
+  width: min(100%, 1540px);
+  margin: 0 auto;
+  padding: 18px 22px 12px;
+  display: grid;
+  gap: 10px;
+}
+
+.agg-hero {
+  position: relative;
+  isolation: isolate;
+  display: grid;
+  align-items: center;
+  justify-items: center;
+  min-height: 96px;
+}
+
+.agg-hero::before,
+.agg-hero::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: min(42%, 520px);
+  z-index: -1;
+  pointer-events: none;
+  opacity: 0.72;
+  background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 560 96'%3E%3Cg fill='none' stroke='%23ef4444' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M6 10H96L216 44' stroke-opacity='0.34' stroke-width='2'/%3E%3Cpath d='M6 29H120L218 46' stroke-opacity='0.46' stroke-width='2.5'/%3E%3Cpath d='M6 48H219' stroke-opacity='0.62' stroke-width='3'/%3E%3Cpath d='M6 67H120L218 50' stroke-opacity='0.46' stroke-width='2.5'/%3E%3Cpath d='M6 86H96L216 52' stroke-opacity='0.34' stroke-width='2'/%3E%3Cpath d='M241 48H310' stroke-opacity='0.6' stroke-width='3.5'/%3E%3Cpath d='M310 48H356' stroke-opacity='0.4' stroke-width='2.5' stroke-dasharray='9 11'/%3E%3C/g%3E%3Cg fill='%23020406' stroke='%23ef4444'%3E%3Ccircle cx='96' cy='10' r='3.5' stroke-opacity='0.3' stroke-width='2.5'/%3E%3Ccircle cx='120' cy='29' r='4' stroke-opacity='0.42' stroke-width='2.5'/%3E%3Ccircle cx='120' cy='67' r='4' stroke-opacity='0.42' stroke-width='2.5'/%3E%3Ccircle cx='96' cy='86' r='3.5' stroke-opacity='0.3' stroke-width='2.5'/%3E%3Ccircle cx='230' cy='48' r='9' stroke-opacity='0.78' stroke-width='3.5'/%3E%3Ccircle cx='310' cy='48' r='5' stroke-opacity='0.5' stroke-width='3'/%3E%3Ccircle cx='356' cy='48' r='4.5' stroke-opacity='0.4' stroke-width='2.5' stroke-dasharray='3 3'/%3E%3C/g%3E%3Ccircle cx='230' cy='48' r='3' fill='%23ef4444' fill-opacity='.85'/%3E%3C/svg%3E")
+    left center / auto 100% no-repeat;
+  -webkit-mask-image: linear-gradient(90deg, #000 0 56%, transparent 88%);
+  mask-image: linear-gradient(90deg, #000 0 56%, transparent 88%);
+}
+
+.agg-hero::before {
+  left: 0;
+}
+
+.agg-hero::after {
+  right: 0;
+  transform: scaleX(-1);
+}
+
+.hero-copy {
+  display: grid;
+  justify-items: center;
+  gap: 3px;
+  text-align: center;
+}
+
+.agg-hero h1 {
+  font-family: "Space Mono", ui-monospace, monospace;
+  font-size: clamp(28px, 2.8vw, 38px);
+  font-weight: 700;
+  line-height: 1.02;
+  letter-spacing: 0.04em;
+}
+
+.agg-hero h1 .hero-accent {
+  color: var(--accent);
+}
+
+.hero-copy p {
+  margin-top: 7px;
+  color: var(--text-muted);
+  font-family: "Space Mono", ui-monospace, monospace;
+  font-size: 13px;
+}
+
+/* Tab rail: subway stops */
+.agg-rail {
+  position: relative;
+  display: flex;
+  align-items: center;
+  width: 100%;
+  min-height: 44px;
+  padding: 0 clamp(40px, 8vw, 120px);
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+
+.agg-rail::before {
+  content: "";
+  position: absolute;
+  top: 21px;
+  right: 0;
+  left: 0;
+  height: 2px;
+  background: linear-gradient(
+    90deg,
+    rgba(239, 68, 68, 0.32),
+    rgba(239, 68, 68, 0.5) 18%,
+    rgba(239, 68, 68, 0.28) 50%,
+    rgba(239, 68, 68, 0.5) 82%,
+    rgba(239, 68, 68, 0.32)
+  );
+  opacity: 0.7;
+  pointer-events: none;
+}
+
+.agg-rail::-webkit-scrollbar {
+  display: none;
+}
+
+.rail-stop {
+  position: relative;
+  display: grid;
+  grid-template-columns: auto minmax(0, max-content);
+  justify-content: center;
+  align-items: center;
+  gap: 10px;
+  flex: 1 0 120px;
+  min-height: 44px;
+  padding: 0 10px;
+  border: 0;
+  background: transparent;
+  color: var(--text-muted);
+  cursor: pointer;
+}
+
+.rail-stop span {
+  position: relative;
+  z-index: 1;
+  width: 13px;
+  height: 13px;
+  border: 3px solid #8f9498;
+  border-radius: 50%;
+  background: var(--bg-main);
+  transition:
+    border-color 150ms ease,
+    box-shadow 150ms ease,
+    transform 150ms ease;
+}
+
+.rail-stop span::after {
+  content: "";
+  position: absolute;
+  inset: 3px;
+  border-radius: 50%;
+  background: transparent;
+}
+
+.rail-stop strong {
+  position: relative;
+  z-index: 2;
+  padding: 0 7px;
+  background: var(--bg-main);
+  box-shadow: 0 0 0 3px var(--bg-main);
+  font-size: 14px;
+  font-weight: 500;
+  line-height: 1.18;
+  white-space: nowrap;
+}
+
+.rail-stop:hover {
+  color: #ffffff;
+}
+
+.rail-stop.is-active {
+  color: #ffffff;
+}
+
+.rail-stop.is-active span {
+  border-color: var(--accent);
+  box-shadow:
+    0 0 0 3px var(--bg-main),
+    0 0 0 5px rgba(239, 68, 68, 0.28),
+    0 0 14px rgba(239, 68, 68, 0.22);
+  transform: scale(1.1);
+}
+
+.rail-stop.is-active span::after {
+  background: var(--accent);
+  box-shadow: 0 0 8px var(--accent-soft);
+}
+
+.rail-stop.is-active strong::after {
+  content: "";
+  position: absolute;
+  right: 0;
+  bottom: -10px;
+  left: 0;
+  height: 2px;
+  background: linear-gradient(90deg, transparent, var(--accent), transparent);
+  opacity: 0.95;
+}

@@ -1,0 +1,8 @@
+{
+  "title": "Loops",
+  "area": "block-geometry",
+  "type": "geometry",
+  "summary": "Loop blocks where speed, gravity, contact, and line angle decide whether the car stays attached.",
+  "tags": ["loop", "geometry"],
+  "relatedConcepts": ["wallrides", "speed-retention"]
+}

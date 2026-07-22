@@ -1,0 +1,3619 @@
+{
+  "version": 1,
+  "sources": {
+    "registry": "sites/shared/xjk-core/site-registry.js",
+    "tools": "sites/tools.xjk.yt/Tools-Hub/data/tools.json",
+    "plugins": "sites/plugins.xjk.yt/Plugins-Hub/data/plugins.json",
+    "learn": "sites/learn.xjk.yt/frontend/content/index.json",
+    "archive": "sites/archive.xjk.yt/frontend/data/archive.json"
+  },
+  "counts": {
+    "sites": 12,
+    "destinations": 37,
+    "tools": 9,
+    "plugins": 16,
+    "learn": 56,
+    "archive": 20
+  },
+  "entries": [
+    {
+      "id": "site:xjk",
+      "kind": "site",
+      "title": "xjk",
+      "subtitle": "Main Hub",
+      "description": "Central entry point for xjk Trackmania projects.",
+      "siteId": "xjk",
+      "siteLabel": "xjk",
+      "section": "Core",
+      "path": "/",
+      "keywords": [
+        "hub",
+        "home",
+        "main",
+        "core",
+        "xjk.yt"
+      ],
+      "aliases": [
+        "home",
+        "main",
+        "www.xjk.yt"
+      ],
+      "priority": 100
+    },
+    {
+      "id": "site:account",
+      "kind": "site",
+      "title": "Account",
+      "subtitle": "account.xjk.yt",
+      "description": "Shared identity, session, and account preferences.",
+      "siteId": "account",
+      "siteLabel": "Account",
+      "section": "Core",
+      "path": "/",
+      "keywords": [
+        "account",
+        "login",
+        "auth",
+        "identity",
+        "profile",
+        "core",
+        "account.xjk.yt"
+      ],
+      "aliases": [
+        "profile",
+        "identity"
+      ],
+      "priority": 70
+    },
+    {
+      "id": "site:altered",
+      "kind": "site",
+      "title": "Altered",
+      "subtitle": "altered.xjk.yt",
+      "description": "Altered-related projects and experiments.",
+      "siteId": "altered",
+      "siteLabel": "Altered",
+      "section": "Community",
+      "path": "/",
+      "keywords": [
+        "altered",
+        "maps",
+        "rankings",
+        "bannerbuilder",
+        "community",
+        "altered.xjk.yt"
+      ],
+      "aliases": [
+        "alterednadeo.xjk.yt"
+      ],
+      "priority": 70
+    },
+    {
+      "id": "site:tools",
+      "kind": "site",
+      "title": "Tools",
+      "subtitle": "tools.xjk.yt",
+      "description": "Trackmania utilities and conversion tools.",
+      "siteId": "tools",
+      "siteLabel": "Tools",
+      "section": "Utilities",
+      "path": "/",
+      "keywords": [
+        "tools",
+        "gbx",
+        "ghost",
+        "conversion",
+        "validation",
+        "utilities",
+        "tools.xjk.yt"
+      ],
+      "aliases": [],
+      "priority": 70
+    },
+    {
+      "id": "site:validifier",
+      "kind": "site",
+      "title": "Validifier",
+      "subtitle": "validifier.xjk.yt",
+      "description": "Replay verification lookups, submission flow, and the public verification API.",
+      "siteId": "validifier",
+      "siteLabel": "Validifier",
+      "section": "Data",
+      "path": "/",
+      "keywords": [
+        "validifier",
+        "verification",
+        "replay",
+        "records",
+        "api",
+        "data",
+        "validifier.xjk.yt"
+      ],
+      "aliases": [],
+      "priority": 70
+    },
+    {
+      "id": "site:cotd",
+      "kind": "site",
+      "title": "COTD",
+      "subtitle": "cotd.xjk.yt",
+      "description": "Daily Cup of the Day style snapshots for the site and plugin.",
+      "siteId": "cotd",
+      "siteLabel": "COTD",
+      "section": "Data",
+      "path": "/",
+      "keywords": [
+        "cotd",
+        "totd",
+        "daily",
+        "maps",
+        "archive",
+        "snapshots",
+        "data",
+        "cotd.xjk.yt"
+      ],
+      "aliases": [
+        "totd"
+      ],
+      "priority": 70
+    },
+    {
+      "id": "site:learn",
+      "kind": "site",
+      "title": "Learn",
+      "subtitle": "learn.xjk.yt",
+      "description": "Notes, guides, and references.",
+      "siteId": "learn",
+      "siteLabel": "Learn",
+      "section": "Learning",
+      "path": "/",
+      "keywords": [
+        "learn",
+        "guides",
+        "notes",
+        "knowledge",
+        "tutorials",
+        "learning",
+        "learn.xjk.yt"
+      ],
+      "aliases": [],
+      "priority": 70
+    },
+    {
+      "id": "site:trackers",
+      "kind": "site",
+      "title": "Trackers",
+      "subtitle": "Trackers Hub",
+      "description": "Hub for the leaderboard, displayname, and club tracker runtimes.",
+      "siteId": "trackers",
+      "siteLabel": "Trackers",
+      "section": "Data",
+      "path": "/",
+      "keywords": [
+        "trackers",
+        "leaderboard",
+        "wr",
+        "displayname",
+        "club",
+        "tracking",
+        "data",
+        "trackers.xjk.yt"
+      ],
+      "aliases": [
+        "tracker",
+        "tracker.xjk.yt",
+        "tracker-displayname.xjk.yt",
+        "tracker-club.xjk.yt"
+      ],
+      "priority": 70
+    },
+    {
+      "id": "site:plugins",
+      "kind": "site",
+      "title": "Plugins",
+      "subtitle": "plugins.xjk.yt",
+      "description": "Catalog of your plugins and their publish status.",
+      "siteId": "plugins",
+      "siteLabel": "Plugins",
+      "section": "Creation",
+      "path": "/",
+      "keywords": [
+        "plugins",
+        "openplanet",
+        "catalog",
+        "publish",
+        "creation",
+        "plugins.xjk.yt"
+      ],
+      "aliases": [],
+      "priority": 70
+    },
+    {
+      "id": "site:archive",
+      "kind": "site",
+      "title": "Archive",
+      "subtitle": "Archive Hub",
+      "description": "Archived Nadeo releases grouped by game, with downloadable files and notes.",
+      "siteId": "archive",
+      "siteLabel": "Archive",
+      "section": "Learning",
+      "path": "/",
+      "keywords": [
+        "archive",
+        "nadeo",
+        "downloads",
+        "history",
+        "learning",
+        "archive.xjk.yt"
+      ],
+      "aliases": [],
+      "priority": 70
+    },
+    {
+      "id": "site:aggregator",
+      "kind": "site",
+      "title": "Aggregator",
+      "subtitle": "aggregator.xjk.yt",
+      "description": "Maps, names, club snapshots, and tracker events.",
+      "siteId": "aggregator",
+      "siteLabel": "Aggregator",
+      "section": "Data",
+      "path": "/",
+      "keywords": [
+        "aggregator",
+        "cache",
+        "api",
+        "data",
+        "aggregator.xjk.yt"
+      ],
+      "aliases": [],
+      "priority": 70
+    },
+    {
+      "id": "site:console",
+      "kind": "site",
+      "title": "Console",
+      "subtitle": "console.xjk.yt",
+      "description": "Companion tools that bring PC-style quality-of-life features to Trackmania on PS4, PS5, and Xbox.",
+      "siteId": "console",
+      "siteLabel": "Console",
+      "section": "Console",
+      "path": "/",
+      "keywords": [
+        "console",
+        "ps4",
+        "ps5",
+        "xbox",
+        "controller",
+        "qol",
+        "bingo",
+        "companion",
+        "console.xjk.yt"
+      ],
+      "aliases": [
+        "bingo.xjk.yt"
+      ],
+      "priority": 70
+    },
+    {
+      "id": "destination:account:profile",
+      "kind": "destination",
+      "title": "Account Profile",
+      "subtitle": "Account",
+      "description": "Open your shared xjk identity and Trackmania profile.",
+      "siteId": "account",
+      "siteLabel": "Account",
+      "section": "Account",
+      "path": "/",
+      "hash": "#overview",
+      "keywords": [
+        "account",
+        "profile",
+        "identity",
+        "trackmania",
+        "login"
+      ],
+      "aliases": [
+        "my profile"
+      ],
+      "priority": 48
+    },
+    {
+      "id": "destination:account:preferences",
+      "kind": "destination",
+      "title": "Appearance Preferences",
+      "subtitle": "Account",
+      "description": "Change shared xjk appearance, density, and motion preferences.",
+      "siteId": "account",
+      "siteLabel": "Account",
+      "section": "Account",
+      "path": "/",
+      "hash": "#appearance",
+      "keywords": [
+        "account",
+        "appearance",
+        "preferences",
+        "settings",
+        "theme",
+        "motion"
+      ],
+      "aliases": [
+        "account settings"
+      ],
+      "priority": 44
+    },
+    {
+      "id": "destination:account:spaces",
+      "kind": "destination",
+      "title": "Connected xjk Spaces",
+      "subtitle": "Account",
+      "description": "Review the xjk services connected to your shared account.",
+      "siteId": "account",
+      "siteLabel": "Account",
+      "section": "Account",
+      "path": "/",
+      "hash": "#spaces/xjk",
+      "keywords": [
+        "account",
+        "spaces",
+        "services",
+        "connections",
+        "xjk"
+      ],
+      "aliases": [
+        "connected services"
+      ],
+      "priority": 42
+    },
+    {
+      "id": "destination:trackers:leaderboard",
+      "kind": "destination",
+      "title": "Leaderboard Tracker",
+      "subtitle": "Trackers",
+      "description": "Browse cached Trackmania leaderboard records and world-record holders.",
+      "siteId": "trackers",
+      "siteLabel": "Trackers",
+      "section": "Tracking",
+      "path": "/leaderboard/",
+      "keywords": [
+        "leaderboard",
+        "world record",
+        "wr",
+        "records",
+        "maps"
+      ],
+      "aliases": [
+        "tracker",
+        "leaderboard"
+      ],
+      "priority": 58
+    },
+    {
+      "id": "destination:trackers:wr",
+      "kind": "destination",
+      "title": "World Record Tracker",
+      "subtitle": "Trackers",
+      "description": "Open the world-record tracker runtime.",
+      "siteId": "trackers",
+      "siteLabel": "Trackers",
+      "section": "Tracking",
+      "path": "/wr/",
+      "keywords": [
+        "world record",
+        "wr",
+        "record history",
+        "tracker"
+      ],
+      "aliases": [
+        "wr tracker"
+      ],
+      "priority": 56
+    },
+    {
+      "id": "destination:trackers:displayname",
+      "kind": "destination",
+      "title": "Display Name Tracker",
+      "subtitle": "Trackers",
+      "description": "Look up and follow Trackmania account display-name changes.",
+      "siteId": "trackers",
+      "siteLabel": "Trackers",
+      "section": "Tracking",
+      "path": "/displayname/",
+      "keywords": [
+        "display name",
+        "account name",
+        "name history",
+        "tracker"
+      ],
+      "aliases": [
+        "displayname tracker",
+        "name tracker"
+      ],
+      "priority": 54
+    },
+    {
+      "id": "destination:trackers:club",
+      "kind": "destination",
+      "title": "Club Tracker",
+      "subtitle": "Trackers",
+      "description": "Inspect Trackmania club snapshots and changes.",
+      "siteId": "trackers",
+      "siteLabel": "Trackers",
+      "section": "Tracking",
+      "path": "/club/",
+      "keywords": [
+        "club",
+        "club history",
+        "snapshot",
+        "tracker"
+      ],
+      "aliases": [
+        "club tracker"
+      ],
+      "priority": 54
+    },
+    {
+      "id": "destination:console:bingo",
+      "kind": "destination",
+      "title": "Console Bingo",
+      "subtitle": "Live console companion",
+      "description": "Use the phone-first Bingo board mirror, room switching, and verification flow.",
+      "siteId": "console",
+      "siteLabel": "Console",
+      "section": "Console",
+      "path": "/bingo/",
+      "keywords": [
+        "bingo",
+        "phone",
+        "room code",
+        "ps4",
+        "ps5",
+        "xbox"
+      ],
+      "aliases": [
+        "bingo companion"
+      ],
+      "priority": 58
+    },
+    {
+      "id": "destination:console:rmc",
+      "kind": "destination",
+      "title": "RMC",
+      "subtitle": "Reserved console companion",
+      "description": "Random Map Challenge companion route.",
+      "siteId": "console",
+      "siteLabel": "Console",
+      "section": "Console",
+      "path": "/rmc/",
+      "keywords": [
+        "rmc",
+        "random map challenge",
+        "phone",
+        "console"
+      ],
+      "aliases": [
+        "random map challenge"
+      ],
+      "priority": 28
+    },
+    {
+      "id": "destination:console:rms",
+      "kind": "destination",
+      "title": "RMS",
+      "subtitle": "Reserved console companion",
+      "description": "Random Map Survival companion route.",
+      "siteId": "console",
+      "siteLabel": "Console",
+      "section": "Console",
+      "path": "/rms/",
+      "keywords": [
+        "rms",
+        "random map survival",
+        "phone",
+        "console"
+      ],
+      "aliases": [
+        "random map survival"
+      ],
+      "priority": 28
+    },
+    {
+      "id": "destination:console:rmt",
+      "kind": "destination",
+      "title": "RMT",
+      "subtitle": "Reserved console companion",
+      "description": "Random Map Together companion route.",
+      "siteId": "console",
+      "siteLabel": "Console",
+      "section": "Console",
+      "path": "/rmt/",
+      "keywords": [
+        "rmt",
+        "random map together",
+        "phone",
+        "console"
+      ],
+      "aliases": [
+        "random map together"
+      ],
+      "priority": 28
+    },
+    {
+      "id": "destination:altered:maps",
+      "kind": "destination",
+      "title": "Altered Maps",
+      "subtitle": "Altered",
+      "description": "Browse Altered campaign maps and map details.",
+      "siteId": "altered",
+      "siteLabel": "Altered",
+      "section": "Community",
+      "path": "/maps/",
+      "keywords": [
+        "altered",
+        "maps",
+        "campaign",
+        "map browser"
+      ],
+      "aliases": [
+        "altered map browser"
+      ],
+      "priority": 54
+    },
+    {
+      "id": "destination:altered:rankings",
+      "kind": "destination",
+      "title": "Altered Rankings",
+      "subtitle": "Altered",
+      "description": "Browse player rankings across Altered campaigns.",
+      "siteId": "altered",
+      "siteLabel": "Altered",
+      "section": "Community",
+      "path": "/rankings/",
+      "keywords": [
+        "altered",
+        "rankings",
+        "leaderboard",
+        "players"
+      ],
+      "aliases": [
+        "altered leaderboard"
+      ],
+      "priority": 52
+    },
+    {
+      "id": "destination:altered:alterations",
+      "kind": "destination",
+      "title": "Alterations",
+      "subtitle": "Altered",
+      "description": "Browse campaigns by alteration type, surface, fragile, reactor, and more.",
+      "siteId": "altered",
+      "siteLabel": "Altered",
+      "section": "Community",
+      "path": "/alterations/",
+      "keywords": [
+        "alteration",
+        "campaign",
+        "surface",
+        "fragile",
+        "reactor"
+      ],
+      "aliases": [
+        "altered alterations"
+      ],
+      "priority": 50
+    },
+    {
+      "id": "destination:altered:seasons",
+      "kind": "destination",
+      "title": "Altered Seasons",
+      "subtitle": "Altered",
+      "description": "Explore Altered campaign seasons.",
+      "siteId": "altered",
+      "siteLabel": "Altered",
+      "section": "Community",
+      "path": "/season/",
+      "keywords": [
+        "altered",
+        "season",
+        "campaign",
+        "winter",
+        "spring",
+        "summer",
+        "fall"
+      ],
+      "aliases": [
+        "altered season"
+      ],
+      "priority": 46
+    },
+    {
+      "id": "destination:altered:tools",
+      "kind": "destination",
+      "title": "Altered Tools",
+      "subtitle": "Altered",
+      "description": "Open the tools made for Altered projects.",
+      "siteId": "altered",
+      "siteLabel": "Altered",
+      "section": "Tools",
+      "path": "/tools/",
+      "keywords": [
+        "altered",
+        "tools",
+        "utilities",
+        "builder"
+      ],
+      "aliases": [
+        "altered utilities"
+      ],
+      "priority": 44
+    },
+    {
+      "id": "destination:altered:bannerbuilder",
+      "kind": "destination",
+      "title": "Banner Builder",
+      "subtitle": "Altered tool",
+      "description": "Build and export an Altered-style campaign banner.",
+      "siteId": "altered",
+      "siteLabel": "Altered",
+      "section": "Tools",
+      "path": "/bannerbuilder/",
+      "keywords": [
+        "banner",
+        "builder",
+        "image",
+        "campaign",
+        "altered"
+      ],
+      "aliases": [
+        "bannerbuilder"
+      ],
+      "priority": 48
+    },
+    {
+      "id": "destination:altered:platonic-solids",
+      "kind": "destination",
+      "title": "Platonic Solids Studio",
+      "subtitle": "Altered tool",
+      "description": "Open the Platonic Solids visual studio.",
+      "siteId": "altered",
+      "siteLabel": "Altered",
+      "section": "Tools",
+      "path": "/platonic-solids/",
+      "keywords": [
+        "platonic",
+        "solids",
+        "studio",
+        "geometry",
+        "altered"
+      ],
+      "aliases": [
+        "platonic solids"
+      ],
+      "priority": 42
+    },
+    {
+      "id": "destination:altered:api-docs",
+      "kind": "destination",
+      "title": "Altered API",
+      "subtitle": "Public API documentation",
+      "description": "Read the public Altered maps and campaigns API documentation.",
+      "siteId": "altered",
+      "siteLabel": "Altered",
+      "section": "API",
+      "path": "/api/",
+      "keywords": [
+        "altered",
+        "api",
+        "documentation",
+        "maps",
+        "campaigns",
+        "json"
+      ],
+      "aliases": [
+        "altered api docs"
+      ],
+      "priority": 42
+    },
+    {
+      "id": "destination:altered:about",
+      "kind": "destination",
+      "title": "About Altered",
+      "subtitle": "Altered",
+      "description": "Learn what the Altered project is about.",
+      "siteId": "altered",
+      "siteLabel": "Altered",
+      "section": "Community",
+      "path": "/about/",
+      "keywords": [
+        "altered",
+        "about",
+        "project"
+      ],
+      "aliases": [],
+      "priority": 30
+    },
+    {
+      "id": "destination:altered:team",
+      "kind": "destination",
+      "title": "Altered Team",
+      "subtitle": "Altered",
+      "description": "Meet the people behind Altered.",
+      "siteId": "altered",
+      "siteLabel": "Altered",
+      "section": "Community",
+      "path": "/team/",
+      "keywords": [
+        "altered",
+        "team",
+        "people",
+        "contributors"
+      ],
+      "aliases": [],
+      "priority": 28
+    },
+    {
+      "id": "destination:altered:request-update",
+      "kind": "destination",
+      "title": "Request an Altered Update",
+      "subtitle": "Altered",
+      "description": "Request refreshed data for an Altered map or campaign.",
+      "siteId": "altered",
+      "siteLabel": "Altered",
+      "section": "Community",
+      "path": "/request-update/",
+      "keywords": [
+        "altered",
+        "request",
+        "update",
+        "refresh",
+        "map",
+        "campaign"
+      ],
+      "aliases": [
+        "altered update request"
+      ],
+      "priority": 34
+    },
+    {
+      "id": "destination:aggregator:events",
+      "kind": "destination",
+      "title": "Aggregator Events",
+      "subtitle": "Aggregator",
+      "description": "Browse recent tracker and project events.",
+      "siteId": "aggregator",
+      "siteLabel": "Aggregator",
+      "section": "Data",
+      "path": "/",
+      "hash": "#events",
+      "keywords": [
+        "aggregator",
+        "events",
+        "changes",
+        "history",
+        "maps"
+      ],
+      "aliases": [
+        "recent events"
+      ],
+      "priority": 46
+    },
+    {
+      "id": "destination:aggregator:projects",
+      "kind": "destination",
+      "title": "Aggregator Projects",
+      "subtitle": "Aggregator",
+      "description": "Browse tracked projects and their maps.",
+      "siteId": "aggregator",
+      "siteLabel": "Aggregator",
+      "section": "Data",
+      "path": "/",
+      "hash": "#projects",
+      "keywords": [
+        "aggregator",
+        "projects",
+        "maps",
+        "changes"
+      ],
+      "aliases": [
+        "tracked projects"
+      ],
+      "priority": 44
+    },
+    {
+      "id": "destination:aggregator:names",
+      "kind": "destination",
+      "title": "Display Name Cache",
+      "subtitle": "Aggregator",
+      "description": "Search cached Trackmania display names.",
+      "siteId": "aggregator",
+      "siteLabel": "Aggregator",
+      "section": "Data",
+      "path": "/",
+      "hash": "#names",
+      "keywords": [
+        "aggregator",
+        "display name",
+        "account",
+        "name cache",
+        "search"
+      ],
+      "aliases": [
+        "display names",
+        "name lookup"
+      ],
+      "priority": 46
+    },
+    {
+      "id": "destination:aggregator:clubs",
+      "kind": "destination",
+      "title": "Club Snapshot Lookup",
+      "subtitle": "Aggregator",
+      "description": "Look up cached Trackmania club snapshots.",
+      "siteId": "aggregator",
+      "siteLabel": "Aggregator",
+      "section": "Data",
+      "path": "/",
+      "hash": "#clubs",
+      "keywords": [
+        "aggregator",
+        "club",
+        "snapshot",
+        "lookup"
+      ],
+      "aliases": [
+        "club cache"
+      ],
+      "priority": 44
+    },
+    {
+      "id": "destination:aggregator:metrics",
+      "kind": "destination",
+      "title": "Aggregator Metrics",
+      "subtitle": "Aggregator",
+      "description": "Inspect public aggregation coverage and activity metrics.",
+      "siteId": "aggregator",
+      "siteLabel": "Aggregator",
+      "section": "Data",
+      "path": "/",
+      "hash": "#metrics",
+      "keywords": [
+        "aggregator",
+        "metrics",
+        "coverage",
+        "activity",
+        "charts"
+      ],
+      "aliases": [
+        "data metrics"
+      ],
+      "priority": 38
+    },
+    {
+      "id": "destination:aggregator:database",
+      "kind": "destination",
+      "title": "Aggregator Database",
+      "subtitle": "Aggregator",
+      "description": "Inspect the public cache database overview and storage health.",
+      "siteId": "aggregator",
+      "siteLabel": "Aggregator",
+      "section": "Data",
+      "path": "/",
+      "hash": "#database",
+      "keywords": [
+        "aggregator",
+        "database",
+        "cache",
+        "storage",
+        "health"
+      ],
+      "aliases": [
+        "cache database"
+      ],
+      "priority": 36
+    },
+    {
+      "id": "destination:aggregator:api-docs",
+      "kind": "destination",
+      "title": "Aggregator API",
+      "subtitle": "Public API documentation",
+      "description": "Read the public Aggregator API catalog and endpoint documentation.",
+      "siteId": "aggregator",
+      "siteLabel": "Aggregator",
+      "section": "API",
+      "path": "/api/",
+      "keywords": [
+        "aggregator",
+        "api",
+        "documentation",
+        "catalog",
+        "json"
+      ],
+      "aliases": [
+        "aggregator api docs"
+      ],
+      "priority": 42
+    },
+    {
+      "id": "destination:validifier:api-docs",
+      "kind": "destination",
+      "title": "Validifier API",
+      "subtitle": "Public API documentation",
+      "description": "Read Validifier endpoint documentation for replay verification records and maps.",
+      "siteId": "validifier",
+      "siteLabel": "Validifier",
+      "section": "API",
+      "path": "/api/",
+      "keywords": [
+        "validifier",
+        "verification",
+        "api",
+        "documentation",
+        "records",
+        "maps"
+      ],
+      "aliases": [
+        "validifier api docs",
+        "verification api"
+      ],
+      "priority": 46
+    },
+    {
+      "id": "destination:validifier:live",
+      "kind": "destination",
+      "title": "Validifier Live Queue",
+      "subtitle": "Validifier",
+      "description": "Watch public replay verification work in progress.",
+      "siteId": "validifier",
+      "siteLabel": "Validifier",
+      "section": "Verification",
+      "path": "/live",
+      "keywords": [
+        "validifier",
+        "live",
+        "queue",
+        "verification",
+        "records"
+      ],
+      "aliases": [
+        "verification queue"
+      ],
+      "priority": 54
+    },
+    {
+      "id": "destination:validifier:records",
+      "kind": "destination",
+      "title": "Validifier Record Lookup",
+      "subtitle": "Validifier",
+      "description": "Look up a replay verification record by its record ID.",
+      "siteId": "validifier",
+      "siteLabel": "Validifier",
+      "section": "Verification",
+      "path": "/records",
+      "keywords": [
+        "validifier",
+        "record",
+        "replay",
+        "lookup",
+        "verification"
+      ],
+      "aliases": [
+        "record lookup"
+      ],
+      "priority": 54
+    },
+    {
+      "id": "destination:validifier:maps",
+      "kind": "destination",
+      "title": "Validifier Map Coverage",
+      "subtitle": "Validifier",
+      "description": "Browse verification coverage and unresolved records for a map.",
+      "siteId": "validifier",
+      "siteLabel": "Validifier",
+      "section": "Verification",
+      "path": "/maps",
+      "keywords": [
+        "validifier",
+        "map",
+        "uid",
+        "coverage",
+        "records"
+      ],
+      "aliases": [
+        "map lookup"
+      ],
+      "priority": 52
+    },
+    {
+      "id": "destination:validifier:submit",
+      "kind": "destination",
+      "title": "Submit to Validifier",
+      "subtitle": "Validifier",
+      "description": "Submit a public replay verification request.",
+      "siteId": "validifier",
+      "siteLabel": "Validifier",
+      "section": "Verification",
+      "path": "/submit",
+      "keywords": [
+        "validifier",
+        "submit",
+        "submission",
+        "replay",
+        "verification"
+      ],
+      "aliases": [
+        "verification submission"
+      ],
+      "priority": 50
+    },
+    {
+      "id": "destination:validifier:clients",
+      "kind": "destination",
+      "title": "Validifier API & Clients",
+      "subtitle": "Validifier",
+      "description": "Find public API endpoints and client integration notes.",
+      "siteId": "validifier",
+      "siteLabel": "Validifier",
+      "section": "API",
+      "path": "/clients",
+      "keywords": [
+        "validifier",
+        "api",
+        "clients",
+        "integration",
+        "documentation"
+      ],
+      "aliases": [
+        "validifier clients"
+      ],
+      "priority": 44
+    },
+    {
+      "id": "destination:validifier:recent",
+      "kind": "destination",
+      "title": "Recent Validifier Checks",
+      "subtitle": "Validifier",
+      "description": "Review recently opened verification records and maps.",
+      "siteId": "validifier",
+      "siteLabel": "Validifier",
+      "section": "Verification",
+      "path": "/recent",
+      "keywords": [
+        "validifier",
+        "recent",
+        "history",
+        "records",
+        "maps"
+      ],
+      "aliases": [
+        "recent verifications"
+      ],
+      "priority": 42
+    },
+    {
+      "id": "destination:cotd:archive",
+      "kind": "destination",
+      "title": "COTD Archive",
+      "subtitle": "Cup of the Day",
+      "description": "Browse the recent Cup of the Day map archive.",
+      "siteId": "cotd",
+      "siteLabel": "COTD",
+      "section": "Archive",
+      "path": "/",
+      "hash": "#history",
+      "keywords": [
+        "cotd",
+        "totd",
+        "cup of the day",
+        "archive",
+        "history",
+        "maps"
+      ],
+      "aliases": [
+        "totd archive",
+        "cup of the day history"
+      ],
+      "priority": 48
+    },
+    {
+      "id": "tool:map-cleaner",
+      "kind": "tool",
+      "title": "Strip Race Validation Ghost",
+      "subtitle": "Validation",
+      "description": "Upload a map, strip the validation replay, and optionally export cleaned map and extracted ghost files. Clone-enabled maps are accepted, and clone state is always cleared in returned maps.",
+      "siteId": "tools",
+      "siteLabel": "Tools",
+      "section": "Validation",
+      "path": "/Strip-RaceValidationGhost/",
+      "keywords": [
+        "map-cleaner",
+        "Validation",
+        ".Map.Gbx",
+        "Map / Ghost / Zip",
+        "live"
+      ],
+      "aliases": [
+        "map-cleaner"
+      ],
+      "priority": 60
+    },
+    {
+      "id": "tool:ghost-embedder",
+      "kind": "tool",
+      "title": "Embed Race Validation Ghost",
+      "subtitle": "Validation",
+      "description": "Upload a map and a ghost/replay source, pick replay ghost index if needed, then download embedded map output.",
+      "siteId": "tools",
+      "siteLabel": "Tools",
+      "section": "Validation",
+      "path": "/Embed-RaceValidationGhost/",
+      "keywords": [
+        "ghost-embedder",
+        "Validation",
+        ".Map.Gbx + .Ghost/.Replay.Gbx",
+        "Embedded .Map.Gbx",
+        "live"
+      ],
+      "aliases": [
+        "ghost-embedder"
+      ],
+      "priority": 60
+    },
+    {
+      "id": "tool:embedded-checker",
+      "kind": "tool",
+      "title": "Embedded Blocks And Items Checker",
+      "subtitle": "Inspection",
+      "description": "Check map embedding consistency and inspect missing expected/custom embedded models.",
+      "siteId": "tools",
+      "siteLabel": "Tools",
+      "section": "Inspection",
+      "path": "/Embedded-Blocks-And-Items-Checker/",
+      "keywords": [
+        "embedded-checker",
+        "Inspection",
+        ".Map.Gbx",
+        "JSON report",
+        "live"
+      ],
+      "aliases": [
+        "embedded-checker"
+      ],
+      "priority": 60
+    },
+    {
+      "id": "tool:replay-data-extractor",
+      "kind": "tool",
+      "title": "Extract Replay Data",
+      "subtitle": "Replay",
+      "description": "Extract structured replay JSON using default projection or a custom request selection.",
+      "siteId": "tools",
+      "siteLabel": "Tools",
+      "section": "Replay",
+      "path": "/Extract-Replay-Data/",
+      "keywords": [
+        "replay-data-extractor",
+        "Replay",
+        ".Replay.Gbx",
+        "JSON data",
+        "live"
+      ],
+      "aliases": [
+        "replay-data-extractor"
+      ],
+      "priority": 60
+    },
+    {
+      "id": "tool:medal-time-modifier",
+      "kind": "tool",
+      "title": "GBX Medal Time Modifier",
+      "subtitle": "Map Editing",
+      "description": "Set AT/Gold/Silver/Bronze medal values for a map and download the modified map file.",
+      "siteId": "tools",
+      "siteLabel": "Tools",
+      "section": "Map Editing",
+      "path": "/Gbx-Medal-Time-Modifier/",
+      "keywords": [
+        "medal-time-modifier",
+        "Map Editing",
+        ".Map.Gbx + medal values",
+        "Modified .Map.Gbx",
+        "live"
+      ],
+      "aliases": [
+        "medal-time-modifier"
+      ],
+      "priority": 60
+    },
+    {
+      "id": "tool:map-validation-checker",
+      "kind": "tool",
+      "title": "Map Validation Checker",
+      "subtitle": "Validation",
+      "description": "Inspect map validation status with optional replay evidence and manual override support.",
+      "siteId": "tools",
+      "siteLabel": "Tools",
+      "section": "Validation",
+      "path": "/Map-Validation-Checker/",
+      "keywords": [
+        "map-validation-checker",
+        "Validation",
+        ".Map.Gbx (+ optional replay/manual)",
+        "JSON verdict",
+        "live"
+      ],
+      "aliases": [
+        "map-validation-checker"
+      ],
+      "priority": 60
+    },
+    {
+      "id": "tool:underwater-converter",
+      "kind": "tool",
+      "title": "Underwater Map Converter",
+      "subtitle": "Map Conversion",
+      "description": "Convert any Trackmania 2020 map into an underwater variant with automatic environment detection and water carrier placement.",
+      "siteId": "tools",
+      "siteLabel": "Tools",
+      "section": "Map Conversion",
+      "path": "/Underwater-Map-Converter/",
+      "keywords": [
+        "underwater-converter",
+        "Map Conversion",
+        ".Map.Gbx",
+        "Underwater .Map.Gbx / Zip",
+        "live"
+      ],
+      "aliases": [
+        "underwater-converter"
+      ],
+      "priority": 60
+    },
+    {
+      "id": "tool:colorizer",
+      "kind": "tool",
+      "title": "TM Gradient Color Formatter",
+      "subtitle": "Text",
+      "description": "Format Trackmania text with per-letter gradient color codes (supports custom palettes & presets).",
+      "siteId": "tools",
+      "siteLabel": "Tools",
+      "section": "Text",
+      "path": "/Colorizer/",
+      "keywords": [
+        "colorizer",
+        "Text",
+        "Text + 2-7 colors",
+        "Formatted gradient string",
+        "live"
+      ],
+      "aliases": [
+        "colorizer"
+      ],
+      "priority": 60
+    },
+    {
+      "id": "tool:clip-to-ghost",
+      "kind": "tool",
+      "title": "Clip To Ghost",
+      "subtitle": "Ghost Export",
+      "description": "Export GPS clip RecordData blocks from Trackmania maps into standalone ghost files with optional manifest output.",
+      "siteId": "tools",
+      "siteLabel": "Tools",
+      "section": "Ghost Export",
+      "path": "/Clip-To-Ghost/",
+      "keywords": [
+        "clip-to-ghost",
+        "Ghost Export",
+        ".Map.Gbx",
+        ".Ghost.Gbx + manifest",
+        "live"
+      ],
+      "aliases": [
+        "clip-to-ghost"
+      ],
+      "priority": 60
+    },
+    {
+      "id": "plugin:autoenablepbghost",
+      "kind": "plugin",
+      "title": "Auto Enable PB Ghost",
+      "subtitle": "Trackmania + Openplanet",
+      "description": "A plugin that auto-loads your PB on the current map (since Nando broke it xD).",
+      "siteId": "plugins",
+      "siteLabel": "Plugins",
+      "section": "Plugin",
+      "url": "https://openplanet.dev/plugin/autoenablepbghost",
+      "keywords": [
+        "autoenablepbghost",
+        "Plugin",
+        "live",
+        "Trackmania + Openplanet",
+        "Openplanet plugin manager"
+      ],
+      "aliases": [
+        "autoenablepbghost"
+      ],
+      "priority": 44
+    },
+    {
+      "id": "plugin:searchtoopensettingsmenu",
+      "kind": "plugin",
+      "title": "Search To Open Settings Menu",
+      "subtitle": "Trackmania + Openplanet",
+      "description": "A plugin that lets you more easily find the correct settings page for any plugin!",
+      "siteId": "plugins",
+      "siteLabel": "Plugins",
+      "section": "Plugin",
+      "url": "https://openplanet.dev/plugin/searchtoopensettingsmenu",
+      "keywords": [
+        "searchtoopensettingsmenu",
+        "Plugin",
+        "live",
+        "Trackmania + Openplanet",
+        "Openplanet plugin manager"
+      ],
+      "aliases": [
+        "searchtoopensettingsmenu"
+      ],
+      "priority": 44
+    },
+    {
+      "id": "plugin:batchcomputeshadows",
+      "kind": "plugin",
+      "title": "Batch Compute Shadows",
+      "subtitle": "Trackmania + Openplanet",
+      "description": "A plugin that lets you compute the shadows of all the maps in a folder without having to manually move between them!",
+      "siteId": "plugins",
+      "siteLabel": "Plugins",
+      "section": "Plugin",
+      "url": "https://openplanet.dev/plugin/batchcomputeshadows",
+      "keywords": [
+        "batchcomputeshadows",
+        "Plugin",
+        "live",
+        "Trackmania + Openplanet",
+        "Openplanet plugin manager"
+      ],
+      "aliases": [
+        "batchcomputeshadows"
+      ],
+      "priority": 44
+    },
+    {
+      "id": "plugin:patchwarner",
+      "kind": "plugin",
+      "title": "Patch Warner",
+      "subtitle": "Trackmania + Openplanet",
+      "description": "Trackmania2020s BEST (and only, but we don't talk about that xdd) Physics change Warner!",
+      "siteId": "plugins",
+      "siteLabel": "Plugins",
+      "section": "Plugin",
+      "url": "https://openplanet.dev/plugin/patchwarner",
+      "keywords": [
+        "patchwarner",
+        "Plugin",
+        "live",
+        "Trackmania + Openplanet",
+        "Openplanet plugin manager"
+      ],
+      "aliases": [
+        "patchwarner"
+      ],
+      "priority": 44
+    },
+    {
+      "id": "plugin:disabledynamicshadows",
+      "kind": "plugin",
+      "title": "Disable Dynamic Shadows",
+      "subtitle": "Trackmania + Openplanet",
+      "description": "This plugin lets you disable some of the games dynamic shadows.",
+      "siteId": "plugins",
+      "siteLabel": "Plugins",
+      "section": "Plugin",
+      "url": "https://openplanet.dev/plugin/disabledynamicshadows",
+      "keywords": [
+        "disabledynamicshadows",
+        "Plugin",
+        "live",
+        "Trackmania + Openplanet",
+        "Openplanet plugin manager"
+      ],
+      "aliases": [
+        "disabledynamicshadows"
+      ],
+      "priority": 44
+    },
+    {
+      "id": "plugin:datasender",
+      "kind": "plugin",
+      "title": "Data Sender",
+      "subtitle": "Trackmania + Openplanet",
+      "description": "A plugin that sends some data about the game/player state over a socket connection",
+      "siteId": "plugins",
+      "siteLabel": "Plugins",
+      "section": "Plugin",
+      "url": "https://openplanet.dev/plugin/datasender",
+      "keywords": [
+        "datasender",
+        "Plugin",
+        "live",
+        "Trackmania + Openplanet",
+        "Openplanet plugin manager"
+      ],
+      "aliases": [
+        "datasender"
+      ],
+      "priority": 44
+    },
+    {
+      "id": "plugin:colorizer",
+      "kind": "plugin",
+      "title": "Colorizer",
+      "subtitle": "Trackmania + Openplanet",
+      "description": "The plugin takes an input-string and some color information and gradiant information and produces a gradiant based on the provided information.",
+      "siteId": "plugins",
+      "siteLabel": "Plugins",
+      "section": "Plugin",
+      "url": "https://openplanet.dev/plugin/colorizer",
+      "keywords": [
+        "colorizer",
+        "Plugin",
+        "live",
+        "Trackmania + Openplanet",
+        "Openplanet plugin manager"
+      ],
+      "aliases": [
+        "colorizer"
+      ],
+      "priority": 44
+    },
+    {
+      "id": "plugin:setitemsettingstodefaultblocksettings",
+      "kind": "plugin",
+      "title": "Set Item Settings To Default Block Settings",
+      "subtitle": "Trackmania + Openplanet",
+      "description": "Adds a button that sets the item settings to the default block settings.",
+      "siteId": "plugins",
+      "siteLabel": "Plugins",
+      "section": "Plugin",
+      "url": "https://openplanet.dev/plugin/setitemsettingstodefaultblocksettings",
+      "keywords": [
+        "setitemsettingstodefaultblocksettings",
+        "Plugin",
+        "live",
+        "Trackmania + Openplanet",
+        "Openplanet plugin manager"
+      ],
+      "aliases": [
+        "setitemsettingstodefaultblocksettings"
+      ],
+      "priority": 44
+    },
+    {
+      "id": "plugin:trackvotehotkeys",
+      "kind": "plugin",
+      "title": "TrackVote Hotkeys",
+      "subtitle": "Trackmania + Openplanet",
+      "description": "A plugin that lets you like/dislike a map with a hotkey from outside of the menu.",
+      "siteId": "plugins",
+      "siteLabel": "Plugins",
+      "section": "Plugin",
+      "url": "https://openplanet.dev/plugin/trackvotehotkeys",
+      "keywords": [
+        "trackvotehotkeys",
+        "Plugin",
+        "live",
+        "Trackmania + Openplanet",
+        "Openplanet plugin manager"
+      ],
+      "aliases": [
+        "trackvotehotkeys"
+      ],
+      "priority": 44
+    },
+    {
+      "id": "plugin:startmeow",
+      "kind": "plugin",
+      "title": "startmeow",
+      "subtitle": "Trackmania + Openplanet",
+      "description": "A plugin that other plugins can use to start(a)meow",
+      "siteId": "plugins",
+      "siteLabel": "Plugins",
+      "section": "Plugin",
+      "url": "https://openplanet.dev/plugin/startmeow",
+      "keywords": [
+        "startmeow",
+        "Plugin",
+        "live",
+        "Trackmania + Openplanet",
+        "Openplanet plugin manager"
+      ],
+      "aliases": [
+        "startmeow"
+      ],
+      "priority": 44
+    },
+    {
+      "id": "plugin:removefavoritemaps",
+      "kind": "plugin",
+      "title": "Remove Favorite Maps",
+      "subtitle": "Trackmania + Openplanet",
+      "description": "A plugin that removes all your favorite maps automatically at the press of a button.",
+      "siteId": "plugins",
+      "siteLabel": "Plugins",
+      "section": "Plugin",
+      "url": "https://openplanet.dev/plugin/removefavoritemaps",
+      "keywords": [
+        "removefavoritemaps",
+        "Plugin",
+        "live",
+        "Trackmania + Openplanet",
+        "Openplanet plugin manager"
+      ],
+      "aliases": [
+        "removefavoritemaps"
+      ],
+      "priority": 44
+    },
+    {
+      "id": "plugin:alterednadeo_randommappicker",
+      "kind": "plugin",
+      "title": "Altered Nadeo - Random Map Picker",
+      "subtitle": "Trackmania + Openplanet",
+      "description": "Picks a random altered campaign map from a 'set' list of maps.",
+      "siteId": "plugins",
+      "siteLabel": "Plugins",
+      "section": "Plugin",
+      "url": "https://openplanet.dev/plugin/alterednadeo_randommappicker",
+      "keywords": [
+        "alterednadeo_randommappicker",
+        "Plugin",
+        "live",
+        "Trackmania + Openplanet",
+        "Openplanet plugin manager"
+      ],
+      "aliases": [
+        "alterednadeo_randommappicker"
+      ],
+      "priority": 44
+    },
+    {
+      "id": "plugin:reactor-duration",
+      "kind": "plugin",
+      "title": "Reactor Duration",
+      "subtitle": "Trackmania + Openplanet",
+      "description": "Shows the duration of a reactor, it's not 100% acurate, but it's close enough in most cases...",
+      "siteId": "plugins",
+      "siteLabel": "Plugins",
+      "section": "Plugin",
+      "url": "https://openplanet.dev/plugin/reactor-duration",
+      "keywords": [
+        "reactor-duration",
+        "Plugin",
+        "live",
+        "Trackmania + Openplanet",
+        "Openplanet plugin manager"
+      ],
+      "aliases": [
+        "reactor-duration"
+      ],
+      "priority": 44
+    },
+    {
+      "id": "plugin:autoenablespecificghosts",
+      "kind": "plugin",
+      "title": "Auto Enable Specific Ghosts",
+      "subtitle": "Trackmania + Openplanet",
+      "description": "This plugin automatically loads the specified ghost for the current map.",
+      "siteId": "plugins",
+      "siteLabel": "Plugins",
+      "section": "Plugin",
+      "url": "https://openplanet.dev/plugin/autoenablespecificghosts",
+      "keywords": [
+        "autoenablespecificghosts",
+        "Plugin",
+        "live",
+        "Trackmania + Openplanet",
+        "Openplanet plugin manager"
+      ],
+      "aliases": [
+        "autoenablespecificghosts"
+      ],
+      "priority": 44
+    },
+    {
+      "id": "plugin:mapborderhighlighter",
+      "kind": "plugin",
+      "title": "Map Border Highlighter",
+      "subtitle": "Trackmania + Openplanet",
+      "description": "Highlights the border of the map when playing.",
+      "siteId": "plugins",
+      "siteLabel": "Plugins",
+      "section": "Plugin",
+      "url": "https://openplanet.dev/plugin/mapborderhighlighter",
+      "keywords": [
+        "mapborderhighlighter",
+        "Plugin",
+        "live",
+        "Trackmania + Openplanet",
+        "Openplanet plugin manager"
+      ],
+      "aliases": [
+        "mapborderhighlighter"
+      ],
+      "priority": 44
+    },
+    {
+      "id": "plugin:csmscriptplayerviewer",
+      "kind": "plugin",
+      "title": "CSmScriptPlayer Viewer",
+      "subtitle": "Trackmania + Openplanet",
+      "description": "A plugin that displays values in CSmScriptPlayer, i.e yaw, roll and pitch, mm etc.",
+      "siteId": "plugins",
+      "siteLabel": "Plugins",
+      "section": "Plugin",
+      "url": "https://openplanet.dev/plugin/csmscriptplayerviewer",
+      "keywords": [
+        "csmscriptplayerviewer",
+        "Plugin",
+        "live",
+        "Trackmania + Openplanet",
+        "Openplanet plugin manager"
+      ],
+      "aliases": [
+        "csmscriptplayerviewer"
+      ],
+      "priority": 44
+    },
+    {
+      "id": "guide:contexts/underwater-driving-primer",
+      "kind": "guide",
+      "title": "Underwater Driving Primer",
+      "subtitle": "context",
+      "description": "The shared context for underwater cards: water changes drag, contact, gravity feel, steering trust, and recovery timing.",
+      "siteId": "learn",
+      "siteLabel": "Learn",
+      "section": "contexts",
+      "path": "/",
+      "hash": "#/learn/contexts/underwater-driving-primer",
+      "keywords": [
+        "underwater",
+        "context",
+        "physics",
+        "water-drag",
+        "wheel-contact",
+        "vehicle-stability",
+        "speed-retention",
+        "rally-underwater-primer",
+        "contexts",
+        "grip-contact",
+        "speed-momentum",
+        "vehicles",
+        "draft",
+        "penalty-speed-retention-answer",
+        "Penalty Speed Retention Answer",
+        "How can Rally underwater keep speed on penalty?",
+        "A compact pack for answering questions about keeping speed on penalty surfaces underwater.",
+        "penalty",
+        "wiggle",
+        "penalty-surfaces",
+        "ak-wiggle",
+        "Rally Underwater Primer",
+        "What should I understand first about Rally underwater?",
+        "A shareable learning route for the core Rally underwater mechanics family.",
+        "rally",
+        "primer",
+        "rally-car",
+        "rally-underwater-transitions",
+        "Rally Underwater Transitions",
+        "How do Rally underwater transitions work?",
+        "A route for wall, loop, bob, quarterpipe, reactor, and edge interactions.",
+        "transitions",
+        "geometry",
+        "reactor",
+        "wallrides",
+        "loops",
+        "bobs",
+        "reactors",
+        "edge-bounce"
+      ],
+      "aliases": [
+        "contexts/underwater-driving-primer"
+      ],
+      "priority": 52
+    },
+    {
+      "id": "guide:underwater/rally-car/air-control-and-ledge-grabs",
+      "kind": "guide",
+      "title": "Air Control & Ledge Grabs",
+      "subtitle": "technique · advanced",
+      "description": "Rally underwater can keep steering influence after a normal forward jump, and its stability can turn quarterpipe launches into ledge-grab setups.",
+      "siteId": "learn",
+      "siteLabel": "Learn",
+      "section": "underwater",
+      "path": "/",
+      "hash": "#/learn/underwater/rally-car/air-control-and-ledge-grabs",
+      "keywords": [
+        "air-control",
+        "ledge-grab",
+        "quarterpipe",
+        "rally",
+        "rally-car",
+        "underwater",
+        "vehicle-stability",
+        "rally-underwater-primer",
+        "rally-underwater-transitions",
+        "techniques",
+        "block-geometry",
+        "vehicles",
+        "grip-contact",
+        "technique",
+        "field-note",
+        "Rally Underwater Primer",
+        "What should I understand first about Rally underwater?",
+        "A shareable learning route for the core Rally underwater mechanics family.",
+        "primer",
+        "speed-retention",
+        "wheel-contact",
+        "Rally Underwater Transitions",
+        "How do Rally underwater transitions work?",
+        "A route for wall, loop, bob, quarterpipe, reactor, and edge interactions.",
+        "transitions",
+        "geometry",
+        "reactor",
+        "wallrides",
+        "loops",
+        "bobs",
+        "reactors",
+        "edge-bounce"
+      ],
+      "aliases": [
+        "underwater/rally-car/air-control-and-ledge-grabs"
+      ],
+      "priority": 52
+    },
+    {
+      "id": "guide:underwater/rally-car/floatiness-slopes-and-flowtrick",
+      "kind": "guide",
+      "title": "Floatiness, Slopes & Flowtrick",
+      "subtitle": "technique · advanced",
+      "description": "Rally underwater can keep speed through partial wheel contact, but downhills reduce grip and returning to full contact can require a weight-shift trick.",
+      "siteId": "learn",
+      "siteLabel": "Learn",
+      "section": "underwater",
+      "path": "/",
+      "hash": "#/learn/underwater/rally-car/floatiness-slopes-and-flowtrick",
+      "keywords": [
+        "floatiness",
+        "slopes",
+        "flowtrick",
+        "rally",
+        "underwater",
+        "rally-car",
+        "wheel-contact",
+        "speed-retention",
+        "rally-underwater-primer",
+        "penalty-speed-retention-answer",
+        "grip-contact",
+        "surfaces",
+        "speed-momentum",
+        "techniques",
+        "technique",
+        "field-note",
+        "Penalty Speed Retention Answer",
+        "How can Rally underwater keep speed on penalty?",
+        "A compact pack for answering questions about keeping speed on penalty surfaces underwater.",
+        "penalty",
+        "wiggle",
+        "penalty-surfaces",
+        "ak-wiggle",
+        "Rally Underwater Primer",
+        "What should I understand first about Rally underwater?",
+        "A shareable learning route for the core Rally underwater mechanics family.",
+        "primer"
+      ],
+      "aliases": [
+        "underwater/rally-car/floatiness-slopes-and-flowtrick"
+      ],
+      "priority": 52
+    },
+    {
+      "id": "guide:underwater/rally-car/mechanics-primer",
+      "kind": "guide",
+      "title": "Rally Underwater Mechanics Primer",
+      "subtitle": "overview · reference",
+      "description": "A compact mental model for Rally car underwater: 100-speed behavior, floaty contact, penalty bypasses, plastic overspeed, and why many tricks are contact tricks.",
+      "siteId": "learn",
+      "siteLabel": "Learn",
+      "section": "underwater",
+      "path": "/",
+      "hash": "#/learn/underwater/rally-car/mechanics-primer",
+      "keywords": [
+        "underwater",
+        "rally",
+        "primer",
+        "field-notes",
+        "rally-car",
+        "speed-retention",
+        "wheel-contact",
+        "penalty-surfaces",
+        "steering-rhythm",
+        "plastic-overspeed",
+        "vehicle-stability",
+        "rally-underwater-primer",
+        "penalty-speed-retention-answer",
+        "rally-underwater-transitions",
+        "contexts",
+        "vehicles",
+        "surfaces",
+        "grip-contact",
+        "speed-momentum",
+        "inputs",
+        "overview",
+        "field-note",
+        "Rally Underwater Primer",
+        "What should I understand first about Rally underwater?",
+        "A shareable learning route for the core Rally underwater mechanics family.",
+        "Rally Underwater Transitions",
+        "How do Rally underwater transitions work?",
+        "A route for wall, loop, bob, quarterpipe, reactor, and edge interactions.",
+        "transitions",
+        "geometry",
+        "reactor",
+        "wallrides",
+        "loops",
+        "bobs",
+        "reactors",
+        "edge-bounce"
+      ],
+      "aliases": [
+        "underwater/rally-car/mechanics-primer"
+      ],
+      "priority": 58
+    },
+    {
+      "id": "guide:underwater/rally-car/reactors-edges-and-overwalls",
+      "kind": "guide",
+      "title": "Reactors, Edges & Overwalls",
+      "subtitle": "technique · advanced",
+      "description": "Rally underwater can use reactor flight, edge bounces, overwalls, and even one-wheel wallclimbs as route tools.",
+      "siteId": "learn",
+      "siteLabel": "Learn",
+      "section": "underwater",
+      "path": "/",
+      "hash": "#/learn/underwater/rally-car/reactors-edges-and-overwalls",
+      "keywords": [
+        "reactor",
+        "overwall",
+        "edge-bounce",
+        "rally",
+        "rally-car",
+        "underwater",
+        "reactors",
+        "reactor-up",
+        "reactor-down",
+        "one-wheel-wallclimb",
+        "rally-underwater-primer",
+        "rally-underwater-transitions",
+        "special-forces",
+        "block-geometry",
+        "techniques",
+        "vehicles",
+        "technique",
+        "field-note",
+        "Rally Underwater Primer",
+        "What should I understand first about Rally underwater?",
+        "A shareable learning route for the core Rally underwater mechanics family.",
+        "primer",
+        "speed-retention",
+        "wheel-contact",
+        "Rally Underwater Transitions",
+        "How do Rally underwater transitions work?",
+        "A route for wall, loop, bob, quarterpipe, reactor, and edge interactions.",
+        "transitions",
+        "geometry",
+        "wallrides",
+        "loops",
+        "bobs"
+      ],
+      "aliases": [
+        "underwater/rally-car/reactors-edges-and-overwalls"
+      ],
+      "priority": 52
+    },
+    {
+      "id": "guide:underwater/rally-car/start-trick-and-penalty-wiggles",
+      "kind": "guide",
+      "title": "Start Trick & Penalty Wiggles",
+      "subtitle": "technique · intermediate",
+      "description": "Rally underwater can gain or retain speed through steering rhythm, including start acceleration tricks and penalty-surface wiggles.",
+      "siteId": "learn",
+      "siteLabel": "Learn",
+      "section": "underwater",
+      "path": "/",
+      "hash": "#/learn/underwater/rally-car/start-trick-and-penalty-wiggles",
+      "keywords": [
+        "rally",
+        "underwater",
+        "penalty",
+        "wiggle",
+        "inputs",
+        "rally-car",
+        "steering-rhythm",
+        "start-trick",
+        "penalty-surfaces",
+        "speed-retention",
+        "ak-wiggle",
+        "rally-underwater-primer",
+        "penalty-speed-retention-answer",
+        "speed-momentum",
+        "surfaces",
+        "vehicles",
+        "techniques",
+        "technique",
+        "field-note",
+        "Penalty Speed Retention Answer",
+        "How can Rally underwater keep speed on penalty?",
+        "A compact pack for answering questions about keeping speed on penalty surfaces underwater.",
+        "wheel-contact",
+        "Rally Underwater Primer",
+        "What should I understand first about Rally underwater?",
+        "A shareable learning route for the core Rally underwater mechanics family.",
+        "primer"
+      ],
+      "aliases": [
+        "underwater/rally-car/start-trick-and-penalty-wiggles"
+      ],
+      "priority": 52
+    },
+    {
+      "id": "guide:underwater/rally-car/surfaces-and-speed-retention",
+      "kind": "guide",
+      "title": "Surfaces & Speed Retention",
+      "subtitle": "reference",
+      "description": "Rally underwater changes how surfaces feel: normal surfaces are mostly noslide-first, plastic is unusually fast, and penalty can be bypassed with contact or wiggle mechanics.",
+      "siteId": "learn",
+      "siteLabel": "Learn",
+      "section": "underwater",
+      "path": "/",
+      "hash": "#/learn/underwater/rally-car/surfaces-and-speed-retention",
+      "keywords": [
+        "surfaces",
+        "rally",
+        "underwater",
+        "plastic",
+        "penalty",
+        "rally-car",
+        "speed-retention",
+        "speed-cap",
+        "penalty-surfaces",
+        "plastic-overspeed",
+        "ice-slide",
+        "rally-underwater-primer",
+        "penalty-speed-retention-answer",
+        "speed-momentum",
+        "grip-contact",
+        "inputs",
+        "vehicles",
+        "reference",
+        "field-note",
+        "Penalty Speed Retention Answer",
+        "How can Rally underwater keep speed on penalty?",
+        "A compact pack for answering questions about keeping speed on penalty surfaces underwater.",
+        "wiggle",
+        "ak-wiggle",
+        "wheel-contact",
+        "Rally Underwater Primer",
+        "What should I understand first about Rally underwater?",
+        "A shareable learning route for the core Rally underwater mechanics family.",
+        "primer"
+      ],
+      "aliases": [
+        "underwater/rally-car/surfaces-and-speed-retention"
+      ],
+      "priority": 52
+    },
+    {
+      "id": "guide:underwater/rally-car/walls-loops-bob-and-poolturns",
+      "kind": "guide",
+      "title": "Walls, Loops, Bob & Poolturns",
+      "subtitle": "reference · advanced",
+      "description": "Wallrides and loops lose speed underwater, but wallride exits, diagonal loop lines, bob inside-wall slides, and poolturn wallhugs can still be useful.",
+      "siteId": "learn",
+      "siteLabel": "Learn",
+      "section": "underwater",
+      "path": "/",
+      "hash": "#/learn/underwater/rally-car/walls-loops-bob-and-poolturns",
+      "keywords": [
+        "wallrides",
+        "loops",
+        "bob",
+        "poolturns",
+        "rally",
+        "rally-car",
+        "underwater",
+        "bobs",
+        "wheel-contact",
+        "speed-retention",
+        "rally-underwater-primer",
+        "rally-underwater-transitions",
+        "block-geometry",
+        "grip-contact",
+        "techniques",
+        "speed-momentum",
+        "reference",
+        "field-note",
+        "Rally Underwater Primer",
+        "What should I understand first about Rally underwater?",
+        "A shareable learning route for the core Rally underwater mechanics family.",
+        "primer",
+        "Rally Underwater Transitions",
+        "How do Rally underwater transitions work?",
+        "A route for wall, loop, bob, quarterpipe, reactor, and edge interactions.",
+        "transitions",
+        "geometry",
+        "reactor",
+        "reactors",
+        "edge-bounce"
+      ],
+      "aliases": [
+        "underwater/rally-car/walls-loops-bob-and-poolturns"
+      ],
+      "priority": 52
+    },
+    {
+      "id": "guide-pack:penalty-speed-retention-answer",
+      "kind": "guide",
+      "title": "Penalty Speed Retention Answer",
+      "subtitle": "Learn pack",
+      "description": "How can Rally underwater keep speed on penalty?",
+      "siteId": "learn",
+      "siteLabel": "Learn",
+      "section": "Packs",
+      "path": "/",
+      "hash": "#/learn/underwater/rally-car/start-trick-and-penalty-wiggles?pack=penalty-speed-retention-answer",
+      "keywords": [
+        "penalty",
+        "wiggle",
+        "speed-retention",
+        "penalty-surfaces",
+        "ak-wiggle",
+        "wheel-contact",
+        "contexts/underwater-driving-primer",
+        "underwater/rally-car/start-trick-and-penalty-wiggles",
+        "underwater/rally-car/surfaces-and-speed-retention",
+        "underwater/rally-car/floatiness-slopes-and-flowtrick",
+        "A compact pack for answering questions about keeping speed on penalty surfaces underwater.",
+        "How can Rally underwater keep speed on penalty?"
+      ],
+      "aliases": [
+        "penalty-speed-retention-answer"
+      ],
+      "priority": 42
+    },
+    {
+      "id": "guide-pack:rally-underwater-primer",
+      "kind": "guide",
+      "title": "Rally Underwater Primer",
+      "subtitle": "Learn pack",
+      "description": "What should I understand first about Rally underwater?",
+      "siteId": "learn",
+      "siteLabel": "Learn",
+      "section": "Packs",
+      "path": "/",
+      "hash": "#/learn/underwater/rally-car/mechanics-primer?pack=rally-underwater-primer",
+      "keywords": [
+        "rally",
+        "underwater",
+        "primer",
+        "rally-car",
+        "speed-retention",
+        "wheel-contact",
+        "contexts/underwater-driving-primer",
+        "underwater/rally-car/mechanics-primer",
+        "underwater/rally-car/start-trick-and-penalty-wiggles",
+        "underwater/rally-car/surfaces-and-speed-retention",
+        "underwater/rally-car/floatiness-slopes-and-flowtrick",
+        "underwater/rally-car/air-control-and-ledge-grabs",
+        "underwater/rally-car/walls-loops-bob-and-poolturns",
+        "underwater/rally-car/reactors-edges-and-overwalls",
+        "A shareable learning route for the core Rally underwater mechanics family.",
+        "What should I understand first about Rally underwater?"
+      ],
+      "aliases": [
+        "rally-underwater-primer"
+      ],
+      "priority": 42
+    },
+    {
+      "id": "guide-pack:rally-underwater-transitions",
+      "kind": "guide",
+      "title": "Rally Underwater Transitions",
+      "subtitle": "Learn pack",
+      "description": "How do Rally underwater transitions work?",
+      "siteId": "learn",
+      "siteLabel": "Learn",
+      "section": "Packs",
+      "path": "/",
+      "hash": "#/learn/underwater/rally-car/walls-loops-bob-and-poolturns?pack=rally-underwater-transitions",
+      "keywords": [
+        "transitions",
+        "geometry",
+        "reactor",
+        "wallrides",
+        "loops",
+        "bobs",
+        "reactors",
+        "edge-bounce",
+        "contexts/underwater-driving-primer",
+        "underwater/rally-car/mechanics-primer",
+        "underwater/rally-car/air-control-and-ledge-grabs",
+        "underwater/rally-car/walls-loops-bob-and-poolturns",
+        "underwater/rally-car/reactors-edges-and-overwalls",
+        "A route for wall, loop, bob, quarterpipe, reactor, and edge interactions.",
+        "How do Rally underwater transitions work?"
+      ],
+      "aliases": [
+        "rally-underwater-transitions"
+      ],
+      "priority": 42
+    },
+    {
+      "id": "guide-concept:air-control",
+      "kind": "guide",
+      "title": "Air Control",
+      "subtitle": "technique · Learn concept",
+      "description": "Input influence while airborne, including steering carryover, cancellation, and landing setup.",
+      "siteId": "learn",
+      "siteLabel": "Learn",
+      "section": "techniques",
+      "path": "/",
+      "hash": "#/library?cluster=techniques&concept=air-control",
+      "keywords": [
+        "air",
+        "control",
+        "vehicle-stability",
+        "ledge-grab",
+        "technique",
+        "techniques"
+      ],
+      "aliases": [
+        "air-control"
+      ],
+      "priority": 28
+    },
+    {
+      "id": "guide-concept:ak-wiggle",
+      "kind": "guide",
+      "title": "AK Wiggle",
+      "subtitle": "technique · Learn concept",
+      "description": "A steering rhythm using action keys or controlled steering values to change speed loss or acceleration behavior.",
+      "siteId": "learn",
+      "siteLabel": "Learn",
+      "section": "inputs",
+      "path": "/",
+      "hash": "#/library?cluster=inputs&concept=ak-wiggle",
+      "keywords": [
+        "ak",
+        "wiggle",
+        "inputs",
+        "steering-rhythm",
+        "penalty-surfaces",
+        "technique"
+      ],
+      "aliases": [
+        "ak-wiggle"
+      ],
+      "priority": 28
+    },
+    {
+      "id": "guide-concept:bobs",
+      "kind": "guide",
+      "title": "Bobs",
+      "subtitle": "geometry · Learn concept",
+      "description": "Banked bob turns where line choice, wall contact, and sliding states define speed retention.",
+      "siteId": "learn",
+      "siteLabel": "Learn",
+      "section": "block-geometry",
+      "path": "/",
+      "hash": "#/library?cluster=block-geometry&concept=bobs",
+      "keywords": [
+        "bob",
+        "geometry",
+        "ice-slide",
+        "wheel-contact",
+        "block-geometry"
+      ],
+      "aliases": [
+        "bobs"
+      ],
+      "priority": 28
+    },
+    {
+      "id": "guide-concept:edge-bounce",
+      "kind": "guide",
+      "title": "Edge Bounce",
+      "subtitle": "geometry · Learn concept",
+      "description": "A bounce produced by block edges or corners, often used to gain height or escape a pool.",
+      "siteId": "learn",
+      "siteLabel": "Learn",
+      "section": "block-geometry",
+      "path": "/",
+      "hash": "#/library?cluster=block-geometry&concept=edge-bounce",
+      "keywords": [
+        "edge",
+        "bounce",
+        "overwall",
+        "wheel-contact",
+        "geometry",
+        "block-geometry"
+      ],
+      "aliases": [
+        "edge-bounce"
+      ],
+      "priority": 28
+    },
+    {
+      "id": "guide-concept:floatiness",
+      "kind": "guide",
+      "title": "Floatiness",
+      "subtitle": "concept · Learn concept",
+      "description": "A light contact feeling where the car is less planted and partial wheel states become more important.",
+      "siteId": "learn",
+      "siteLabel": "Learn",
+      "section": "grip-contact",
+      "path": "/",
+      "hash": "#/library?cluster=grip-contact&concept=floatiness",
+      "keywords": [
+        "water",
+        "contact",
+        "wheel-contact",
+        "flowtrick",
+        "concept",
+        "grip-contact"
+      ],
+      "aliases": [
+        "floatiness"
+      ],
+      "priority": 28
+    },
+    {
+      "id": "guide-concept:flowtrick",
+      "kind": "guide",
+      "title": "Flowtrick",
+      "subtitle": "technique · Learn concept",
+      "description": "A weight-shift trick used to return from partial contact without taking the same slowdown.",
+      "siteId": "learn",
+      "siteLabel": "Learn",
+      "section": "techniques",
+      "path": "/",
+      "hash": "#/library?cluster=techniques&concept=flowtrick",
+      "keywords": [
+        "contact",
+        "technique",
+        "floatiness",
+        "wheel-contact",
+        "techniques"
+      ],
+      "aliases": [
+        "flowtrick"
+      ],
+      "priority": 28
+    },
+    {
+      "id": "guide-concept:ice-slide",
+      "kind": "guide",
+      "title": "Ice Slide",
+      "subtitle": "technique · Learn concept",
+      "description": "A controlled sliding state used when grip is too low or when a surface demands a sliding line.",
+      "siteId": "learn",
+      "siteLabel": "Learn",
+      "section": "techniques",
+      "path": "/",
+      "hash": "#/library?cluster=techniques&concept=ice-slide",
+      "keywords": [
+        "ice",
+        "slide",
+        "surfaces",
+        "wheel-contact",
+        "technique",
+        "techniques"
+      ],
+      "aliases": [
+        "ice-slide"
+      ],
+      "priority": 28
+    },
+    {
+      "id": "guide-concept:ledge-grab",
+      "kind": "guide",
+      "title": "Ledge Grab",
+      "subtitle": "technique · Learn concept",
+      "description": "Using rotation and stability to reach or catch ledges that are not reachable through a normal jump arc.",
+      "siteId": "learn",
+      "siteLabel": "Learn",
+      "section": "block-geometry",
+      "path": "/",
+      "hash": "#/library?cluster=block-geometry&concept=ledge-grab",
+      "keywords": [
+        "ledge",
+        "transition",
+        "air-control",
+        "quarterpipe",
+        "technique",
+        "block-geometry"
+      ],
+      "aliases": [
+        "ledge-grab"
+      ],
+      "priority": 28
+    },
+    {
+      "id": "guide-concept:loops",
+      "kind": "guide",
+      "title": "Loops",
+      "subtitle": "geometry · Learn concept",
+      "description": "Loop blocks where speed, gravity, contact, and line angle decide whether the car stays attached.",
+      "siteId": "learn",
+      "siteLabel": "Learn",
+      "section": "block-geometry",
+      "path": "/",
+      "hash": "#/library?cluster=block-geometry&concept=loops",
+      "keywords": [
+        "loop",
+        "geometry",
+        "wallrides",
+        "speed-retention",
+        "block-geometry"
+      ],
+      "aliases": [
+        "loops"
+      ],
+      "priority": 28
+    },
+    {
+      "id": "guide-concept:one-wheel-wallclimb",
+      "kind": "guide",
+      "title": "One-Wheel Wallclimb",
+      "subtitle": "technique · Learn concept",
+      "description": "A climb state where one wheel holds enough wall contact to lift the car, especially with supportive forces.",
+      "siteId": "learn",
+      "siteLabel": "Learn",
+      "section": "techniques",
+      "path": "/",
+      "hash": "#/library?cluster=techniques&concept=one-wheel-wallclimb",
+      "keywords": [
+        "wallclimb",
+        "contact",
+        "wheel-contact",
+        "overwall",
+        "technique",
+        "techniques"
+      ],
+      "aliases": [
+        "one-wheel-wallclimb"
+      ],
+      "priority": 28
+    },
+    {
+      "id": "guide-concept:overwall",
+      "kind": "guide",
+      "title": "Overwall",
+      "subtitle": "technique · Learn concept",
+      "description": "Climbing or crossing borders, scenery, or block lips by using vehicle contact and angle.",
+      "siteId": "learn",
+      "siteLabel": "Learn",
+      "section": "techniques",
+      "path": "/",
+      "hash": "#/library?cluster=techniques&concept=overwall",
+      "keywords": [
+        "overwall",
+        "technique",
+        "wheel-contact",
+        "edge-bounce",
+        "techniques"
+      ],
+      "aliases": [
+        "overwall"
+      ],
+      "priority": 28
+    },
+    {
+      "id": "guide-concept:penalty-surfaces",
+      "kind": "guide",
+      "title": "Penalty Surfaces",
+      "subtitle": "concept · Learn concept",
+      "description": "Surfaces that reduce or cap speed, with possible bypasses through wiggles, partial contact, or route geometry.",
+      "siteId": "learn",
+      "siteLabel": "Learn",
+      "section": "surfaces",
+      "path": "/",
+      "hash": "#/library?cluster=surfaces&concept=penalty-surfaces",
+      "keywords": [
+        "penalty",
+        "surface",
+        "speed-cap",
+        "ak-wiggle",
+        "wheel-contact",
+        "concept",
+        "surfaces"
+      ],
+      "aliases": [
+        "penalty-surfaces"
+      ],
+      "priority": 28
+    },
+    {
+      "id": "guide-concept:plastic-overspeed",
+      "kind": "guide",
+      "title": "Plastic Overspeed",
+      "subtitle": "concept · Learn concept",
+      "description": "Plastic-specific speed behavior where overspeed can be gained or retained longer than expected.",
+      "siteId": "learn",
+      "siteLabel": "Learn",
+      "section": "surfaces",
+      "path": "/",
+      "hash": "#/library?cluster=surfaces&concept=plastic-overspeed",
+      "keywords": [
+        "plastic",
+        "overspeed",
+        "speed-retention",
+        "speed-cap",
+        "concept",
+        "surfaces"
+      ],
+      "aliases": [
+        "plastic-overspeed"
+      ],
+      "priority": 28
+    },
+    {
+      "id": "guide-concept:poolturns",
+      "kind": "guide",
+      "title": "Poolturns",
+      "subtitle": "geometry · Learn concept",
+      "description": "Pool turn blocks and their inside-wall or wallhug behavior.",
+      "siteId": "learn",
+      "siteLabel": "Learn",
+      "section": "block-geometry",
+      "path": "/",
+      "hash": "#/library?cluster=block-geometry&concept=poolturns",
+      "keywords": [
+        "pool",
+        "geometry",
+        "wallrides",
+        "wheel-contact",
+        "block-geometry"
+      ],
+      "aliases": [
+        "poolturns"
+      ],
+      "priority": 28
+    },
+    {
+      "id": "guide-concept:quarterpipe",
+      "kind": "guide",
+      "title": "Quarterpipe",
+      "subtitle": "geometry · Learn concept",
+      "description": "A steep curved transition block that can launch, rotate, or redirect the car.",
+      "siteId": "learn",
+      "siteLabel": "Learn",
+      "section": "block-geometry",
+      "path": "/",
+      "hash": "#/library?cluster=block-geometry&concept=quarterpipe",
+      "keywords": [
+        "geometry",
+        "transition",
+        "ledge-grab",
+        "wallrides",
+        "block-geometry"
+      ],
+      "aliases": [
+        "quarterpipe"
+      ],
+      "priority": 28
+    },
+    {
+      "id": "guide-concept:rally-car",
+      "kind": "guide",
+      "title": "Rally Car",
+      "subtitle": "vehicle · Learn concept",
+      "description": "The Rally vehicle and its car-specific grip, acceleration, stability, and forward/backward behavior.",
+      "siteId": "learn",
+      "siteLabel": "Learn",
+      "section": "vehicles",
+      "path": "/",
+      "hash": "#/library?cluster=vehicles&concept=rally-car",
+      "keywords": [
+        "vehicle",
+        "rally",
+        "vehicle-stability",
+        "steering-rhythm",
+        "vehicles"
+      ],
+      "aliases": [
+        "rally-car"
+      ],
+      "priority": 28
+    },
+    {
+      "id": "guide-concept:reactor-down",
+      "kind": "guide",
+      "title": "Reactor Down",
+      "subtitle": "force · Learn concept",
+      "description": "Downward reactor behavior that changes ground adherence and force direction.",
+      "siteId": "learn",
+      "siteLabel": "Learn",
+      "section": "special-forces",
+      "path": "/",
+      "hash": "#/library?cluster=special-forces&concept=reactor-down",
+      "keywords": [
+        "reactor",
+        "down",
+        "reactors",
+        "force",
+        "special-forces"
+      ],
+      "aliases": [
+        "reactor-down"
+      ],
+      "priority": 28
+    },
+    {
+      "id": "guide-concept:reactor-up",
+      "kind": "guide",
+      "title": "Reactor Up",
+      "subtitle": "force · Learn concept",
+      "description": "Upward reactor behavior, including green and orange variants where control and launch differ.",
+      "siteId": "learn",
+      "siteLabel": "Learn",
+      "section": "special-forces",
+      "path": "/",
+      "hash": "#/library?cluster=special-forces&concept=reactor-up",
+      "keywords": [
+        "reactor",
+        "up",
+        "reactors",
+        "air-control",
+        "force",
+        "special-forces"
+      ],
+      "aliases": [
+        "reactor-up"
+      ],
+      "priority": 28
+    },
+    {
+      "id": "guide-concept:reactors",
+      "kind": "guide",
+      "title": "Reactors",
+      "subtitle": "force · Learn concept",
+      "description": "Reactor effects that modify gravity, flight, ground behavior, and route possibilities.",
+      "siteId": "learn",
+      "siteLabel": "Learn",
+      "section": "special-forces",
+      "path": "/",
+      "hash": "#/library?cluster=special-forces&concept=reactors",
+      "keywords": [
+        "reactor",
+        "force",
+        "reactor-up",
+        "reactor-down",
+        "special-forces"
+      ],
+      "aliases": [
+        "reactors"
+      ],
+      "priority": 28
+    },
+    {
+      "id": "guide-concept:slopes",
+      "kind": "guide",
+      "title": "Slopes",
+      "subtitle": "geometry · Learn concept",
+      "description": "Uphills, downhills, and slanted blocks that change grip, contact, speed, and line choice.",
+      "siteId": "learn",
+      "siteLabel": "Learn",
+      "section": "block-geometry",
+      "path": "/",
+      "hash": "#/library?cluster=block-geometry&concept=slopes",
+      "keywords": [
+        "geometry",
+        "slope",
+        "floatiness",
+        "speed-retention",
+        "block-geometry"
+      ],
+      "aliases": [
+        "slopes"
+      ],
+      "priority": 28
+    },
+    {
+      "id": "guide-concept:speed-cap",
+      "kind": "guide",
+      "title": "Speed Cap",
+      "subtitle": "concept · Learn concept",
+      "description": "A surface or state-imposed upper speed that can sometimes be bypassed through contact, inputs, or special forces.",
+      "siteId": "learn",
+      "siteLabel": "Learn",
+      "section": "speed-momentum",
+      "path": "/",
+      "hash": "#/library?cluster=speed-momentum&concept=speed-cap",
+      "keywords": [
+        "speed",
+        "limit",
+        "penalty-surfaces",
+        "plastic-overspeed",
+        "concept",
+        "speed-momentum"
+      ],
+      "aliases": [
+        "speed-cap"
+      ],
+      "priority": 28
+    },
+    {
+      "id": "guide-concept:speed-retention",
+      "kind": "guide",
+      "title": "Speed Retention",
+      "subtitle": "concept · Learn concept",
+      "description": "Keeping speed that a surface, turn, landing, or force would normally remove.",
+      "siteId": "learn",
+      "siteLabel": "Learn",
+      "section": "speed-momentum",
+      "path": "/",
+      "hash": "#/library?cluster=speed-momentum&concept=speed-retention",
+      "keywords": [
+        "speed",
+        "momentum",
+        "speed-cap",
+        "wheel-contact",
+        "penalty-surfaces",
+        "concept",
+        "speed-momentum"
+      ],
+      "aliases": [
+        "speed-retention"
+      ],
+      "priority": 28
+    },
+    {
+      "id": "guide-concept:start-trick",
+      "kind": "guide",
+      "title": "Start Trick",
+      "subtitle": "technique · Learn concept",
+      "description": "A start-line input pattern that improves early acceleration or exit positioning.",
+      "siteId": "learn",
+      "siteLabel": "Learn",
+      "section": "inputs",
+      "path": "/",
+      "hash": "#/library?cluster=inputs&concept=start-trick",
+      "keywords": [
+        "start",
+        "inputs",
+        "steering-rhythm",
+        "speed-retention",
+        "technique"
+      ],
+      "aliases": [
+        "start-trick"
+      ],
+      "priority": 28
+    },
+    {
+      "id": "guide-concept:steering-rhythm",
+      "kind": "guide",
+      "title": "Steering Rhythm",
+      "subtitle": "concept · Learn concept",
+      "description": "Repeated steering timing, taps, analog motion, or AK changes that produce a useful physics response.",
+      "siteId": "learn",
+      "siteLabel": "Learn",
+      "section": "inputs",
+      "path": "/",
+      "hash": "#/library?cluster=inputs&concept=steering-rhythm",
+      "keywords": [
+        "inputs",
+        "steering",
+        "ak-wiggle",
+        "start-trick",
+        "concept"
+      ],
+      "aliases": [
+        "steering-rhythm"
+      ],
+      "priority": 28
+    },
+    {
+      "id": "guide-concept:surfaces",
+      "kind": "guide",
+      "title": "Surfaces",
+      "subtitle": "concept · Learn concept",
+      "description": "Trackmania surface behavior, including normal grip surfaces, ice, plastic, wood, rubber, penalty, and mixed states.",
+      "siteId": "learn",
+      "siteLabel": "Learn",
+      "section": "surfaces",
+      "path": "/",
+      "hash": "#/library?cluster=surfaces&concept=surfaces",
+      "keywords": [
+        "surface",
+        "physics",
+        "penalty-surfaces",
+        "plastic-overspeed",
+        "ice-slide",
+        "concept",
+        "surfaces"
+      ],
+      "aliases": [
+        "surfaces"
+      ],
+      "priority": 28
+    },
+    {
+      "id": "guide-concept:underwater",
+      "kind": "guide",
+      "title": "Underwater",
+      "subtitle": "context · Learn concept",
+      "description": "Driving while submerged, where drag, buoyancy feel, contact states, and special physics change normal assumptions.",
+      "siteId": "learn",
+      "siteLabel": "Learn",
+      "section": "contexts",
+      "path": "/",
+      "hash": "#/library?cluster=contexts&concept=underwater",
+      "keywords": [
+        "water",
+        "submerged",
+        "context",
+        "water-drag",
+        "wheel-contact",
+        "speed-retention",
+        "contexts"
+      ],
+      "aliases": [
+        "underwater"
+      ],
+      "priority": 28
+    },
+    {
+      "id": "guide-concept:vehicle-stability",
+      "kind": "guide",
+      "title": "Vehicle Stability",
+      "subtitle": "concept · Learn concept",
+      "description": "How strongly a car resists rotation, aligns itself, or stays controllable in awkward states.",
+      "siteId": "learn",
+      "siteLabel": "Learn",
+      "section": "grip-contact",
+      "path": "/",
+      "hash": "#/library?cluster=grip-contact&concept=vehicle-stability",
+      "keywords": [
+        "control",
+        "stability",
+        "air-control",
+        "ledge-grab",
+        "concept",
+        "grip-contact"
+      ],
+      "aliases": [
+        "vehicle-stability"
+      ],
+      "priority": 28
+    },
+    {
+      "id": "guide-concept:wallrides",
+      "kind": "guide",
+      "title": "Wallrides",
+      "subtitle": "geometry · Learn concept",
+      "description": "Driving on wall surfaces, including entry, holding, loss of speed, and exit jumps.",
+      "siteId": "learn",
+      "siteLabel": "Learn",
+      "section": "block-geometry",
+      "path": "/",
+      "hash": "#/library?cluster=block-geometry&concept=wallrides",
+      "keywords": [
+        "wall",
+        "geometry",
+        "wheel-contact",
+        "quarterpipe",
+        "block-geometry"
+      ],
+      "aliases": [
+        "wallrides"
+      ],
+      "priority": 28
+    },
+    {
+      "id": "guide-concept:water-drag",
+      "kind": "guide",
+      "title": "Water Drag",
+      "subtitle": "concept · Learn concept",
+      "description": "The underwater resistance that changes acceleration, steering trust, speed loss, and recovery timing.",
+      "siteId": "learn",
+      "siteLabel": "Learn",
+      "section": "special-forces",
+      "path": "/",
+      "hash": "#/library?cluster=special-forces&concept=water-drag",
+      "keywords": [
+        "water",
+        "drag",
+        "underwater",
+        "speed-retention",
+        "concept",
+        "special-forces"
+      ],
+      "aliases": [
+        "water-drag"
+      ],
+      "priority": 28
+    },
+    {
+      "id": "guide-concept:wheel-contact",
+      "kind": "guide",
+      "title": "Wheel Contact",
+      "subtitle": "concept · Learn concept",
+      "description": "How many wheels are touching useful ground, wall, edge, or mixed surfaces, and what that contact allows.",
+      "siteId": "learn",
+      "siteLabel": "Learn",
+      "section": "grip-contact",
+      "path": "/",
+      "hash": "#/library?cluster=grip-contact&concept=wheel-contact",
+      "keywords": [
+        "contact",
+        "grip",
+        "floatiness",
+        "speed-retention",
+        "concept",
+        "grip-contact"
+      ],
+      "aliases": [
+        "wheel-contact"
+      ],
+      "priority": 28
+    },
+    {
+      "id": "destination:learn:cluster:speed-momentum",
+      "kind": "destination",
+      "title": "Speed & Momentum Library",
+      "subtitle": "Learn topic cluster",
+      "description": "Acceleration, speed loss, caps, overspeed, and exits.",
+      "siteId": "learn",
+      "siteLabel": "Learn",
+      "section": "Library",
+      "path": "/",
+      "hash": "#/library?cluster=speed-momentum",
+      "keywords": [
+        "speed-momentum",
+        "Speed & Momentum"
+      ],
+      "aliases": [
+        "speed-momentum"
+      ],
+      "priority": 30
+    },
+    {
+      "id": "destination:learn:cluster:grip-contact",
+      "kind": "destination",
+      "title": "Grip & Contact Library",
+      "subtitle": "Learn topic cluster",
+      "description": "Noslide, slide states, wheel contact, wall contact, and floatiness.",
+      "siteId": "learn",
+      "siteLabel": "Learn",
+      "section": "Library",
+      "path": "/",
+      "hash": "#/library?cluster=grip-contact",
+      "keywords": [
+        "grip-contact",
+        "Grip & Contact"
+      ],
+      "aliases": [
+        "grip-contact"
+      ],
+      "priority": 30
+    },
+    {
+      "id": "destination:learn:cluster:inputs",
+      "kind": "destination",
+      "title": "Inputs Library",
+      "subtitle": "Learn topic cluster",
+      "description": "Steering, gas, brake, releases, taps, AKs, analog ranges, and wiggles.",
+      "siteId": "learn",
+      "siteLabel": "Learn",
+      "section": "Library",
+      "path": "/",
+      "hash": "#/library?cluster=inputs",
+      "keywords": [
+        "inputs",
+        "Inputs"
+      ],
+      "aliases": [
+        "inputs"
+      ],
+      "priority": 30
+    },
+    {
+      "id": "destination:learn:cluster:surfaces",
+      "kind": "destination",
+      "title": "Surfaces Library",
+      "subtitle": "Learn topic cluster",
+      "description": "Road, dirt, grass, ice, plastic, wood, water, penalty, rubber, and mixed contact.",
+      "siteId": "learn",
+      "siteLabel": "Learn",
+      "section": "Library",
+      "path": "/",
+      "hash": "#/library?cluster=surfaces",
+      "keywords": [
+        "surfaces",
+        "Surfaces"
+      ],
+      "aliases": [
+        "surfaces"
+      ],
+      "priority": 30
+    },
+    {
+      "id": "destination:learn:cluster:vehicles",
+      "kind": "destination",
+      "title": "Vehicles Library",
+      "subtitle": "Learn topic cluster",
+      "description": "Stadium, Rally, Snow, Desert, and car-specific quirks.",
+      "siteId": "learn",
+      "siteLabel": "Learn",
+      "section": "Library",
+      "path": "/",
+      "hash": "#/library?cluster=vehicles",
+      "keywords": [
+        "vehicles",
+        "Vehicles"
+      ],
+      "aliases": [
+        "vehicles"
+      ],
+      "priority": 30
+    },
+    {
+      "id": "destination:learn:cluster:block-geometry",
+      "kind": "destination",
+      "title": "Block Geometry Library",
+      "subtitle": "Learn topic cluster",
+      "description": "Walls, loops, bobs, tubes, quarterpipes, borders, slopes, edges, and corners.",
+      "siteId": "learn",
+      "siteLabel": "Learn",
+      "section": "Library",
+      "path": "/",
+      "hash": "#/library?cluster=block-geometry",
+      "keywords": [
+        "block-geometry",
+        "Block Geometry"
+      ],
+      "aliases": [
+        "block-geometry"
+      ],
+      "priority": 30
+    },
+    {
+      "id": "destination:learn:cluster:special-forces",
+      "kind": "destination",
+      "title": "Special Forces Library",
+      "subtitle": "Learn topic cluster",
+      "description": "Boosters, reactors, water, magnets, gravity changes, and non-standard forces.",
+      "siteId": "learn",
+      "siteLabel": "Learn",
+      "section": "Library",
+      "path": "/",
+      "hash": "#/library?cluster=special-forces",
+      "keywords": [
+        "special-forces",
+        "Special Forces"
+      ],
+      "aliases": [
+        "special-forces"
+      ],
+      "priority": 30
+    },
+    {
+      "id": "destination:learn:cluster:techniques",
+      "kind": "destination",
+      "title": "Techniques Library",
+      "subtitle": "Learn topic cluster",
+      "description": "Practical mechanics such as speedslides, wallrides, overwalls, bounces, and start tricks.",
+      "siteId": "learn",
+      "siteLabel": "Learn",
+      "section": "Library",
+      "path": "/",
+      "hash": "#/library?cluster=techniques",
+      "keywords": [
+        "techniques",
+        "Techniques"
+      ],
+      "aliases": [
+        "techniques"
+      ],
+      "priority": 30
+    },
+    {
+      "id": "destination:learn:cluster:contexts",
+      "kind": "destination",
+      "title": "Styles & Contexts Library",
+      "subtitle": "Learn topic cluster",
+      "description": "Fullspeed, tech, dirt, ice, RPG, trial, kacky, underwater, and question-specific context.",
+      "siteId": "learn",
+      "siteLabel": "Learn",
+      "section": "Library",
+      "path": "/",
+      "hash": "#/library?cluster=contexts",
+      "keywords": [
+        "contexts",
+        "Styles & Contexts"
+      ],
+      "aliases": [
+        "contexts"
+      ],
+      "priority": 30
+    },
+    {
+      "id": "destination:learn:cluster:practice-analysis",
+      "kind": "destination",
+      "title": "Practice & Analysis Library",
+      "subtitle": "Learn topic cluster",
+      "description": "Ghosts, inputs, section practice, validation status, and route reading.",
+      "siteId": "learn",
+      "siteLabel": "Learn",
+      "section": "Library",
+      "path": "/",
+      "hash": "#/library?cluster=practice-analysis",
+      "keywords": [
+        "practice-analysis",
+        "Practice & Analysis"
+      ],
+      "aliases": [
+        "practice-analysis"
+      ],
+      "priority": 30
+    },
+    {
+      "id": "learn-tool:ghost",
+      "kind": "tool",
+      "title": "Ghost Comparison",
+      "subtitle": "Learn tool",
+      "description": "Compare your run against a top ghost with speed, angle, and input deltas.",
+      "siteId": "learn",
+      "siteLabel": "Learn",
+      "section": "Tools",
+      "path": "/",
+      "hash": "#/tools/ghost",
+      "keywords": [
+        "ghost",
+        "learn"
+      ],
+      "aliases": [
+        "ghost"
+      ],
+      "priority": 36
+    },
+    {
+      "id": "learn-tool:inputs",
+      "kind": "tool",
+      "title": "Input Timeline",
+      "subtitle": "Learn tool",
+      "description": "Inspect speed, steer, pitch, and angle timing from a mock input trace.",
+      "siteId": "learn",
+      "siteLabel": "Learn",
+      "section": "Tools",
+      "path": "/",
+      "hash": "#/tools/inputs",
+      "keywords": [
+        "inputs",
+        "learn"
+      ],
+      "aliases": [
+        "inputs"
+      ],
+      "priority": 36
+    },
+    {
+      "id": "learn-tool:markdown",
+      "kind": "tool",
+      "title": "Markdown Playground",
+      "subtitle": "Learn tool",
+      "description": "Test Learn directives and inspect the rendered AST output.",
+      "siteId": "learn",
+      "siteLabel": "Learn",
+      "section": "Tools",
+      "path": "/",
+      "hash": "#/tools/markdown",
+      "keywords": [
+        "markdown",
+        "learn"
+      ],
+      "aliases": [
+        "markdown"
+      ],
+      "priority": 36
+    },
+    {
+      "id": "learn-tool:discord",
+      "kind": "tool",
+      "title": "Discord Mirror Preview",
+      "subtitle": "Learn tool",
+      "description": "Preview how a Learn page can mirror into Discord from the same AST.",
+      "siteId": "learn",
+      "siteLabel": "Learn",
+      "section": "Tools",
+      "path": "/",
+      "hash": "#/tools/discord",
+      "keywords": [
+        "discord",
+        "learn"
+      ],
+      "aliases": [
+        "discord"
+      ],
+      "priority": 36
+    },
+    {
+      "id": "learn-tool:export",
+      "kind": "tool",
+      "title": "Manifest Export",
+      "subtitle": "Learn tool",
+      "description": "View and copy the static manifest JSON currently powering Learn.",
+      "siteId": "learn",
+      "siteLabel": "Learn",
+      "section": "Tools",
+      "path": "/",
+      "hash": "#/tools/export",
+      "keywords": [
+        "export",
+        "learn"
+      ],
+      "aliases": [
+        "export"
+      ],
+      "priority": 36
+    },
+    {
+      "id": "archive:tm-2020",
+      "kind": "archive",
+      "title": "Trackmania (2020)",
+      "subtitle": "2020- · Windows · PS4/PS5 · Xbox One/Series · Cloud",
+      "description": "Current Trackmania release focused on time-trial racing on creator-made tracks, with Free, Standard, and Club access tiers.",
+      "siteId": "archive",
+      "siteLabel": "Archive",
+      "section": "TrackMania",
+      "path": "/",
+      "hash": "#tm-2020",
+      "keywords": [
+        "tm-2020",
+        "TrackMania",
+        "2020-",
+        "Windows",
+        "PS4/PS5",
+        "Xbox One/Series",
+        "Cloud"
+      ],
+      "aliases": [
+        "tm-2020"
+      ],
+      "priority": 32
+    },
+    {
+      "id": "archive:tm2-lagoon",
+      "kind": "archive",
+      "title": "TrackMania 2: Lagoon",
+      "subtitle": "2017 · Windows",
+      "description": "Tropical island environment with aquatic shortcuts and high-speed straights. Fourth and final TrackMania 2 title on ManiaPlanet.",
+      "siteId": "archive",
+      "siteLabel": "Archive",
+      "section": "TrackMania 2 / ManiaPlanet",
+      "path": "/",
+      "hash": "#tm2-lagoon",
+      "keywords": [
+        "tm2-lagoon",
+        "TrackMania 2 / ManiaPlanet",
+        "2017",
+        "Windows"
+      ],
+      "aliases": [
+        "tm2-lagoon"
+      ],
+      "priority": 32
+    },
+    {
+      "id": "archive:tm-turbo-2016",
+      "kind": "archive",
+      "title": "TrackMania Turbo",
+      "subtitle": "2016 · Windows · PS4 · Xbox One",
+      "description": "Console-focused entry with four environments: Rollercoaster Lagoon, International Stadium, Canyon Grand Drift, and Valley Down & Dirty, plus a co-op stunt mode.",
+      "siteId": "archive",
+      "siteLabel": "Archive",
+      "section": "TrackMania",
+      "path": "/",
+      "hash": "#tm-turbo-2016",
+      "keywords": [
+        "tm-turbo-2016",
+        "TrackMania",
+        "2016",
+        "Windows",
+        "PS4",
+        "Xbox One"
+      ],
+      "aliases": [
+        "tm-turbo-2016"
+      ],
+      "priority": 32
+    },
+    {
+      "id": "archive:tm2-valley",
+      "kind": "archive",
+      "title": "TrackMania 2: Valley",
+      "subtitle": "2013 · Windows",
+      "description": "Forested mountain roads, off-road terrain, and sweeping high-speed corners. Third TrackMania 2 title on ManiaPlanet.",
+      "siteId": "archive",
+      "siteLabel": "Archive",
+      "section": "TrackMania 2 / ManiaPlanet",
+      "path": "/",
+      "hash": "#tm2-valley",
+      "keywords": [
+        "tm2-valley",
+        "TrackMania 2 / ManiaPlanet",
+        "2013",
+        "Windows"
+      ],
+      "aliases": [
+        "tm2-valley"
+      ],
+      "priority": 32
+    },
+    {
+      "id": "archive:tm2-stadium",
+      "kind": "archive",
+      "title": "TrackMania 2: Stadium",
+      "subtitle": "2013 · Windows",
+      "description": "Free-to-play revival of the Nations/Forever Stadium environment on the ManiaPlanet engine.",
+      "siteId": "archive",
+      "siteLabel": "Archive",
+      "section": "TrackMania 2 / ManiaPlanet",
+      "path": "/",
+      "hash": "#tm2-stadium",
+      "keywords": [
+        "tm2-stadium",
+        "TrackMania 2 / ManiaPlanet",
+        "2013",
+        "Windows"
+      ],
+      "aliases": [
+        "tm2-stadium"
+      ],
+      "priority": 32
+    },
+    {
+      "id": "archive:shootmania-storm",
+      "kind": "archive",
+      "title": "ShootMania Storm",
+      "subtitle": "2013 · Windows",
+      "description": "Arena shooter built on ManiaPlanet with elimination and team modes plus community modding support.",
+      "siteId": "archive",
+      "siteLabel": "Archive",
+      "section": "ShootMania / ManiaPlanet",
+      "path": "/",
+      "hash": "#shootmania-storm",
+      "keywords": [
+        "shootmania-storm",
+        "ShootMania / ManiaPlanet",
+        "2013",
+        "Windows"
+      ],
+      "aliases": [
+        "shootmania-storm"
+      ],
+      "priority": 32
+    },
+    {
+      "id": "archive:tm2-canyon",
+      "kind": "archive",
+      "title": "TrackMania 2: Canyon",
+      "subtitle": "2011 · Windows",
+      "description": "ManiaPlanet launch title with canyon environments, drifting, and big air sections.",
+      "siteId": "archive",
+      "siteLabel": "Archive",
+      "section": "TrackMania 2 / ManiaPlanet",
+      "path": "/",
+      "hash": "#tm2-canyon",
+      "keywords": [
+        "tm2-canyon",
+        "TrackMania 2 / ManiaPlanet",
+        "2011",
+        "Windows"
+      ],
+      "aliases": [
+        "tm2-canyon"
+      ],
+      "priority": 32
+    },
+    {
+      "id": "archive:questmania",
+      "kind": "archive",
+      "title": "QuestMania",
+      "subtitle": "2011 · Windows",
+      "description": "RPG/adventure spin-off on ManiaPlanet with exploration, puzzles, and Nadeo physics.",
+      "siteId": "archive",
+      "siteLabel": "Archive",
+      "section": "QuestMania / ManiaPlanet",
+      "path": "/",
+      "hash": "#questmania",
+      "keywords": [
+        "questmania",
+        "QuestMania / ManiaPlanet",
+        "2011",
+        "Windows"
+      ],
+      "aliases": [
+        "questmania"
+      ],
+      "priority": 32
+    },
+    {
+      "id": "archive:tm-turbo-2010",
+      "kind": "archive",
+      "title": "TrackMania Turbo",
+      "subtitle": "2010 · Nintendo DS · Wii",
+      "description": "Spin-off for Nintendo DS and Wii with simplified turbo mechanics and handheld-oriented track design.",
+      "siteId": "archive",
+      "siteLabel": "Archive",
+      "section": "TrackMania",
+      "path": "/",
+      "hash": "#tm-turbo-2010",
+      "keywords": [
+        "tm-turbo-2010",
+        "TrackMania",
+        "2010",
+        "Nintendo DS",
+        "Wii"
+      ],
+      "aliases": [
+        "tm-turbo-2010"
+      ],
+      "priority": 32
+    },
+    {
+      "id": "archive:tm-build-to-race",
+      "kind": "archive",
+      "title": "TrackMania: Build to Race",
+      "subtitle": "2010 · Nintendo DS · Wii",
+      "description": "Track-building focused entry for Nintendo DS and Wii that lets players build and race their own courses.",
+      "siteId": "archive",
+      "siteLabel": "Archive",
+      "section": "TrackMania",
+      "path": "/",
+      "hash": "#tm-build-to-race",
+      "keywords": [
+        "tm-build-to-race",
+        "TrackMania",
+        "2010",
+        "Nintendo DS",
+        "Wii"
+      ],
+      "aliases": [
+        "tm-build-to-race"
+      ],
+      "priority": 32
+    },
+    {
+      "id": "archive:tm-nations-forever",
+      "kind": "archive",
+      "title": "TrackMania Nations Forever",
+      "subtitle": "2008 · Windows",
+      "description": "Free follow-up to TM Nations ESWC with the Stadium environment and online multiplayer.",
+      "siteId": "archive",
+      "siteLabel": "Archive",
+      "section": "TrackMania",
+      "path": "/",
+      "hash": "#tm-nations-forever",
+      "keywords": [
+        "tm-nations-forever",
+        "TrackMania",
+        "2008",
+        "Windows"
+      ],
+      "aliases": [
+        "tm-nations-forever"
+      ],
+      "priority": 32
+    },
+    {
+      "id": "archive:tm-united-forever",
+      "kind": "archive",
+      "title": "TrackMania United Forever",
+      "subtitle": "2008 · Windows",
+      "description": "Updated TM United release with the six classic environments and improved online features.",
+      "siteId": "archive",
+      "siteLabel": "Archive",
+      "section": "TrackMania",
+      "path": "/",
+      "hash": "#tm-united-forever",
+      "keywords": [
+        "tm-united-forever",
+        "TrackMania",
+        "2008",
+        "Windows"
+      ],
+      "aliases": [
+        "tm-united-forever"
+      ],
+      "priority": 32
+    },
+    {
+      "id": "archive:tm-ds",
+      "kind": "archive",
+      "title": "TrackMania DS",
+      "subtitle": "2008 · Nintendo DS",
+      "description": "Nintendo DS version of TrackMania with adapted tracks and a portable track editor.",
+      "siteId": "archive",
+      "siteLabel": "Archive",
+      "section": "TrackMania",
+      "path": "/",
+      "hash": "#tm-ds",
+      "keywords": [
+        "tm-ds",
+        "TrackMania",
+        "2008",
+        "Nintendo DS"
+      ],
+      "aliases": [
+        "tm-ds"
+      ],
+      "priority": 32
+    },
+    {
+      "id": "archive:tm-united",
+      "kind": "archive",
+      "title": "TrackMania United",
+      "subtitle": "2006 · Windows",
+      "description": "Bundles the six classic environments - Desert, Rally, Snow, Island, Bay, and Stadium - into one release.",
+      "siteId": "archive",
+      "siteLabel": "Archive",
+      "section": "TrackMania",
+      "path": "/",
+      "hash": "#tm-united",
+      "keywords": [
+        "tm-united",
+        "TrackMania",
+        "2006",
+        "Windows"
+      ],
+      "aliases": [
+        "tm-united"
+      ],
+      "priority": 32
+    },
+    {
+      "id": "archive:tm-nations-eswc",
+      "kind": "archive",
+      "title": "TrackMania Nations ESWC",
+      "subtitle": "2006 · Windows",
+      "description": "Free ESWC tie-in release with the Stadium environment and competitive multiplayer.",
+      "siteId": "archive",
+      "siteLabel": "Archive",
+      "section": "TrackMania",
+      "path": "/",
+      "hash": "#tm-nations-eswc",
+      "keywords": [
+        "tm-nations-eswc",
+        "TrackMania",
+        "2006",
+        "Windows"
+      ],
+      "aliases": [
+        "tm-nations-eswc"
+      ],
+      "priority": 32
+    },
+    {
+      "id": "archive:tm-sunrise-extreme",
+      "kind": "archive",
+      "title": "TrackMania Sunrise eXtreme",
+      "subtitle": "2005 · Windows",
+      "description": "Expanded TrackMania Sunrise re-release with extra tracks, updated physics, and eXtreme mode.",
+      "siteId": "archive",
+      "siteLabel": "Archive",
+      "section": "TrackMania",
+      "path": "/",
+      "hash": "#tm-sunrise-extreme",
+      "keywords": [
+        "tm-sunrise-extreme",
+        "TrackMania",
+        "2005",
+        "Windows"
+      ],
+      "aliases": [
+        "tm-sunrise-extreme"
+      ],
+      "priority": 32
+    },
+    {
+      "id": "archive:tm-original-free",
+      "kind": "archive",
+      "title": "TrackMania Original",
+      "subtitle": "2005 · Windows",
+      "description": "Free re-release of the original 2003 TrackMania with the Desert and Rally environments.",
+      "siteId": "archive",
+      "siteLabel": "Archive",
+      "section": "TrackMania",
+      "path": "/",
+      "hash": "#tm-original-free",
+      "keywords": [
+        "tm-original-free",
+        "TrackMania",
+        "2005",
+        "Windows"
+      ],
+      "aliases": [
+        "tm-original-free"
+      ],
+      "priority": 32
+    },
+    {
+      "id": "archive:tm-sunrise",
+      "kind": "archive",
+      "title": "TrackMania Sunrise",
+      "subtitle": "2005 · Windows",
+      "description": "Second main entry with the Island and Bay environments, updated graphics, and stunt-focused play.",
+      "siteId": "archive",
+      "siteLabel": "Archive",
+      "section": "TrackMania",
+      "path": "/",
+      "hash": "#tm-sunrise",
+      "keywords": [
+        "tm-sunrise",
+        "TrackMania",
+        "2005",
+        "Windows"
+      ],
+      "aliases": [
+        "tm-sunrise"
+      ],
+      "priority": 32
+    },
+    {
+      "id": "archive:tm-power-up",
+      "kind": "archive",
+      "title": "TrackMania: Power Up!",
+      "subtitle": "2004 · Windows",
+      "description": "Expansion pack for the original TrackMania with new tracks, cars, and game modes.",
+      "siteId": "archive",
+      "siteLabel": "Archive",
+      "section": "TrackMania",
+      "path": "/",
+      "hash": "#tm-power-up",
+      "keywords": [
+        "tm-power-up",
+        "TrackMania",
+        "2004",
+        "Windows"
+      ],
+      "aliases": [
+        "tm-power-up"
+      ],
+      "priority": 32
+    },
+    {
+      "id": "archive:tm-original",
+      "kind": "archive",
+      "title": "TrackMania",
+      "subtitle": "2003 · Windows",
+      "description": "Original TrackMania release focused on time-trial racing across the Desert and Rally environments.",
+      "siteId": "archive",
+      "siteLabel": "Archive",
+      "section": "TrackMania",
+      "path": "/",
+      "hash": "#tm-original",
+      "keywords": [
+        "tm-original",
+        "TrackMania",
+        "2003",
+        "Windows"
+      ],
+      "aliases": [
+        "tm-original"
+      ],
+      "priority": 32
+    }
+  ]
+}

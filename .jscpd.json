@@ -1,0 +1,16 @@
+{
+  "threshold": 0,
+  "reporters": ["console", "threshold"],
+  "minTokens": 100,
+  "minLines": 15,
+  "mode": "strict",
+  "format": ["javascript", "powershell"],
+  "ignore": [
+    "**/node_modules/**",
+    "**/test/**",
+    "**/*.test.js",
+    "**/*.test.mjs",
+    "**/legacyAlterationRegexCatalog.js",
+    "**/mock-data.js"
+  ]
+}

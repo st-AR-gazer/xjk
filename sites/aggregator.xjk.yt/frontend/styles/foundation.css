@@ -1,0 +1,181 @@
+:root {
+  --bg-main: #020406;
+  --bg-panel: rgba(5, 8, 11, 0.76);
+  --bg-panel-solid: #05080b;
+  --bg-control: rgba(0, 0, 0, 0.58);
+  --border-subtle: rgba(255, 255, 255, 0.11);
+  --border-medium: rgba(255, 255, 255, 0.2);
+  --text-main: #f2f2f2;
+  --text-muted: #a8a8a8;
+  --text-dim: #72777c;
+  --accent: #ef4444;
+  --accent-soft: rgba(239, 68, 68, 0.14);
+  --coral: #ef4444;
+  --ink-dim: #a8a8a8;
+  --ok: #70d85f;
+  --warn: #fb923c;
+  --good: #79e6a0;
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  margin: 0;
+  min-height: 100vh;
+  color: var(--text-main);
+  font-family:
+    "IBM Plex Sans Condensed",
+    "Roboto Condensed",
+    "Inter",
+    system-ui,
+    -apple-system,
+    BlinkMacSystemFont,
+    "Segoe UI",
+    sans-serif;
+  font-size: 16px;
+}
+
+body {
+  line-height: 1.45;
+  background: radial-gradient(ellipse at 50% -18%, rgba(239, 68, 68, 0.05), transparent 43%), var(--bg-main);
+}
+
+a {
+  color: inherit;
+  text-decoration: none;
+}
+
+button,
+input,
+select {
+  font: inherit;
+}
+
+button {
+  color: inherit;
+}
+
+[hidden] {
+  display: none !important;
+}
+
+:focus-visible {
+  outline: 1px solid var(--accent);
+  outline-offset: 3px;
+}
+
+h1,
+h2,
+h3,
+p {
+  margin: 0;
+}
+
+/* Backdrop: faint subway texture */
+.backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  opacity: 0.12;
+  background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 1540 540'%3E%3Cg fill='none' stroke='%23ef4444' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M24 86H158L206 134H370L426 190H612L680 258H812L888 334H1058L1128 404H1432' stroke-opacity='.15' stroke-width='3' stroke-dasharray='10 12'/%3E%3Cpath d='M72 420H210L272 358H458L520 296H678' stroke-opacity='.1' stroke-width='4'/%3E%3Cpath d='M866 118H1008L1060 66H1284L1348 130H1510' stroke-opacity='.12' stroke-width='4'/%3E%3Cpath d='M944 472H1104L1160 416H1328L1394 482' stroke-opacity='.1' stroke-width='3' stroke-dasharray='11 11'/%3E%3C/g%3E%3Cg fill='%23020406' stroke='%23ef4444'%3E%3Ccircle cx='158' cy='86' r='7' stroke-opacity='.16' stroke-width='4'/%3E%3Ccircle cx='370' cy='134' r='7' stroke-opacity='.12' stroke-width='4'/%3E%3Ccircle cx='612' cy='190' r='7' stroke-opacity='.12' stroke-width='4'/%3E%3Ccircle cx='812' cy='258' r='7' stroke-opacity='.13' stroke-width='4'/%3E%3Ccircle cx='1058' cy='334' r='7' stroke-opacity='.13' stroke-width='4'/%3E%3Ccircle cx='210' cy='420' r='7' stroke-opacity='.12' stroke-width='4'/%3E%3Ccircle cx='458' cy='358' r='7' stroke-opacity='.11' stroke-width='4'/%3E%3Ccircle cx='1008' cy='118' r='7' stroke-opacity='.13' stroke-width='4'/%3E%3Ccircle cx='1284' cy='66' r='7' stroke-opacity='.13' stroke-width='4'/%3E%3Ccircle cx='1328' cy='416' r='7' stroke-opacity='.11' stroke-width='4'/%3E%3C/svg%3E")
+    center top / 100% auto no-repeat;
+}
+
+/* Shell + topbar */
+.agg-shell {
+  min-height: 100vh;
+}
+
+.agg-topbar {
+  position: sticky;
+  top: 0;
+  z-index: 40;
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 22px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  background: rgba(2, 4, 6, 0.88);
+  backdrop-filter: blur(10px);
+}
+
+.agg-brand {
+  display: grid;
+  place-items: center;
+  width: 38px;
+  height: 31px;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  border-radius: 4px;
+  background: rgba(0, 0, 0, 0.14);
+  opacity: 0.72;
+}
+
+.agg-brand:hover {
+  border-color: rgba(255, 255, 255, 0.34);
+  background: rgba(255, 255, 255, 0.035);
+  opacity: 1;
+}
+
+.agg-brand-logo {
+  display: block;
+  width: 25px;
+  height: 18px;
+  object-fit: contain;
+}
+
+.agg-status {
+  justify-self: start;
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  align-items: center;
+  gap: 9px;
+  min-height: 34px;
+  padding: 0 10px;
+  border: 1px solid var(--border-subtle);
+  border-radius: 4px;
+  background: rgba(0, 0, 0, 0.44);
+}
+
+.status-dot {
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  background: var(--ok);
+  box-shadow: 0 0 10px rgba(112, 216, 95, 0.7);
+}
+
+.status-copy {
+  min-width: 0;
+}
+
+.status-copy strong,
+.status-copy small {
+  display: block;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.status-copy strong {
+  font-size: 14px;
+  font-weight: 500;
+  line-height: 1.05;
+}
+
+.status-copy small {
+  margin-top: 2px;
+  color: var(--text-muted);
+  font-family: "Space Mono", ui-monospace, monospace;
+  font-size: 11px;
+}
+
+.agg-account-slot {
+  justify-self: end;
+}

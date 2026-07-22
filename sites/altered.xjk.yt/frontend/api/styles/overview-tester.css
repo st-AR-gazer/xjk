@@ -1,0 +1,246 @@
+/* Main */
+.docs-main {
+  min-width: 0;
+  padding: 0.7rem 0.9rem 2rem;
+}
+
+.docs-topbar {
+  position: sticky;
+  top: calc(var(--xjk-shared-topbar-height) + 0.4rem);
+  z-index: 5;
+  display: flex;
+  justify-content: space-between;
+  gap: 0.6rem;
+  align-items: center;
+  margin-bottom: 0.6rem;
+  padding: 0.5rem 0.7rem;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: rgba(10, 22, 33, 0.92);
+  backdrop-filter: blur(10px);
+  box-shadow: var(--shadow);
+}
+
+.topbar-copy strong {
+  font-size: 0.86rem;
+  line-height: 1.3;
+}
+
+.topbar-actions {
+  display: flex;
+  gap: 0.35rem;
+  flex-shrink: 0;
+}
+
+/* Buttons */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 1.9rem;
+  padding: 0.35rem 0.65rem;
+  border: 1px solid transparent;
+  border-radius: 0.55rem;
+  font: inherit;
+  font-size: 0.78rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.btn.primary {
+  background: var(--accent);
+  color: #06111a;
+}
+.btn.ghost {
+  border-color: var(--line-strong);
+  background: rgba(255, 255, 255, 0.03);
+  color: var(--ink);
+}
+
+/* Sections */
+.doc-section {
+  margin-bottom: 0.6rem;
+  padding: 0.7rem 0.8rem;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: var(--panel);
+  box-shadow: var(--shadow);
+}
+
+.doc-section-compact {
+  padding: 0.55rem 0.75rem;
+}
+
+.doc-section-group {
+  padding: 0;
+  overflow: hidden;
+}
+
+.lead,
+.inline-empty {
+  color: var(--muted);
+  font-size: 0.84rem;
+  line-height: 1.5;
+}
+
+/* Overview */
+.overview-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 0.8rem;
+}
+
+.overview-info h2 {
+  margin: 0;
+  font-size: 1.05rem;
+  line-height: 1.2;
+}
+.overview-info .lead {
+  margin: 0.15rem 0 0;
+}
+
+.stat-pills {
+  display: flex;
+  gap: 0.35rem;
+  flex-shrink: 0;
+}
+
+.stat-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.2rem;
+  padding: 0.22rem 0.55rem;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  font-size: 0.72rem;
+  color: var(--muted);
+}
+
+.stat-pill strong {
+  color: var(--ink);
+}
+
+.code-inline {
+  margin-top: 0.45rem;
+  padding: 0.4rem 0.6rem;
+  border: 1px solid var(--line);
+  border-radius: 0.55rem;
+  background: #08131d;
+}
+
+.code-inline code {
+  font-size: 0.76rem;
+  color: var(--accent);
+  word-break: break-all;
+}
+
+/* Tester */
+.tester-details {
+}
+
+.tester-summary {
+  cursor: pointer;
+  font-weight: 600;
+  font-size: 0.86rem;
+  color: var(--accent);
+  list-style: none;
+  user-select: none;
+}
+
+.tester-summary::-webkit-details-marker {
+  display: none;
+}
+.tester-summary::marker {
+  content: "";
+}
+
+.tester-summary::before {
+  content: "\25B6\FE0E";
+  display: inline-block;
+  margin-right: 0.4rem;
+  font-size: 0.6rem;
+  transition: transform 0.15s;
+}
+
+details[open] > .tester-summary::before {
+  transform: rotate(90deg);
+}
+
+.tester-form {
+  display: flex;
+  gap: 0.5rem;
+  align-items: end;
+  flex-wrap: wrap;
+  margin-top: 0.5rem;
+}
+
+.field {
+  display: grid;
+  gap: 0.2rem;
+  min-width: 0;
+  flex: 1 1 12rem;
+}
+
+.field span {
+  color: var(--muted);
+  font-size: 0.64rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.field input {
+  width: 100%;
+  min-height: 2.1rem;
+  border: 1px solid var(--line-strong);
+  border-radius: 0.6rem;
+  background: #0a1621;
+  color: var(--ink);
+  padding: 0 0.65rem;
+  font: inherit;
+}
+
+.field-small {
+  flex: 0 0 6rem;
+}
+
+.tester-status {
+  min-height: 1rem;
+  margin: 0.4rem 0 0.35rem;
+  color: var(--accent);
+  font-size: 0.78rem;
+  font-weight: 500;
+}
+
+.response-block {
+  min-height: 6rem;
+}
+
+/* Code Blocks */
+.code-block {
+  border: 1px solid var(--line);
+  border-radius: 0.65rem;
+  background: #08131d;
+  color: #f3f7fb;
+  overflow: hidden;
+}
+
+.code-label {
+  padding: 0.5rem 0.7rem 0;
+  color: #8fb0cb;
+  font-size: 0.62rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.code-block pre {
+  margin: 0;
+  padding: 0.5rem 0.7rem 0.6rem;
+  overflow-x: auto;
+  white-space: pre-wrap;
+  word-break: break-word;
+  font-size: 0.76rem;
+  line-height: 1.5;
+}

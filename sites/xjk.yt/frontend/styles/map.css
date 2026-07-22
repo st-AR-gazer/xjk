@@ -1,0 +1,307 @@
+.network-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  width: 100%;
+  min-width: 0;
+  height: 100%;
+  min-height: 0;
+}
+
+.map-stage {
+  position: relative;
+  min-width: 0;
+  min-height: 0;
+  overflow: hidden;
+  background:
+    linear-gradient(var(--grid-line-strong) 1px, transparent 1px),
+    linear-gradient(90deg, var(--grid-line-strong) 1px, transparent 1px),
+    linear-gradient(var(--grid-line) 1px, transparent 1px),
+    linear-gradient(90deg, var(--grid-line) 1px, transparent 1px), #020406;
+  background-size:
+    40px 40px,
+    40px 40px,
+    10px 10px,
+    10px 10px;
+}
+
+.map-stage::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 3;
+  pointer-events: none;
+  background:
+    radial-gradient(circle at 50% 45%, transparent 0%, rgba(0, 0, 0, 0.35) 72%, rgba(0, 0, 0, 0.75) 100%),
+    linear-gradient(90deg, rgba(0, 0, 0, 0.25), transparent 18%, transparent 82%, rgba(0, 0, 0, 0.32));
+}
+
+.map-canvas {
+  --map-pan-x: 0px;
+  --map-pan-y: 0px;
+  --map-scale: 1;
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  display: grid;
+  place-items: center;
+  padding: 18px;
+  cursor: grab;
+  touch-action: none;
+  user-select: none;
+}
+
+.map-canvas.is-panning {
+  cursor: grabbing;
+}
+
+.network-map {
+  width: min(100%, 1250px);
+  height: min(calc(100vh - var(--topbar-height) - 36px), 760px);
+  height: min(calc(100dvh - var(--topbar-height) - 36px), 760px);
+  overflow: visible;
+  transform: translate(var(--map-pan-x), var(--map-pan-y)) scale(var(--map-scale));
+  transform-origin: center center;
+  will-change: transform;
+}
+
+.map-canvas.is-panning .network-map {
+  pointer-events: none;
+}
+
+.inactive-route {
+  fill: none;
+  stroke: var(--inactive-route);
+  stroke-width: 3;
+  stroke-linecap: round;
+  stroke-linejoin: miter;
+  stroke-miterlimit: 2;
+}
+
+.inactive-route.is-dashed {
+  stroke-dasharray: 8 7;
+}
+
+.inactive-node {
+  fill: #020406;
+  stroke: var(--inactive-node);
+  stroke-width: 2;
+}
+
+.route {
+  fill: none;
+  stroke-linecap: round;
+  stroke-linejoin: miter;
+  stroke-miterlimit: 2;
+}
+
+.route-shadow {
+  stroke: rgba(0, 0, 0, 0.86);
+  stroke-width: 10;
+  transition: opacity 150ms ease;
+}
+
+.route-line {
+  stroke: var(--hub-color);
+  stroke-width: 4;
+  opacity: 0.88;
+  transition:
+    opacity 150ms ease,
+    filter 150ms ease,
+    stroke-width 150ms ease;
+}
+
+.route-line.is-selected,
+.route-line:hover {
+  opacity: 1;
+  stroke-width: 4.5;
+  filter: drop-shadow(0 0 5px var(--hub-color));
+}
+
+.route-line.is-muted,
+.route-shadow.is-muted {
+  opacity: 0.28;
+}
+
+.route-overpass-gap {
+  fill: #020406;
+  stroke: #020406;
+  stroke-width: 4;
+}
+
+.route-overpass-line {
+  stroke: var(--hub-color);
+  stroke-width: 4;
+  stroke-linecap: round;
+}
+
+.route-stop {
+  fill: #020406;
+  stroke: var(--hub-color);
+  stroke-width: 2.4;
+  opacity: 0.95;
+  pointer-events: visiblePainted;
+  transition:
+    opacity 150ms ease,
+    filter 150ms ease,
+    stroke-width 150ms ease;
+}
+
+.route-stop--transfer {
+  stroke: #e8e8e8;
+  stroke-width: 3;
+}
+
+.route-stop.is-selected,
+.route-stop:hover {
+  opacity: 1;
+  stroke-width: 3;
+  filter: drop-shadow(0 0 5px var(--hub-color));
+}
+
+.route-stop.is-muted {
+  opacity: 0.28;
+}
+
+.junction {
+  fill: #020406;
+  stroke: #e8e8e8;
+  stroke-width: 3;
+}
+
+.junction--important {
+  stroke-width: 3.5;
+}
+
+.hub-group,
+.hub-label-link,
+.hub-node {
+  transition:
+    opacity 150ms ease,
+    filter 150ms ease,
+    transform 150ms ease;
+}
+
+.hub-group {
+  transform-box: fill-box;
+  transform-origin: center;
+}
+
+.hub-group.is-muted {
+  opacity: 0.38;
+}
+
+.hub-group.is-selected {
+  opacity: 1;
+}
+
+.hub-group.is-selected .hub-node,
+.hub-node:hover,
+.hub-node:focus-visible {
+  filter: drop-shadow(0 0 7px var(--hub-color));
+  transform: scale(1.06);
+}
+
+.hub-node {
+  cursor: pointer;
+  outline: 0;
+  transform-box: fill-box;
+  transform-origin: center;
+}
+
+.hub-node:focus-visible {
+  outline: 1px solid var(--hub-color);
+  outline-offset: 4px;
+}
+
+.node-glow {
+  fill: transparent;
+  stroke: var(--hub-color);
+  stroke-width: 2;
+  opacity: 0.35;
+}
+
+.node-ring {
+  fill: #020406;
+  stroke: var(--hub-color);
+  stroke-width: 4;
+}
+
+.node-inner {
+  fill: none;
+  stroke: rgba(255, 255, 255, 0.8);
+  stroke-width: 1.5;
+}
+
+.node-core {
+  fill: #020406;
+  stroke: none;
+}
+
+.hub-node--central .node-glow {
+  fill: rgba(154, 236, 53, 0.06);
+  opacity: 1;
+}
+
+.hub-node--central .node-ring {
+  stroke-width: 4.5;
+}
+
+.hub-node--central .node-inner {
+  stroke: rgba(255, 255, 255, 0.55);
+}
+
+.hub-node--central .node-core {
+  fill: rgba(154, 236, 53, 0.05);
+}
+
+.hub-node--excluded .node-inner {
+  stroke-dasharray: 3 4;
+}
+
+.hub-label-link {
+  cursor: pointer;
+  text-decoration: none;
+}
+
+.hub-title,
+.hub-description,
+.hub-action {
+  paint-order: stroke;
+  stroke: rgba(0, 0, 0, 0.88);
+}
+
+.hub-title {
+  fill: #f4f4f4;
+  stroke-width: 5px;
+  font-size: 19px;
+  font-weight: 500;
+  line-height: 1.05;
+}
+
+.hub-description {
+  fill: #b9b9b9;
+  stroke-width: 4px;
+  font-size: 13px;
+  font-weight: 400;
+  line-height: 1.25;
+}
+
+.hub-action {
+  fill: var(--hub-color);
+  stroke-width: 4px;
+  font-family: "Space Mono", ui-monospace, monospace;
+  font-size: 12px;
+  font-weight: 500;
+  letter-spacing: 0.03em;
+}
+
+.hub-label-link:hover .hub-action,
+.hub-label-link:focus-visible .hub-action,
+.hub-label-link.is-selected .hub-action {
+  text-decoration: underline;
+}
+
+.hub-label-link:focus-visible {
+  outline: 1px solid var(--hub-color);
+  outline-offset: 4px;
+}

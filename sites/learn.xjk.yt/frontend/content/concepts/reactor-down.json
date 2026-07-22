@@ -1,0 +1,8 @@
+{
+  "title": "Reactor Down",
+  "area": "special-forces",
+  "type": "force",
+  "summary": "Downward reactor behavior that changes ground adherence and force direction.",
+  "tags": ["reactor", "down"],
+  "relatedConcepts": ["reactors"]
+}

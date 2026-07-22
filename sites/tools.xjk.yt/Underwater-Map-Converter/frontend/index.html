@@ -1,0 +1,105 @@
+<!doctype html>
+<html lang="en" data-tool-id="underwater-converter">
+  <head>
+    <link rel="stylesheet" href="/shared/xjk-core/chrome-prepaint.css?v=2" data-xjk-chrome-prepaint />
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Underwater Converter · tools.xjk.yt</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Condensed:wght@400;500;600;700&family=Inter:wght@400;500;600;700&family=Space+Mono:wght@400;700&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="/shared/xjk-core/surface-foundation.css?v=2" />
+    <link rel="stylesheet" href="../shared/tool-theme/foundation.css?v=2" />
+    <link rel="stylesheet" href="../shared/tool-theme/uploads.css?v=2" />
+    <link rel="stylesheet" href="../shared/tool-theme/controls.css?v=2" />
+    <link rel="stylesheet" href="../shared/tool-theme/candidates.css?v=2" />
+    <link rel="stylesheet" href="../shared/tool-theme/documentation.css?v=2" />
+    <link rel="stylesheet" href="../shared/tool-howto.css?v=2" />
+    <link rel="stylesheet" href="styles.css?v=2" />
+    <link rel="icon" href="/favicon.svg?v=2" type="image/svg+xml" />
+  </head>
+  <body>
+    <div class="backdrop" aria-hidden="true"></div>
+
+    <main class="shell">
+      <section class="hero">
+        <p class="eyebrow">Map Conversion</p>
+        <h1>Underwater Map Converter</h1>
+        <p class="lead">
+          Upload a <code>.Map.Gbx</code> and convert it into an underwater variant. Only supports non-Stadium
+          environments and vistas, with automatic carrier detection.
+        </p>
+      </section>
+
+      <section id="drop" class="dropcard" role="button" tabindex="0" aria-label="Choose map files">
+        <input id="file" type="file" accept=".gbx,.Map.Gbx" multiple />
+        <p class="card-title">Map Input</p>
+        <p class="card-copy">Drop one or more <code>.Map.Gbx</code>/<code>.Gbx</code> files here or click to browse.</p>
+        <p class="card-copy">Compatible with non-Stadium environments and vistas only.</p>
+        <p class="card-copy">Batch conversions download a zip (includes an <code>errors.json</code> report).</p>
+        <p id="fileName" class="card-meta">No maps selected</p>
+      </section>
+
+      <section class="options panel" aria-label="Conversion options">
+        <h2>Options</h2>
+
+        <div class="option-group">
+          <label class="option-label" for="variant">Variant</label>
+          <select id="variant" class="option-select">
+            <option value="both">Both (normal + meshless)</option>
+            <option value="normal">Normal</option>
+            <option value="meshless" selected>Meshless</option>
+          </select>
+          <p class="option-hint">Normal keeps water meshes visible. Meshless removes visual water geometry.</p>
+        </div>
+
+        <div class="option-group">
+          <label class="option-label" for="coverage">Coverage</label>
+          <select id="coverage" class="option-select">
+            <option value="full-stack" selected>Full stack</option>
+            <option value="one-layer">One layer</option>
+          </select>
+          <p class="option-hint">Full stack fills the entire vertical range. One layer places a single water sheet.</p>
+        </div>
+
+        <div class="option-group">
+          <label class="option-label" for="suffix">Output suffix</label>
+          <input id="suffix" type="text" class="option-input" value="Underwater" maxlength="64" />
+          <p class="option-hint">Appended to the map name in the output file.</p>
+        </div>
+      </section>
+
+      <section class="action-row">
+        <button id="go" class="go" type="button" disabled>Convert Maps</button>
+      </section>
+
+      <div id="status" class="status" role="status" aria-live="polite"></div>
+      <div id="error" class="error" role="alert"></div>
+    </main>
+
+    <div id="overlay" class="overlay hidden" aria-live="polite" aria-busy="true">
+      <div class="loader" aria-hidden="true"></div>
+      <p id="overlayText" class="overlay-title">Uploading...</p>
+      <p id="progressText" class="overlay-copy muted small"></p>
+    </div>
+
+    <script src="../shared/tool-browser-runtime.js?v=2"></script>
+    <script src="../shared/tool-theme.js?v=2"></script>
+    <script src="app.js?v=2"></script>
+    <script
+      type="module"
+      src="/shared/xjk-core/sidenav-boot.js?v=2"
+      data-xjk-sidenav="tools"
+      data-xjk-page="tool"
+    ></script>
+    <script
+      type="module"
+      src="/shared/xjk-core/topbar-loader.js?v=2"
+      data-xjk-topbar="tools"
+      data-xjk-page="tool"
+    ></script>
+  </body>
+</html>

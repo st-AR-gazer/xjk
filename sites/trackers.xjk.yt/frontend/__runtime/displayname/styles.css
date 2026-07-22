@@ -1,0 +1,25 @@
+:root {
+  --accent: #58cbff;
+  --accent-strong: #8adcff;
+  --accent-soft: rgba(88, 203, 255, 0.12);
+  --accent-border: rgba(88, 203, 255, 0.42);
+  --accent-glow: rgba(88, 203, 255, 0.2);
+  --border: rgba(88, 203, 255, 0.14);
+  --border-hover: rgba(88, 203, 255, 0.35);
+}
+
+.dashboard-grid {
+  display: grid;
+  gap: 1rem;
+  grid-template-columns: 1fr;
+}
+
+@media (min-width: 880px) {
+  .dashboard-grid {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+#accountIds.form-textarea {
+  min-height: 180px;
+}

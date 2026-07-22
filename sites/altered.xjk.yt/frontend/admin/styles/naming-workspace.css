@@ -1,0 +1,389 @@
+/* Naming workspace */
+.naming-workspace-shell {
+  margin-bottom: 0.75rem;
+}
+
+.naming-workspace-hero {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 0.9rem;
+  padding: 1rem 1.05rem;
+  border: 1px solid rgba(255, 255, 255, 0.07);
+  border-radius: 18px;
+  background:
+    radial-gradient(circle at top right, rgba(114, 241, 255, 0.12), transparent 35%),
+    linear-gradient(135deg, rgba(255, 255, 255, 0.03), rgba(255, 255, 255, 0.015));
+  margin-bottom: 0.75rem;
+}
+.naming-workspace-hero h3 {
+  font-size: 1.08rem;
+}
+.naming-workspace-copy {
+  margin-top: 0.38rem;
+  max-width: 72ch;
+  color: var(--a-dim);
+  font-size: 0.84rem;
+  line-height: 1.5;
+}
+.naming-workspace-actions {
+  display: flex;
+  gap: 0.45rem;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+}
+
+.naming-metric-grid {
+  display: grid;
+  grid-template-columns: repeat(6, minmax(0, 1fr));
+  gap: 0.55rem;
+  margin-bottom: 0.75rem;
+}
+.naming-metric-card {
+  display: grid;
+  gap: 0.25rem;
+  min-width: 0;
+  padding: 0.82rem 0.88rem;
+  border-radius: 16px;
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  background: rgba(255, 255, 255, 0.018);
+  color: var(--a-ink);
+  text-align: left;
+}
+button.naming-metric-card {
+  appearance: none;
+  cursor: pointer;
+  transition:
+    transform 0.18s var(--ease),
+    border-color 0.18s var(--ease),
+    background 0.18s var(--ease);
+}
+button.naming-metric-card:hover {
+  transform: translateY(-1px);
+  border-color: rgba(255, 255, 255, 0.12);
+}
+.naming-metric-card.is-active {
+  border-color: rgba(114, 241, 255, 0.32);
+  box-shadow: 0 0 0 1px rgba(114, 241, 255, 0.16) inset;
+}
+.naming-metric-card.accent-info {
+  background: linear-gradient(180deg, rgba(114, 241, 255, 0.09), rgba(255, 255, 255, 0.018));
+}
+.naming-metric-card.accent-warn {
+  background: linear-gradient(180deg, rgba(255, 183, 77, 0.1), rgba(255, 255, 255, 0.018));
+}
+.naming-metric-card.accent-success {
+  background: linear-gradient(180deg, rgba(89, 214, 140, 0.1), rgba(255, 255, 255, 0.018));
+}
+.naming-metric-card.accent-muted {
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.045), rgba(255, 255, 255, 0.015));
+}
+.naming-metric-label {
+  font: 500 0.68rem var(--font-head);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--a-muted);
+}
+.naming-metric-value {
+  font: 700 1.32rem var(--font-head);
+  color: var(--a-ink);
+}
+.naming-metric-note {
+  font-size: 0.76rem;
+  line-height: 1.35;
+  color: var(--a-dim);
+}
+
+.naming-control-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1.25fr) minmax(0, 0.95fr);
+  gap: 0.75rem;
+  margin-bottom: 0.75rem;
+}
+.naming-filter-panel,
+.naming-ops-panel {
+  padding: 0.95rem 1rem;
+  border: 1px solid var(--a-line);
+  border-radius: 18px;
+  background: rgba(255, 255, 255, 0.018);
+}
+.naming-panel-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 0.65rem;
+  margin-bottom: 0.7rem;
+}
+.naming-panel-head h3 {
+  font-size: 1rem;
+}
+.naming-panel-copy {
+  margin: 0 0 0.8rem;
+  font-size: 0.82rem;
+  color: var(--a-dim);
+  line-height: 1.5;
+}
+.naming-filter-grid,
+.naming-similarity-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.55rem;
+}
+.naming-preset-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  margin-top: 0.8rem;
+}
+.naming-preset-chip {
+  appearance: none;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: rgba(255, 255, 255, 0.03);
+  color: var(--a-dim);
+  border-radius: 999px;
+  padding: 0.42rem 0.7rem;
+  font: 600 0.72rem var(--font-head);
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: all 0.18s var(--ease);
+}
+.naming-preset-chip:hover {
+  color: var(--a-ink);
+  border-color: rgba(255, 255, 255, 0.14);
+}
+.naming-preset-chip.is-active {
+  color: var(--a-ink);
+  border-color: rgba(114, 241, 255, 0.28);
+  background: linear-gradient(135deg, rgba(114, 241, 255, 0.12), rgba(255, 255, 255, 0.04));
+}
+.naming-active-filters {
+  display: grid;
+  gap: 0.45rem;
+  margin-top: 0.8rem;
+  padding: 0.68rem 0.72rem;
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.014);
+}
+.naming-active-summary {
+  font-size: 0.78rem;
+  color: var(--a-dim);
+}
+.naming-active-chiplist {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+}
+.naming-filter-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  min-width: 0;
+  max-width: 100%;
+  padding: 0.3rem 0.55rem;
+  border-radius: 999px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: rgba(255, 255, 255, 0.03);
+  color: var(--a-muted);
+  font-size: 0.74rem;
+  overflow-wrap: anywhere;
+}
+.naming-panel-actions {
+  display: flex;
+  gap: 0.45rem;
+  flex-wrap: wrap;
+  align-items: center;
+  margin-top: 0.8rem;
+}
+
+.naming-similarity-panel {
+  display: grid;
+  gap: 0.8rem;
+}
+.naming-inline-check {
+  padding: 0.58rem 0.68rem;
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.02);
+}
+.naming-inline-check span {
+  color: var(--a-dim);
+}
+.naming-similarity-footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+}
+.naming-similarity-scope {
+  max-width: 40rem;
+  font-size: 0.78rem;
+  line-height: 1.45;
+  color: var(--a-muted);
+}
+.naming-similarity-error {
+  margin: -0.15rem 0 0;
+  font-size: 0.77rem;
+  color: var(--a-err);
+}
+.naming-similarity-actions {
+  display: flex;
+  gap: 0.4rem;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+}
+
+.similarity-progress {
+  margin: 0 0 0.75rem;
+  padding: 0.75rem;
+  border: 1px solid var(--a-line);
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.02);
+}
+.similarity-progress-compact {
+  margin-top: 0.65rem;
+  margin-bottom: 0;
+}
+.similarity-progress-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 0.75rem;
+}
+.similarity-progress-top strong {
+  display: block;
+  font-size: 0.84rem;
+  color: var(--a-ink);
+}
+.similarity-progress-top span:not(.pill) {
+  display: block;
+  margin-top: 0.18rem;
+  font-size: 0.78rem;
+  color: var(--a-dim);
+  line-height: 1.45;
+}
+.similarity-progress-track {
+  position: relative;
+  margin-top: 0.65rem;
+  height: 10px;
+  overflow: hidden;
+  border-radius: 999px;
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  background: rgba(255, 255, 255, 0.04);
+}
+.similarity-progress-fill {
+  height: 100%;
+  width: 0;
+  border-radius: inherit;
+  background: linear-gradient(90deg, rgba(114, 241, 255, 0.65), rgba(26, 142, 255, 0.85));
+  box-shadow: 0 0 18px rgba(114, 241, 255, 0.22);
+  transition: width 0.24s var(--ease);
+}
+.similarity-progress-fill.is-error {
+  background: linear-gradient(90deg, rgba(255, 122, 148, 0.75), rgba(255, 107, 134, 0.95));
+  box-shadow: 0 0 18px rgba(255, 122, 148, 0.2);
+}
+.similarity-progress-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem 0.7rem;
+  margin-top: 0.6rem;
+  font-size: 0.75rem;
+  color: var(--a-muted);
+}
+.similarity-progress-current {
+  margin-top: 0.45rem;
+  font-size: 0.77rem;
+  color: var(--a-dim);
+}
+
+.similarity-diagnostics {
+  margin-top: 0.6rem;
+  padding: 0.6rem 0.65rem;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.018);
+}
+.similarity-diagnostics.is-compact {
+  margin-top: 0.5rem;
+  padding: 0.5rem 0.55rem;
+}
+.similarity-diagnostics-head {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+.similarity-diagnostics-head span:not(.pill) {
+  font-size: 0.75rem;
+  color: var(--a-muted);
+}
+.similarity-diagnostics-item {
+  display: grid;
+  gap: 0.12rem;
+  margin-top: 0.45rem;
+}
+.similarity-diagnostics-item strong {
+  font-size: 0.74rem;
+  color: var(--a-ink);
+}
+.similarity-diagnostics-item span {
+  font-size: 0.75rem;
+  color: var(--a-dim);
+  overflow-wrap: anywhere;
+}
+.similarity-diagnostics-item.is-error strong,
+.similarity-diagnostics-item.is-error span {
+  color: var(--a-err);
+}
+
+.field {
+  display: grid;
+  gap: 0.3rem;
+}
+.field > span,
+.field > label {
+  font: 500 0.72rem var(--font-head);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--a-muted);
+}
+.field input,
+.field select,
+.field textarea {
+  width: 100%;
+  min-height: 36px;
+  padding: 0.45rem 0.6rem;
+  border-radius: var(--a-r-xs);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: var(--a-bg-input);
+  color: var(--a-ink);
+  font: inherit;
+  font-size: 0.88rem;
+  transition: border-color 0.18s var(--ease);
+}
+.field input:focus,
+.field select:focus,
+.field textarea:focus {
+  border-color: var(--a-line-strong);
+  outline: none;
+}
+.field textarea {
+  min-height: 90px;
+  resize: vertical;
+}
+.field.check {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+}
+.field.check input {
+  width: 20px;
+  height: 20px;
+  min-height: 20px;
+  padding: 0;
+  flex-shrink: 0;
+}

@@ -1,0 +1,8 @@
+{
+  "title": "Quarterpipe",
+  "area": "block-geometry",
+  "type": "geometry",
+  "summary": "A steep curved transition block that can launch, rotate, or redirect the car.",
+  "tags": ["geometry", "transition"],
+  "relatedConcepts": ["ledge-grab", "wallrides"]
+}

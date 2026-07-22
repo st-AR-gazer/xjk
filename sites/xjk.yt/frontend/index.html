@@ -1,0 +1,67 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <link rel="stylesheet" href="/shared/xjk-core/chrome-prepaint.css?v=2" data-xjk-chrome-prepaint />
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>xjk / network</title>
+    <link rel="icon" href="favicon.svg?v=2" type="image/svg+xml" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Condensed:wght@400;500;600;700&family=Inter:wght@400;500;600;700&family=Space+Mono:wght@400;700&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="./styles/shell.css?v=2" />
+    <link rel="stylesheet" href="./styles/map.css?v=2" />
+    <link rel="stylesheet" href="./styles/responsive.css?v=2" />
+  </head>
+
+  <body>
+    <div class="backdrop" aria-hidden="true"></div>
+    <div class="hub-shell">
+      <header class="network-topbar" aria-label="xjk service navigation">
+        <a class="network-brand" href="/" data-xjk-site-link="xjk" aria-label="xjk home">
+          <span class="brand-mark" aria-hidden="true">
+            <span></span>
+            <span></span>
+          </span>
+          <span class="brand-copy">
+            <strong>xjk.yt</strong>
+            <small><span class="status-dot" aria-hidden="true"></span>Network online</small>
+          </span>
+        </a>
+
+        <div class="network-topbar-actions" data-xjk-topbar-actions>
+          <button
+            class="service-search-trigger"
+            type="button"
+            data-xjk-search-trigger
+            aria-label="Search the xjk service (Control or Command K)"
+            aria-haspopup="dialog"
+          >
+            <span class="search-glyph" aria-hidden="true"></span>
+            <span class="service-search-copy">
+              <strong>Search xjk</strong>
+              <small>Sites, tools, maps, docs, and more</small>
+            </span>
+            <kbd data-xjk-search-shortcut aria-hidden="true">Ctrl / Cmd K</kbd>
+          </button>
+
+          <div class="topbar-account" data-xjk-account-widget-slot="topbar" aria-label="xjk account"></div>
+        </div>
+      </header>
+
+      <main class="network-layout" id="network">
+        <section class="map-stage" aria-labelledby="mapTitle">
+          <h1 class="sr-only" id="mapTitle">xjk network</h1>
+          <div class="map-canvas" id="mapCanvas"></div>
+        </section>
+      </main>
+    </div>
+
+    <script type="module" src="app.js?v=2"></script>
+    <script type="module" src="/shared/xjk-core/sidenav-boot.js?v=2" data-xjk-sidenav="xjk"></script>
+    <script type="module" src="/shared/xjk-core/topbar-loader.js?v=2" data-xjk-topbar="xjk"></script>
+  </body>
+</html>

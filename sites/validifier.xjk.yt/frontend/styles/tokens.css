@@ -1,0 +1,47 @@
+:root {
+  /* xjk platform palette — validifier (cyan / data line) */
+  --bg-main: #020406;
+  --bg-deep: #020406;
+  --bg-surface: rgba(5, 8, 11, 0.76);
+  --bg-panel-solid: #05080b;
+  --bg-control: rgba(0, 0, 0, 0.58);
+
+  --ink: #f2f2f2;
+  --ink-dim: #a8a8a8;
+  --ink-muted: #72777c;
+
+  --border: rgba(255, 255, 255, 0.14);
+  --border-subtle: rgba(255, 255, 255, 0.11);
+  --border-medium: rgba(255, 255, 255, 0.2);
+  --border-hover: #22d3ee;
+
+  --accent: #22d3ee;
+  --accent-dim: rgba(34, 211, 238, 0.14);
+
+  --ok: #70d85f;
+  --warn: #fb923c;
+  --bad: #ff5f57;
+
+  /* Legacy mappings for JS compatibility */
+  --bg-0: var(--bg-main);
+  --bg-1: var(--bg-main);
+  --panel: var(--bg-surface);
+  --line: var(--border);
+  --line-strong: var(--border-hover);
+  --warm: var(--warn);
+  --cool: var(--accent);
+  --review: var(--accent);
+  --muted: var(--ink-dim);
+
+  /* JS track classes */
+  --track-pass-bg: rgba(112, 216, 95, 0.06);
+  --track-pass-line: var(--ok);
+  --track-fail-bg: rgba(255, 95, 87, 0.06);
+  --track-fail-line: var(--bad);
+  --track-pending-bg: rgba(251, 146, 60, 0.06);
+  --track-pending-line: var(--warn);
+  --track-review-bg: var(--accent-dim);
+  --track-review-line: var(--accent);
+  --track-neutral-bg: rgba(255, 255, 255, 0.02);
+  --track-neutral-line: var(--border);
+}

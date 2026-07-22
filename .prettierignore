@@ -1,0 +1,7 @@
+# Generated data
+sites/shared/xjk-core/search-index.json
+PLATFORM_CATALOG.md
+
+# Jinja templates require a template-aware formatter.
+services/bannerbuilder/templates/*.html
+sites/altered.xjk.yt/frontend/bannerbuilder/index.html

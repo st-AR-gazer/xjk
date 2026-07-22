@@ -1,0 +1,102 @@
+<!doctype html>
+<html lang="en" data-tool-id="medal-time-modifier">
+  <head>
+    <link rel="stylesheet" href="/shared/xjk-core/chrome-prepaint.css?v=2" data-xjk-chrome-prepaint />
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Medal Time Modifier · tools.xjk.yt</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Condensed:wght@400;500;600;700&family=Inter:wght@400;500;600;700&family=Space+Mono:wght@400;700&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="/shared/xjk-core/surface-foundation.css?v=2" />
+    <link rel="stylesheet" href="../shared/tool-theme/foundation.css?v=2" />
+    <link rel="stylesheet" href="../shared/tool-theme/uploads.css?v=2" />
+    <link rel="stylesheet" href="../shared/tool-theme/controls.css?v=2" />
+    <link rel="stylesheet" href="../shared/tool-theme/candidates.css?v=2" />
+    <link rel="stylesheet" href="../shared/tool-theme/documentation.css?v=2" />
+    <link rel="stylesheet" href="../shared/tool-howto.css?v=2" />
+    <link rel="stylesheet" href="styles.css?v=2" />
+    <link rel="icon" href="/favicon.svg?v=2" type="image/svg+xml" />
+  </head>
+  <body>
+    <div class="backdrop" aria-hidden="true"></div>
+
+    <main class="shell">
+      <section class="hero">
+        <p class="eyebrow">Map Utility</p>
+        <h1>GBX Medal Time Modifier</h1>
+        <p class="lead">
+          Upload one map and set medal times. Use <code>auto</code> for Gold/Silver/Bronze and <code>_</code> to keep a
+          medal unchanged.
+        </p>
+      </section>
+
+      <section class="cards" aria-label="Inputs">
+        <article id="mapDrop" class="dropcard" tabindex="0" aria-label="Map upload">
+          <input id="mapFile" type="file" accept=".gbx,.Map.Gbx" />
+          <p class="card-title">Map Input</p>
+          <p class="card-copy">Drop <code>.Map.Gbx</code> here or click to browse.</p>
+          <p id="mapName" class="card-meta">No map selected</p>
+        </article>
+      </section>
+
+      <section class="panel" aria-label="Medal values">
+        <h2>Medal Targets</h2>
+        <div class="field-grid medals">
+          <label class="field">
+            <span>Author Time (AT)</span>
+            <input id="at" type="text" value="60000" />
+            <small>Required. Number or <code>_</code>. <code>auto</code> is not valid for AT.</small>
+          </label>
+          <label class="field">
+            <span>Gold</span>
+            <input id="gold" type="text" value="auto" />
+            <small>Number, <code>_</code>, or <code>auto</code>.</small>
+          </label>
+          <label class="field">
+            <span>Silver</span>
+            <input id="silver" type="text" value="auto" />
+            <small>Number, <code>_</code>, or <code>auto</code>.</small>
+          </label>
+          <label class="field">
+            <span>Bronze</span>
+            <input id="bronze" type="text" value="_" />
+            <small>Number, <code>_</code>, or <code>auto</code>.</small>
+          </label>
+        </div>
+      </section>
+
+      <section class="actions">
+        <button id="go" class="go" disabled>Modify Medal Times</button>
+      </section>
+
+      <div id="status" class="status" role="status" aria-live="polite"></div>
+      <div id="error" class="error" role="alert"></div>
+    </main>
+
+    <div id="overlay" class="overlay hidden" aria-live="polite" aria-busy="true">
+      <div class="loader" aria-hidden="true"></div>
+      <p id="overlayText" class="overlay-title">Working...</p>
+      <p id="progressText" class="overlay-copy"></p>
+    </div>
+
+    <script src="../shared/tool-browser-runtime.js?v=2"></script>
+    <script src="../shared/tool-theme.js?v=2"></script>
+    <script src="app.js?v=2"></script>
+    <script
+      type="module"
+      src="/shared/xjk-core/sidenav-boot.js?v=2"
+      data-xjk-sidenav="tools"
+      data-xjk-page="tool"
+    ></script>
+    <script
+      type="module"
+      src="/shared/xjk-core/topbar-loader.js?v=2"
+      data-xjk-topbar="tools"
+      data-xjk-page="tool"
+    ></script>
+  </body>
+</html>

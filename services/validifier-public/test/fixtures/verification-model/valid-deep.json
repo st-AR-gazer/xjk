@@ -1,0 +1,19 @@
+{
+  "data": {
+    "recordId": "valid-deep-record",
+    "mapUid": "valid-deep-map",
+    "rank": "12",
+    "items": [
+      {
+        "validationTrack": "runtime_validation",
+        "state": "complete",
+        "verdict": "INVALID",
+        "publicReasonCode": "failed_verification",
+        "validatedAt": "2026-07-20T15:00:00.000Z",
+        "updatedAt": "2026-07-20T15:00:00.000Z",
+        "confidenceBucket": "LOW",
+        "policyVersion": "deep-v2"
+      }
+    ]
+  }
+}

@@ -1,0 +1,8 @@
+{
+  "title": "Flowtrick",
+  "area": "techniques",
+  "type": "technique",
+  "summary": "A weight-shift trick used to return from partial contact without taking the same slowdown.",
+  "tags": ["contact", "technique"],
+  "relatedConcepts": ["floatiness", "wheel-contact"]
+}

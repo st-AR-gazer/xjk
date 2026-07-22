@@ -1,0 +1,435 @@
+/* Map overlays */
+.tile-modal {
+  position: fixed;
+  inset: 0;
+  z-index: 90;
+  display: grid;
+  place-items: center;
+  padding: 1rem;
+}
+
+.tile-modal__backdrop {
+  position: absolute;
+  inset: 0;
+  border: 0;
+  background: rgba(0, 0, 0, 0.58);
+  cursor: pointer;
+}
+
+.tile-modal__panel {
+  position: relative;
+  z-index: 1;
+  width: min(960px, calc(100vw - 28px));
+  max-height: min(88vh, 760px);
+  overflow: auto;
+  border: 1px solid rgba(255, 255, 255, 0.22);
+  border-radius: 14px;
+  background: rgba(13, 16, 24, 0.98);
+  box-shadow: 0 24px 58px rgba(0, 0, 0, 0.56);
+  display: grid;
+  grid-template-columns: minmax(320px, 0.95fr) minmax(300px, 1fr);
+  gap: 0.75rem;
+  padding: 0.75rem;
+}
+
+.tile-modal__close {
+  position: absolute;
+  top: 0.45rem;
+  right: 0.45rem;
+  z-index: 2;
+  width: 30px;
+  height: 30px;
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  border-radius: 999px;
+  background: rgba(4, 6, 11, 0.75);
+  color: var(--ink);
+  cursor: pointer;
+}
+
+.tile-modal__preview {
+  align-self: start;
+  display: grid;
+  gap: 0.65rem;
+  min-width: 0;
+}
+
+.tile-modal__media {
+  align-self: start;
+  width: 100%;
+  aspect-ratio: var(--thumb-aspect, 16 / 9);
+  max-height: min(54vh, 520px);
+  min-height: 0;
+  display: grid;
+  place-items: center;
+  position: relative;
+  overflow: hidden;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 10px;
+  background: rgba(7, 9, 16, 0.88);
+}
+
+.tile-modal__media img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  display: block;
+}
+
+.tile-modal__media span {
+  color: var(--muted);
+  font-family: "Chakra Petch", "Trebuchet MS", sans-serif;
+  font-size: 1.6rem;
+  font-weight: 700;
+}
+
+.tile-modal__media[data-thumbnail-size]::after {
+  content: attr(data-thumbnail-size);
+  position: absolute;
+  right: 0.45rem;
+  bottom: 0.45rem;
+  padding: 0.18rem 0.38rem;
+  border-radius: 999px;
+  background: rgba(4, 6, 11, 0.72);
+  color: var(--muted);
+  font-family: "Chakra Petch", "Trebuchet MS", sans-serif;
+  font-size: 0.64rem;
+  font-weight: 700;
+}
+
+.tile-modal__play {
+  width: 100%;
+  padding-block: 0.9rem;
+  font-size: 1rem;
+}
+
+.tile-modal__body {
+  display: grid;
+  gap: 0.6rem;
+  align-content: start;
+  min-width: 0;
+}
+
+.tile-modal__body h3 {
+  font-size: 1.18rem;
+}
+
+.tile-modal__header {
+  display: grid;
+  gap: 0.25rem;
+  padding-right: 2rem;
+}
+
+.tile-modal__tabs {
+  display: flex;
+  gap: 0.35rem;
+  padding: 0.2rem;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.025);
+}
+
+.tile-modal__tab {
+  flex: 1 1 0;
+  border: 0;
+  border-radius: 8px;
+  padding: 0.46rem 0.55rem;
+  background: transparent;
+  color: var(--muted);
+  cursor: pointer;
+  font-family: "Chakra Petch", "Trebuchet MS", sans-serif;
+  font-size: 0.8rem;
+  font-weight: 700;
+}
+
+.tile-modal__tab.is-active {
+  background: rgba(154, 236, 53, 0.12);
+  color: var(--ink);
+}
+
+.tile-modal__tab-panel {
+  display: grid;
+  gap: 0.55rem;
+  min-width: 0;
+}
+
+.tile-detail-list {
+  margin: 0;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.38rem;
+}
+
+.tile-detail-list div {
+  min-width: 0;
+  padding: 0.46rem 0.52rem;
+  border-radius: 9px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: rgba(255, 255, 255, 0.025);
+}
+
+.tile-detail-list dt {
+  margin-bottom: 0.18rem;
+  color: var(--muted);
+  font-family: "Chakra Petch", "Trebuchet MS", sans-serif;
+  font-size: 0.66rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.tile-detail-list dd {
+  margin: 0;
+  overflow: hidden;
+  color: var(--ink);
+  font-size: 0.84rem;
+  font-weight: 700;
+  line-height: 1.2;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.tile-modal__actions {
+  grid-template-columns: minmax(0, 1fr);
+}
+
+.tile-modal__status {
+  display: grid;
+  gap: 0.25rem;
+  padding: 0.58rem 0.62rem;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.02);
+}
+
+.tile-modal__status h3 {
+  font-size: 0.9rem;
+}
+
+.run-history {
+  display: grid;
+  gap: 0.42rem;
+  max-height: 330px;
+  overflow: auto;
+}
+
+.run-history__row {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 0.55rem;
+  padding: 0.48rem 0.55rem;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.025);
+}
+
+.run-history__row.is-team-colored {
+  border-color: color-mix(in srgb, var(--team-border) 34%, transparent);
+  background: linear-gradient(90deg, var(--team-soft), rgba(255, 255, 255, 0.02) 72%), rgba(255, 255, 255, 0.025);
+  box-shadow: inset 3px 0 0 var(--team-border);
+}
+
+.run-history__rank {
+  color: var(--accent-strong);
+  font-family: "Chakra Petch", "Trebuchet MS", sans-serif;
+  font-size: 0.78rem;
+  font-weight: 800;
+}
+
+.run-history__row.is-team-colored .run-history__rank {
+  color: color-mix(in srgb, var(--team-border) 78%, white);
+}
+
+.run-history__main {
+  min-width: 0;
+  display: grid;
+  gap: 0.05rem;
+}
+
+.run-history__main strong,
+.run-history__main span,
+.run-history__main small {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.run-history__main strong {
+  font-size: 0.88rem;
+}
+
+.run-history__main span,
+.run-history__main small {
+  color: var(--muted);
+  font-size: 0.74rem;
+}
+
+.run-history__team {
+  display: flex;
+  align-items: center;
+  gap: 0.32rem;
+  min-width: 0;
+}
+
+.run-history__team .team-color-dot {
+  width: 0.48rem;
+  height: 0.48rem;
+  box-shadow: none;
+}
+
+.run-history__time {
+  color: var(--ink);
+  font-family: "Chakra Petch", "Trebuchet MS", sans-serif;
+  font-size: 0.92rem;
+  font-weight: 800;
+}
+
+.run-history__empty {
+  padding: 0.85rem;
+  border: 1px dashed rgba(255, 255, 255, 0.16);
+  border-radius: 10px;
+  color: var(--muted);
+  font-size: 0.86rem;
+}
+
+.map-switch-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 120;
+  display: grid;
+  place-items: center;
+  padding: 1rem;
+  background: rgba(4, 6, 11, 0.72);
+  backdrop-filter: blur(10px);
+}
+
+.map-switch-dialog {
+  width: min(440px, 100%);
+  display: grid;
+  gap: 0.72rem;
+  padding: 1rem;
+  border: 1px solid rgba(255, 255, 255, 0.22);
+  border-radius: 14px;
+  background: rgba(13, 16, 24, 0.98);
+  box-shadow: 0 22px 48px rgba(0, 0, 0, 0.44);
+}
+
+.map-switch-dialog h3 {
+  font-size: 1.18rem;
+}
+
+.map-switch-dialog > p:not(.detail-card__label) {
+  margin: 0;
+  color: var(--muted);
+  line-height: 1.45;
+  font-size: 0.9rem;
+}
+
+.map-switch-steps {
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 0.46rem;
+  list-style: none;
+}
+
+.map-switch-step {
+  display: grid;
+  grid-template-columns: 2rem minmax(0, 1fr);
+  gap: 0.6rem;
+  align-items: start;
+  padding: 0.55rem 0.6rem;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 11px;
+  background: rgba(255, 255, 255, 0.025);
+}
+
+.map-switch-step__icon {
+  width: 1.45rem;
+  height: 1.45rem;
+  display: grid;
+  place-items: center;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 999px;
+  color: var(--muted);
+  font-family: "Chakra Petch", "Trebuchet MS", sans-serif;
+  font-size: 0.82rem;
+  font-weight: 800;
+}
+
+.map-switch-step__icon::before {
+  content: "";
+  width: 0.42rem;
+  height: 0.42rem;
+  border-radius: 999px;
+  background: currentColor;
+}
+
+.map-switch-step__copy {
+  min-width: 0;
+  display: grid;
+  gap: 0.1rem;
+}
+
+.map-switch-step__copy strong {
+  color: var(--ink);
+  font-family: "Chakra Petch", "Trebuchet MS", sans-serif;
+  font-size: 0.9rem;
+  line-height: 1.2;
+}
+
+.map-switch-step__copy small {
+  color: var(--muted);
+  line-height: 1.35;
+  font-size: 0.76rem;
+}
+
+.map-switch-step.is-active {
+  border-color: rgba(154, 236, 53, 0.38);
+  background: rgba(154, 236, 53, 0.08);
+}
+
+.map-switch-step.is-active .map-switch-step__icon {
+  color: var(--accent-strong);
+  border-color: rgba(154, 236, 53, 0.48);
+}
+
+.map-switch-step.is-active .map-switch-step__icon::before {
+  width: 0.75rem;
+  height: 0.75rem;
+  border: 2px solid currentColor;
+  border-top-color: transparent;
+  background: transparent;
+  animation: switch-spin 0.8s linear infinite;
+}
+
+.map-switch-step.is-complete .map-switch-step__icon {
+  color: var(--good);
+  border-color: rgba(136, 214, 111, 0.36);
+}
+
+.map-switch-step.is-complete .map-switch-step__icon::before {
+  content: "\2713";
+  width: auto;
+  height: auto;
+  border-radius: 0;
+  background: transparent;
+  line-height: 1;
+}
+
+.map-switch-step.is-failed .map-switch-step__icon {
+  color: var(--bad);
+  border-color: rgba(239, 107, 107, 0.42);
+}
+
+.map-switch-step.is-failed .map-switch-step__icon::before {
+  content: "!";
+  width: auto;
+  height: auto;
+  border-radius: 0;
+  background: transparent;
+  line-height: 1;
+}
+
+.map-switch-close {
+  width: 100%;
+}

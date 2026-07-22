@@ -1,0 +1,667 @@
+{
+  "$schema": "./platform-manifest.schema.json",
+  "schemaVersion": 1,
+  "assetVersion": "2",
+  "infrastructure": {
+    "localGateway": {
+      "port": 8080,
+      "portParameter": "GatewayPort",
+      "rootSiteId": "xjk"
+    },
+    "localhostBrowserProxy": {
+      "port": 8877,
+      "managedByStackReset": false
+    },
+    "security": {
+      "localOnlyOverrides": [
+        {
+          "serviceId": "aggregator-hub",
+          "environmentVariable": "AGGREGATOR_ALLOW_INSECURE_OPEN",
+          "localValue": "1",
+          "allowedInProduction": false
+        },
+        {
+          "serviceId": "bannerbuilder",
+          "environmentVariable": "BANNERBUILDER_ALLOW_EPHEMERAL_SECRET",
+          "localValue": "1",
+          "allowedInProduction": false
+        },
+        {
+          "serviceId": "bannerbuilder",
+          "environmentVariable": "BANNERBUILDER_COOKIE_SECURE",
+          "localValue": "0",
+          "allowedInProduction": false
+        }
+      ]
+    }
+  },
+  "routing": {
+    "tools": {
+      "siteId": "tools",
+      "rootServiceId": "tools-hub"
+    },
+    "tracker": {
+      "siteId": "trackers",
+      "rootServiceId": "tracker-hub",
+      "modes": [
+        { "path": "wr", "serviceId": "tracker-hub" },
+        { "path": "leaderboard", "serviceId": "tracker-leaderboard-hub" },
+        { "path": "displayname", "serviceId": "tracker-displayname-hub" },
+        { "path": "club", "serviceId": "tracker-club-hub" }
+      ]
+    }
+  },
+  "sites": [
+    {
+      "id": "xjk",
+      "name": "Main",
+      "host": "xjk.yt",
+      "aliases": ["www.xjk.yt"],
+      "frontend": "sites/xjk.yt/frontend",
+      "visibility": "public"
+    },
+    {
+      "id": "account",
+      "name": "Account",
+      "host": "account.xjk.yt",
+      "aliases": [],
+      "frontend": "sites/account.xjk.yt/frontend",
+      "visibility": "public"
+    },
+    {
+      "id": "learn",
+      "name": "Learn",
+      "host": "learn.xjk.yt",
+      "aliases": [],
+      "frontend": "sites/learn.xjk.yt/frontend",
+      "visibility": "public"
+    },
+    {
+      "id": "console",
+      "name": "Console",
+      "host": "console.xjk.yt",
+      "aliases": ["bingo.xjk.yt"],
+      "frontend": "sites/console.xjk.yt/frontend",
+      "visibility": "public"
+    },
+    {
+      "id": "archive",
+      "name": "Archive",
+      "host": "archive.xjk.yt",
+      "aliases": [],
+      "frontend": "sites/archive.xjk.yt/frontend",
+      "visibility": "public"
+    },
+    {
+      "id": "altered",
+      "name": "Altered",
+      "host": "altered.xjk.yt",
+      "aliases": ["alterednadeo.xjk.yt"],
+      "frontend": "sites/altered.xjk.yt/frontend",
+      "visibility": "public"
+    },
+    {
+      "id": "trackers",
+      "name": "Trackers",
+      "host": "trackers.xjk.yt",
+      "aliases": ["tracker.xjk.yt", "tracker-displayname.xjk.yt", "tracker-club.xjk.yt"],
+      "frontend": "sites/trackers.xjk.yt/frontend",
+      "visibility": "public"
+    },
+    {
+      "id": "aggregator",
+      "name": "Aggregator",
+      "host": "aggregator.xjk.yt",
+      "aliases": [],
+      "frontend": "sites/aggregator.xjk.yt/frontend",
+      "visibility": "public"
+    },
+    {
+      "id": "validifier",
+      "name": "Validifier",
+      "host": "validifier.xjk.yt",
+      "aliases": [],
+      "frontend": "sites/validifier.xjk.yt/frontend",
+      "visibility": "public"
+    },
+    {
+      "id": "cotd",
+      "name": "COTD",
+      "host": "cotd.xjk.yt",
+      "aliases": [],
+      "frontend": "sites/cotd.xjk.yt/frontend",
+      "visibility": "public"
+    },
+    {
+      "id": "dash",
+      "name": "Dashboard",
+      "host": "dash.xjk.yt",
+      "aliases": [],
+      "frontend": "sites/dash.xjk.yt/frontend",
+      "visibility": "private"
+    },
+    {
+      "id": "admin",
+      "name": "Admin",
+      "host": "admin.xjk.yt",
+      "aliases": [],
+      "frontend": "sites/admin.xjk.yt/frontend",
+      "visibility": "private"
+    },
+    {
+      "id": "plugins",
+      "name": "Plugins",
+      "host": "plugins.xjk.yt",
+      "aliases": [],
+      "frontend": "sites/plugins.xjk.yt/Plugins-Hub/frontend",
+      "visibility": "public"
+    },
+    {
+      "id": "tools",
+      "name": "Tools",
+      "host": "tools.xjk.yt",
+      "aliases": [],
+      "frontend": "sites/tools.xjk.yt/Tools-Hub/frontend",
+      "visibility": "public"
+    }
+  ],
+  "services": [
+    {
+      "id": "validifier-public",
+      "processName": "xjk-validifier-public",
+      "localName": "validifier-public",
+      "cwd": "services/validifier-public",
+      "entry": "server.js",
+      "runtime": "node",
+      "ports": {
+        "production": 3044,
+        "local": 3144,
+        "localParameter": "ValidifierPublicPort",
+        "localEnvironmentVariable": "VALIDIFIER_PUBLIC_PORT"
+      },
+      "health": { "path": "/health", "required": true }
+    },
+    {
+      "id": "cotd-public",
+      "processName": "xjk-cotd-public",
+      "localName": "cotd-public",
+      "cwd": "services/cotd-public",
+      "entry": "server.js",
+      "runtime": "node",
+      "ports": {
+        "production": 3045,
+        "local": 3145,
+        "localParameter": "CotdPublicPort",
+        "localEnvironmentVariable": "COTD_PUBLIC_PORT"
+      },
+      "health": { "path": "/health", "required": true }
+    },
+    {
+      "id": "plugins-hub",
+      "processName": "xjk-plugins-hub",
+      "localName": "plugins-hub",
+      "cwd": "sites/plugins.xjk.yt/Plugins-Hub/backend",
+      "entry": "server.js",
+      "runtime": "node",
+      "ports": {
+        "production": 3020,
+        "local": 3120,
+        "localParameter": "PluginsHubPort",
+        "localEnvironmentVariable": "PLUGINS_HUB_PORT"
+      },
+      "health": { "path": "/health", "required": true }
+    },
+    {
+      "id": "xjk-auth",
+      "processName": "xjk-auth",
+      "localName": "xjk-auth",
+      "cwd": "services/xjk-auth",
+      "entry": "server.js",
+      "runtime": "node",
+      "ports": {
+        "production": 3038,
+        "local": 3138,
+        "localParameter": "XjkAuthPort",
+        "localEnvironmentVariable": "XJK_AUTH_PORT"
+      },
+      "health": { "path": "/health", "required": true }
+    },
+    {
+      "id": "learn-profile",
+      "processName": "xjk-learn-profile",
+      "localName": "learn-profile",
+      "cwd": "services/learn-profile",
+      "entry": "server.js",
+      "runtime": "node",
+      "ports": {
+        "production": 3036,
+        "local": 3136,
+        "localParameter": "LearnProfilePort",
+        "localEnvironmentVariable": "LEARN_PROFILE_PORT"
+      },
+      "health": { "path": "/health", "required": true }
+    },
+    {
+      "id": "console-hub",
+      "processName": "xjk-console-hub",
+      "localName": "console-hub",
+      "cwd": "services/console-hub",
+      "entry": "server.js",
+      "runtime": "node",
+      "ports": {
+        "production": 3037,
+        "local": 3137,
+        "localParameter": "ConsoleHubPort",
+        "localEnvironmentVariable": "CONSOLE_HUB_PORT"
+      },
+      "health": { "path": "/health", "required": true }
+    },
+    {
+      "id": "altered-hub",
+      "processName": "xjk-altered-hub",
+      "localName": "altered-hub",
+      "cwd": "services/altered",
+      "entry": "server.js",
+      "runtime": "node",
+      "ports": {
+        "production": 3030,
+        "local": 3130,
+        "localParameter": "AlteredHubPort",
+        "localEnvironmentVariable": "ALTERED_HUB_PORT"
+      },
+      "health": { "path": "/health", "required": true }
+    },
+    {
+      "id": "bannerbuilder",
+      "processName": "xjk-bannerbuilder",
+      "localName": "altered-bannerbuilder",
+      "cwd": "services/bannerbuilder",
+      "entry": "app.py",
+      "runtime": "python",
+      "ports": {
+        "production": 3050,
+        "local": 3135,
+        "localParameter": "AlteredBannerBuilderPort",
+        "localEnvironmentVariable": "ALTERED_BANNER_BUILDER_PORT"
+      },
+      "health": { "path": "/health", "required": true }
+    },
+    {
+      "id": "tracker-hub",
+      "processName": "xjk-tracker-hub",
+      "localName": "tracker-hub",
+      "cwd": "services/tracker",
+      "entry": "server.js",
+      "runtime": "node",
+      "ports": {
+        "production": 3031,
+        "local": 3131,
+        "localParameter": "TrackerHubPort",
+        "localEnvironmentVariable": "TRACKER_HUB_PORT"
+      },
+      "health": { "path": "/api/v1/tracker/status", "required": true }
+    },
+    {
+      "id": "tracker-leaderboard-hub",
+      "processName": "xjk-tracker-leaderboard-hub",
+      "localName": "tracker-leaderboard",
+      "cwd": "services/tracker",
+      "entry": "server.js",
+      "runtime": "node",
+      "ports": {
+        "production": 3043,
+        "local": 3143,
+        "localParameter": "TrackerLeaderboardHubPort",
+        "localEnvironmentVariable": "TRACKER_LEADERBOARD_HUB_PORT"
+      },
+      "health": { "path": "/health", "required": true }
+    },
+    {
+      "id": "aggregator-hub",
+      "processName": "xjk-aggregator-hub",
+      "localName": "tracker-aggregator",
+      "cwd": "services/aggregator",
+      "entry": "server.js",
+      "runtime": "node",
+      "ports": {
+        "production": 3040,
+        "local": 3140,
+        "localParameter": "AggregatorHubPort",
+        "localEnvironmentVariable": "AGGREGATOR_HUB_PORT"
+      },
+      "health": { "path": "/health", "required": true }
+    },
+    {
+      "id": "tracker-displayname-hub",
+      "processName": "xjk-tracker-displayname-hub",
+      "localName": "tracker-displayname",
+      "cwd": "services/tracker-displayname",
+      "entry": "server.js",
+      "runtime": "node",
+      "ports": {
+        "production": 3041,
+        "local": 3141,
+        "localParameter": "TrackerDisplaynameHubPort",
+        "localEnvironmentVariable": "TRACKER_DISPLAYNAME_HUB_PORT"
+      },
+      "health": { "path": "/health", "required": true }
+    },
+    {
+      "id": "tracker-club-hub",
+      "processName": "xjk-tracker-club-hub",
+      "localName": "tracker-club",
+      "cwd": "services/tracker-club",
+      "entry": "server.js",
+      "runtime": "node",
+      "ports": {
+        "production": 3042,
+        "local": 3142,
+        "localParameter": "TrackerClubHubPort",
+        "localEnvironmentVariable": "TRACKER_CLUB_HUB_PORT"
+      },
+      "health": { "path": "/health", "required": true }
+    },
+    {
+      "id": "tools-hub",
+      "processName": "xjk-tools-hub",
+      "localName": "tools-hub",
+      "cwd": "sites/tools.xjk.yt/Tools-Hub/backend",
+      "entry": "server.js",
+      "runtime": "node",
+      "ports": {
+        "production": 3010,
+        "local": 3110,
+        "localParameter": "HubPort",
+        "localEnvironmentVariable": "TOOLS_HUB_PORT"
+      },
+      "health": { "path": "/health", "required": true }
+    },
+    {
+      "id": "tools-strip",
+      "processName": "xjk-tools-strip",
+      "localName": "tools-strip",
+      "cwd": "sites/tools.xjk.yt/Strip-RaceValidationGhost/backend",
+      "entry": "server.js",
+      "runtime": "node",
+      "ports": {
+        "production": 3011,
+        "local": 3111,
+        "localParameter": "StripPort",
+        "localEnvironmentVariable": "TOOLS_STRIP_PORT"
+      },
+      "health": { "path": "/health", "required": true }
+    },
+    {
+      "id": "tools-embed",
+      "processName": "xjk-tools-embed",
+      "localName": "tools-embed",
+      "cwd": "sites/tools.xjk.yt/Embed-RaceValidationGhost/backend",
+      "entry": "server.js",
+      "runtime": "node",
+      "ports": {
+        "production": 3012,
+        "local": 3112,
+        "localParameter": "EmbedPort",
+        "localEnvironmentVariable": "TOOLS_EMBED_PORT"
+      },
+      "health": { "path": "/health", "required": true }
+    },
+    {
+      "id": "tools-embedded-checker",
+      "processName": "xjk-tools-embedded-checker",
+      "localName": "tools-embedded-checker",
+      "cwd": "sites/tools.xjk.yt/Embedded-Blocks-And-Items-Checker/backend",
+      "entry": "server.js",
+      "runtime": "node",
+      "ports": {
+        "production": 3013,
+        "local": 3113,
+        "localParameter": "EmbeddedCheckerPort",
+        "localEnvironmentVariable": "TOOLS_EMBEDDED_CHECKER_PORT"
+      },
+      "health": { "path": "/health", "required": true }
+    },
+    {
+      "id": "tools-extract-replay",
+      "processName": "xjk-tools-extract-replay",
+      "localName": "tools-extract-replay",
+      "cwd": "sites/tools.xjk.yt/Extract-Replay-Data/backend",
+      "entry": "server.js",
+      "runtime": "node",
+      "ports": {
+        "production": 3014,
+        "local": 3114,
+        "localParameter": "ExtractReplayPort",
+        "localEnvironmentVariable": "TOOLS_EXTRACT_REPLAY_PORT"
+      },
+      "health": { "path": "/health", "required": true }
+    },
+    {
+      "id": "tools-medal-modifier",
+      "processName": "xjk-tools-medal-modifier",
+      "localName": "tools-medal-modifier",
+      "cwd": "sites/tools.xjk.yt/Gbx-Medal-Time-Modifier/backend",
+      "entry": "server.js",
+      "runtime": "node",
+      "ports": {
+        "production": 3015,
+        "local": 3115,
+        "localParameter": "MedalModifierPort",
+        "localEnvironmentVariable": "TOOLS_MEDAL_MODIFIER_PORT"
+      },
+      "health": { "path": "/health", "required": true }
+    },
+    {
+      "id": "tools-map-validation",
+      "processName": "xjk-tools-map-validation",
+      "localName": "tools-map-validation",
+      "cwd": "sites/tools.xjk.yt/Map-Validation-Checker/backend",
+      "entry": "server.js",
+      "runtime": "node",
+      "ports": {
+        "production": 3016,
+        "local": 3116,
+        "localParameter": "MapValidationPort",
+        "localEnvironmentVariable": "TOOLS_MAP_VALIDATION_PORT"
+      },
+      "health": { "path": "/health", "required": true }
+    },
+    {
+      "id": "tools-underwater",
+      "processName": "xjk-tools-underwater",
+      "localName": "tools-underwater",
+      "cwd": "sites/tools.xjk.yt/Underwater-Map-Converter/backend",
+      "entry": "server.js",
+      "runtime": "node",
+      "ports": {
+        "production": 3017,
+        "local": 3117,
+        "localParameter": "UnderwaterPort",
+        "localEnvironmentVariable": "TOOLS_UNDERWATER_PORT"
+      },
+      "health": { "path": "/health", "required": true }
+    },
+    {
+      "id": "tools-clip-to-ghost",
+      "processName": "xjk-tools-clip-to-ghost",
+      "localName": "tools-clip-to-ghost",
+      "cwd": "sites/tools.xjk.yt/Clip-To-Ghost/backend",
+      "entry": "server.js",
+      "runtime": "node",
+      "ports": {
+        "production": 3018,
+        "local": 3118,
+        "localParameter": "ClipToGhostPort",
+        "localEnvironmentVariable": "TOOLS_CLIP_TO_GHOST_PORT"
+      },
+      "health": { "path": "/health", "required": true }
+    },
+    {
+      "id": "tools-replay-verification",
+      "processName": "xjk-tools-replay-verification",
+      "localName": "tools-replay-verification",
+      "cwd": "sites/tools.xjk.yt/Replay-Verification/backend",
+      "entry": "server.js",
+      "runtime": "node",
+      "ports": {
+        "production": 3019,
+        "local": 3119,
+        "localParameter": "ReplayVerificationPort",
+        "localEnvironmentVariable": "TOOLS_REPLAY_VERIFICATION_PORT"
+      },
+      "health": { "path": "/health", "required": true }
+    }
+  ],
+  "tools": [
+    {
+      "id": "map-cleaner",
+      "path": "Strip-RaceValidationGhost",
+      "serviceId": "tools-strip",
+      "executableName": "stripValidationReplay.exe",
+      "runtimeFileId": "strip-race-validation-ghost",
+      "listed": true,
+      "name": "Strip Race Validation Ghost",
+      "description": "Upload a map, strip the validation replay, and optionally export cleaned map and extracted ghost files. Clone-enabled maps are accepted, and clone state is always cleared in returned maps.",
+      "category": "Validation",
+      "status": "live",
+      "input": ".Map.Gbx",
+      "output": "Map / Ghost / Zip",
+      "tone": "cool"
+    },
+    {
+      "id": "ghost-embedder",
+      "path": "Embed-RaceValidationGhost",
+      "serviceId": "tools-embed",
+      "executableName": "EmbedRaceValidationGhost.exe",
+      "runtimeFileId": "embed-race-validation-ghost",
+      "listed": true,
+      "name": "Embed Race Validation Ghost",
+      "description": "Upload a map and a ghost/replay source, pick replay ghost index if needed, then download embedded map output.",
+      "category": "Validation",
+      "status": "live",
+      "input": ".Map.Gbx + .Ghost/.Replay.Gbx",
+      "output": "Embedded .Map.Gbx",
+      "tone": "warm"
+    },
+    {
+      "id": "embedded-checker",
+      "path": "Embedded-Blocks-And-Items-Checker",
+      "serviceId": "tools-embedded-checker",
+      "executableName": "EmbeddedBlocksAndItemsChecker.exe",
+      "runtimeFileId": "embedded-blocks-and-items-checker",
+      "listed": true,
+      "name": "Embedded Blocks And Items Checker",
+      "description": "Check map embedding consistency and inspect missing expected/custom embedded models.",
+      "category": "Inspection",
+      "status": "live",
+      "input": ".Map.Gbx",
+      "output": "JSON report",
+      "tone": "cool"
+    },
+    {
+      "id": "replay-data-extractor",
+      "path": "Extract-Replay-Data",
+      "serviceId": "tools-extract-replay",
+      "executableName": "ReplayDataExtractor.exe",
+      "runtimeFileId": "replay-data-extractor",
+      "listed": true,
+      "name": "Extract Replay Data",
+      "description": "Extract structured replay JSON using default projection or a custom request selection.",
+      "category": "Replay",
+      "status": "live",
+      "input": ".Replay.Gbx",
+      "output": "JSON data",
+      "tone": "cool"
+    },
+    {
+      "id": "medal-time-modifier",
+      "path": "Gbx-Medal-Time-Modifier",
+      "serviceId": "tools-medal-modifier",
+      "executableName": "GbxMedalTimeModifier.exe",
+      "runtimeFileId": "gbx-medal-time-modifier",
+      "listed": true,
+      "name": "GBX Medal Time Modifier",
+      "description": "Set AT/Gold/Silver/Bronze medal values for a map and download the modified map file.",
+      "category": "Map Editing",
+      "status": "live",
+      "input": ".Map.Gbx + medal values",
+      "output": "Modified .Map.Gbx",
+      "tone": "warm"
+    },
+    {
+      "id": "map-validation-checker",
+      "path": "Map-Validation-Checker",
+      "serviceId": "tools-map-validation",
+      "executableName": "MapValidationChecker.exe",
+      "runtimeFileId": "map-validation-checker",
+      "listed": true,
+      "name": "Map Validation Checker",
+      "description": "Inspect map validation status with optional replay evidence and manual override support.",
+      "category": "Validation",
+      "status": "live",
+      "input": ".Map.Gbx (+ optional replay/manual)",
+      "output": "JSON verdict",
+      "tone": "cool"
+    },
+    {
+      "id": "underwater-converter",
+      "path": "Underwater-Map-Converter",
+      "serviceId": "tools-underwater",
+      "executableName": "UnderwaterMapConverter.exe",
+      "runtimeFileId": "underwater-map-converter",
+      "listed": true,
+      "name": "Underwater Map Converter",
+      "description": "Convert any Trackmania 2020 map into an underwater variant with automatic environment detection and water carrier placement.",
+      "category": "Map Conversion",
+      "status": "live",
+      "input": ".Map.Gbx",
+      "output": "Underwater .Map.Gbx / Zip",
+      "tone": "cool"
+    },
+    {
+      "id": "colorizer",
+      "path": "Colorizer",
+      "serviceId": null,
+      "executableName": null,
+      "runtimeFileId": null,
+      "listed": true,
+      "name": "TM Gradient Color Formatter",
+      "description": "Format Trackmania text with per-letter gradient color codes (supports custom palettes & presets).",
+      "category": "Text",
+      "status": "live",
+      "input": "Text + 2-7 colors",
+      "output": "Formatted gradient string",
+      "tone": "warm"
+    },
+    {
+      "id": "clip-to-ghost",
+      "path": "Clip-To-Ghost",
+      "serviceId": "tools-clip-to-ghost",
+      "executableName": "ClipToGhost.exe",
+      "runtimeFileId": "clip-to-ghost",
+      "listed": true,
+      "name": "Clip To Ghost",
+      "description": "Export GPS clip RecordData blocks from Trackmania maps into standalone ghost files with optional manifest output.",
+      "category": "Ghost Export",
+      "status": "live",
+      "input": ".Map.Gbx",
+      "output": ".Ghost.Gbx + manifest",
+      "tone": "cool"
+    },
+    {
+      "id": "replay-verification",
+      "path": "Replay-Verification",
+      "serviceId": "tools-replay-verification",
+      "executableName": null,
+      "runtimeFileId": null,
+      "listed": false,
+      "name": "Replay Verification",
+      "description": "Verify replay evidence against a Trackmania map.",
+      "category": "Validation",
+      "status": "internal",
+      "input": ".Map.Gbx + .Replay.Gbx",
+      "output": "Verification report",
+      "tone": "cool"
+    }
+  ]
+}

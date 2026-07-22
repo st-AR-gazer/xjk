@@ -1,0 +1,19 @@
+{
+  "title": "Rally Underwater Primer",
+  "summary": "A shareable learning route for the core Rally underwater mechanics family.",
+  "question": "What should I understand first about Rally underwater?",
+  "pageSlug": "underwater/rally-car/mechanics-primer",
+  "cards": [
+    "contexts/underwater-driving-primer",
+    "underwater/rally-car/mechanics-primer",
+    "underwater/rally-car/start-trick-and-penalty-wiggles",
+    "underwater/rally-car/surfaces-and-speed-retention",
+    "underwater/rally-car/floatiness-slopes-and-flowtrick",
+    "underwater/rally-car/air-control-and-ledge-grabs",
+    "underwater/rally-car/walls-loops-bob-and-poolturns",
+    "underwater/rally-car/reactors-edges-and-overwalls"
+  ],
+  "concepts": ["underwater", "rally-car", "speed-retention", "wheel-contact"],
+  "requiredContext": ["contexts/underwater-driving-primer"],
+  "tags": ["rally", "underwater", "primer"]
+}

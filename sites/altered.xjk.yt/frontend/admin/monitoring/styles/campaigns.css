@@ -1,0 +1,269 @@
+.club-structure-board {
+  display: grid;
+  gap: 0.62rem;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+}
+
+.live-progress-card {
+  max-width: 900px;
+}
+
+.campaign-card {
+  border: 1px solid rgba(190, 205, 255, 0.16);
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.02);
+  padding: 0.66rem;
+}
+
+.campaign-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  margin-bottom: 0.55rem;
+}
+
+.campaign-head h3 {
+  font-size: 1rem;
+}
+
+.campaign-count {
+  border: 1px solid rgba(190, 205, 255, 0.22);
+  border-radius: 999px;
+  min-height: 24px;
+  padding: 0 0.5rem;
+  display: inline-flex;
+  align-items: center;
+  font-size: 0.72rem;
+  color: var(--ink-soft);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+.campaign-map-list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: grid;
+  gap: 0.42rem;
+  max-height: 360px;
+  overflow: auto;
+}
+
+.campaign-map-list li {
+  border: 1px solid rgba(190, 205, 255, 0.14);
+  border-radius: 9px;
+  background: rgba(255, 255, 255, 0.03);
+  padding: 0.44rem 0.5rem;
+}
+
+.campaign-map-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+}
+
+.campaign-map-top strong {
+  font-size: 0.9rem;
+}
+
+.campaign-map-meta {
+  margin: 0.24rem 0 0;
+  color: var(--ink-soft);
+  font-size: 0.8rem;
+}
+.section-head {
+  display: flex;
+  align-items: end;
+  justify-content: space-between;
+  gap: 0.8rem;
+  flex-wrap: wrap;
+}
+
+.section-head p {
+  margin: 0.25rem 0 0;
+  color: var(--ink-soft);
+}
+.btn-lite,
+.btn-main {
+  border: 1px solid transparent;
+  border-radius: 10px;
+  font-family: "Chakra Petch", "Trebuchet MS", sans-serif;
+  letter-spacing: 0.05em;
+  cursor: pointer;
+  color: var(--ink);
+  min-height: 40px;
+  padding: 0.45rem 0.74rem;
+  transition:
+    transform 0.12s ease,
+    filter 0.12s ease,
+    border-color 0.12s ease;
+}
+
+.btn-lite {
+  border-color: rgba(190, 205, 255, 0.22);
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.btn-main {
+  border-color: rgba(208, 231, 255, 0.24);
+  background:
+    linear-gradient(130deg, rgba(255, 255, 255, 0.08), rgba(255, 255, 255, 0.02)),
+    linear-gradient(120deg, rgba(34, 204, 238, 0.9), rgba(34, 153, 238, 0.88));
+}
+
+.btn-lite:hover,
+.btn-main:hover {
+  filter: brightness(1.04);
+  transform: translateY(-1px);
+}
+.latest-card {
+  margin-top: 0.75rem;
+  border-radius: 14px;
+  border: 1px solid rgba(208, 231, 255, 0.22);
+  background:
+    radial-gradient(440px 200px at 9% 0%, rgba(34, 204, 238, 0.16), transparent 70%),
+    radial-gradient(420px 220px at 100% 0%, rgba(34, 153, 238, 0.16), transparent 70%), rgba(255, 255, 255, 0.03);
+  padding: 0.78rem;
+}
+
+.latest-card strong {
+  display: block;
+  font-size: 1.2rem;
+}
+
+.latest-card p {
+  margin: 0.24rem 0 0;
+  color: var(--ink-soft);
+}
+
+.wr-feed {
+  margin: 0.72rem 0 0;
+  padding: 0;
+  list-style: none;
+  display: grid;
+  gap: 0.5rem;
+}
+
+.wr-feed li {
+  border: 1px solid rgba(190, 205, 255, 0.17);
+  border-radius: 12px;
+  padding: 0.56rem 0.64rem;
+  background: rgba(255, 255, 255, 0.02);
+}
+
+.wr-feed strong {
+  display: block;
+}
+
+.wr-feed span {
+  color: var(--ink-soft);
+  font-size: 0.88rem;
+}
+.controls {
+  margin-top: 0.8rem;
+  display: grid;
+  gap: 0.62rem;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+}
+
+.table-wrap {
+  margin-top: 0.78rem;
+  overflow: auto;
+  border: 1px solid rgba(190, 205, 255, 0.16);
+  border-radius: 12px;
+}
+
+.map-table {
+  width: 100%;
+  border-collapse: collapse;
+  min-width: 760px;
+}
+
+.map-table th,
+.map-table td {
+  padding: 0.56rem 0.62rem;
+  text-align: left;
+  border-bottom: 1px solid rgba(190, 205, 255, 0.14);
+  font-size: 0.9rem;
+}
+
+.map-table th {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  background: rgba(8, 13, 23, 0.95);
+  color: var(--ink-soft);
+  font-family: "Chakra Petch", "Trebuchet MS", sans-serif;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  font-size: 0.76rem;
+}
+.status-pill {
+  display: inline-flex;
+  min-height: 1.4rem;
+  align-items: center;
+  border-radius: 999px;
+  border: 1px solid transparent;
+  padding: 0 0.48rem;
+  font-size: 0.74rem;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  font-weight: 700;
+}
+
+.status-live {
+  border-color: rgba(51, 255, 255, 0.45);
+  color: var(--ok);
+  background: rgba(51, 255, 255, 0.15);
+}
+
+.status-paused {
+  border-color: rgba(34, 204, 238, 0.45);
+  color: var(--warn);
+  background: rgba(34, 204, 238, 0.15);
+}
+
+.status-archived {
+  border-color: rgba(17, 102, 221, 0.45);
+  color: var(--bad);
+  background: rgba(17, 102, 221, 0.12);
+}
+
+.status-neutral {
+  border-color: rgba(190, 205, 255, 0.25);
+  color: var(--ink-soft);
+  background: rgba(255, 255, 255, 0.04);
+}
+
+.status-info {
+  border-color: rgba(34, 153, 238, 0.42);
+  color: #9bdcff;
+  background: rgba(34, 153, 238, 0.12);
+}
+
+.status-good {
+  border-color: rgba(51, 255, 255, 0.45);
+  color: var(--ok);
+  background: rgba(51, 255, 255, 0.13);
+}
+
+.status-warn {
+  border-color: rgba(34, 204, 238, 0.45);
+  color: #6fe7ff;
+  background: rgba(34, 204, 238, 0.12);
+}
+
+.status-bad {
+  border-color: rgba(17, 102, 221, 0.5);
+  color: #87a8ff;
+  background: rgba(17, 102, 221, 0.14);
+}
+
+.status-pill-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.34rem;
+  align-items: center;
+}

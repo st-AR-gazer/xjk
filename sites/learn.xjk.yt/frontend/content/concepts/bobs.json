@@ -1,0 +1,8 @@
+{
+  "title": "Bobs",
+  "area": "block-geometry",
+  "type": "geometry",
+  "summary": "Banked bob turns where line choice, wall contact, and sliding states define speed retention.",
+  "tags": ["bob", "geometry"],
+  "relatedConcepts": ["ice-slide", "wheel-contact"]
+}

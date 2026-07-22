@@ -1,0 +1,220 @@
+.admin-status-grid {
+  display: grid;
+  gap: 0.42rem;
+  grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+}
+
+.admin-status-grid-compact {
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+}
+
+.admin-status-card {
+  border: 1px solid rgba(190, 205, 255, 0.16);
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.03);
+  padding: 0.42rem 0.5rem;
+  display: grid;
+  gap: 0.14rem;
+}
+
+.admin-status-card.is-good {
+  border-color: rgba(51, 255, 255, 0.24);
+  background: linear-gradient(135deg, rgba(51, 255, 255, 0.08), rgba(255, 255, 255, 0.03));
+}
+
+.admin-status-card.is-warn {
+  border-color: rgba(34, 204, 238, 0.24);
+  background: linear-gradient(135deg, rgba(34, 204, 238, 0.08), rgba(255, 255, 255, 0.03));
+}
+
+.admin-status-card.is-bad {
+  border-color: rgba(17, 102, 221, 0.28);
+  background: linear-gradient(135deg, rgba(17, 102, 221, 0.09), rgba(255, 255, 255, 0.03));
+}
+
+.admin-status-card.is-info {
+  border-color: rgba(34, 153, 238, 0.24);
+  background: linear-gradient(135deg, rgba(34, 153, 238, 0.08), rgba(255, 255, 255, 0.03));
+}
+
+.admin-status-label {
+  color: var(--ink-soft);
+  font-size: 0.68rem;
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+  font-family: "Chakra Petch", "Trebuchet MS", sans-serif;
+}
+
+.admin-status-value {
+  color: var(--ink);
+  font-size: 0.92rem;
+  line-height: 1.2;
+  font-weight: 600;
+  word-break: break-word;
+}
+
+.admin-detail-line {
+  margin: 0;
+}
+
+.admin-grid {
+  margin-top: 0.78rem;
+  display: grid;
+  gap: 0.62rem;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+}
+
+.compact-grid {
+  margin-top: 0;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.admin-card {
+  border: 1px solid rgba(190, 205, 255, 0.15);
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.02);
+  padding: 0.66rem;
+  display: grid;
+  gap: 0.54rem;
+}
+
+.admin-card h3 {
+  font-size: 1rem;
+}
+
+.live-monitor-form {
+  gap: 0.45rem;
+}
+
+.live-monitor-grid {
+  display: grid;
+  gap: 0.46rem;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+}
+
+.live-monitor-grid .field {
+  gap: 0.22rem;
+}
+
+.live-monitor-grid input,
+.live-monitor-grid select {
+  min-height: 36px;
+  padding: 0.4rem 0.56rem;
+}
+
+.live-monitor-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.45rem;
+}
+
+.connected-maps-card {
+  min-width: 0;
+}
+
+.connected-maps-card p {
+  margin: 0;
+}
+
+.connected-maps-wrap {
+  max-height: 420px;
+}
+
+.connected-maps-wrap .map-table {
+  min-width: 680px;
+}
+
+.pager-controls {
+  margin-top: 0.5rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.pager-btn {
+  min-height: 32px;
+  padding: 0.3rem 0.58rem;
+  font-size: 0.78rem;
+}
+
+.live-action-feedback {
+  display: grid;
+  gap: 0.34rem;
+}
+
+.live-action-feedback p {
+  margin: 0;
+}
+
+.live-progress-inline {
+  height: 8px;
+}
+
+.live-progress-wrap {
+  margin-top: 0.3rem;
+  display: grid;
+  gap: 0.32rem;
+}
+
+.live-progress-stats {
+  margin-top: 0.18rem;
+  display: grid;
+  gap: 0.42rem;
+  grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
+}
+
+.live-progress-stat {
+  border: 1px solid rgba(190, 205, 255, 0.16);
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.03);
+  padding: 0.4rem 0.5rem;
+  display: grid;
+  gap: 0.14rem;
+}
+
+.live-progress-stat-label {
+  color: var(--ink-soft);
+  font-size: 0.7rem;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  font-family: "Chakra Petch", "Trebuchet MS", sans-serif;
+}
+
+.live-progress-stat-value {
+  color: var(--ink);
+  font-size: 0.86rem;
+  line-height: 1.2;
+  word-break: break-word;
+}
+
+.live-progress-bar-outer {
+  width: 100%;
+  height: 10px;
+  border-radius: 999px;
+  border: 1px solid rgba(190, 205, 255, 0.25);
+  background: rgba(255, 255, 255, 0.04);
+  overflow: hidden;
+}
+
+.live-progress-bar-inner {
+  width: 0;
+  height: 100%;
+  border-radius: 999px;
+  background: linear-gradient(90deg, #1166dd, #22ccee, #33ffff);
+  transition: width 0.25s ease;
+}
+
+.lookup-result {
+  margin: 0;
+  font-size: 0.88rem;
+  color: var(--ink-soft);
+}
+
+.lookup-result.good {
+  color: var(--ok);
+}
+
+.lookup-result.bad {
+  color: var(--bad);
+}

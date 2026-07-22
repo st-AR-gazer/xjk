@@ -1,0 +1,33 @@
+{
+  "data": {
+    "record": {
+      "record_id": "untracked-record",
+      "map_uid": "untracked-map",
+      "rank": null,
+      "verdicts": [
+        {
+          "record_id": "untracked-record",
+          "map_uid": "untracked-map",
+          "state": "complete",
+          "verdict": "VALID",
+          "updated_at": "2026-07-20T12:00:00.000Z"
+        },
+        {
+          "record_id": "untracked-record",
+          "map_uid": "untracked-map",
+          "validation_track": "custom_replay_check",
+          "state": "complete",
+          "verdict": "INVALID",
+          "updated_at": "2026-07-20T12:01:00.000Z"
+        }
+      ]
+    },
+    "unexpected": {
+      "nested": {
+        "record_id": "untracked-record",
+        "validation_track": "replay_validation",
+        "verdict": "VALID"
+      }
+    }
+  }
+}

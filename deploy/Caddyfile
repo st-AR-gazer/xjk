@@ -1,0 +1,5 @@
+{
+	email {$XJK_ACME_EMAIL:admin@xjk.yt}
+}
+
+import Caddyfile.routes https://

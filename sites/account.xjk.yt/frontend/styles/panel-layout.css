@@ -1,0 +1,184 @@
+.panel {
+  display: none;
+  min-height: 0;
+  overflow: hidden;
+}
+
+.panel.is-active {
+  display: grid;
+  min-height: 0;
+  overflow: auto;
+  padding-right: 4px;
+  scrollbar-color: rgba(255, 255, 255, 0.24) transparent;
+  scrollbar-width: thin;
+}
+
+.space-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 0.95fr) minmax(0, 1.05fr);
+  align-items: start;
+  gap: var(--card-gap);
+  min-height: 0;
+}
+
+#panel-overview.is-active {
+  position: relative;
+  isolation: isolate;
+  grid-template-columns: repeat(12, minmax(0, 1fr));
+  grid-template-rows: minmax(192px, 1fr) minmax(168px, 0.86fr) minmax(60px, 0.28fr);
+  gap: var(--card-gap);
+  align-content: stretch;
+  align-items: stretch;
+  overflow: hidden;
+  padding-right: 0;
+}
+
+#panel-overview.is-active::before {
+  content: "";
+  position: absolute;
+  inset: 7px 9px 10px;
+  z-index: 0;
+  pointer-events: none;
+  opacity: 0.22;
+  background:
+    radial-gradient(circle at 15.8% 83%, #020406 0 4px, rgba(255, 255, 255, 0.26) 4px 6px, transparent 7px),
+    radial-gradient(circle at 50% 83%, #020406 0 4px, rgba(255, 255, 255, 0.2) 4px 6px, transparent 7px),
+    radial-gradient(circle at 84.2% 83%, #020406 0 4px, rgba(255, 255, 255, 0.26) 4px 6px, transparent 7px),
+    linear-gradient(
+        90deg,
+        transparent 0 12%,
+        rgba(255, 255, 255, 0.1) 12% 28%,
+        transparent 28% 72%,
+        rgba(255, 255, 255, 0.1) 72% 88%,
+        transparent 88%
+      )
+      0 83% / 100% 2px no-repeat,
+    linear-gradient(45deg, transparent 0 47%, rgba(255, 255, 255, 0.09) 47% 53%, transparent 53%) 8% 12% / 16% 38%
+      no-repeat,
+    linear-gradient(135deg, transparent 0 47%, rgba(255, 255, 255, 0.085) 47% 53%, transparent 53%) 76% 12% / 16% 38%
+      no-repeat;
+}
+
+#panel-overview .account-card {
+  z-index: 1;
+}
+
+#panel-spaces .space-grid {
+  height: 100%;
+}
+
+#panel-spaces .account-card,
+#panel-appearance .account-card {
+  height: 100%;
+}
+
+#panel-appearance .appearance-control,
+#panel-spaces .account-card {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+}
+
+#panel-appearance .appearance-control {
+  z-index: 1;
+  justify-content: flex-start;
+}
+
+#panel-appearance .account-card {
+  height: 100%;
+  min-height: 0;
+  border-color: rgba(255, 255, 255, 0.18);
+  border-bottom: 0;
+  border-radius: 0;
+  background:
+    linear-gradient(90deg, rgba(255, 255, 255, 0.014), transparent 42%),
+    radial-gradient(ellipse at 50% 0%, rgba(255, 255, 255, 0.026), transparent 58%), rgba(5, 8, 11, 0.6);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.042),
+    inset 0 -1px 0 rgba(0, 0, 0, 0.28);
+}
+
+#panel-appearance .appearance-control + .appearance-control {
+  border-left: 0;
+}
+
+#panel-appearance .appearance-control:first-child {
+  border-radius: 5px 0 0;
+}
+
+#panel-appearance .appearance-control:last-child {
+  border-radius: 0 5px 0 0;
+}
+
+#panel-appearance .appearance-control:not(:last-child)::after {
+  content: "";
+  position: absolute;
+  top: 58px;
+  right: 0;
+  bottom: 18px;
+  width: 1px;
+  pointer-events: none;
+  background: linear-gradient(
+    180deg,
+    transparent,
+    rgba(255, 255, 255, 0.14) 22%,
+    rgba(255, 255, 255, 0.08) 74%,
+    transparent
+  );
+}
+
+@media (min-width: 1360px) and (min-height: 840px) {
+  .account-topbar {
+    grid-template-columns: 48px minmax(0, 1fr) 42px;
+    gap: 14px;
+    padding: 16px 28px 0;
+  }
+
+  .account-main {
+    width: min(100%, 1680px);
+    height: auto;
+    min-height: 100dvh;
+    padding: 18px 40px 18px;
+    grid-template-rows: auto auto auto;
+    align-content: start;
+    gap: 13px;
+  }
+
+  .account-hero {
+    min-height: 78px;
+  }
+
+  .panel.is-active {
+    align-self: start;
+    height: min(100%, 620px);
+    max-height: 620px;
+  }
+
+  #panel-overview.is-active {
+    grid-template-rows: minmax(232px, 1fr) minmax(188px, 0.82fr) minmax(104px, 0.42fr);
+  }
+
+  #panel-spaces .space-grid {
+    height: 100%;
+  }
+
+  #panel-spaces .space-summary,
+  #panel-spaces .space-route-card {
+    max-height: 620px;
+  }
+
+  #panel-spaces .space-summary {
+    grid-template-rows: auto auto minmax(154px, 0.72fr) auto auto;
+  }
+
+  .space-summary-map {
+    min-height: 172px;
+    margin-block: 18px;
+  }
+
+  .space-route-card .space-route-visual {
+    flex: 0 0 132px;
+    min-height: 132px;
+    max-height: 132px;
+  }
+}

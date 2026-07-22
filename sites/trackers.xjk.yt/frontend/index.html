@@ -1,0 +1,85 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <link rel="stylesheet" href="/shared/xjk-core/chrome-prepaint.css?v=2" data-xjk-chrome-prepaint />
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>trackers.xjk.yt</title>
+    <meta name="description" content="Hub for the WR, leaderboard, displayname, and club tracker runtimes." />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Condensed:wght@400;500;600;700&family=Inter:wght@400;500;600;700&family=Space+Mono:wght@400;700&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="/shared/xjk-core/surface-foundation.css?v=2" />
+    <link rel="stylesheet" href="/trackers-shell/styles/foundation.css?v=2" />
+    <link rel="stylesheet" href="/trackers-shell/styles/navigation.css?v=2" />
+    <link rel="stylesheet" href="/trackers-shell/styles/overview.css?v=2" />
+    <link rel="stylesheet" href="/trackers-shell/styles/runtime.css?v=2" />
+    <link rel="stylesheet" href="/trackers-shell/styles/responsive.css?v=2" />
+    <link rel="icon" href="/trackers-shell/favicon.svg?v=2" type="image/svg+xml" />
+  </head>
+  <body>
+    <div class="backdrop" aria-hidden="true"></div>
+
+    <header class="trk-topbar">
+      <a class="trk-brand" data-link="main" href="https://xjk.yt/" aria-label="Go to xjk main hub">
+        <img class="trk-brand-logo" src="/trackers-shell/xjk.svg?v=2" alt="" decoding="async" />
+      </a>
+
+      <div class="trk-status">
+        <span class="status-dot" aria-hidden="true"></span>
+        <span class="status-copy">
+          <strong>trackers</strong>
+          <small>tracker group hub</small>
+        </span>
+      </div>
+
+      <div class="trk-account-slot" data-xjk-account-widget-slot="topbar" aria-label="xjk account"></div>
+    </header>
+
+    <main class="trk-main">
+      <section class="trk-hero" aria-labelledby="trkTitle">
+        <div class="hero-copy">
+          <h1 id="trkTitle"><span class="hero-accent">trackers</span>.xjk.yt</h1>
+          <p>WR, leaderboard, displayname, and club runtimes</p>
+        </div>
+      </section>
+
+      <nav class="trk-rail" aria-label="Tracker navigation">
+        <a class="rail-stop" data-route="overview" data-route-link href="/">
+          <span aria-hidden="true"></span>
+          <strong>Hub</strong>
+        </a>
+        <a class="rail-stop" data-route="wr" data-route-link href="/wr/">
+          <span aria-hidden="true"></span>
+          <strong>WR Tracker</strong>
+        </a>
+        <a class="rail-stop" data-route="leaderboard" data-route-link href="/leaderboard/">
+          <span aria-hidden="true"></span>
+          <strong>Leaderboard</strong>
+        </a>
+        <a class="rail-stop" data-route="displayname" data-route-link href="/displayname/">
+          <span aria-hidden="true"></span>
+          <strong>Displayname</strong>
+        </a>
+        <a class="rail-stop" data-route="club" data-route-link href="/club/">
+          <span aria-hidden="true"></span>
+          <strong>Club Ingest</strong>
+        </a>
+      </nav>
+
+      <noscript>
+        <div class="route-boot">Tracker shell needs JavaScript enabled to switch between runtime tabs.</div>
+      </noscript>
+      <div id="route-content" class="route-outlet">
+        <div class="route-boot">Loading tracker shell...</div>
+      </div>
+    </main>
+
+    <script type="module" src="/trackers-shell/app.js?v=2"></script>
+    <script type="module" src="/shared/xjk-core/sidenav-boot.js?v=2" data-xjk-sidenav="trackers"></script>
+    <script type="module" src="/shared/xjk-core/topbar-loader.js?v=2" data-xjk-topbar="trackers"></script>
+  </body>
+</html>

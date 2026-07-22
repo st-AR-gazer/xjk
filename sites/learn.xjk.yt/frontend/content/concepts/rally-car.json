@@ -1,0 +1,8 @@
+{
+  "title": "Rally Car",
+  "area": "vehicles",
+  "type": "vehicle",
+  "summary": "The Rally vehicle and its car-specific grip, acceleration, stability, and forward/backward behavior.",
+  "tags": ["vehicle", "rally"],
+  "relatedConcepts": ["vehicle-stability", "steering-rhythm"]
+}

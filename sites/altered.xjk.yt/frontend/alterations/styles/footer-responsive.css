@@ -1,0 +1,91 @@
+/* Footer and responsive layout */
+.foot {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.8rem;
+  flex-wrap: wrap;
+  padding: 1.2rem 0;
+  margin-top: 2.5rem;
+  border-top: 1px solid var(--border);
+}
+
+.foot-mark {
+  color: var(--ink-muted);
+  font-family: "Chakra Petch", "Trebuchet MS", sans-serif;
+  font-size: 0.82rem;
+  letter-spacing: 0.04em;
+}
+
+.foot nav {
+  display: flex;
+  gap: 0.4rem;
+  flex-wrap: wrap;
+}
+
+.foot nav a {
+  padding: 0.28rem 0.5rem;
+  border: 1px solid transparent;
+  border-radius: 8px;
+  color: var(--ink-dim);
+  font-family: "Chakra Petch", "Trebuchet MS", sans-serif;
+  font-size: 0.76rem;
+  text-decoration: none;
+}
+
+.foot nav a:hover {
+  border-color: var(--border-hover);
+  color: var(--ink);
+}
+
+@media (max-width: 900px) {
+  .stats-row {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .alteration-spotlight {
+    flex-direction: column;
+    align-items: start;
+  }
+}
+
+@media (max-width: 720px) {
+  .alt-shell {
+    padding-right: 1rem;
+    padding-bottom: 2rem;
+    padding-left: 1rem;
+  }
+
+  .alteration-grid,
+  .campaign-grid,
+  .campaign-maps-grid {
+    grid-template-columns: repeat(auto-fill, minmax(190px, 1fr));
+  }
+}
+
+@media (max-width: 600px) {
+  .modal-hero {
+    flex-direction: column;
+  }
+
+  .modal-thumb {
+    width: 100%;
+  }
+
+  .modal-medals {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 480px) {
+  .controls-bar,
+  .alteration-toolbar {
+    flex-direction: column;
+  }
+
+  .alteration-grid,
+  .campaign-grid,
+  .campaign-maps-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}

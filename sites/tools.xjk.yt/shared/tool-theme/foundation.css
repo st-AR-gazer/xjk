@@ -1,0 +1,217 @@
+/* xjk tools — shared platform theme (purple subway design).
+   Loaded by every tool page BEFORE its local styles.css, which only carries
+   page-specific layout. Covers the common tool-page skeleton. */
+
+:root {
+  --accent: #a855f7;
+  --accent-soft: rgba(168, 85, 247, 0.14);
+  --surface-glow: rgba(168, 85, 247, 0.055);
+  --surface-line-height: 1.5;
+}
+
+code {
+  padding: 1px 5px;
+  border: 1px solid rgba(168, 85, 247, 0.28);
+  border-radius: 3px;
+  color: color-mix(in srgb, var(--accent), white 30%);
+  background: rgba(168, 85, 247, 0.07);
+  font-family: "Space Mono", ui-monospace, monospace;
+  font-size: 0.86em;
+}
+
+/* Legacy decor from the old theme: retired. */
+.bg-grid,
+.bg-sweep,
+.bg-tool-squares {
+  display: none !important;
+}
+
+/* Backdrop: faint map texture + side route rails */
+.backdrop {
+  opacity: 0.12;
+  background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 1540 540'%3E%3Cg fill='none' stroke='%23a855f7' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M24 86H158L206 134H370L426 190H612L680 258H812L888 334H1058L1128 404H1432' stroke-opacity='.15' stroke-width='3' stroke-dasharray='10 12'/%3E%3Cpath d='M72 420H210L272 358H458L520 296H678' stroke-opacity='.1' stroke-width='4'/%3E%3Cpath d='M866 118H1008L1060 66H1284L1348 130H1510' stroke-opacity='.12' stroke-width='4'/%3E%3Cpath d='M944 472H1104L1160 416H1328L1394 482' stroke-opacity='.1' stroke-width='3' stroke-dasharray='11 11'/%3E%3C/g%3E%3Cg fill='%23020406' stroke='%23a855f7'%3E%3Ccircle cx='158' cy='86' r='7' stroke-opacity='.16' stroke-width='4'/%3E%3Ccircle cx='370' cy='134' r='7' stroke-opacity='.12' stroke-width='4'/%3E%3Ccircle cx='612' cy='190' r='7' stroke-opacity='.12' stroke-width='4'/%3E%3Ccircle cx='812' cy='258' r='7' stroke-opacity='.13' stroke-width='4'/%3E%3Ccircle cx='1058' cy='334' r='7' stroke-opacity='.13' stroke-width='4'/%3E%3Ccircle cx='210' cy='420' r='7' stroke-opacity='.12' stroke-width='4'/%3E%3Ccircle cx='458' cy='358' r='7' stroke-opacity='.11' stroke-width='4'/%3E%3Ccircle cx='1008' cy='118' r='7' stroke-opacity='.13' stroke-width='4'/%3E%3Ccircle cx='1284' cy='66' r='7' stroke-opacity='.13' stroke-width='4'/%3E%3Ccircle cx='1328' cy='416' r='7' stroke-opacity='.11' stroke-width='4'/%3E%3C/svg%3E")
+    center top / 1540px auto no-repeat;
+}
+
+/* Vertical route rails in the empty page margins. Drawn as a seamless
+   repeat-y tile (line enters and exits at the same x), mirrored on the
+   right, and only shown when the viewport actually has spare margin.
+   They live on body pseudos, not .backdrop, so the backdrop's low opacity
+   does not multiply them into invisibility. */
+body::before,
+body::after {
+  content: "";
+  position: fixed;
+  top: 0;
+  bottom: 0;
+  z-index: -1;
+  pointer-events: none;
+  display: none;
+  width: 96px;
+  background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 96 520'%3E%3Cg fill='none' stroke='%23a855f7' stroke-linecap='round'%3E%3Cpath d='M48 0V520' stroke-opacity='.4' stroke-width='3'/%3E%3Cpath d='M48 285H68' stroke-opacity='.28' stroke-width='2'/%3E%3C/g%3E%3Cg fill='%23020406' stroke='%23a855f7'%3E%3Ccircle cx='48' cy='110' r='5.5' stroke-opacity='.5' stroke-width='3.5'/%3E%3Ccircle cx='48' cy='285' r='7' stroke-opacity='.55' stroke-width='3.5'/%3E%3Ccircle cx='74' cy='285' r='4' stroke-opacity='.36' stroke-width='2.5'/%3E%3Ccircle cx='48' cy='430' r='4.5' stroke-opacity='.4' stroke-width='3' stroke-dasharray='3 3'/%3E%3C/g%3E%3Ccircle cx='48' cy='285' r='2.2' fill='%23a855f7' fill-opacity='.7'/%3E%3C/svg%3E")
+    left top / 96px 520px repeat-y;
+  opacity: 0.55;
+  -webkit-mask-image: linear-gradient(180deg, transparent 0, #000 110px, #000 calc(100% - 70px), transparent);
+  mask-image: linear-gradient(180deg, transparent 0, #000 110px, #000 calc(100% - 70px), transparent);
+}
+
+body::before {
+  left: 18px;
+}
+
+body::after {
+  right: 18px;
+  transform: scaleX(-1);
+}
+
+@media (min-width: 1360px) {
+  body::before,
+  body::after {
+    display: block;
+  }
+}
+
+/* Shell + injected back link */
+.shell {
+  width: min(100%, 1080px);
+  margin: 0 auto;
+  padding: 18px 22px 40px;
+}
+
+.tool-back-link {
+  --back-accent: var(--theme-accent, var(--accent));
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  width: fit-content;
+  min-height: 30px;
+  margin: 2px 0 6px;
+  padding: 3px 2px;
+  border: 0;
+  border-radius: 0;
+  color: var(--text-muted);
+  background: transparent;
+  box-shadow: none;
+  font-family: "Space Mono", ui-monospace, monospace;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.045em;
+  line-height: 1;
+  text-transform: uppercase;
+  transition:
+    color 150ms ease,
+    transform 150ms ease;
+}
+
+.tool-back-link::before {
+  content: "\2190";
+  color: var(--back-accent);
+  font-size: 15px;
+  letter-spacing: 0;
+  line-height: 1;
+  transition: transform 150ms ease;
+}
+
+.tool-back-link::after {
+  content: "";
+  position: absolute;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  height: 1px;
+  pointer-events: none;
+  background: linear-gradient(90deg, var(--back-accent), transparent);
+  opacity: 0.5;
+  transform: scaleX(0.24);
+  transform-origin: left;
+  transition:
+    opacity 150ms ease,
+    transform 150ms ease;
+}
+
+.tool-back-link:hover,
+.tool-back-link:focus-visible {
+  color: var(--text-main);
+  background: transparent;
+  transform: translateX(-2px);
+}
+
+.tool-back-link:hover::before,
+.tool-back-link:focus-visible::before {
+  transform: translateX(-3px);
+}
+
+.tool-back-link:hover::after,
+.tool-back-link:focus-visible::after {
+  opacity: 1;
+  transform: scaleX(1);
+}
+
+.tool-back-link:active {
+  transform: translateX(0);
+}
+
+/* Hero: tool station header */
+.hero {
+  position: relative;
+  isolation: isolate;
+  display: grid;
+  justify-items: center;
+  gap: 4px;
+  min-height: 100px;
+  margin: 6px 0 18px;
+  padding: 26px 0 22px;
+  text-align: center;
+}
+
+/* Route art at fixed aspect (station circles stay circular), mirrored on
+   the right, fading out before the title. */
+.hero::before,
+.hero::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: min(38%, 380px);
+  z-index: -1;
+  pointer-events: none;
+  opacity: 0.7;
+  background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 560 96'%3E%3Cg fill='none' stroke='%23a855f7' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M6 48H170' stroke-opacity='0.62' stroke-width='3'/%3E%3Cpath d='M246 48H308' stroke-opacity='0.5' stroke-width='3'/%3E%3Cpath d='M308 48H352' stroke-opacity='0.38' stroke-width='2.5' stroke-dasharray='9 11'/%3E%3Cpath d='M6 76H150' stroke-opacity='0.3' stroke-width='2'/%3E%3Cpath d='M208 28V20M208 68V76M188 48H180M228 48H236M222 34L228 28M194 34L188 28M222 62L228 68M194 62L188 68' stroke-opacity='0.6' stroke-width='3'/%3E%3C/g%3E%3Cg fill='%23020406' stroke='%23a855f7'%3E%3Ccircle cx='208' cy='48' r='20' stroke-opacity='0.72' stroke-width='3.5'/%3E%3C/g%3E%3Cg fill='%23020406' stroke='%23a855f7'%3E%3Ccircle cx='208' cy='48' r='7' stroke-opacity='0.62' stroke-width='3'/%3E%3Ccircle cx='120' cy='76' r='4' stroke-opacity='0.34' stroke-width='2.5'/%3E%3Ccircle cx='308' cy='48' r='5' stroke-opacity='0.5' stroke-width='3'/%3E%3Ccircle cx='352' cy='48' r='4.5' stroke-opacity='0.4' stroke-width='2.5' stroke-dasharray='3 3'/%3E%3C/g%3E%3Ccircle cx='208' cy='48' r='2.6' fill='%23a855f7' fill-opacity='.85'/%3E%3C/svg%3E")
+    left center / auto 100% no-repeat;
+  -webkit-mask-image: linear-gradient(90deg, #000 0 52%, transparent 86%);
+  mask-image: linear-gradient(90deg, #000 0 52%, transparent 86%);
+}
+
+.hero::before {
+  left: 0;
+}
+
+.hero::after {
+  right: 0;
+  transform: scaleX(-1);
+}
+
+.eyebrow {
+  color: var(--accent);
+  font-family: "Space Mono", ui-monospace, monospace;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+}
+
+.hero h1 {
+  margin-top: 6px;
+  font-size: clamp(24px, 3.4vw, 32px);
+  font-weight: 600;
+  line-height: 1.08;
+}
+
+.lead {
+  max-width: 68ch;
+  margin-top: 8px;
+  color: var(--text-muted);
+  font-size: 14.5px;
+  line-height: 1.55;
+}

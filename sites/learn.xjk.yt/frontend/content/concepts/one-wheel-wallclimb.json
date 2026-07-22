@@ -1,0 +1,8 @@
+{
+  "title": "One-Wheel Wallclimb",
+  "area": "techniques",
+  "type": "technique",
+  "summary": "A climb state where one wheel holds enough wall contact to lift the car, especially with supportive forces.",
+  "tags": ["wallclimb", "contact"],
+  "relatedConcepts": ["wheel-contact", "overwall"]
+}

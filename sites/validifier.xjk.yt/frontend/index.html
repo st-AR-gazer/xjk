@@ -1,0 +1,440 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <link rel="stylesheet" href="/shared/xjk-core/chrome-prepaint.css?v=2" data-xjk-chrome-prepaint />
+    <base href="/" data-xjk-site-base />
+    <script src="/shared/xjk-core/site-base.js?v=2" data-xjk-site-path="/validifier"></script>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>validifier.xjk.yt</title>
+    <meta name="description" content="Replay verification lookups, submission flow, and the public verification API." />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Condensed:wght@400;500;600;700&family=Inter:wght@400;500;600;700&family=Space+Mono:ital,wght@0,400;0,700;1,400;1,700&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="./styles.css?v=2" />
+    <link rel="icon" href="./favicon.svg?v=2" type="image/svg+xml" />
+  </head>
+  <body>
+    <div class="backdrop" aria-hidden="true"></div>
+
+    <div class="val-shell">
+      <header class="val-topbar">
+        <a
+          class="val-brand"
+          id="sidebarHomeLink"
+          data-link="main"
+          href="https://xjk.yt/"
+          aria-label="Go to xjk main hub"
+        >
+          <img class="val-brand-logo" src="/shared/xjk-workspace/xjk.svg?v=2" alt="" decoding="async" />
+        </a>
+
+        <div class="val-status">
+          <span class="status-dot" aria-hidden="true"></span>
+          <span class="status-copy">
+            <strong>validifier</strong>
+            <small id="statusLine">Checking...</small>
+          </span>
+        </div>
+
+        <div class="val-account-slot" data-xjk-account-widget-slot="topbar" aria-label="xjk account"></div>
+      </header>
+
+      <main class="val-main">
+        <section class="val-hero" aria-labelledby="valTitle">
+          <div class="hero-copy">
+            <h1 id="valTitle"><span class="hero-accent">validifier</span>.xjk.yt</h1>
+            <p>replay verification + public API</p>
+          </div>
+        </section>
+
+        <nav class="val-rail" aria-label="Workspace sections">
+          <button class="rail-stop is-active" type="button" data-workspace-target="live">
+            <span aria-hidden="true"></span>
+            <strong>Live queue</strong>
+          </button>
+          <button class="rail-stop" type="button" data-workspace-target="record">
+            <span aria-hidden="true"></span>
+            <strong>Record lookup</strong>
+          </button>
+          <button class="rail-stop" type="button" data-workspace-target="map">
+            <span aria-hidden="true"></span>
+            <strong>Map coverage</strong>
+          </button>
+          <button class="rail-stop" type="button" data-workspace-target="submission">
+            <span aria-hidden="true"></span>
+            <strong>Submission</strong>
+          </button>
+          <button class="rail-stop" type="button" data-workspace-target="clients">
+            <span aria-hidden="true"></span>
+            <strong>API &amp; clients</strong>
+          </button>
+          <button class="rail-stop" type="button" data-workspace-target="recent">
+            <span aria-hidden="true"></span>
+            <strong>Recent</strong>
+          </button>
+        </nav>
+
+        <div id="status" class="status-msg" role="status" aria-live="polite"></div>
+        <div id="error" class="error-msg" role="alert"></div>
+
+        <section
+          class="workspace-panel live-workspace-panel is-active"
+          data-workspace-panel="live"
+          aria-label="Live queue workspace"
+        >
+          <section class="panel-card workspace-card">
+            <div class="section-bar">
+              <h2>Live Queue</h2>
+              <div class="section-bar-actions">
+                <span class="tab-count">LIVE</span>
+                <button id="liveRefreshButton" class="btn btn-outline btn-compact" type="button">Refresh</button>
+              </div>
+            </div>
+
+            <section id="liveResult" aria-label="Live verification queue">
+              <section class="empty-panel empty-panel-compact">
+                <h3>Loading live queue</h3>
+                <p class="intro-copy">Watching known public records...</p>
+              </section>
+            </section>
+          </section>
+        </section>
+
+        <section class="workspace-panel" data-workspace-panel="record" aria-label="Record workspace">
+          <section class="panel-card workspace-card">
+            <div class="section-bar">
+              <h2>Record Lookup</h2>
+              <span class="tab-count">Per-run</span>
+            </div>
+
+            <div class="workspace-grid">
+              <form id="recordForm" class="workspace-side workspace-side-control lookup-panel control-panel">
+                <div class="workspace-block-head">
+                  <h3>Input</h3>
+                </div>
+
+                <div class="toolbar toolbar-stack">
+                  <span class="toolbar-label">Record ID</span>
+                  <input
+                    id="recordInput"
+                    class="form-input"
+                    type="text"
+                    name="recordId"
+                    autocomplete="off"
+                    spellcheck="false"
+                    maxlength="160"
+                    placeholder="Paste a record ID..."
+                  />
+                </div>
+
+                <div class="actions">
+                  <button id="recordSubmit" class="btn btn-primary" type="submit">Check Record</button>
+                </div>
+              </form>
+
+              <section class="workspace-side workspace-side-output" aria-label="Record output">
+                <div class="workspace-block-head">
+                  <h3>Result</h3>
+                  <span class="tab-count">LIVE</span>
+                </div>
+
+                <section id="recordEmptyState" class="empty-panel empty-panel-compact">
+                  <h3>Record workspace ready</h3>
+                  <p class="intro-copy">Paste a record ID to begin.</p>
+                </section>
+
+                <section id="recordResult" class="hidden" aria-label="Record verification result"></section>
+              </section>
+            </div>
+          </section>
+        </section>
+
+        <section class="workspace-panel" data-workspace-panel="map" aria-label="Map workspace">
+          <section class="panel-card workspace-card">
+            <div class="section-bar">
+              <h2>Map Coverage</h2>
+              <span class="tab-count">Replay scope</span>
+            </div>
+
+            <div class="workspace-grid">
+              <form id="mapForm" class="workspace-side workspace-side-control lookup-panel control-panel">
+                <div class="workspace-block-head">
+                  <h3>Input</h3>
+                </div>
+
+                <div class="toolbar toolbar-stack">
+                  <span class="toolbar-label">Map UID</span>
+                  <input
+                    id="mapInput"
+                    class="form-input"
+                    type="text"
+                    name="mapUid"
+                    autocomplete="off"
+                    spellcheck="false"
+                    maxlength="160"
+                    placeholder="Paste a map UID..."
+                  />
+                  <span class="toolbar-label">Primary track</span>
+                  <select id="mapTrackSelect" class="form-input" name="mapTrack">
+                    <option value="replay">Replay verification</option>
+                    <option value="deep">Deep verification</option>
+                  </select>
+                </div>
+
+                <div class="actions">
+                  <button id="mapSubmit" class="btn btn-primary" type="submit">Open Map View</button>
+                </div>
+              </form>
+
+              <section class="workspace-side workspace-side-output" aria-label="Map output">
+                <div class="workspace-block-head">
+                  <h3>Result</h3>
+                  <span class="tab-count">LIVE</span>
+                </div>
+
+                <section id="mapEmptyState" class="empty-panel empty-panel-compact">
+                  <h3>Map workspace ready</h3>
+                  <p class="intro-copy">Paste a map UID to begin.</p>
+                </section>
+
+                <section id="mapResult" class="hidden" aria-label="Map verification result"></section>
+              </section>
+            </div>
+          </section>
+        </section>
+
+        <section class="workspace-panel" data-workspace-panel="submission" aria-label="Submission workspace">
+          <section class="panel-card workspace-card">
+            <div class="section-bar">
+              <h2>Replay Submission</h2>
+              <span class="tab-count">Write v1</span>
+            </div>
+
+            <div class="workspace-grid workspace-grid-submission">
+              <section
+                class="workspace-side workspace-side-control submission-panel control-panel"
+                aria-label="Replay submission form"
+              >
+                <div class="workspace-block-head">
+                  <h3>Input</h3>
+                </div>
+
+                <div class="submission-flow-strip" aria-label="Submission flow">
+                  <div class="summary-chip">
+                    <div class="summary-chip-label">Step 1</div>
+                    <div class="summary-chip-value summary-chip-value-copy">Enter details</div>
+                  </div>
+                  <div class="summary-chip">
+                    <div class="summary-chip-label">Step 2</div>
+                    <div class="summary-chip-value summary-chip-value-copy">Attach files</div>
+                  </div>
+                  <div class="summary-chip">
+                    <div class="summary-chip-label">Step 3</div>
+                    <div class="summary-chip-value summary-chip-value-copy">Submit &amp; watch</div>
+                  </div>
+                </div>
+
+                <div class="toolbar submission-grid submission-grid-dense">
+                  <div class="form-group">
+                    <span class="toolbar-label">Record ID</span>
+                    <input
+                      id="submissionRecordId"
+                      class="form-input"
+                      type="text"
+                      autocomplete="off"
+                      spellcheck="false"
+                      placeholder="Record ID"
+                    />
+                  </div>
+                  <div class="form-group">
+                    <span class="toolbar-label">Map UID</span>
+                    <input
+                      id="submissionMapUid"
+                      class="form-input"
+                      type="text"
+                      autocomplete="off"
+                      spellcheck="false"
+                      placeholder="Map UID"
+                    />
+                  </div>
+                  <div class="form-group">
+                    <span class="toolbar-label">Rank (opt)</span>
+                    <input id="submissionRank" class="form-input" type="number" min="0" step="1" placeholder="--" />
+                  </div>
+                  <div class="form-group">
+                    <span class="toolbar-label">Map File</span>
+                    <input
+                      id="mapFileInput"
+                      class="form-input form-file"
+                      type="file"
+                      accept=".Map.Gbx,.Gbx,application/octet-stream"
+                    />
+                  </div>
+                  <div class="form-group">
+                    <span class="toolbar-label">Replay File</span>
+                    <input
+                      id="replayFileInput"
+                      class="form-input form-file"
+                      type="file"
+                      accept=".Replay.Gbx,.Ghost.Gbx,.Gbx,application/octet-stream"
+                    />
+                  </div>
+                </div>
+
+                <div class="actions actions-wrap">
+                  <button id="submissionSubmitButton" class="btn btn-primary" type="button">Submit Replay</button>
+                  <button id="submissionPollButton" class="btn btn-outline" type="button">Refresh Status</button>
+                  <button id="mapUploadButton" class="btn btn-outline" type="button">Prepare Map Upload</button>
+                  <button id="replayUploadButton" class="btn btn-outline" type="button">Prepare Replay Upload</button>
+                </div>
+                <p class="field-hint">
+                  Submitting will upload the selected files automatically if needed, create the public submission, then
+                  keep watching the canonical record route.
+                </p>
+              </section>
+
+              <section
+                class="workspace-side workspace-side-output submission-output-panel"
+                aria-label="Submission output"
+              >
+                <div class="workspace-block-head">
+                  <h3>Result</h3>
+                  <span class="tab-count">QUEUE</span>
+                </div>
+
+                <div
+                  id="submissionStatus"
+                  class="status-msg submission-status submission-status-panel"
+                  aria-live="polite"
+                ></div>
+                <div id="artifactStatus" class="artifact-grid"></div>
+                <section id="submissionResult" class="hidden" aria-label="Replay submission result"></section>
+              </section>
+            </div>
+          </section>
+        </section>
+
+        <section class="workspace-panel" data-workspace-panel="clients" aria-label="API and clients workspace">
+          <section class="panel-card workspace-card">
+            <div class="section-bar">
+              <h2>API &amp; Clients</h2>
+              <span class="tab-count">PUBLIC</span>
+            </div>
+
+            <div class="workspace-grid workspace-grid-stack">
+              <section class="workspace-side workspace-side-output api-panel">
+                <div class="workspace-block-head">
+                  <h3>Docs entry</h3>
+                </div>
+
+                <div class="summary-strip summary-strip-two">
+                  <div class="summary-chip">
+                    <div class="summary-chip-label">API root</div>
+                    <div class="summary-chip-value summary-chip-value-copy" id="apiRootValue">/api/v1</div>
+                  </div>
+                  <div class="summary-chip">
+                    <div class="summary-chip-label">Client target</div>
+                    <div class="summary-chip-value summary-chip-value-copy">validifier.xjk.yt</div>
+                  </div>
+                </div>
+
+                <div class="result-actions actions">
+                  <a class="secondary-btn" href="./api/">Open API docs</a>
+                  <a class="secondary-btn" href="./api/v1">Open API root</a>
+                  <a class="secondary-btn" href="./api/v1/endpoints" target="_blank" rel="noopener noreferrer"
+                    >Open endpoint catalog</a
+                  >
+                  <button class="secondary-btn" id="copyApiRootButton" type="button">Copy API root</button>
+                </div>
+              </section>
+
+              <section class="workspace-side workspace-side-output api-panel">
+                <div class="workspace-block-head">
+                  <h3>Docs highlights</h3>
+                </div>
+
+                <div class="api-note-grid">
+                  <article class="api-note-card">
+                    <div class="track-label">Homepage</div>
+                    <h3 class="track-headline">Live queue feed</h3>
+                    <p class="track-detail">
+                      Use <code>GET /api/v1/live</code> for the public watchboard, recent checks, and grouped remaining
+                      map state.
+                    </p>
+                  </article>
+
+                  <article class="api-note-card">
+                    <div class="track-label">Website</div>
+                    <h3 class="track-headline">Canonical record route</h3>
+                    <p class="track-detail">
+                      Use <code>GET /api/v1/records/:recordId</code> for record detail views and permalink pages.
+                    </p>
+                  </article>
+
+                  <article class="api-note-card">
+                    <div class="track-label">Plugin</div>
+                    <h3 class="track-headline">Batch for lookups</h3>
+                    <p class="track-detail">
+                      Use <code>POST /api/v1/verdicts/batch</code> when the client needs to resolve many record IDs in
+                      one pass.
+                    </p>
+                  </article>
+
+                  <article class="api-note-card">
+                    <div class="track-label">Map tooling</div>
+                    <h3 class="track-headline">Track-scoped map list</h3>
+                    <p class="track-detail">
+                      Use <code>GET /api/v1/maps/:mapUid/verdicts</code> with explicit <code>track</code>, plus
+                      <code>page</code>, <code>limit</code>, <code>sort</code>, and <code>status</code> when paging or
+                      filtering bigger maps.
+                    </p>
+                  </article>
+                </div>
+              </section>
+            </div>
+          </section>
+        </section>
+
+        <section class="workspace-panel" data-workspace-panel="recent" aria-label="Recent workspace">
+          <section class="panel-card workspace-card">
+            <div class="section-bar">
+              <h2>Recent</h2>
+              <span class="tab-count">LOCAL</span>
+            </div>
+
+            <section class="workspace-side workspace-side-output recent-panel">
+              <div class="workspace-block-head">
+                <h3>Recent lookups</h3>
+                <button id="clearRecentButton" class="btn btn-outline" type="button">Clear</button>
+              </div>
+
+              <section id="recentHistoryEmpty" class="empty-panel empty-panel-compact">
+                <h3>No recent items yet</h3>
+                <p class="intro-copy">
+                  Record pages, map views, and submissions you open here will appear in this list.
+                </p>
+              </section>
+
+              <div id="recentHistoryList" class="recent-history-list hidden"></div>
+            </section>
+          </section>
+        </section>
+      </main>
+    </div>
+
+    <div id="overlay" class="overlay hidden" aria-live="polite" aria-busy="true">
+      <div class="loader-wrap">
+        <div class="loader" aria-hidden="true"></div>
+        <p id="overlayText" class="overlay-title">Loading Validifier data...</p>
+      </div>
+    </div>
+
+    <script type="module" src="./app.js?v=2"></script>
+    <script type="module" src="/shared/xjk-core/sidenav-boot.js?v=2" data-xjk-sidenav="validifier"></script>
+    <script type="module" src="/shared/xjk-core/topbar-loader.js?v=2" data-xjk-topbar="validifier"></script>
+  </body>
+</html>

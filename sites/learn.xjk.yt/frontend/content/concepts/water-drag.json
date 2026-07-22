@@ -1,0 +1,8 @@
+{
+  "title": "Water Drag",
+  "area": "special-forces",
+  "type": "concept",
+  "summary": "The underwater resistance that changes acceleration, steering trust, speed loss, and recovery timing.",
+  "tags": ["water", "drag"],
+  "relatedConcepts": ["underwater", "speed-retention"]
+}

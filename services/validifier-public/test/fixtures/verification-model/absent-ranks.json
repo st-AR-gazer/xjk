@@ -1,0 +1,54 @@
+[
+  {
+    "label": "missing",
+    "payload": {
+      "data": {
+        "record_id": "rank-missing",
+        "map_uid": "rank-map",
+        "verdicts": [
+          {
+            "validation_track": "replay_validation",
+            "verdict": "VALID",
+            "updated_at": "2026-07-20T13:00:00.000Z"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "label": "blank",
+    "payload": {
+      "data": {
+        "record_id": "rank-blank",
+        "map_uid": "rank-map",
+        "rank": "   ",
+        "verdicts": [
+          {
+            "validation_track": "replay_validation",
+            "rank": "",
+            "verdict": "VALID",
+            "updated_at": "2026-07-20T13:01:00.000Z"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "label": "null",
+    "payload": {
+      "data": {
+        "record_id": "rank-null",
+        "map_uid": "rank-map",
+        "rank": null,
+        "verdicts": [
+          {
+            "validation_track": "replay_validation",
+            "rank": null,
+            "verdict": "VALID",
+            "updated_at": "2026-07-20T13:02:00.000Z"
+          }
+        ]
+      }
+    }
+  }
+]

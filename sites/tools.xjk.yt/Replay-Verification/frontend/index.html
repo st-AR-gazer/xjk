@@ -1,0 +1,136 @@
+<!doctype html>
+<html lang="en" data-tool-id="replay-verification">
+  <head>
+    <link rel="stylesheet" href="/shared/xjk-core/chrome-prepaint.css?v=2" data-xjk-chrome-prepaint />
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Validifier Launchpad · tools.xjk.yt</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Condensed:wght@400;500;600;700&family=Inter:wght@400;500;600;700&family=Space+Mono:wght@400;700&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="/shared/xjk-core/surface-foundation.css?v=2" />
+    <link rel="stylesheet" href="../shared/tool-theme/foundation.css?v=2" />
+    <link rel="stylesheet" href="../shared/tool-theme/uploads.css?v=2" />
+    <link rel="stylesheet" href="../shared/tool-theme/controls.css?v=2" />
+    <link rel="stylesheet" href="../shared/tool-theme/candidates.css?v=2" />
+    <link rel="stylesheet" href="../shared/tool-theme/documentation.css?v=2" />
+    <link rel="stylesheet" href="../shared/tool-howto.css?v=2" />
+    <link rel="stylesheet" href="styles.css?v=2" />
+    <link rel="icon" href="/favicon.svg?v=2" type="image/svg+xml" />
+  </head>
+  <body>
+    <div class="backdrop" aria-hidden="true"></div>
+
+    <main class="shell">
+      <section class="hero">
+        <p class="eyebrow">Tool Launchpad</p>
+        <h1>Open Validifier</h1>
+        <p class="lead">
+          Validifier now lives at its own canonical public home under the xjk umbrella. Use this page to jump directly
+          into the public product for record or map lookups.
+        </p>
+      </section>
+
+      <section class="panel intro-panel" aria-label="About Validifier">
+        <div>
+          <h2>Canonical home</h2>
+          <p class="intro-copy">
+            The public product and stable public API now live at <code>validifier.xjk.yt</code>. This tools route is
+            only a discovery and launch surface.
+          </p>
+        </div>
+        <ul class="intro-list">
+          <li>Public website: <code>validifier.xjk.yt</code></li>
+          <li>Public API: <code>validifier.xjk.yt/api/v1/...</code></li>
+          <li>Plugins and future public clients should target Validifier directly.</li>
+        </ul>
+      </section>
+
+      <section class="lookup-grid" aria-label="Launch forms">
+        <form id="recordForm" class="panel lookup-panel">
+          <div class="panel-head">
+            <h2>Record Lookup</h2>
+            <span class="lookup-kicker">Launch in Validifier</span>
+          </div>
+
+          <label class="field">
+            <span>Record ID</span>
+            <input
+              id="recordInput"
+              type="text"
+              name="recordId"
+              autocomplete="off"
+              spellcheck="false"
+              maxlength="160"
+              placeholder="Paste a record ID"
+            />
+          </label>
+
+          <p class="field-hint">Opens the canonical Validifier record view.</p>
+
+          <div class="actions">
+            <button id="recordSubmit" class="go" type="submit">Open Record In Validifier</button>
+          </div>
+        </form>
+
+        <form id="mapForm" class="panel lookup-panel">
+          <div class="panel-head">
+            <h2>Map View</h2>
+            <span class="lookup-kicker">Launch in Validifier</span>
+          </div>
+
+          <label class="field">
+            <span>Map UID</span>
+            <input
+              id="mapInput"
+              type="text"
+              name="mapUid"
+              autocomplete="off"
+              spellcheck="false"
+              maxlength="160"
+              placeholder="Paste a map UID"
+            />
+          </label>
+
+          <p class="field-hint">Opens the canonical Validifier map view.</p>
+
+          <div class="actions">
+            <button id="mapSubmit" class="go" type="submit">Open Map In Validifier</button>
+          </div>
+        </form>
+      </section>
+
+      <div id="error" class="error" role="alert"></div>
+
+      <section class="panel cta-panel">
+        <h2>Go to Validifier</h2>
+        <p class="intro-copy">
+          Use the main product for public lookups, API access, and future deep verification support.
+        </p>
+        <div class="actions">
+          <a id="homeLink" class="go linklike" href="#">Open Validifier Home</a>
+          <a id="apiLink" class="secondary-btn linklike" href="#">Open Public API Root</a>
+        </div>
+      </section>
+    </main>
+
+    <script src="../shared/tool-browser-runtime.js?v=2"></script>
+    <script src="../shared/tool-theme.js?v=2"></script>
+    <script type="module" src="app.js?v=2"></script>
+    <script
+      type="module"
+      src="/shared/xjk-core/sidenav-boot.js?v=2"
+      data-xjk-sidenav="tools"
+      data-xjk-page="tool"
+    ></script>
+    <script
+      type="module"
+      src="/shared/xjk-core/topbar-loader.js?v=2"
+      data-xjk-topbar="tools"
+      data-xjk-page="tool"
+    ></script>
+  </body>
+</html>

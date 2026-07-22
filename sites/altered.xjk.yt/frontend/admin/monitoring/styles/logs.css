@@ -1,0 +1,206 @@
+.ops-log {
+  margin-top: 0.8rem;
+  border: 1px solid rgba(190, 205, 255, 0.15);
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.02);
+  padding: 0.66rem;
+}
+
+.ops-log ul {
+  margin: 0.55rem 0 0;
+  padding: 0;
+  list-style: none;
+  display: grid;
+  gap: 0.42rem;
+}
+
+.ops-log li {
+  border-left: 3px solid rgba(34, 204, 238, 0.52);
+  background: rgba(255, 255, 255, 0.03);
+  border-radius: 8px;
+  padding: 0.42rem 0.52rem;
+  font-size: 0.87rem;
+  color: var(--ink-soft);
+}
+
+.ops-log li.ops-entry {
+  border-left: 0;
+  border: 1px solid rgba(190, 205, 255, 0.14);
+  border-radius: 10px;
+  padding: 0.5rem 0.56rem;
+  display: grid;
+  gap: 0.38rem;
+  color: var(--ink);
+}
+
+.ops-entry-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 0.55rem;
+}
+
+.ops-entry-title {
+  margin: 0;
+  font-size: 0.9rem;
+  line-height: 1.2;
+  color: var(--ink);
+}
+
+.ops-entry-subtitle {
+  display: block;
+  margin-top: 0.14rem;
+  color: var(--ink-soft);
+  font-size: 0.76rem;
+  line-height: 1.2;
+}
+
+.ops-entry-pills {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 0.28rem;
+}
+
+.ops-entry-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.36rem 0.55rem;
+  color: var(--ink-soft);
+  font-size: 0.76rem;
+}
+
+.ops-entry-meta span {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.18rem;
+}
+
+.ops-entry-detail {
+  color: var(--ink);
+  font-size: 0.82rem;
+  line-height: 1.35;
+}
+
+.ops-entry-detail.muted {
+  color: var(--ink-soft);
+}
+
+.ops-entry-code {
+  font-family: "Chakra Petch", "Trebuchet MS", sans-serif;
+  letter-spacing: 0.02em;
+  word-break: break-all;
+}
+
+.ops-entry.is-changed {
+  border-color: rgba(51, 255, 255, 0.24);
+  box-shadow: inset 0 0 0 1px rgba(51, 255, 255, 0.08);
+}
+
+.ops-entry.is-error {
+  border-color: rgba(17, 102, 221, 0.28);
+  box-shadow: inset 0 0 0 1px rgba(17, 102, 221, 0.08);
+}
+
+.ops-entry.is-running {
+  border-color: rgba(34, 204, 238, 0.24);
+  box-shadow: inset 0 0 0 1px rgba(34, 204, 238, 0.08);
+}
+
+.ops-entry.is-empty {
+  color: var(--ink-soft);
+}
+.toast-stack {
+  position: fixed;
+  top: 1rem;
+  right: 1rem;
+  width: min(420px, calc(100vw - 2rem));
+  display: grid;
+  gap: 0.52rem;
+  z-index: 1200;
+  pointer-events: none;
+}
+
+.toast {
+  pointer-events: auto;
+  border-radius: 12px;
+  border: 1px solid rgba(190, 205, 255, 0.2);
+  background: linear-gradient(120deg, rgba(8, 13, 23, 0.98), rgba(10, 20, 42, 0.98));
+  box-shadow: 0 16px 34px rgba(0, 0, 0, 0.45);
+  padding: 0.56rem 0.68rem;
+  display: grid;
+  gap: 0.26rem;
+  animation: toast-in 160ms ease-out;
+}
+
+.toast-title {
+  margin: 0;
+  font-family: "Chakra Petch", "Trebuchet MS", sans-serif;
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+  font-size: 0.72rem;
+}
+
+.toast-body {
+  margin: 0;
+  font-size: 0.88rem;
+  color: var(--ink);
+}
+
+.toast.info {
+  border-color: rgba(34, 153, 238, 0.55);
+}
+
+.toast.info .toast-title {
+  color: #2299ee;
+}
+
+.toast.success {
+  border-color: rgba(51, 255, 255, 0.55);
+}
+
+.toast.success .toast-title {
+  color: #33ffff;
+}
+
+.toast.warn {
+  border-color: rgba(34, 204, 238, 0.55);
+}
+
+.toast.warn .toast-title {
+  color: #22ccee;
+}
+
+.toast.error {
+  border-color: rgba(17, 102, 221, 0.6);
+}
+
+.toast.error .toast-title {
+  color: #1166dd;
+}
+
+.toast.is-leaving {
+  animation: toast-out 180ms ease-in forwards;
+}
+
+@keyframes toast-in {
+  from {
+    opacity: 0;
+    transform: translate3d(0, -8px, 0);
+  }
+  to {
+    opacity: 1;
+    transform: translate3d(0, 0, 0);
+  }
+}
+
+@keyframes toast-out {
+  from {
+    opacity: 1;
+    transform: translate3d(0, 0, 0);
+  }
+  to {
+    opacity: 0;
+    transform: translate3d(0, -6px, 0);
+  }
+}

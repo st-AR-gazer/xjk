@@ -1,0 +1,196 @@
+.palette-result {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  gap: 12px;
+  align-items: center;
+  padding: 11px;
+  border-radius: var(--learn-radius);
+  color: #dddddd;
+}
+
+.palette-result:hover,
+.palette-result.is-selected {
+  background: rgba(255, 255, 255, 0.075);
+}
+.palette-result small {
+  display: block;
+  color: var(--learn-muted);
+  margin-top: 3px;
+}
+
+.learn-admin-grid {
+  align-items: start;
+}
+
+.learn-admin-loading,
+.learn-admin-gate {
+  margin-top: 16px;
+}
+
+.learn-admin-gate {
+  display: grid;
+  justify-items: start;
+  gap: 12px;
+  max-width: 760px;
+}
+
+.learn-admin-gate-icon {
+  width: 46px;
+  height: 46px;
+  display: grid;
+  place-items: center;
+  border: 1px solid var(--learn-line-strong);
+  border-radius: var(--learn-radius);
+  background: rgba(255, 255, 255, 0.06);
+}
+
+.learn-admin-warning,
+.learn-admin-warnings {
+  border: 1px solid rgba(255, 255, 255, 0.22);
+  border-radius: var(--learn-radius);
+  background: rgba(255, 255, 255, 0.06);
+  color: var(--learn-muted);
+  padding: 10px 12px;
+}
+
+.learn-admin-status,
+.learn-admin-tabs,
+.learn-admin-account-card,
+.learn-admin-role-create,
+.learn-admin-account-row,
+.learn-admin-audit-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.learn-admin-status {
+  justify-content: space-between;
+  margin-bottom: 14px;
+}
+
+.learn-admin-tabs {
+  flex-wrap: wrap;
+}
+
+.learn-admin-role {
+  border: 1px solid var(--learn-line-strong);
+  border-radius: var(--learn-radius);
+  padding: 8px 12px;
+  color: var(--learn-accent);
+  font-family: "Space Mono", Consolas, monospace;
+  text-transform: uppercase;
+}
+
+.learn-admin-account-card {
+  flex-wrap: wrap;
+  border: 1px solid var(--learn-line);
+  border-radius: var(--learn-radius);
+  background: rgba(255, 255, 255, 0.035);
+  padding: 12px;
+}
+
+.learn-admin-account-card span {
+  color: var(--learn-muted);
+  font-family: "Space Mono", Consolas, monospace;
+  text-transform: uppercase;
+  font-size: 11px;
+}
+
+.learn-admin-editor-grid {
+  display: grid;
+  grid-template-columns: minmax(220px, 0.55fr) minmax(320px, 1fr) minmax(320px, 1fr);
+  gap: 12px;
+  margin-top: 14px;
+}
+
+.learn-admin-editor-meta {
+  display: grid;
+  align-content: start;
+  gap: 10px;
+}
+
+.learn-admin-editor-meta label,
+.learn-admin-form label {
+  display: grid;
+  gap: 6px;
+}
+
+.learn-admin-editor {
+  min-height: 68vh;
+  resize: vertical;
+  font-family: "Space Mono", Consolas, monospace;
+  line-height: 1.55;
+}
+
+.learn-admin-preview {
+  min-height: 68vh;
+  max-height: 68vh;
+  overflow: auto;
+  border: 1px solid var(--learn-line);
+  border-radius: var(--learn-radius);
+  background: rgba(0, 0, 0, 0.34);
+  padding: 18px;
+}
+
+.learn-admin-preview .learn-article-body {
+  max-width: 100%;
+}
+
+.learn-admin-role-create {
+  flex-wrap: wrap;
+  margin: 14px 0;
+}
+
+.learn-admin-role-create .learn-input,
+.learn-admin-role-create .learn-select {
+  min-width: 150px;
+  flex: 1 1 150px;
+}
+
+.learn-admin-role-list,
+.learn-admin-audit-list {
+  display: grid;
+  gap: 8px;
+}
+
+.learn-route-recovered {
+  margin-bottom: 16px;
+}
+
+.learn-admin-account-row {
+  display: grid;
+  grid-template-columns: minmax(180px, 1.2fr) minmax(120px, 0.8fr) 120px 92px minmax(120px, 1fr) auto;
+  border: 1px solid var(--learn-line);
+  border-radius: var(--learn-radius);
+  background: rgba(255, 255, 255, 0.03);
+  padding: 10px;
+}
+
+.learn-admin-account-row small {
+  display: block;
+  color: var(--learn-muted);
+  margin-top: 3px;
+}
+
+.learn-admin-active {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--learn-muted);
+}
+
+.learn-admin-audit-row {
+  display: grid;
+  grid-template-columns: minmax(150px, 0.8fr) minmax(120px, 0.7fr) minmax(180px, 0.8fr) minmax(220px, 1.4fr);
+  border: 1px solid var(--learn-line);
+  border-radius: var(--learn-radius);
+  background: rgba(255, 255, 255, 0.03);
+  padding: 10px;
+}
+
+.learn-admin-audit-row code {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}

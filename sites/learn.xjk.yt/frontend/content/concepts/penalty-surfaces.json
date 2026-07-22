@@ -1,0 +1,8 @@
+{
+  "title": "Penalty Surfaces",
+  "area": "surfaces",
+  "type": "concept",
+  "summary": "Surfaces that reduce or cap speed, with possible bypasses through wiggles, partial contact, or route geometry.",
+  "tags": ["penalty", "surface"],
+  "relatedConcepts": ["speed-cap", "ak-wiggle", "wheel-contact"]
+}

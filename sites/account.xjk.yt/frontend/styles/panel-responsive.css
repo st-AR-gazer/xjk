@@ -1,0 +1,251 @@
+@media (max-width: 1220px) {
+  .account-topbar {
+    grid-template-columns: 48px minmax(250px, 1fr) minmax(170px, 220px);
+  }
+
+  .space-grid {
+    grid-template-columns: 1fr;
+  }
+
+  #panel-overview.is-active::before {
+    display: none;
+  }
+}
+
+@media (min-width: 901px) and (max-height: 680px) {
+  #panel-overview.is-active {
+    grid-template-rows: 192px 176px 54px;
+    align-content: start;
+  }
+}
+
+@media (max-width: 900px) {
+  body {
+    overflow: auto;
+    overflow-x: hidden;
+  }
+
+  .account-shell {
+    height: auto;
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  .account-topbar {
+    grid-template-columns: 42px minmax(0, 1fr) 38px;
+    gap: 10px;
+    padding: 12px;
+  }
+
+  .account-main {
+    width: 100%;
+    max-width: 100%;
+    height: auto;
+    min-height: 100vh;
+    padding: 70px 14px 22px;
+    grid-template-rows: auto auto auto;
+  }
+
+  .account-hero {
+    grid-template-columns: 1fr;
+    min-height: 58px;
+    gap: 0;
+    margin-bottom: 8px;
+  }
+
+  .account-hero::before {
+    display: none;
+  }
+
+  .hero-copy {
+    grid-column: 1;
+  }
+
+  .ghost-rail {
+    display: none;
+  }
+
+  .account-hero h1 {
+    font-size: clamp(22px, 6vw, 28px);
+  }
+
+  .account-rail {
+    overflow-x: auto;
+    justify-self: stretch;
+    display: flex;
+    width: 100%;
+    min-height: 42px;
+    padding: 0 0 4px;
+  }
+
+  .rail-stop {
+    grid-template-columns: auto minmax(0, max-content);
+    justify-items: stretch;
+    justify-content: center;
+    gap: 8px;
+    flex: 0 0 112px;
+    min-width: 0;
+    min-height: 42px;
+    padding: 0 6px;
+  }
+
+  .rail-stop strong {
+    position: relative;
+    width: auto;
+    height: auto;
+    overflow: hidden;
+    clip: auto;
+    font-size: 13px;
+    white-space: nowrap;
+  }
+
+  #panel-appearance .account-card {
+    height: auto;
+  }
+
+  #panel-appearance.is-active {
+    gap: var(--card-gap);
+  }
+
+  #panel-appearance .account-card,
+  #panel-appearance .appearance-control:first-child,
+  #panel-appearance .appearance-control:last-child {
+    border: 1px solid rgba(255, 255, 255, 0.21);
+    border-radius: 5px;
+  }
+
+  #panel-appearance .appearance-control:not(:last-child)::after {
+    display: none;
+  }
+
+  #panel-appearance > .toolbar {
+    display: flex;
+    justify-content: flex-start;
+    margin-top: 0;
+    border-radius: 5px;
+  }
+
+  #panel-appearance > .toolbar::before {
+    display: none;
+  }
+
+  #panel-appearance > .toolbar .toolbar-note {
+    order: 0;
+    max-width: none;
+    text-align: left;
+    white-space: normal;
+  }
+
+  .space-route-visual {
+    min-height: 128px;
+  }
+
+  .panel,
+  .panel.is-active {
+    overflow: visible;
+    max-width: 100%;
+  }
+
+  .account-card,
+  .space-grid {
+    min-width: 0;
+    max-width: 100%;
+  }
+
+  #panel-spaces,
+  #panel-spaces .account-card,
+  .space-summary,
+  .space-summary > *,
+  .space-route-card,
+  .space-route-card > *,
+  .space-note {
+    min-width: 0;
+    max-width: 100%;
+  }
+}
+
+@media (max-width: 620px) {
+  .account-rail {
+    display: grid;
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+    overflow: hidden;
+    min-height: 34px;
+    padding: 0;
+  }
+
+  .rail-stop {
+    grid-template-columns: 1fr;
+    justify-items: center;
+    gap: 0;
+    flex: none;
+    min-height: 34px;
+    padding: 0;
+  }
+
+  .rail-stop strong {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+  }
+
+  .space-pills {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    justify-content: flex-start;
+    max-width: 100%;
+  }
+
+  .space-selector-shell {
+    grid-template-columns: 1fr;
+  }
+
+  .space-selector-shell > span {
+    padding-top: 0;
+  }
+
+  .space-summary-head {
+    align-items: flex-start;
+  }
+
+  #panel-appearance > .toolbar::before {
+    display: none;
+  }
+
+  .space-route-visual {
+    grid-template-columns: 18px minmax(20px, 1fr) 18px minmax(20px, 1fr) 18px;
+    min-height: 112px;
+    padding: 12px;
+    overflow: hidden;
+  }
+
+  .space-route-card .space-route-visual {
+    grid-template-columns: 19px minmax(28px, 1fr) 19px minmax(28px, 1fr) 19px;
+    flex-basis: 132px;
+    min-height: 132px;
+    max-height: none;
+    padding: 18px 28px;
+  }
+
+  .space-route-visual span {
+    width: 18px;
+    height: 18px;
+    border-width: 3px;
+  }
+
+  .space-header,
+  .identity-row {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .identity-row dd {
+    max-width: none;
+    text-align: left;
+  }
+
+  .toolbar > * {
+    width: 100%;
+  }
+}

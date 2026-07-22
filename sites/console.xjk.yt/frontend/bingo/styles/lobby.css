@@ -1,0 +1,217 @@
+.detail-card {
+  padding: 0.95rem;
+  display: grid;
+  gap: 0.7rem;
+}
+
+.detail-card--guide {
+  align-content: start;
+}
+
+.detail-card__label--nested {
+  margin-top: 0.15rem;
+}
+
+.detail-card--compact h3 {
+  font-size: 1rem;
+}
+
+.detail-actions {
+  display: grid;
+  gap: 0.55rem;
+}
+
+.detail-actions--single {
+  grid-template-columns: 1fr;
+}
+
+.detail-actions--room {
+  grid-template-columns: 1fr;
+}
+
+@media (min-width: 700px) {
+  .detail-actions--room {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+.path-list {
+  margin: 0;
+  padding-left: 1rem;
+  display: grid;
+  gap: 0.35rem;
+}
+
+.path-list--detailed {
+  padding-left: 0;
+  gap: 0.65rem;
+  list-style: none;
+  counter-reset: bingo-path-step;
+}
+
+.path-list li {
+  line-height: 1.4;
+}
+
+.path-list--detailed li {
+  counter-increment: bingo-path-step;
+  padding: 0.8rem 0.9rem;
+  border-radius: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: rgba(255, 255, 255, 0.02);
+}
+
+.path-step {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: 0.18rem 0.65rem;
+  align-items: start;
+}
+
+.path-step::before {
+  content: counter(bingo-path-step);
+  grid-row: span 3;
+  width: 1.45rem;
+  height: 1.45rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 999px;
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  color: var(--accent-strong);
+  background: rgba(154, 236, 53, 0.08);
+  font-family: "Chakra Petch", "Trebuchet MS", sans-serif;
+  font-size: 0.78rem;
+  font-weight: 700;
+}
+
+.path-step strong {
+  font-family: "Chakra Petch", "Trebuchet MS", sans-serif;
+  font-size: 0.96rem;
+  font-weight: 600;
+}
+
+.path-step__value {
+  color: var(--accent-strong);
+  font-size: 0.92rem;
+  word-break: break-word;
+}
+
+.path-step__note {
+  color: var(--muted);
+  font-size: 0.82rem;
+  line-height: 1.45;
+}
+
+.guide-frame {
+  display: grid;
+  gap: 0.55rem;
+  border-radius: 14px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: rgba(255, 255, 255, 0.02);
+  padding: 0.8rem;
+}
+
+.guide-frame__screen {
+  min-height: 188px;
+  border-radius: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  background: linear-gradient(180deg, rgba(154, 236, 53, 0.06), rgba(154, 236, 53, 0.02)), rgba(7, 9, 16, 0.78);
+  padding: 0.9rem;
+  display: grid;
+  gap: 0.85rem;
+  align-content: start;
+}
+
+.guide-frame__bar {
+  width: 84px;
+  height: 4px;
+  border-radius: 999px;
+  background: rgba(154, 236, 53, 0.55);
+}
+
+.guide-frame__steps {
+  display: grid;
+  gap: 0.55rem;
+}
+
+.guide-frame__steps span {
+  display: block;
+  padding: 0.65rem 0.75rem;
+  border-radius: 10px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: rgba(255, 255, 255, 0.03);
+  color: var(--ink);
+  font-family: "Chakra Petch", "Trebuchet MS", sans-serif;
+  font-size: 0.86rem;
+}
+
+.guide-frame__caption {
+  color: var(--muted);
+  font-size: 0.82rem;
+}
+
+.lobby-player {
+  display: grid;
+  grid-template-columns: 40px minmax(0, 1fr);
+  gap: 0.7rem;
+  align-items: center;
+  padding: 0.75rem 0.8rem;
+  border-radius: 12px;
+  border: 1px solid color-mix(in srgb, var(--team-border) 28%, transparent);
+  background: linear-gradient(90deg, var(--team-soft), rgba(255, 255, 255, 0.018) 72%), rgba(255, 255, 255, 0.02);
+}
+
+.lobby-player__avatar {
+  width: 40px;
+  height: 40px;
+  border-radius: 12px;
+  border: 1px solid color-mix(in srgb, var(--team-border) 54%, transparent);
+  background: var(--team-fill);
+  display: grid;
+  place-items: center;
+  font-family: "Chakra Petch", "Trebuchet MS", sans-serif;
+  font-weight: 700;
+  color: var(--team-text);
+  box-shadow: 0 0 18px var(--team-glow);
+}
+
+.lobby-player__copy {
+  min-width: 0;
+  display: grid;
+  gap: 0.18rem;
+}
+
+.lobby-player__copy strong {
+  font-family: "Chakra Petch", "Trebuchet MS", sans-serif;
+  font-size: 0.98rem;
+  line-height: 1.15;
+}
+
+.lobby-player__copy span {
+  color: var(--muted);
+  font-size: 0.84rem;
+}
+
+.team-btn {
+  text-align: left;
+}
+
+.team-btn__meta {
+  display: block;
+  color: var(--muted);
+  margin-top: 0.35rem;
+  font-size: 0.82rem;
+}
+
+.state-good {
+  color: var(--good);
+}
+
+.state-warn {
+  color: var(--warn);
+}
+
+.state-bad {
+  color: var(--bad);
+}

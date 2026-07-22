@@ -1,0 +1,8 @@
+{
+  "title": "Ice Slide",
+  "area": "techniques",
+  "type": "technique",
+  "summary": "A controlled sliding state used when grip is too low or when a surface demands a sliding line.",
+  "tags": ["ice", "slide"],
+  "relatedConcepts": ["surfaces", "wheel-contact"]
+}

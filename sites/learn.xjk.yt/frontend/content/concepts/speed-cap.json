@@ -1,0 +1,8 @@
+{
+  "title": "Speed Cap",
+  "area": "speed-momentum",
+  "type": "concept",
+  "summary": "A surface or state-imposed upper speed that can sometimes be bypassed through contact, inputs, or special forces.",
+  "tags": ["speed", "limit"],
+  "relatedConcepts": ["penalty-surfaces", "plastic-overspeed"]
+}

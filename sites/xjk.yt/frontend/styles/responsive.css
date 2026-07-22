@@ -1,0 +1,144 @@
+@media (max-width: 900px) {
+  .network-topbar {
+    grid-template-columns: minmax(130px, 0.7fr) minmax(260px, 1.5fr) minmax(44px, 0.7fr);
+    gap: 12px;
+    padding-right: 12px;
+    padding-left: 12px;
+  }
+
+  .network-topbar-actions {
+    grid-template-columns: minmax(260px, 1.5fr) minmax(32px, 0.7fr);
+    gap: 12px;
+  }
+
+  .hub-title {
+    font-size: 17px;
+  }
+
+  .hub-description {
+    font-size: 12px;
+  }
+}
+
+@media (max-width: 700px) {
+  body {
+    overflow: auto;
+  }
+
+  .hub-shell {
+    grid-template-rows: var(--topbar-height) auto;
+    height: auto;
+    min-height: 100vh;
+    min-height: 100dvh;
+  }
+
+  .network-topbar {
+    grid-template-columns: auto minmax(0, 1fr) auto;
+    gap: 10px;
+    padding: 9px 12px;
+  }
+
+  .network-topbar-actions {
+    grid-template-columns: minmax(0, 1fr) auto;
+    gap: 10px;
+  }
+
+  .brand-copy small {
+    gap: 0;
+    font-size: 0;
+  }
+
+  .service-search-trigger {
+    min-height: 40px;
+    padding-top: 4px;
+    padding-bottom: 4px;
+  }
+
+  .service-search-copy small {
+    display: none;
+  }
+
+  .network-layout {
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+  }
+
+  .map-stage {
+    min-height: 560px;
+    overflow-x: auto;
+    overflow-y: hidden;
+  }
+
+  .map-canvas {
+    min-width: 900px;
+    padding: 20px;
+    touch-action: pan-y;
+  }
+
+  .network-map {
+    width: 860px;
+    height: 520px;
+  }
+}
+
+@media (max-width: 460px) {
+  .network-topbar {
+    gap: 8px;
+    padding-right: 10px;
+    padding-left: 10px;
+  }
+
+  .network-topbar-actions {
+    gap: 8px;
+  }
+
+  .network-brand {
+    gap: 7px;
+  }
+
+  .brand-mark {
+    width: 30px;
+    height: 30px;
+  }
+
+  .brand-mark span {
+    top: 13px;
+    left: 6px;
+  }
+
+  .brand-copy strong {
+    font-size: 11px;
+  }
+
+  .service-search-trigger {
+    grid-template-columns: 16px minmax(0, 1fr);
+    gap: 9px;
+    padding-right: 10px;
+    padding-left: 10px;
+  }
+
+  .service-search-trigger kbd {
+    display: none;
+  }
+}
+
+@media (max-width: 350px) {
+  .brand-copy {
+    display: none;
+  }
+
+  .network-brand {
+    gap: 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation: none !important;
+    scroll-behavior: auto !important;
+    transition-duration: 0.01ms !important;
+  }
+}

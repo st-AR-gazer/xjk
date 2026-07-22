@@ -1,0 +1,397 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <link rel="stylesheet" href="/shared/xjk-core/chrome-prepaint.css?v=2" data-xjk-chrome-prepaint />
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>xjk / console / bingo</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@400;500;600;700&family=IBM+Plex+Sans+Condensed:wght@400;500;600;700&family=Manrope:wght@400;500;700&family=Space+Mono:wght@400;700&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="/shared/xjk-core/surface-foundation.css?v=2" />
+    <link rel="stylesheet" href="../styles/foundation.css?v=2" />
+    <link rel="stylesheet" href="../styles/routes.css?v=2" />
+    <link rel="stylesheet" href="../styles/footer-responsive.css?v=2" />
+    <link rel="stylesheet" href="../styles/subpages.css?v=2" />
+    <link rel="stylesheet" href="./styles/shell.css?v=2" />
+    <link rel="stylesheet" href="./styles/rooms.css?v=2" />
+    <link rel="stylesheet" href="./styles/board.css?v=2" />
+    <link rel="stylesheet" href="./styles/map-overlays.css?v=2" />
+    <link rel="stylesheet" href="./styles/notifications-settings.css?v=2" />
+    <link rel="stylesheet" href="./styles/lobby.css?v=2" />
+    <link rel="stylesheet" href="./styles/responsive.css?v=2" />
+  </head>
+  <body>
+    <div class="backdrop" aria-hidden="true"></div>
+
+    <div class="console-shell console-shell--runtime" id="runtimeShell">
+      <header class="con-topbar">
+        <a class="con-brand" data-link="main" href="https://xjk.yt/" aria-label="Go to xjk main hub">
+          <img class="con-brand-logo" src="../assets/xjk.svg?v=2" alt="" decoding="async" />
+        </a>
+
+        <div class="con-status">
+          <span class="status-dot" aria-hidden="true"></span>
+          <span class="status-copy">
+            <strong>console</strong>
+            <small>bingo board</small>
+          </span>
+        </div>
+
+        <nav class="con-subnav" aria-label="Console routes">
+          <a class="con-subnav__link" href="../">Hub</a>
+          <a class="con-subnav__link is-active" href="./">Bingo</a>
+        </nav>
+
+        <div class="con-account-slot" data-xjk-account-widget-slot="topbar" aria-label="xjk account"></div>
+      </header>
+
+      <main class="console-main">
+        <div class="console-route console-route--bingo">
+          <div class="bingo-tabs-row">
+            <div class="bingo-tabs" role="tablist" aria-label="Bingo views">
+              <button class="bingo-tab is-active" id="tabGamesButton" type="button" role="tab" aria-selected="true">
+                Play
+              </button>
+              <button class="bingo-tab" id="tabLobbyButton" type="button" role="tab" aria-selected="false">
+                Lobby
+              </button>
+              <button class="bingo-tab" id="tabRoomButton" type="button" role="tab" aria-selected="false">Room</button>
+            </div>
+            <button class="ghost-btn room-settings-button hidden" id="roomSettingsButton" type="button">
+              Room settings
+            </button>
+          </div>
+
+          <section class="tab-panel" id="gamesPanel">
+            <div class="panel panel--games">
+              <div class="panel__header">
+                <div>
+                  <p class="panel__eyebrow">Play</p>
+                  <h2>Join a room</h2>
+                </div>
+                <button class="ghost-btn" id="refreshRoomsButton" type="button">Refresh</button>
+              </div>
+
+              <form class="private-form" id="privateLookupForm">
+                <div class="private-form__row">
+                  <input
+                    id="joinCodeInput"
+                    name="joinCode"
+                    type="text"
+                    maxlength="24"
+                    autocomplete="off"
+                    placeholder="Private join code"
+                  />
+                  <button class="primary-btn" type="submit">Open</button>
+                </div>
+              </form>
+
+              <div class="lookup-result" id="privateLookupResult"></div>
+              <div class="room-list" id="publicRooms"></div>
+            </div>
+          </section>
+
+          <section class="tab-panel hidden" id="lobbyPanel">
+            <div class="panel panel--lobby panel--empty" id="lobbyEmpty">
+              <p class="panel__eyebrow">Lobby</p>
+              <h2>No room selected</h2>
+              <p class="panel__compact-copy">Join a room in Play first.</p>
+            </div>
+
+            <div class="panel panel--lobby hidden" id="lobbyActive">
+              <div class="panel__header">
+                <div>
+                  <p class="panel__eyebrow">Lobby</p>
+                  <h2 id="matchTitle">Match</h2>
+                </div>
+                <div class="lobby-header-actions">
+                  <button class="ghost-btn lobby-leave-btn" id="leaveMatchButton" type="button">Leave</button>
+                  <span class="live-pill" id="matchPhasePill">Waiting</span>
+                </div>
+              </div>
+
+              <div class="match-summary" id="matchSummary"></div>
+
+              <div class="team-picker hidden" id="teamPicker">
+                <p class="team-picker__copy" id="teamPickerIntro">Choose your team.</p>
+                <div class="team-picker__list" id="teamPickerList"></div>
+              </div>
+
+              <div class="lobby-subtabs" role="tablist" aria-label="Lobby details">
+                <button
+                  class="lobby-subtab is-active"
+                  id="lobbyJoinTabButton"
+                  type="button"
+                  role="tab"
+                  aria-selected="true"
+                >
+                  Join
+                </button>
+                <button class="lobby-subtab" id="lobbyPlayersTabButton" type="button" role="tab" aria-selected="false">
+                  Players
+                </button>
+              </div>
+
+              <div class="lobby-subpanel" id="lobbyJoinPanel">
+                <div class="lobby-grid">
+                  <div class="detail-card detail-card--guide">
+                    <p class="detail-card__label">How To Join</p>
+                    <h3 id="joinGuideTitle">Walkthrough placeholder</h3>
+                    <p class="path-note" id="joinGuideIntro">
+                      This side is reserved for the future video or screenshot walkthrough.
+                    </p>
+                    <div class="guide-frame" id="joinGuideFrame" aria-hidden="true">
+                      <div class="guide-frame__screen">
+                        <div class="guide-frame__bar"></div>
+                        <div class="guide-frame__steps">
+                          <span>Video slot</span>
+                          <span>Console lobby capture</span>
+                          <span>Folder navigation</span>
+                          <span>Room join clip</span>
+                        </div>
+                      </div>
+                      <div class="guide-frame__caption">
+                        Video or still-image walkthrough can be dropped here later.
+                      </div>
+                    </div>
+                  </div>
+
+                  <div class="detail-card">
+                    <p class="detail-card__label">Where To Join</p>
+                    <h3 id="joinInstructionsTitle">Follow the room path</h3>
+                    <p class="path-note" id="joinInstructionsIntro">
+                      Open Trackmania on console, go to Clubs, then follow these folders.
+                    </p>
+                    <ol class="path-list path-list--detailed" id="clubPathList"></ol>
+                    <p class="path-note" id="clubPathNote">The final Nadeo room is the one you actually join.</p>
+                    <div class="detail-actions detail-actions--room">
+                      <button class="primary-btn" id="openBoardButton" type="button">Open Room</button>
+                      <button class="ghost-btn" id="regenerateRoomButton" type="button" disabled>
+                        Regenerate Room
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div class="lobby-subpanel hidden" id="lobbyPlayersPanel">
+                <div class="detail-card">
+                  <p class="detail-card__label">Players</p>
+                  <h3 id="lobbyPlayersTitle">Nobody joined yet</h3>
+                  <div class="lobby-players" id="lobbyPlayersList"></div>
+                </div>
+              </div>
+            </div>
+          </section>
+
+          <section class="tab-panel hidden" id="roomPanel">
+            <div class="panel panel--room panel--empty" id="roomEmpty">
+              <p class="panel__eyebrow">Room</p>
+              <h2>No room open</h2>
+              <p class="panel__compact-copy">Join a room first.</p>
+            </div>
+
+            <div class="panel panel--room hidden" id="roomActive">
+              <div class="board-layout" id="boardLayout">
+                <div class="board-toolbar" aria-label="Board controls">
+                  <label class="board-size-control" for="boardSizeSlider">
+                    <span>GUI size</span>
+                    <input id="boardSizeSlider" type="range" min="82" max="396" step="2" value="132" />
+                    <strong id="boardSizeValue">100%</strong>
+                  </label>
+                  <div class="record-check">
+                    <button class="primary-btn record-check__button" id="manualRecordButton" type="button" disabled>
+                      I set a new record
+                    </button>
+                    <span id="manualRecordStatus">Auto-checking once a minute.</span>
+                  </div>
+                  <p class="board-pan-hint">
+                    Click a tile for details. Hold a tile to play it. Pinch or Ctrl + wheel to zoom.
+                  </p>
+                </div>
+
+                <div class="board-pane" id="boardPane">
+                  <div class="board-grid" id="boardGrid"></div>
+                </div>
+
+                <div
+                  class="tile-modal hidden"
+                  id="tilePopover"
+                  role="dialog"
+                  aria-modal="true"
+                  aria-labelledby="selectedMapTitle"
+                >
+                  <button
+                    class="tile-modal__backdrop"
+                    id="tilePopoverBackdrop"
+                    type="button"
+                    aria-label="Close tile details"
+                  ></button>
+                  <aside class="tile-modal__panel">
+                    <button
+                      class="tile-modal__close"
+                      id="tilePopoverClose"
+                      type="button"
+                      aria-label="Close tile details"
+                    >
+                      &times;
+                    </button>
+                    <div class="tile-modal__preview">
+                      <div class="tile-modal__media" id="selectedMapMedia" aria-hidden="true"></div>
+                      <button class="primary-btn tile-modal__play" id="switchMapButton" type="button" disabled>
+                        Play this map
+                      </button>
+                    </div>
+                    <div class="tile-modal__body">
+                      <div class="tile-modal__header">
+                        <p class="detail-card__label">Tile</p>
+                        <h3 id="selectedMapTitle">Pick a tile</h3>
+                        <p id="selectedMapSubtitle">Select a tile to target it.</p>
+                      </div>
+
+                      <div class="tile-modal__tabs" role="tablist" aria-label="Tile information">
+                        <button
+                          class="tile-modal__tab is-active"
+                          id="tileDetailsTabButton"
+                          type="button"
+                          role="tab"
+                          aria-selected="true"
+                          aria-controls="tileDetailsPanel"
+                        >
+                          Details
+                        </button>
+                        <button
+                          class="tile-modal__tab"
+                          id="tileRunsTabButton"
+                          type="button"
+                          role="tab"
+                          aria-selected="false"
+                          aria-controls="tileRunsPanel"
+                        >
+                          Run history
+                        </button>
+                      </div>
+
+                      <div
+                        class="tile-modal__tab-panel"
+                        id="tileDetailsPanel"
+                        role="tabpanel"
+                        aria-labelledby="tileDetailsTabButton"
+                      >
+                        <dl class="tile-detail-list" id="selectedMapStats"></dl>
+                        <div class="detail-actions tile-modal__actions">
+                          <button class="ghost-btn" id="checkMapButton" type="button" disabled>Check Now</button>
+                        </div>
+                        <div class="tile-modal__status">
+                          <p class="detail-card__label">Verification</p>
+                          <h3 id="claimStatusTitle">Waiting</h3>
+                          <p id="claimStatusBody">Select a tile first.</p>
+                        </div>
+                      </div>
+
+                      <div
+                        class="tile-modal__tab-panel hidden"
+                        id="tileRunsPanel"
+                        role="tabpanel"
+                        aria-labelledby="tileRunsTabButton"
+                      >
+                        <div class="run-history" id="selectedMapRunHistory"></div>
+                      </div>
+                    </div>
+                  </aside>
+                </div>
+
+                <div class="map-switch-overlay hidden" id="mapSwitchOverlay" role="status" aria-live="polite">
+                  <div class="map-switch-dialog">
+                    <p class="detail-card__label">Map updater</p>
+                    <h3 id="mapSwitchTitle">Preparing map</h3>
+                    <p id="mapSwitchBody">Starting the console room update.</p>
+                    <ol class="map-switch-steps" id="mapSwitchSteps"></ol>
+                    <button class="ghost-btn map-switch-close hidden" id="mapSwitchCloseButton" type="button">
+                      Got it
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </section>
+
+          <div
+            class="room-settings-modal hidden"
+            id="roomSettingsModal"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="roomSettingsTitle"
+          >
+            <button
+              class="room-settings-modal__backdrop"
+              id="roomSettingsBackdrop"
+              type="button"
+              aria-label="Close room settings"
+            ></button>
+            <section class="room-settings-panel">
+              <button
+                class="room-settings-panel__close"
+                id="roomSettingsClose"
+                type="button"
+                aria-label="Close room settings"
+              >
+                &times;
+              </button>
+              <header class="room-settings-panel__header">
+                <div>
+                  <p class="detail-card__label">Room settings</p>
+                  <h3 id="roomSettingsTitle">Current room</h3>
+                </div>
+                <span class="settings-lock-pill" id="roomSettingsHostNote">Read-only</span>
+              </header>
+              <div class="room-settings-grid" id="roomSettingsGrid"></div>
+            </section>
+          </div>
+        </div>
+      </main>
+    </div>
+
+    <section
+      class="bingo-notifications"
+      id="bingoNotifications"
+      aria-live="polite"
+      aria-label="Bingo run notifications"
+    ></section>
+
+    <template id="roomCardTemplate">
+      <article class="room-card">
+        <div class="room-card__head">
+          <div>
+            <p class="room-card__eyebrow"></p>
+            <h3></h3>
+          </div>
+          <span class="room-card__phase"></span>
+        </div>
+        <dl class="room-card__stats"></dl>
+        <p class="room-card__detail"></p>
+        <button class="primary-btn room-card__action" type="button">Join</button>
+      </article>
+    </template>
+
+    <script src="/shared/xjk-core/safe-html.js?v=2"></script>
+    <script src="../console.js?v=2"></script>
+    <script type="module" src="./scripts/runtime.js?v=2"></script>
+    <script
+      type="module"
+      src="/shared/xjk-core/sidenav-boot.js?v=2"
+      data-xjk-sidenav="console"
+      data-xjk-page="bingo"
+    ></script>
+    <script
+      type="module"
+      src="/shared/xjk-core/topbar-loader.js?v=2"
+      data-xjk-topbar="console"
+      data-xjk-page="bingo"
+    ></script>
+  </body>
+</html>

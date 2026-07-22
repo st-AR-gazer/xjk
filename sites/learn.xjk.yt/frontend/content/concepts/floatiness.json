@@ -1,0 +1,8 @@
+{
+  "title": "Floatiness",
+  "area": "grip-contact",
+  "type": "concept",
+  "summary": "A light contact feeling where the car is less planted and partial wheel states become more important.",
+  "tags": ["water", "contact"],
+  "relatedConcepts": ["wheel-contact", "flowtrick"]
+}

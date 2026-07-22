@@ -1,0 +1,209 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <link rel="stylesheet" href="/shared/xjk-core/chrome-prepaint.css?v=2" data-xjk-chrome-prepaint />
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="description" content="Daily Track of the Day style snapshots for Trackmania plugin and web clients." />
+    <title>cotd.xjk.yt</title>
+    <link rel="icon" href="./favicon.svg?v=2" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Condensed:wght@400;500;600;700&family=Inter:wght@400;500;600;700&family=Space+Mono:wght@400;700&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="./styles/foundation.css?v=2" />
+    <link rel="stylesheet" href="./styles/overview.css?v=2" />
+    <link rel="stylesheet" href="./styles/fingerprint.css?v=2" />
+    <link rel="stylesheet" href="./styles/archive.css?v=2" />
+    <link rel="stylesheet" href="./styles/responsive.css?v=2" />
+  </head>
+  <body>
+    <div class="backdrop" aria-hidden="true"></div>
+
+    <header class="cotd-topbar">
+      <a class="cotd-brand" data-link="main" href="https://xjk.yt/" aria-label="Go to xjk main hub">
+        <img class="cotd-brand-logo" src="./assets/xjk.svg?v=2" alt="" decoding="async" />
+      </a>
+
+      <div class="cotd-status">
+        <span class="status-dot" aria-hidden="true"></span>
+        <span class="status-copy">
+          <strong>cotd</strong>
+          <small>daily style snapshots</small>
+        </span>
+      </div>
+
+      <nav class="cotd-topnav" aria-label="Primary">
+        <a href="./api/v1/today">API</a>
+        <a href="#history">Archive</a>
+      </nav>
+
+      <div class="cotd-account-slot" data-xjk-account-widget-slot="topbar" aria-label="xjk account"></div>
+    </header>
+
+    <main class="cotd-main">
+      <section class="cotd-hero" aria-labelledby="cotdTitle">
+        <div class="hero-copy">
+          <h1 id="cotdTitle"><span class="hero-accent">cotd</span>.xjk.yt</h1>
+          <p>COTD showcase + TOTD style data</p>
+        </div>
+      </section>
+
+      <section class="today-grid" aria-label="Latest Track of the Day">
+        <section class="panel latest-panel" aria-labelledby="mapName">
+          <div class="panel-kicker-row">
+            <p class="card-kicker">Latest TOTD</p>
+            <span class="status-ribbon" id="statusRibbon">Loading</span>
+          </div>
+
+          <div class="latest-body">
+            <div class="map-visual" id="mapVisual" data-image-state="loading">
+              <img id="mapImage" alt="" hidden />
+              <div class="map-placeholder" id="mapPlaceholder">
+                <span>Current COTD map image</span>
+                <strong>Waiting for live map thumbnail</strong>
+              </div>
+            </div>
+
+            <div class="latest-copy">
+              <p class="latest-date" id="cotdDate">Track of the Day</p>
+              <h2 id="mapName">Loading latest TOTD map</h2>
+              <p class="mapper" id="authorName">Checking the public API...</p>
+
+              <div class="metric-row" aria-label="COTD status metrics">
+                <div>
+                  <span class="metric-label">Confidence</span>
+                  <strong id="confidenceValue">--</strong>
+                </div>
+                <div>
+                  <span class="metric-label">Records</span>
+                  <strong id="recordCount">--</strong>
+                </div>
+                <div>
+                  <span class="metric-label">Updated</span>
+                  <strong id="updatedAt">--</strong>
+                </div>
+              </div>
+
+              <div class="cta-row">
+                <a class="button primary" href="./api/v1/today">Today JSON</a>
+                <a class="button" href="./api/v1/totd">Archive JSON</a>
+                <button class="button" id="copyApiButton" type="button">Copy API URL</button>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <section class="panel fingerprint-panel" aria-labelledby="stylesTitle">
+          <div class="panel-kicker-row">
+            <p class="card-kicker">Style fingerprint</p>
+            <span class="pill" id="classifierMode">Pending</span>
+          </div>
+          <h2 class="sr-only" id="stylesTitle">Classifier result</h2>
+
+          <div class="style-overview">
+            <div class="style-pie" id="stylePie" role="img" aria-label="Style distribution pending">
+              <span id="stylePieLabel">Pending</span>
+            </div>
+            <div class="style-legend" id="styleLegend"></div>
+          </div>
+
+          <div class="style-list" id="styleList"></div>
+
+          <div class="evidence-strip" aria-labelledby="evidenceTitle">
+            <h3 class="sr-only" id="evidenceTitle">Evidence</h3>
+            <dl class="evidence-stats">
+              <div>
+                <dt>Replays</dt>
+                <dd id="replayCount">--</dd>
+              </div>
+              <div>
+                <dt>Source</dt>
+                <dd id="evidenceSource">--</dd>
+              </div>
+            </dl>
+            <ul class="signal-list" id="signalList"></ul>
+            <div class="notice" id="warningBox" hidden></div>
+          </div>
+        </section>
+      </section>
+
+      <section class="middle-grid" aria-label="Recent maps and archive pulse">
+        <section class="panel recent-panel" aria-labelledby="recentTitle">
+          <div class="panel-kicker-row">
+            <p class="card-kicker">Recent maps</p>
+            <a class="panel-link" href="#history">View archive</a>
+          </div>
+          <h2 class="sr-only" id="recentTitle">Recent TOTD maps</h2>
+          <div class="recent-rail" id="recentRail" aria-live="polite"></div>
+        </section>
+
+        <section class="panel pulse-panel" aria-labelledby="pulseTitle">
+          <div class="panel-kicker-row">
+            <p class="card-kicker">Archive pulse</p>
+            <span class="panel-note" id="archiveDonutNote">stored maps</span>
+          </div>
+          <h2 class="sr-only" id="pulseTitle">Archive style distribution</h2>
+
+          <div class="donut-overview">
+            <div class="style-donut" id="archiveDonut" role="img" aria-label="Archive style distribution pending">
+              <span class="donut-center">
+                <strong id="archiveDonutCount">--</strong>
+                <small>maps</small>
+              </span>
+            </div>
+            <div class="style-legend" id="archiveDonutLegend"></div>
+          </div>
+        </section>
+      </section>
+
+      <section class="archive-band panel" id="history" aria-labelledby="historyTitle">
+        <div class="panel-kicker-row">
+          <p class="card-kicker">TOTD archive</p>
+          <span class="panel-note" id="archiveSummary">Loading stored map styles...</span>
+        </div>
+        <h2 class="sr-only" id="historyTitle">All known TOTD maps</h2>
+        <div class="archive-tabs" id="archiveTabs" role="tablist" aria-label="TOTD archive months"></div>
+        <div class="history-list" id="historyList"></div>
+      </section>
+
+      <footer class="info-bar" aria-label="Service summary">
+        <div class="info-cell">
+          <span class="info-label">TOTD archive</span>
+          <strong id="infoArchiveCount">--</strong>
+        </div>
+        <div class="info-cell">
+          <span class="info-label">Classifier</span>
+          <strong id="infoClassifier">--</strong>
+        </div>
+        <div class="info-cell">
+          <span class="info-label">Next TOTD (approx.)</span>
+          <strong id="nextTotdCountdown">--:--:--</strong>
+        </div>
+        <div class="info-cell info-cell--wide">
+          <span class="info-label">Made and maintained by xjk</span>
+          <strong>Free for the community. No accounts required.</strong>
+        </div>
+      </footer>
+    </main>
+
+    <template id="styleItemTemplate">
+      <article class="style-item">
+        <div class="rank"></div>
+        <div class="style-main">
+          <div class="style-row">
+            <h3></h3>
+            <span></span>
+          </div>
+          <div class="bar" aria-hidden="true"><i></i></div>
+        </div>
+      </article>
+    </template>
+
+    <script type="module" src="./app.js?v=2"></script>
+    <script type="module" src="/shared/xjk-core/sidenav-boot.js?v=2" data-xjk-sidenav="cotd"></script>
+    <script type="module" src="/shared/xjk-core/topbar-loader.js?v=2" data-xjk-topbar="cotd"></script>
+  </body>
+</html>

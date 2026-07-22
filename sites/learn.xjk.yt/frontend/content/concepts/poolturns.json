@@ -1,0 +1,8 @@
+{
+  "title": "Poolturns",
+  "area": "block-geometry",
+  "type": "geometry",
+  "summary": "Pool turn blocks and their inside-wall or wallhug behavior.",
+  "tags": ["pool", "geometry"],
+  "relatedConcepts": ["wallrides", "wheel-contact"]
+}

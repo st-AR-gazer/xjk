@@ -1,0 +1,86 @@
+/* Console foundation */
+:root {
+  --accent: #9aec35;
+  --accent-soft: rgba(154, 236, 53, 0.14);
+  --surface-glow: rgba(154, 236, 53, 0.05);
+  --rmc: #22d3ee;
+  --rms: #fb923c;
+  --rmt: #f472b6;
+  --future: #9aa3ab;
+}
+
+/* Backdrop: faint subway texture */
+.backdrop {
+  opacity: 0.12;
+  background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 1540 540'%3E%3Cg fill='none' stroke='%239aec35' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M24 86H158L206 134H370L426 190H612L680 258H812L888 334H1058L1128 404H1432' stroke-opacity='.15' stroke-width='3' stroke-dasharray='10 12'/%3E%3Cpath d='M72 420H210L272 358H458L520 296H678' stroke-opacity='.1' stroke-width='4'/%3E%3Cpath d='M866 118H1008L1060 66H1284L1348 130H1510' stroke-opacity='.12' stroke-width='4'/%3E%3Cpath d='M944 472H1104L1160 416H1328L1394 482' stroke-opacity='.1' stroke-width='3' stroke-dasharray='11 11'/%3E%3C/g%3E%3Cg fill='%23020406' stroke='%239aec35'%3E%3Ccircle cx='158' cy='86' r='7' stroke-opacity='.16' stroke-width='4'/%3E%3Ccircle cx='370' cy='134' r='7' stroke-opacity='.12' stroke-width='4'/%3E%3Ccircle cx='612' cy='190' r='7' stroke-opacity='.12' stroke-width='4'/%3E%3Ccircle cx='812' cy='258' r='7' stroke-opacity='.13' stroke-width='4'/%3E%3Ccircle cx='1058' cy='334' r='7' stroke-opacity='.13' stroke-width='4'/%3E%3Ccircle cx='210' cy='420' r='7' stroke-opacity='.12' stroke-width='4'/%3E%3Ccircle cx='458' cy='358' r='7' stroke-opacity='.11' stroke-width='4'/%3E%3Ccircle cx='1008' cy='118' r='7' stroke-opacity='.13' stroke-width='4'/%3E%3Ccircle cx='1284' cy='66' r='7' stroke-opacity='.13' stroke-width='4'/%3E%3Ccircle cx='1328' cy='416' r='7' stroke-opacity='.11' stroke-width='4'/%3E%3C/svg%3E")
+    center top / 100% auto no-repeat;
+}
+
+/* Main + hero */
+.con-main {
+  width: min(100%, 1540px);
+  margin: 0 auto;
+  padding: 18px 22px 16px;
+  display: grid;
+  gap: 12px;
+}
+
+.con-hero {
+  position: relative;
+  isolation: isolate;
+  display: grid;
+  align-items: center;
+  justify-items: center;
+  min-height: 96px;
+}
+
+.con-hero::before,
+.con-hero::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: min(42%, 520px);
+  z-index: -1;
+  pointer-events: none;
+  opacity: 0.72;
+  background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 560 96'%3E%3Cg fill='none' stroke='%239aec35' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M6 48H132' stroke-opacity='0.62' stroke-width='3'/%3E%3Cpath d='M132 48L172 20H258' stroke-opacity='0.52' stroke-width='2.5'/%3E%3Cpath d='M132 48H262' stroke-opacity='0.52' stroke-width='2.5'/%3E%3Cpath d='M132 48L172 76H258' stroke-opacity='0.52' stroke-width='2.5'/%3E%3Cpath d='M276 48H336' stroke-opacity='0.36' stroke-width='2.5' stroke-dasharray='9 11'/%3E%3C/g%3E%3Cg fill='%23020406' stroke='%239aec35'%3E%3Ccircle cx='132' cy='48' r='7.5' stroke-opacity='0.75' stroke-width='3.5'/%3E%3Ccircle cx='258' cy='20' r='5' stroke-opacity='0.55' stroke-width='3'/%3E%3Ccircle cx='262' cy='48' r='5' stroke-opacity='0.55' stroke-width='3'/%3E%3Ccircle cx='258' cy='76' r='5' stroke-opacity='0.55' stroke-width='3'/%3E%3Ccircle cx='336' cy='48' r='4.5' stroke-opacity='0.4' stroke-width='2.5' stroke-dasharray='3 3'/%3E%3C/g%3E%3Ccircle cx='132' cy='48' r='2.6' fill='%239aec35' fill-opacity='.85'/%3E%3C/svg%3E")
+    left center / auto 100% no-repeat;
+  -webkit-mask-image: linear-gradient(90deg, #000 0 56%, transparent 88%);
+  mask-image: linear-gradient(90deg, #000 0 56%, transparent 88%);
+}
+
+.con-hero::before {
+  left: 0;
+}
+
+.con-hero::after {
+  right: 0;
+  transform: scaleX(-1);
+}
+
+.hero-copy {
+  display: grid;
+  justify-items: center;
+  gap: 3px;
+  text-align: center;
+}
+
+.con-hero h1 {
+  font-family: "Space Mono", ui-monospace, monospace;
+  font-size: clamp(28px, 2.8vw, 38px);
+  font-weight: 700;
+  line-height: 1.02;
+  letter-spacing: 0.04em;
+}
+
+.con-hero h1 .hero-accent {
+  color: var(--accent);
+}
+
+.hero-copy p {
+  margin-top: 7px;
+  color: var(--text-muted);
+  font-family: "Space Mono", ui-monospace, monospace;
+  font-size: 13px;
+}

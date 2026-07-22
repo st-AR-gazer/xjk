@@ -1,0 +1,79 @@
+# Dependencies
+**/node_modules/
+**/.venv/
+
+# Secrets and local environment overrides
+**/.env
+**/.env.local
+**/.env.*
+!**/.env.example
+!**/.env.*.example
+**/*.key
+**/*.pem
+**/*.pfx
+**/*.p12
+**/*-token.txt
+**/secrets/
+
+# Runtime data and logs
+**/*.sqlite
+**/*.sqlite-shm
+**/*.sqlite-wal
+**/*.db
+**/*.db-shm
+**/*.db-wal
+**/*.log
+**/logs/
+**_docs/*
+/deploy/local/.local-pids.json
+**/nadeo-token-cache.json
+**/*token-cache*.json
+**/diagnostics*.txt
+**/targeted-diagnostics*.txt
+.aie*
+
+# Build artifacts
+**/dist/
+**/build/
+**/coverage/
+
+# Temporary work
+/.codex-tmp/
+**/tmp*/
+tmp/
+/artifacts/
+/report/
+
+# Local-only folders (do not sync/commit)
+/.claude/
+/agent_docs/
+/docs/
+/GUI-Redesign-Ideas/
+/zDeploy/
+/deploy/local/logs/
+/deploy/local/.localhost-browser-proxy-settings.json
+/deploy/local/.localhost-browser-proxy.json
+/deploy/server/winsw/
+/deploy/server/**/*.local.*
+
+# Tool runtime outputs (do not sync/commit)
+/sites/tools.xjk.yt/*/tools/
+/sites/tools.xjk.yt/*/tools-backup*/
+/sites/tools.xjk.yt/.runtime-licenses/
+/sites/console.xjk.yt/data/
+/sites/console.xjk.yt/frontend/bingo/*.psd
+/sites/tools.xjk.yt/Embed-RaceValidationGhost/data/
+/sites/tools.xjk.yt/Embedded-Blocks-And-Items-Checker/data/
+/sites/tools.xjk.yt/Extract-Replay-Data/data/
+/sites/tools.xjk.yt/Gbx-Medal-Time-Modifier/data/
+/sites/tools.xjk.yt/Map-Validation-Checker/data/
+/sites/tools.xjk.yt/Strip-RaceValidationGhost/data/
+/sites/altered.xjk.yt/data_server/
+/sites/learn.xjk.yt/data/
+/services/altered/alteration-groups.local.json
+
+# OS/editor files
+.DS_Store
+Thumbs.db
+*.swp
+*.swo

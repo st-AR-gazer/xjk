@@ -1,0 +1,644 @@
+{
+  "schemaVersion": 1,
+  "scope": "All tracked first-party JavaScript modules selected by .c8rc.json; test and generated sources excluded.",
+  "total": {
+    "lines": {
+      "covered": 67056,
+      "total": 144091,
+      "pct": 46.54
+    },
+    "functions": {
+      "covered": 2943,
+      "total": 4609,
+      "pct": 63.85
+    },
+    "branches": {
+      "covered": 8474,
+      "total": 14798,
+      "pct": 57.26
+    },
+    "statements": {
+      "covered": 67056,
+      "total": 144091,
+      "pct": 46.54
+    }
+  },
+  "areas": {
+    "deploy": {
+      "lines": {
+        "covered": 1807,
+        "total": 3446,
+        "pct": 52.44
+      },
+      "functions": {
+        "covered": 72,
+        "total": 117,
+        "pct": 61.54
+      },
+      "branches": {
+        "covered": 192,
+        "total": 323,
+        "pct": 59.44
+      },
+      "statements": {
+        "covered": 1807,
+        "total": 3446,
+        "pct": 52.44
+      }
+    },
+    "scripts": {
+      "lines": {
+        "covered": 1243,
+        "total": 5700,
+        "pct": 21.81
+      },
+      "functions": {
+        "covered": 41,
+        "total": 65,
+        "pct": 63.08
+      },
+      "branches": {
+        "covered": 213,
+        "total": 363,
+        "pct": 58.68
+      },
+      "statements": {
+        "covered": 1243,
+        "total": 5700,
+        "pct": 21.81
+      }
+    },
+    "services/aggregator": {
+      "lines": {
+        "covered": 6370,
+        "total": 10364,
+        "pct": 61.46
+      },
+      "functions": {
+        "covered": 269,
+        "total": 392,
+        "pct": 68.62
+      },
+      "branches": {
+        "covered": 746,
+        "total": 1312,
+        "pct": 56.86
+      },
+      "statements": {
+        "covered": 6370,
+        "total": 10364,
+        "pct": 61.46
+      }
+    },
+    "services/altered": {
+      "lines": {
+        "covered": 28726,
+        "total": 44291,
+        "pct": 64.86
+      },
+      "functions": {
+        "covered": 1018,
+        "total": 1627,
+        "pct": 62.57
+      },
+      "branches": {
+        "covered": 2884,
+        "total": 5180,
+        "pct": 55.68
+      },
+      "statements": {
+        "covered": 28726,
+        "total": 44291,
+        "pct": 64.86
+      }
+    },
+    "services/console-hub": {
+      "lines": {
+        "covered": 3570,
+        "total": 5912,
+        "pct": 60.39
+      },
+      "functions": {
+        "covered": 178,
+        "total": 290,
+        "pct": 61.38
+      },
+      "branches": {
+        "covered": 393,
+        "total": 775,
+        "pct": 50.71
+      },
+      "statements": {
+        "covered": 3570,
+        "total": 5912,
+        "pct": 60.39
+      }
+    },
+    "services/cotd-public": {
+      "lines": {
+        "covered": 2088,
+        "total": 2941,
+        "pct": 71
+      },
+      "functions": {
+        "covered": 101,
+        "total": 149,
+        "pct": 67.79
+      },
+      "branches": {
+        "covered": 311,
+        "total": 485,
+        "pct": 64.12
+      },
+      "statements": {
+        "covered": 2088,
+        "total": 2941,
+        "pct": 71
+      }
+    },
+    "services/learn-profile": {
+      "lines": {
+        "covered": 1676,
+        "total": 2005,
+        "pct": 83.59
+      },
+      "functions": {
+        "covered": 103,
+        "total": 116,
+        "pct": 88.79
+      },
+      "branches": {
+        "covered": 285,
+        "total": 587,
+        "pct": 48.55
+      },
+      "statements": {
+        "covered": 1676,
+        "total": 2005,
+        "pct": 83.59
+      }
+    },
+    "services/shared": {
+      "lines": {
+        "covered": 3805,
+        "total": 4975,
+        "pct": 76.48
+      },
+      "functions": {
+        "covered": 275,
+        "total": 340,
+        "pct": 80.88
+      },
+      "branches": {
+        "covered": 885,
+        "total": 1350,
+        "pct": 65.56
+      },
+      "statements": {
+        "covered": 3805,
+        "total": 4975,
+        "pct": 76.48
+      }
+    },
+    "services/tracker": {
+      "lines": {
+        "covered": 2216,
+        "total": 4988,
+        "pct": 44.43
+      },
+      "functions": {
+        "covered": 90,
+        "total": 117,
+        "pct": 76.92
+      },
+      "branches": {
+        "covered": 236,
+        "total": 463,
+        "pct": 50.97
+      },
+      "statements": {
+        "covered": 2216,
+        "total": 4988,
+        "pct": 44.43
+      }
+    },
+    "services/tracker-club": {
+      "lines": {
+        "covered": 214,
+        "total": 235,
+        "pct": 91.06
+      },
+      "functions": {
+        "covered": 8,
+        "total": 9,
+        "pct": 88.89
+      },
+      "branches": {
+        "covered": 22,
+        "total": 31,
+        "pct": 70.97
+      },
+      "statements": {
+        "covered": 214,
+        "total": 235,
+        "pct": 91.06
+      }
+    },
+    "services/tracker-displayname": {
+      "lines": {
+        "covered": 569,
+        "total": 820,
+        "pct": 69.39
+      },
+      "functions": {
+        "covered": 20,
+        "total": 30,
+        "pct": 66.67
+      },
+      "branches": {
+        "covered": 33,
+        "total": 79,
+        "pct": 41.77
+      },
+      "statements": {
+        "covered": 569,
+        "total": 820,
+        "pct": 69.39
+      }
+    },
+    "services/validifier-public": {
+      "lines": {
+        "covered": 2581,
+        "total": 3529,
+        "pct": 73.14
+      },
+      "functions": {
+        "covered": 105,
+        "total": 148,
+        "pct": 70.95
+      },
+      "branches": {
+        "covered": 326,
+        "total": 514,
+        "pct": 63.42
+      },
+      "statements": {
+        "covered": 2581,
+        "total": 3529,
+        "pct": 73.14
+      }
+    },
+    "services/xjk-auth": {
+      "lines": {
+        "covered": 338,
+        "total": 679,
+        "pct": 49.78
+      },
+      "functions": {
+        "covered": 15,
+        "total": 42,
+        "pct": 35.71
+      },
+      "branches": {
+        "covered": 47,
+        "total": 81,
+        "pct": 58.02
+      },
+      "statements": {
+        "covered": 338,
+        "total": 679,
+        "pct": 49.78
+      }
+    },
+    "sites/account.xjk.yt": {
+      "lines": {
+        "covered": 93,
+        "total": 1024,
+        "pct": 9.08
+      },
+      "functions": {
+        "covered": 9,
+        "total": 23,
+        "pct": 39.13
+      },
+      "branches": {
+        "covered": 12,
+        "total": 30,
+        "pct": 40
+      },
+      "statements": {
+        "covered": 93,
+        "total": 1024,
+        "pct": 9.08
+      }
+    },
+    "sites/admin.xjk.yt": {
+      "lines": {
+        "covered": 253,
+        "total": 1254,
+        "pct": 20.18
+      },
+      "functions": {
+        "covered": 22,
+        "total": 38,
+        "pct": 57.89
+      },
+      "branches": {
+        "covered": 43,
+        "total": 62,
+        "pct": 69.35
+      },
+      "statements": {
+        "covered": 253,
+        "total": 1254,
+        "pct": 20.18
+      }
+    },
+    "sites/aggregator.xjk.yt": {
+      "lines": {
+        "covered": 88,
+        "total": 1702,
+        "pct": 5.17
+      },
+      "functions": {
+        "covered": 5,
+        "total": 14,
+        "pct": 35.71
+      },
+      "branches": {
+        "covered": 9,
+        "total": 43,
+        "pct": 20.93
+      },
+      "statements": {
+        "covered": 88,
+        "total": 1702,
+        "pct": 5.17
+      }
+    },
+    "sites/altered.xjk.yt": {
+      "lines": {
+        "covered": 2323,
+        "total": 16240,
+        "pct": 14.3
+      },
+      "functions": {
+        "covered": 119,
+        "total": 239,
+        "pct": 49.79
+      },
+      "branches": {
+        "covered": 441,
+        "total": 778,
+        "pct": 56.68
+      },
+      "statements": {
+        "covered": 2323,
+        "total": 16240,
+        "pct": 14.3
+      }
+    },
+    "sites/archive.xjk.yt": {
+      "lines": {
+        "covered": 0,
+        "total": 488,
+        "pct": 0
+      },
+      "functions": {
+        "covered": 0,
+        "total": 1,
+        "pct": 0
+      },
+      "branches": {
+        "covered": 0,
+        "total": 1,
+        "pct": 0
+      },
+      "statements": {
+        "covered": 0,
+        "total": 488,
+        "pct": 0
+      }
+    },
+    "sites/console.xjk.yt": {
+      "lines": {
+        "covered": 0,
+        "total": 2992,
+        "pct": 0
+      },
+      "functions": {
+        "covered": 0,
+        "total": 8,
+        "pct": 0
+      },
+      "branches": {
+        "covered": 0,
+        "total": 8,
+        "pct": 0
+      },
+      "statements": {
+        "covered": 0,
+        "total": 2992,
+        "pct": 0
+      }
+    },
+    "sites/cotd.xjk.yt": {
+      "lines": {
+        "covered": 170,
+        "total": 846,
+        "pct": 20.09
+      },
+      "functions": {
+        "covered": 9,
+        "total": 10,
+        "pct": 90
+      },
+      "branches": {
+        "covered": 46,
+        "total": 66,
+        "pct": 69.7
+      },
+      "statements": {
+        "covered": 170,
+        "total": 846,
+        "pct": 20.09
+      }
+    },
+    "sites/dash.xjk.yt": {
+      "lines": {
+        "covered": 298,
+        "total": 2230,
+        "pct": 13.36
+      },
+      "functions": {
+        "covered": 11,
+        "total": 46,
+        "pct": 23.91
+      },
+      "branches": {
+        "covered": 46,
+        "total": 71,
+        "pct": 64.79
+      },
+      "statements": {
+        "covered": 298,
+        "total": 2230,
+        "pct": 13.36
+      }
+    },
+    "sites/learn.xjk.yt": {
+      "lines": {
+        "covered": 2275,
+        "total": 7319,
+        "pct": 31.08
+      },
+      "functions": {
+        "covered": 166,
+        "total": 269,
+        "pct": 61.71
+      },
+      "branches": {
+        "covered": 402,
+        "total": 713,
+        "pct": 56.38
+      },
+      "statements": {
+        "covered": 2275,
+        "total": 7319,
+        "pct": 31.08
+      }
+    },
+    "sites/plugins.xjk.yt": {
+      "lines": {
+        "covered": 719,
+        "total": 1105,
+        "pct": 65.07
+      },
+      "functions": {
+        "covered": 46,
+        "total": 55,
+        "pct": 83.64
+      },
+      "branches": {
+        "covered": 96,
+        "total": 164,
+        "pct": 58.54
+      },
+      "statements": {
+        "covered": 719,
+        "total": 1105,
+        "pct": 65.07
+      }
+    },
+    "sites/shared": {
+      "lines": {
+        "covered": 2468,
+        "total": 4689,
+        "pct": 52.63
+      },
+      "functions": {
+        "covered": 92,
+        "total": 156,
+        "pct": 58.97
+      },
+      "branches": {
+        "covered": 338,
+        "total": 571,
+        "pct": 59.19
+      },
+      "statements": {
+        "covered": 2468,
+        "total": 4689,
+        "pct": 52.63
+      }
+    },
+    "sites/tools.xjk.yt": {
+      "lines": {
+        "covered": 2319,
+        "total": 7113,
+        "pct": 32.6
+      },
+      "functions": {
+        "covered": 113,
+        "total": 191,
+        "pct": 59.16
+      },
+      "branches": {
+        "covered": 317,
+        "total": 468,
+        "pct": 67.74
+      },
+      "statements": {
+        "covered": 2319,
+        "total": 7113,
+        "pct": 32.6
+      }
+    },
+    "sites/trackers.xjk.yt": {
+      "lines": {
+        "covered": 847,
+        "total": 2373,
+        "pct": 35.69
+      },
+      "functions": {
+        "covered": 56,
+        "total": 91,
+        "pct": 61.54
+      },
+      "branches": {
+        "covered": 151,
+        "total": 254,
+        "pct": 59.45
+      },
+      "statements": {
+        "covered": 847,
+        "total": 2373,
+        "pct": 35.69
+      }
+    },
+    "sites/validifier.xjk.yt": {
+      "lines": {
+        "covered": 0,
+        "total": 3116,
+        "pct": 0
+      },
+      "functions": {
+        "covered": 0,
+        "total": 21,
+        "pct": 0
+      },
+      "branches": {
+        "covered": 0,
+        "total": 21,
+        "pct": 0
+      },
+      "statements": {
+        "covered": 0,
+        "total": 3116,
+        "pct": 0
+      }
+    },
+    "sites/xjk.yt": {
+      "lines": {
+        "covered": 0,
+        "total": 1715,
+        "pct": 0
+      },
+      "functions": {
+        "covered": 0,
+        "total": 5,
+        "pct": 0
+      },
+      "branches": {
+        "covered": 0,
+        "total": 5,
+        "pct": 0
+      },
+      "statements": {
+        "covered": 0,
+        "total": 1715,
+        "pct": 0
+      }
+    }
+  }
+}

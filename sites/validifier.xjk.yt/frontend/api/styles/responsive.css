@@ -1,0 +1,44 @@
+/* Validifier responsive layout */
+@media (max-width: 1080px) {
+  .overview-grid,
+  .enum-grid,
+  .endpoint-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 920px) {
+  .docs-shell {
+    grid-template-columns: 1fr;
+  }
+  .docs-sidebar {
+    position: static;
+    height: auto;
+    border-right: 0;
+    border-bottom: 1px solid var(--line);
+  }
+}
+
+@media (max-width: 720px) {
+  .docs-main {
+    padding: 0.55rem 0.55rem 1.4rem;
+  }
+  .docs-topbar,
+  .topbar-actions,
+  .tester-form,
+  .overview-row,
+  .endpoint-head {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  .param-row {
+    grid-template-columns: 1fr;
+  }
+  .btn {
+    width: 100%;
+  }
+  .topbar-actions .xjk-search-topbar-actions {
+    width: 100%;
+    justify-content: flex-end;
+  }
+}

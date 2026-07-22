@@ -1,0 +1,8 @@
+{
+  "title": "Plastic Overspeed",
+  "area": "surfaces",
+  "type": "concept",
+  "summary": "Plastic-specific speed behavior where overspeed can be gained or retained longer than expected.",
+  "tags": ["plastic", "overspeed"],
+  "relatedConcepts": ["speed-retention", "speed-cap"]
+}

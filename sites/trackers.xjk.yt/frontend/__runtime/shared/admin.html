@@ -1,0 +1,238 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <link rel="stylesheet" href="/shared/xjk-core/chrome-prepaint.css?v=2" data-xjk-chrome-prepaint />
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>xjk / tracker / admin</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@400;500;600;700&family=Manrope:wght@400;500;700&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="/shared/main.css?v=2" />
+    <link rel="stylesheet" href="styles.css?v=2" />
+    <link rel="stylesheet" href="tracker-shared/admin.css?v=2" />
+    <link rel="icon" href="tracker-shared/favicon.svg?v=2" type="image/svg+xml" />
+  </head>
+  <body>
+    <div class="backdrop" aria-hidden="true">
+      <div class="dot-grid"></div>
+      <div class="orb orb-1"></div>
+      <div class="orb orb-2"></div>
+      <div class="orb orb-3"></div>
+    </div>
+
+    <a class="corner-back" href="/">Back to Dashboard</a>
+
+    <main class="admin-shell">
+      <header class="header admin-hero">
+        <div class="hero-head">
+          <span class="header-badge">Tracker Admin</span>
+          <div class="hero-auth-actions">
+            <span class="auth-note" id="authNote">Auth: checking&hellip;</span>
+            <button id="admin-logout-btn" class="btn-lite" type="button">Logout</button>
+          </div>
+        </div>
+        <h1 class="admin-title" id="admin-title">Tracker Admin</h1>
+        <p class="admin-sub" id="admin-sub">
+          Manage tracked maps, trigger runs, import maps in bulk, and monitor WR change history.
+        </p>
+
+        <section class="stats-bar" aria-label="Admin quick stats">
+          <div class="stat">
+            <span class="stat-value" id="stat-tracked">&mdash;</span>
+            <span class="stat-label">Tracked</span>
+          </div>
+          <div class="stat">
+            <span class="stat-value" id="stat-due">&mdash;</span>
+            <span class="stat-label">Due Now</span>
+          </div>
+          <div class="stat">
+            <span class="stat-value" id="stat-changes">&mdash;</span>
+            <span class="stat-label" id="admin-changes-label">WR Changes</span>
+          </div>
+          <div class="stat">
+            <span class="stat-value" id="stat-engine">&mdash;</span>
+            <span class="stat-label">Engine</span>
+          </div>
+        </section>
+      </header>
+
+      <section class="panel admin-tabs" aria-label="Dashboard tabs">
+        <div class="tab-list" role="tablist" aria-label="Admin dashboard tabs">
+          <button class="tab-btn is-active" type="button" role="tab" aria-selected="true" data-admin-tab="overview">
+            Overview
+          </button>
+          <button class="tab-btn" type="button" role="tab" aria-selected="false" data-admin-tab="maps">Maps</button>
+          <button class="tab-btn" type="button" role="tab" aria-selected="false" data-admin-tab="bulk-import">
+            Bulk Import
+          </button>
+          <button class="tab-btn" type="button" role="tab" aria-selected="false" data-admin-tab="run-history">
+            Run History
+          </button>
+          <button class="tab-btn" type="button" role="tab" aria-selected="false" data-admin-tab="wr-feed">
+            <span id="admin-feed-tab-label">WR Feed</span>
+          </button>
+        </div>
+      </section>
+
+      <section class="panel tab-panel is-active" data-tab-panel="overview">
+        <div class="section-bar">
+          <div>
+            <h2>Engine Status</h2>
+            <p class="panel-sub">Real-time tracker engine state and controls.</p>
+          </div>
+          <button id="run-now-btn" class="btn btn-gold btn-sm" type="button">Run Now</button>
+        </div>
+
+        <div class="engine-grid" style="margin-top: 0.8rem">
+          <div class="engine-kv"><span>Provider</span><strong id="engine-provider">&mdash;</strong></div>
+          <div class="engine-kv"><span>Tick</span><strong id="engine-tick">&mdash;</strong></div>
+          <div class="engine-kv"><span>Status</span><strong id="engine-status">&mdash;</strong></div>
+          <div class="engine-kv"><span>Last Started</span><strong id="engine-started">&mdash;</strong></div>
+          <div class="engine-kv"><span>Last Finished</span><strong id="engine-finished">&mdash;</strong></div>
+          <div class="engine-kv"><span>Last Error</span><strong id="engine-error">none</strong></div>
+        </div>
+
+        <div class="admin-grid" style="margin-top: 1rem">
+          <article class="admin-card">
+            <h3>Latest Run</h3>
+            <p id="overview-latest-run" class="card-note">No runs yet.</p>
+          </article>
+          <article class="admin-card">
+            <h3>Recent Activity</h3>
+            <ul id="overview-recent-runs" class="mini-run-list"></ul>
+          </article>
+        </div>
+      </section>
+
+      <section class="panel tab-panel" data-tab-panel="maps" hidden>
+        <div class="section-bar">
+          <div>
+            <h2>Map Management</h2>
+            <p class="panel-sub">Browse all maps, toggle tracking, and adjust check intervals.</p>
+          </div>
+          <span class="maps-count" id="admin-maps-count">0 maps</span>
+        </div>
+
+        <div class="maps-controls">
+          <input
+            type="search"
+            id="admin-map-search"
+            class="search-input"
+            placeholder="Search maps, UIDs, holders&hellip;"
+          />
+          <select id="admin-map-filter" class="filter-select">
+            <option value="all">All Maps</option>
+            <option value="tracked">Tracked Only</option>
+            <option value="untracked">Untracked Only</option>
+          </select>
+        </div>
+
+        <div class="table-wrap">
+          <table class="maps-table admin-map-table">
+            <thead>
+              <tr>
+                <th>Map</th>
+                <th>Campaign</th>
+                <th>WR</th>
+                <th>Holder</th>
+                <th>Status</th>
+                <th>Interval</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody id="admin-map-rows"></tbody>
+          </table>
+        </div>
+      </section>
+
+      <section class="panel tab-panel" data-tab-panel="bulk-import" hidden>
+        <div class="section-bar">
+          <h2>Bulk Map Import</h2>
+        </div>
+        <p class="panel-sub">Paste a JSON array of maps to upsert into the tracker database.</p>
+
+        <div class="admin-grid" style="margin-top: 0.8rem">
+          <form id="bulk-import-form" class="admin-card" style="grid-column: 1 / -1">
+            <h3>Import JSON</h3>
+            <label class="field">
+              <span>Maps JSON</span>
+              <textarea
+                id="bulk-json-input"
+                rows="12"
+                placeholder='[{"uid":"MAP_UID","name":"Map Name","wrMs":12345,"wrHolder":"Player","tracked":true,"campaign":"Spring 2026","slot":1}]'
+              ></textarea>
+            </label>
+            <div class="bulk-actions">
+              <button class="btn-main" type="submit">Import Maps</button>
+              <button id="bulk-validate-btn" class="btn-lite" type="button">Validate JSON</button>
+            </div>
+            <p id="bulk-status" class="card-note">Paste JSON and click Import.</p>
+          </form>
+        </div>
+      </section>
+
+      <section class="panel tab-panel" data-tab-panel="run-history" hidden>
+        <div class="section-bar">
+          <h2>Run History</h2>
+        </div>
+        <p class="panel-sub">Complete history of tracker runs with per-run statistics.</p>
+
+        <ul class="runs-list" id="admin-runs-list" style="margin-top: 0.8rem"></ul>
+      </section>
+
+      <section class="panel tab-panel" data-tab-panel="wr-feed" hidden>
+        <div class="section-bar">
+          <div class="section-bar-left">
+            <span class="pulse-dot"></span>
+            <h2>WR Change History</h2>
+          </div>
+          <span class="feed-note" id="admin-feed-note">Full history</span>
+        </div>
+
+        <div class="feed-list" id="admin-feed-list" style="margin-top: 0.8rem; max-height: none">
+          <div class="feed-empty" id="admin-feed-empty">
+            <p>No WR changes recorded yet.</p>
+          </div>
+        </div>
+      </section>
+
+      <section class="panel ops-log-panel">
+        <div class="section-bar">
+          <h2>Activity Log</h2>
+        </div>
+        <div class="ops-log">
+          <ul id="admin-log-list"></ul>
+        </div>
+      </section>
+
+      <footer class="foot">
+        <span class="foot-mark">tracker.xjk.yt</span>
+        <nav aria-label="Hub navigation">
+          <a data-link="main" href="https://xjk.yt/">Main</a>
+          <a data-link="trackers" href="https://trackers.xjk.yt/">Trackers</a>
+          <a data-link="altered" href="https://altered.xjk.yt/">Altered</a>
+          <a data-link="aggregator" href="https://aggregator.xjk.yt/">Aggregator</a>
+          <a data-link="tools" href="https://tools.xjk.yt/">Tools</a>
+        </nav>
+      </footer>
+    </main>
+
+    <script type="module" src="admin.js?v=2"></script>
+    <script
+      type="module"
+      src="/shared/xjk-core/sidenav-boot.js?v=2"
+      data-xjk-sidenav="trackers"
+      data-xjk-page="admin"
+    ></script>
+    <script
+      type="module"
+      src="/shared/xjk-core/topbar-loader.js?v=2"
+      data-xjk-topbar="trackers"
+      data-xjk-page="admin"
+    ></script>
+  </body>
+</html>

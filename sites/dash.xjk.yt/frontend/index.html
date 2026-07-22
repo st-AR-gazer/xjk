@@ -1,0 +1,645 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <link rel="stylesheet" href="/shared/xjk-core/chrome-prepaint.css?v=2" data-xjk-chrome-prepaint />
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>xjk / private dash</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Condensed:wght@400;500;600;700&family=Inter:wght@600;700&family=Space+Mono:wght@400;700&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="./styles/foundation.css?v=2" />
+    <link rel="stylesheet" href="./styles/dashboard.css?v=2" />
+    <link rel="stylesheet" href="./styles/operations.css?v=2" />
+    <link rel="stylesheet" href="./styles/responsive.css?v=2" />
+    <link rel="icon" href="/favicon.svg?v=2" type="image/svg+xml" />
+  </head>
+  <body>
+    <div class="backdrop" aria-hidden="true"></div>
+    <div class="app">
+      <header class="topbar">
+        <div class="topbar-brand">
+          <span class="badge">Private</span>
+          <h1>dash<span class="dim">.xjk.yt</span></h1>
+        </div>
+        <div class="topbar-right">
+          <span id="statusLine" class="status-text">Loading...</span>
+        </div>
+      </header>
+
+      <div class="toolbar">
+        <label>
+          <span>Window</span>
+          <select id="windowHours">
+            <option value="1">1h</option>
+            <option value="6">6h</option>
+            <option value="24">24h</option>
+            <option value="72">72h</option>
+            <option value="168" selected>7d</option>
+            <option value="720">30d</option>
+          </select>
+        </label>
+        <label>
+          <span>Project</span>
+          <select id="projectKey">
+            <option value="">All projects</option>
+          </select>
+        </label>
+        <label>
+          <span>Service</span>
+          <select id="serviceName">
+            <option value="">All services</option>
+          </select>
+        </label>
+        <button id="refreshBtn" class="btn btn-primary btn-sm" type="button">Refresh</button>
+        <a class="btn btn-outline btn-sm" href="/dash/logout" data-xjk-dashboard-logout>Leave dashboard</a>
+      </div>
+
+      <nav class="tab-nav" role="tablist">
+        <button class="tab-btn is-active" type="button" data-tab="overview" role="tab" aria-selected="true">
+          Overview
+        </button>
+        <button class="tab-btn" type="button" data-tab="routes" role="tab" aria-selected="false">Routes</button>
+        <button class="tab-btn" type="button" data-tab="errors" role="tab" aria-selected="false">Errors</button>
+        <button class="tab-btn" type="button" data-tab="trackers" role="tab" aria-selected="false">Trackers</button>
+        <button class="tab-btn" type="button" data-tab="altered" role="tab" aria-selected="false">Altered</button>
+        <button class="tab-btn" type="button" data-tab="logs" role="tab" aria-selected="false">Logs</button>
+      </nav>
+
+      <div class="tab-content">
+        <section id="tabOverview" class="tab-panel" role="tabpanel">
+          <div class="stat-strips">
+            <div class="stat-strip stat-strip--nadeo" data-accent="nadeo">
+              <div class="stat-strip-head">
+                <h2>Nadeo Guardrail</h2>
+                <span class="stat-strip-note">Keep under 0.2 req/s</span>
+                <button id="nadeoQueueToggleBtn" class="btn btn-outline btn-sm stat-strip-action" type="button">
+                  Queue
+                </button>
+              </div>
+              <div class="stat-strip-stats">
+                <div class="stat">
+                  <span class="stat-label">To Nadeo</span><span class="stat-value" id="mNadeoOut">-</span>
+                </div>
+                <div class="stat">
+                  <span class="stat-label">req/s (60s)</span><span class="stat-value" id="mNadeoRps">-</span>
+                </div>
+                <div class="stat">
+                  <span class="stat-label">1 req / x sec</span><span class="stat-value" id="mNadeoPerSec">-</span>
+                </div>
+                <div class="stat">
+                  <span class="stat-label">req/min (60s)</span><span class="stat-value" id="mNadeoRpm">-</span>
+                </div>
+                <div class="stat">
+                  <span class="stat-label">Transfer</span><span class="stat-value" id="mNadeoBytes">-</span>
+                </div>
+              </div>
+            </div>
+
+            <div id="nadeoQueuePanel" class="stat-strip stat-strip--queue" data-accent="nadeo" hidden>
+              <div class="section-head">
+                <h2>Nadeo Queue (Hidden)</h2>
+                <div class="tracker-actions">
+                  <button id="nadeoQueueRefreshBtn" class="btn btn-outline btn-sm" type="button">Refresh</button>
+                  <button id="nadeoQueueCloseBtn" class="btn btn-outline btn-sm" type="button">Close</button>
+                </div>
+              </div>
+              <div class="stat-strip-stats">
+                <div class="stat">
+                  <span class="stat-label">Pending</span><span class="stat-value" id="qPending">-</span>
+                </div>
+                <div class="stat">
+                  <span class="stat-label">Active Waiter</span><span class="stat-value" id="qActive">-</span>
+                </div>
+                <div class="stat">
+                  <span class="stat-label">Oldest Pending</span><span class="stat-value" id="qOldest">-</span>
+                </div>
+                <div class="stat">
+                  <span class="stat-label">Last Grant</span><span class="stat-value" id="qLastGrant">-</span>
+                </div>
+              </div>
+              <div id="nadeoQueueMeta" class="muted logs-meta">Loading queue...</div>
+              <div class="table-wrap">
+                <table>
+                  <thead>
+                    <tr>
+                      <th>Status</th>
+                      <th>Label</th>
+                      <th>PID</th>
+                      <th>Wait</th>
+                      <th>Queued</th>
+                      <th>Granted</th>
+                      <th>Done</th>
+                    </tr>
+                  </thead>
+                  <tbody id="nadeoQueueBody"></tbody>
+                </table>
+              </div>
+            </div>
+
+            <div class="stat-strip" data-accent="traffic">
+              <div class="stat-strip-head">
+                <h2>Total Traffic</h2>
+              </div>
+              <div class="stat-strip-stats">
+                <div class="stat">
+                  <span class="stat-label">Requests</span><span class="stat-value" id="mRequests">-</span>
+                </div>
+                <div class="stat">
+                  <span class="stat-label">req/s (60s)</span><span class="stat-value" id="mRps">-</span>
+                </div>
+                <div class="stat">
+                  <span class="stat-label">req/min (60s)</span><span class="stat-value" id="mRpm">-</span>
+                </div>
+                <div class="stat">
+                  <span class="stat-label">Incoming</span><span class="stat-value" id="mIncoming">-</span>
+                </div>
+                <div class="stat">
+                  <span class="stat-label">Outgoing</span><span class="stat-value" id="mOutgoing">-</span>
+                </div>
+                <div class="stat">
+                  <span class="stat-label">In/s (60s)</span><span class="stat-value" id="mIncomingRps">-</span>
+                </div>
+                <div class="stat">
+                  <span class="stat-label">Out/s (60s)</span><span class="stat-value" id="mOutgoingRps">-</span>
+                </div>
+                <div class="stat">
+                  <span class="stat-label">Avg Duration</span><span class="stat-value" id="mDuration">-</span>
+                </div>
+              </div>
+            </div>
+
+            <div class="stat-strip-row">
+              <div class="stat-strip" data-accent="segment">
+                <div class="stat-strip-head">
+                  <h2>Outgoing Segments</h2>
+                </div>
+                <div class="stat-strip-stats">
+                  <div class="stat">
+                    <span class="stat-label">Internal Out</span><span class="stat-value" id="mInternalOut">-</span>
+                  </div>
+                  <div class="stat">
+                    <span class="stat-label">Internal req/s</span><span class="stat-value" id="mInternalRps">-</span>
+                  </div>
+                  <div class="stat">
+                    <span class="stat-label">Internal Transfer</span
+                    ><span class="stat-value" id="mInternalBytes">-</span>
+                  </div>
+                  <div class="stat">
+                    <span class="stat-label">Public (non-Nadeo)</span
+                    ><span class="stat-value" id="mPublicNonNadeoOut">-</span>
+                  </div>
+                  <div class="stat">
+                    <span class="stat-label">Public req/s</span
+                    ><span class="stat-value" id="mPublicNonNadeoRps">-</span>
+                  </div>
+                  <div class="stat">
+                    <span class="stat-label">Public Transfer</span
+                    ><span class="stat-value" id="mPublicNonNadeoBytes">-</span>
+                  </div>
+                </div>
+              </div>
+
+              <div class="stat-strip" data-accent="health">
+                <div class="stat-strip-head">
+                  <h2>Reliability</h2>
+                </div>
+                <div class="stat-strip-stats">
+                  <div class="stat">
+                    <span class="stat-label">Errors</span><span class="stat-value" id="mErrors">-</span>
+                  </div>
+                  <div class="stat">
+                    <span class="stat-label">Error Rate</span><span class="stat-value" id="mErrorRate">-</span>
+                  </div>
+                  <div class="stat">
+                    <span class="stat-label">Inbound Data</span><span class="stat-value" id="mBytesIn">-</span>
+                  </div>
+                  <div class="stat">
+                    <span class="stat-label">Outbound Data</span><span class="stat-value" id="mBytesOut">-</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="chart-card">
+            <h2>Traffic Timeline</h2>
+            <svg
+              id="trafficChart"
+              class="chart"
+              viewBox="0 0 900 260"
+              preserveAspectRatio="none"
+              role="img"
+              aria-label="Traffic timeline"
+            ></svg>
+          </div>
+        </section>
+
+        <section id="tabRoutes" class="tab-panel" hidden role="tabpanel">
+          <nav class="sub-tab-nav">
+            <button class="sub-tab-btn is-active" type="button" data-subtab="incoming">Incoming Routes</button>
+            <button class="sub-tab-btn" type="button" data-subtab="outgoing">Outgoing Targets</button>
+            <button class="sub-tab-btn" type="button" data-subtab="nadeo">Nadeo Routes</button>
+          </nav>
+
+          <div id="routesIncoming" class="sub-tab-panel">
+            <div class="table-wrap">
+              <table>
+                <thead>
+                  <tr>
+                    <th class="col-key">Route</th>
+                    <th>Requests</th>
+                    <th>Errors</th>
+                    <th>Err %</th>
+                    <th>Avg ms</th>
+                    <th>Bytes In</th>
+                    <th>Bytes Out</th>
+                  </tr>
+                </thead>
+                <tbody id="incomingBody"></tbody>
+              </table>
+            </div>
+          </div>
+
+          <div id="routesOutgoing" class="sub-tab-panel" hidden>
+            <div class="table-wrap">
+              <table>
+                <thead>
+                  <tr>
+                    <th class="col-key">Target</th>
+                    <th>Requests</th>
+                    <th>Errors</th>
+                    <th>Err %</th>
+                    <th>Avg ms</th>
+                    <th>Bytes In</th>
+                    <th>Bytes Out</th>
+                  </tr>
+                </thead>
+                <tbody id="outgoingBody"></tbody>
+              </table>
+            </div>
+          </div>
+
+          <div id="routesNadeo" class="sub-tab-panel" hidden>
+            <div class="table-wrap">
+              <table>
+                <thead>
+                  <tr>
+                    <th class="col-key">Route</th>
+                    <th>Requests</th>
+                    <th>Errors</th>
+                    <th>Err %</th>
+                    <th>Avg ms</th>
+                    <th>Bytes In</th>
+                    <th>Bytes Out</th>
+                  </tr>
+                </thead>
+                <tbody id="nadeoBody"></tbody>
+              </table>
+            </div>
+          </div>
+        </section>
+
+        <section id="tabErrors" class="tab-panel" hidden role="tabpanel">
+          <div class="card">
+            <div class="errors-toolbar">
+              <label>
+                <span>Search</span>
+                <input id="errorsSearch" type="search" placeholder="route, host, service, status..." />
+              </label>
+              <label>
+                <span>Direction</span>
+                <select id="errorsDirection">
+                  <option value="">Incoming + Outgoing</option>
+                  <option value="incoming">Incoming only</option>
+                  <option value="outgoing">Outgoing only</option>
+                </select>
+              </label>
+              <button id="errorsApplyBtn" class="btn btn-outline btn-sm" type="button">Apply</button>
+            </div>
+
+            <div class="error-summary">
+              <div class="stat">
+                <span class="stat-label">Total Errors</span><span class="stat-value" id="mErrorsTotal">-</span>
+              </div>
+              <div class="stat">
+                <span class="stat-label">Showing</span><span class="stat-value" id="mErrorsShowing">-</span>
+              </div>
+              <div class="stat">
+                <span class="stat-label">Status Spread</span><span class="stat-value" id="mErrorsStatusSpread">-</span>
+              </div>
+              <div class="stat">
+                <span class="stat-label">Top Route</span><span class="stat-value" id="mErrorsTopRoute">-</span>
+              </div>
+              <div class="stat">
+                <span class="stat-label">Top Target</span><span class="stat-value" id="mErrorsTopTarget">-</span>
+              </div>
+            </div>
+
+            <div class="table-wrap">
+              <table>
+                <thead>
+                  <tr>
+                    <th>Time</th>
+                    <th>Dir</th>
+                    <th>Service</th>
+                    <th class="col-key">Request</th>
+                    <th class="col-key">Target</th>
+                    <th>Status</th>
+                    <th>ms</th>
+                    <th>Project</th>
+                    <th>Source</th>
+                  </tr>
+                </thead>
+                <tbody id="errorsBody"></tbody>
+              </table>
+            </div>
+
+            <div class="errors-pager">
+              <button id="errorsPrevBtn" class="btn btn-outline btn-sm" type="button">Prev</button>
+              <span id="errorsPageLabel" class="muted">Page -/-</span>
+              <button id="errorsNextBtn" class="btn btn-outline btn-sm" type="button">Next</button>
+            </div>
+          </div>
+        </section>
+
+        <section id="tabTrackers" class="tab-panel" hidden role="tabpanel">
+          <div class="card">
+            <div class="section-head">
+              <h2>Tracker Control</h2>
+              <button id="trackerRefreshBtn" class="btn btn-outline btn-sm" type="button">Refresh Trackers</button>
+            </div>
+            <div class="tracker-priority-row">
+              <div class="tracker-priority-controls">
+                <label>
+                  <span>Priority Tracker</span>
+                  <select id="trackerPriorityTarget">
+                    <option value="displayname">Displayname</option>
+                    <option value="wr">WR</option>
+                    <option value="leaderboard">Leaderboard</option>
+                    <option value="club">Club</option>
+                  </select>
+                </label>
+                <label>
+                  <span>Interval (seconds)</span>
+                  <input id="trackerPriorityInterval" type="number" min="3" max="3600" step="1" value="3" />
+                </label>
+                <label class="tracker-priority-check">
+                  <span>Pause Others</span>
+                  <input id="trackerPriorityPauseOthers" type="checkbox" checked />
+                </label>
+              </div>
+              <div class="tracker-actions">
+                <button id="trackerPriorityEnableBtn" class="btn btn-primary btn-sm" type="button">
+                  Apply Priority
+                </button>
+                <button id="trackerPriorityDisableBtn" class="btn btn-outline btn-sm" type="button">
+                  Restore Normal
+                </button>
+              </div>
+            </div>
+            <div id="trackerPriorityStatus" class="muted tracker-priority-status">Normal mode</div>
+            <div id="trackerRefreshMeta" class="muted tracker-priority-status">Tracker status not loaded yet.</div>
+            <div class="table-wrap">
+              <table>
+                <thead>
+                  <tr>
+                    <th>Tracker</th>
+                    <th>Status</th>
+                    <th>Runtime</th>
+                    <th>Actions</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td>WR</td>
+                    <td id="trackerWrStatus" class="muted">-</td>
+                    <td id="trackerWrRuntime" class="muted">-</td>
+                    <td class="tracker-actions">
+                      <button id="trackerWrRunNowBtn" class="btn btn-outline btn-sm" type="button">Run Now</button>
+                      <button id="trackerWrToggleBtn" class="btn btn-outline btn-sm" type="button">Toggle</button>
+                    </td>
+                  </tr>
+                  <tr>
+                    <td>Leaderboard</td>
+                    <td id="trackerLbStatus" class="muted">-</td>
+                    <td id="trackerLbRuntime" class="muted">-</td>
+                    <td class="tracker-actions">
+                      <button id="trackerLbRunNowBtn" class="btn btn-outline btn-sm" type="button">Run Now</button>
+                      <button id="trackerLbToggleBtn" class="btn btn-outline btn-sm" type="button">Toggle</button>
+                    </td>
+                  </tr>
+                  <tr>
+                    <td>Displayname</td>
+                    <td id="trackerDnStatus" class="muted">-</td>
+                    <td id="trackerDnRuntime" class="muted">-</td>
+                    <td class="tracker-actions">
+                      <button id="trackerDnRunNowBtn" class="btn btn-outline btn-sm" type="button">Run Now</button>
+                      <button id="trackerDnToggleBtn" class="btn btn-outline btn-sm" type="button">Toggle</button>
+                    </td>
+                  </tr>
+                  <tr>
+                    <td>Club</td>
+                    <td id="trackerClubStatus" class="muted">-</td>
+                    <td id="trackerClubRuntime" class="muted">-</td>
+                    <td class="tracker-actions">
+                      <button id="trackerClubToggleBtn" class="btn btn-outline btn-sm" type="button">Toggle</button>
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+            <div class="tracker-probe-panel">
+              <div class="section-head">
+                <h2>Status Route Probe</h2>
+                <div class="tracker-actions">
+                  <select id="trackerProbeMode" class="compact-select">
+                    <option value="local" selected>Local</option>
+                    <option value="configured">Mirror</option>
+                    <option value="all">Both</option>
+                  </select>
+                  <button id="trackerProbeBtn" class="btn btn-outline btn-sm" type="button">Run Probe</button>
+                </div>
+              </div>
+              <div id="trackerProbeMeta" class="muted tracker-priority-status">Route probe not run yet.</div>
+              <div class="table-wrap tracker-probe-table">
+                <table>
+                  <thead>
+                    <tr>
+                      <th>Tracker</th>
+                      <th>Target</th>
+                      <th>Path</th>
+                      <th>Result</th>
+                      <th>Time</th>
+                      <th>Error</th>
+                    </tr>
+                  </thead>
+                  <tbody id="trackerProbeBody">
+                    <tr>
+                      <td colspan="6" class="muted">No probe data.</td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <section id="tabAltered" class="tab-panel" hidden role="tabpanel">
+          <div class="card">
+            <div class="section-head altered-section-head">
+              <div>
+                <h2>Altered Hub</h2>
+                <div id="alteredSummaryLine" class="muted logs-meta">Loading altered status...</div>
+              </div>
+              <div class="tracker-actions">
+                <button id="alteredRefreshBtn" class="btn btn-outline btn-sm" type="button">Refresh Altered</button>
+                <button id="alteredRunDiscoveryBtn" class="btn btn-outline btn-sm" type="button">Run Discovery</button>
+                <button id="alteredRunFullBtn" class="btn btn-primary btn-sm" type="button">Run Full Sync</button>
+              </div>
+            </div>
+            <div class="error-summary altered-summary-grid">
+              <div class="stat">
+                <span class="stat-label">Last Full Sync</span><span class="stat-value" id="alteredLastFull">-</span>
+              </div>
+              <div class="stat">
+                <span class="stat-label">Next Full Sync</span><span class="stat-value" id="alteredNextFull">-</span>
+              </div>
+              <div class="stat">
+                <span class="stat-label">Latest Snapshot</span
+                ><span class="stat-value" id="alteredLatestSnapshot">-</span>
+              </div>
+              <div class="stat">
+                <span class="stat-label">Latest Check Run</span
+                ><span class="stat-value" id="alteredLatestPollRun">-</span>
+              </div>
+            </div>
+            <div id="alteredHookStatus" class="muted logs-meta">Hook: -</div>
+            <div id="alteredLiveStatus" class="muted logs-meta">Monitor: -</div>
+          </div>
+
+          <div class="altered-grid">
+            <div class="card">
+              <h2>Recent Club Sync Runs</h2>
+              <div class="table-wrap">
+                <table>
+                  <thead>
+                    <tr>
+                      <th>Run</th>
+                      <th>Status</th>
+                      <th>Finished</th>
+                      <th>Maps</th>
+                      <th>Note</th>
+                    </tr>
+                  </thead>
+                  <tbody id="alteredSyncRunsBody"></tbody>
+                </table>
+              </div>
+            </div>
+
+            <div class="card">
+              <h2>Recent Check Runs</h2>
+              <div class="table-wrap">
+                <table>
+                  <thead>
+                    <tr>
+                      <th>Run</th>
+                      <th>Status</th>
+                      <th>Finished</th>
+                      <th>Checked</th>
+                      <th>Changed</th>
+                    </tr>
+                  </thead>
+                  <tbody id="alteredPollRunsBody"></tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+
+          <div class="card">
+            <div class="section-head altered-check-head">
+              <div>
+                <h2>Check History</h2>
+                <div id="alteredCheckMeta" class="muted logs-meta">Loading recent checks...</div>
+              </div>
+              <div class="logs-toolbar altered-check-toolbar">
+                <label>
+                  <span>Map / UID</span>
+                  <input id="alteredCheckSearch" type="search" placeholder="Filter recent checks..." />
+                </label>
+                <button id="alteredCheckApplyBtn" class="btn btn-outline btn-sm" type="button">Apply</button>
+                <button id="alteredCheckClearBtn" class="btn btn-outline btn-sm" type="button">Clear</button>
+              </div>
+            </div>
+            <div class="table-wrap">
+              <table>
+                <thead>
+                  <tr>
+                    <th>Checked</th>
+                    <th class="col-key">Map</th>
+                    <th>Result</th>
+                    <th>WR Change</th>
+                    <th>Run</th>
+                  </tr>
+                </thead>
+                <tbody id="alteredCheckBody"></tbody>
+              </table>
+            </div>
+          </div>
+        </section>
+
+        <section id="tabLogs" class="tab-panel" hidden role="tabpanel">
+          <div class="card">
+            <div class="logs-toolbar">
+              <label>
+                <span>Service</span>
+                <select id="logsService"></select>
+              </label>
+              <label>
+                <span>Stream</span>
+                <select id="logsStream">
+                  <option value="out">stdout</option>
+                  <option value="error">stderr</option>
+                </select>
+              </label>
+              <label>
+                <span>Lines</span>
+                <select id="logsLines">
+                  <option value="100">100</option>
+                  <option value="200" selected>200</option>
+                  <option value="400">400</option>
+                  <option value="800">800</option>
+                </select>
+              </label>
+              <label class="tracker-priority-check">
+                <span>Follow Tail</span>
+                <input id="logsFollowTail" type="checkbox" checked />
+              </label>
+              <button id="logsRefreshBtn" class="btn btn-outline btn-sm" type="button">Refresh Logs</button>
+            </div>
+            <div id="logsMeta" class="muted logs-meta">Loading logs...</div>
+            <pre id="logsOutput" class="logs-output">Loading logs...</pre>
+          </div>
+        </section>
+      </div>
+    </div>
+
+    <div id="detailDrawer" class="drawer" hidden>
+      <div class="drawer-backdrop"></div>
+      <div class="drawer-panel">
+        <div class="drawer-header">
+          <h2 id="drawerTitle">Details</h2>
+          <button id="drawerCloseBtn" class="btn btn-outline btn-sm" type="button">Close</button>
+        </div>
+        <div id="drawerContent" class="drawer-body"></div>
+      </div>
+    </div>
+
+    <script type="module" src="app.js?v=2"></script>
+    <script type="module" src="/shared/xjk-core/sidenav-boot.js?v=2" data-xjk-sidenav="dash"></script>
+    <script type="module" src="/shared/xjk-core/topbar-loader.js?v=2" data-xjk-topbar="dash"></script>
+  </body>
+</html>

@@ -1,0 +1,430 @@
+/* Canonical xjk topbar. Page-specific chrome lives in the optional
+   .xjk-page-toolbar below this component, never inside the shared row. */
+
+.xjk-global-topbar,
+.xjk-global-topbar * {
+  box-sizing: border-box;
+}
+
+.xjk-global-topbar {
+  --xjk-topbar-accent: #d8d8d8;
+  --xjk-topbar-height: 58px;
+  z-index: 39;
+  isolation: isolate;
+  display: block !important;
+  width: 100%;
+  min-width: 0;
+  /* One fixed shell height keeps the sidebar hand-off identical even when a
+     legacy host lives inside a taller grid row. The 58px row plus the 1px
+     bottom border produces the shared 59px chrome boundary. */
+  min-height: 59px !important;
+  height: 59px !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  border: 0 !important;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.09) !important;
+  border-radius: 0 !important;
+  color: #f3f4f6;
+  background:
+    linear-gradient(
+        color-mix(in srgb, var(--xjk-topbar-accent) 75%, transparent),
+        color-mix(in srgb, var(--xjk-topbar-accent) 75%, transparent)
+      )
+      left top / 3px 100% no-repeat,
+    linear-gradient(90deg, color-mix(in srgb, var(--xjk-topbar-accent) 7%, transparent), transparent 38%),
+    rgba(4, 6, 8, 0.965) !important;
+  box-shadow: 0 10px 28px rgba(0, 0, 0, 0.18);
+  font-family: Inter, ui-sans-serif, system-ui, sans-serif;
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  /* Legacy hosts such as Account disabled hit-testing on the header and only
+     opted their former children back in. The canonical host owns interaction
+     for its complete row in every reused page context. */
+  pointer-events: auto !important;
+}
+
+.xjk-global-topbar[data-xjk-topbar-mode="standalone"] {
+  position: sticky;
+  top: 0;
+}
+
+.xjk-global-topbar__row {
+  display: grid;
+  grid-template-columns: minmax(132px, 210px) minmax(0, 1fr) minmax(220px, 680px) 38px;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  min-height: var(--xjk-topbar-height);
+  margin: 0 auto;
+  padding: 7px 14px;
+}
+
+.xjk-global-topbar__identity {
+  grid-column: 1;
+  display: grid;
+  grid-template-columns: 34px minmax(0, 1fr);
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+  color: inherit;
+  text-decoration: none;
+}
+
+.xjk-global-topbar__mark {
+  position: relative;
+  display: grid;
+  place-items: center;
+  width: 34px;
+  height: 34px;
+  border: 1px solid color-mix(in srgb, var(--xjk-topbar-accent) 44%, transparent);
+  border-radius: 8px;
+  color: #f4f5f6;
+  background: color-mix(in srgb, var(--xjk-topbar-accent) 8%, transparent);
+}
+
+.xjk-global-topbar__mark::after {
+  content: "";
+  position: absolute;
+  top: -3px;
+  right: -3px;
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--xjk-topbar-accent);
+  box-shadow: 0 0 0 2px #05070a;
+}
+
+.xjk-global-topbar__mark svg {
+  display: block;
+  width: 19px;
+  height: auto;
+}
+
+.xjk-global-topbar__context {
+  display: grid;
+  gap: 2px;
+  min-width: 0;
+}
+
+.xjk-global-topbar__context strong {
+  overflow: hidden;
+  color: #f4f5f6;
+  font-family: "IBM Plex Sans Condensed", Inter, sans-serif;
+  font-size: 15px;
+  font-weight: 700;
+  line-height: 1;
+  letter-spacing: 0.025em;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.xjk-global-topbar__context small {
+  overflow: hidden;
+  color: #68717b;
+  font-family: "Space Mono", Consolas, ui-monospace, monospace;
+  font-size: 8.5px;
+  letter-spacing: 0.15em;
+  line-height: 1.2;
+  text-overflow: ellipsis;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.xjk-global-topbar__search {
+  grid-column: 3;
+  display: block !important;
+  width: 100% !important;
+  min-width: 0 !important;
+  max-width: 680px !important;
+  height: 40px !important;
+  min-height: 40px !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  justify-self: end;
+}
+
+.xjk-global-topbar .xjk-topbar-search {
+  display: grid;
+  grid-template-columns: 18px minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  min-width: 0;
+  height: 40px;
+  margin: 0 !important;
+  padding: 0 11px;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: 7px;
+  color: #aeb4bb;
+  background: rgba(0, 0, 0, 0.4);
+  box-shadow: inset 0 1px rgba(255, 255, 255, 0.025);
+  cursor: pointer;
+  text-align: left;
+}
+
+.xjk-global-topbar .xjk-topbar-search:hover,
+.xjk-global-topbar .xjk-topbar-search:focus-visible,
+.xjk-global-topbar .xjk-topbar-search[aria-expanded="true"] {
+  border-color: color-mix(in srgb, var(--xjk-topbar-accent) 62%, rgba(255, 255, 255, 0.28));
+  color: #fff;
+  background: color-mix(in srgb, var(--xjk-topbar-accent) 7%, rgba(0, 0, 0, 0.5));
+  outline: 0;
+}
+
+.xjk-topbar-search__icon {
+  display: grid;
+  place-items: center;
+  color: var(--xjk-topbar-accent);
+}
+
+.xjk-topbar-search__icon svg {
+  display: block;
+  width: 17px;
+  height: 17px;
+}
+
+.xjk-topbar-search__copy {
+  display: grid;
+  gap: 2px;
+  min-width: 0;
+}
+
+.xjk-topbar-search__copy strong,
+.xjk-topbar-search__copy small {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.xjk-topbar-search__copy strong {
+  color: #eef0f2;
+  font-family: "IBM Plex Sans Condensed", Inter, sans-serif;
+  font-size: 12px;
+  font-weight: 600;
+  line-height: 1;
+}
+
+.xjk-topbar-search__copy small {
+  color: #747b84;
+  font-family: "Space Mono", Consolas, ui-monospace, monospace;
+  font-size: 8.5px;
+  line-height: 1.15;
+}
+
+.xjk-global-topbar .xjk-topbar-search kbd {
+  padding: 3px 6px;
+  border: 1px solid rgba(255, 255, 255, 0.13);
+  border-radius: 4px;
+  color: #858c94;
+  background: rgba(255, 255, 255, 0.035);
+  font-family: "Space Mono", Consolas, ui-monospace, monospace;
+  font-size: 8.5px;
+  font-weight: 400;
+}
+
+.xjk-global-topbar__actions {
+  grid-column: 2;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 7px;
+  min-width: 0;
+}
+
+.xjk-global-topbar__actions:empty {
+  display: none;
+}
+
+.xjk-global-topbar__account {
+  grid-column: 4;
+  position: relative;
+  display: grid !important;
+  place-items: center;
+  width: 38px !important;
+  min-width: 38px !important;
+  max-width: 38px !important;
+  height: 38px !important;
+  min-height: 38px !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  justify-self: end;
+}
+
+.xjk-global-topbar .xjk-account-widget {
+  margin: 0 !important;
+}
+
+/* Native page controls that used to share the header are kept below the
+   canonical row. This preserves filters/admin actions without allowing them
+   to create a second platform search owner. */
+.xjk-page-toolbar {
+  position: relative;
+  z-index: 30;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 8px 14px;
+  min-height: 42px;
+  width: 100%;
+  margin: 0;
+  padding: 6px 14px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.065);
+  color: #aeb4bb;
+  background: rgba(5, 7, 9, 0.9);
+  font-family: Inter, ui-sans-serif, system-ui, sans-serif;
+}
+
+.xjk-page-toolbar:empty {
+  display: none;
+}
+
+.xjk-page-toolbar input[type="search"],
+.xjk-page-toolbar input[type="text"],
+.xjk-page-toolbar select {
+  min-width: 0;
+  height: 32px;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  border-radius: 5px;
+  color: #eceff1;
+  background: rgba(0, 0, 0, 0.38);
+}
+
+/* Bare controls can claim a useful toolbar width. Inputs inside a composed
+   legacy control (icon/input/shortcut, for example) must instead respect the
+   width of that component or they can create document-level overflow. */
+.xjk-page-toolbar > input[type="search"],
+.xjk-page-toolbar > input[type="text"],
+.xjk-page-toolbar > select {
+  min-width: min(320px, 66vw);
+}
+
+.xjk-page-toolbar a,
+.xjk-page-toolbar button {
+  color: inherit;
+}
+
+/* The topbar owns the complete upper edge on every page. Desktop page bodies
+   reserve the sidebar gutter, so pull the chrome back across that gutter and
+   restore the width. Fixed legacy nav hosts already use the viewport as their
+   containing block and receive the direct override below. */
+html.xjk-has-sidenav .xjk-global-topbar {
+  width: calc(100% + var(--xjk-sidenav-w)) !important;
+  margin-left: calc(-1 * var(--xjk-sidenav-w)) !important;
+}
+
+html.xjk-has-sidenav .site-nav.xjk-global-topbar {
+  left: 0 !important;
+  width: 100% !important;
+  margin-left: 0 !important;
+}
+
+/* The mounted canonical host owns the viewport. Clear any page-owned sidebar
+   offset and skip the in-flow width expansion. */
+html.xjk-has-sidenav .xjk-global-topbar[data-xjk-topbar-position="viewport"] {
+  position: fixed !important;
+  top: 0 !important;
+  left: 0 !important;
+  right: 0 !important;
+  width: 100% !important;
+  margin-left: 0 !important;
+}
+
+.xjk-global-topbar-spacer {
+  display: block;
+  grid-column: 1 / -1;
+  width: 100%;
+  height: 59px;
+  min-height: 59px;
+  flex: 0 0 59px;
+}
+
+/* Overlay/reveal shells intentionally keep their body content unguttered.
+   They already start at the viewport edge, so do not apply the desktop gutter
+   compensation a second time. */
+html.xjk-has-sidenav[data-xjk-chrome-scroll-reveal] .xjk-global-topbar {
+  width: 100% !important;
+  margin-left: 0 !important;
+}
+
+@media (max-width: 880px) {
+  html.xjk-has-sidenav .xjk-global-topbar {
+    width: 100% !important;
+    margin-left: 0 !important;
+  }
+
+  html.xjk-has-sidenav .site-nav.xjk-global-topbar {
+    left: 0 !important;
+    width: 100% !important;
+  }
+
+  .xjk-global-topbar__row {
+    grid-template-columns: minmax(42px, auto) minmax(140px, 1fr) 38px;
+    gap: 8px;
+    padding-left: 52px;
+  }
+
+  .xjk-global-topbar__actions {
+    display: none;
+  }
+
+  .xjk-global-topbar__search {
+    grid-column: 2;
+  }
+
+  .xjk-global-topbar__account {
+    grid-column: 3;
+  }
+
+  .xjk-global-topbar__context small,
+  .xjk-topbar-search__copy small,
+  .xjk-global-topbar .xjk-topbar-search kbd {
+    display: none;
+  }
+
+  .xjk-global-topbar .xjk-topbar-search {
+    grid-template-columns: 18px minmax(0, 1fr);
+  }
+}
+
+@media (max-width: 560px) {
+  .xjk-global-topbar__row {
+    grid-template-columns: 34px minmax(0, 1fr) 36px;
+    padding-right: 8px;
+  }
+
+  .xjk-global-topbar__identity {
+    grid-template-columns: 34px;
+  }
+
+  .xjk-global-topbar__context {
+    display: none;
+  }
+
+  .xjk-page-toolbar {
+    justify-content: stretch;
+    padding-inline: 10px;
+  }
+
+  .xjk-page-toolbar input[type="search"],
+  .xjk-page-toolbar input[type="text"],
+  .xjk-page-toolbar select {
+    width: 100%;
+    min-width: 0;
+  }
+}
+
+@media (forced-colors: active) {
+  .xjk-global-topbar,
+  .xjk-global-topbar .xjk-topbar-search {
+    border-color: CanvasText !important;
+    background: Canvas !important;
+  }
+}
+
+@media print {
+  .xjk-global-topbar,
+  .xjk-page-toolbar {
+    display: none !important;
+  }
+}

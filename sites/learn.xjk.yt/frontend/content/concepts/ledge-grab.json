@@ -1,0 +1,8 @@
+{
+  "title": "Ledge Grab",
+  "area": "block-geometry",
+  "type": "technique",
+  "summary": "Using rotation and stability to reach or catch ledges that are not reachable through a normal jump arc.",
+  "tags": ["ledge", "transition"],
+  "relatedConcepts": ["air-control", "quarterpipe"]
+}

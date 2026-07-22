@@ -1,0 +1,96 @@
+import { createJsonResponse } from "./response.js";
+
+const mapNotFoundResponse = () =>
+  createJsonResponse(404, "Not found", {
+    error: "Map not found.",
+    mapUid: "unknown-map-uid",
+  });
+
+const mapResponseFactories = {
+  "public-map-detail": () => [
+    createJsonResponse(200, "Map detail", {
+      exists: true,
+      generatedAt: "2026-03-15T12:00:00.000Z",
+      api: { name: "Altered Public API", version: "v1", docsPath: "/api/" },
+      map: {
+        mapUid: "ixgRz0phSb2_luKbkuFu7PK0Iea",
+        mapId: "84f939cb-d43e-47cf-b110-1b953ba3ba16",
+        name: "Fall 2024 - 08 Cleaned",
+        filename: "Fall 2024 - 08 Cleaned.Map.Gbx",
+        fileUrl: "https://core.trackmania.nadeo.live/maps/84f939cb-d43e-47cf-b110-1b953ba3ba16/file",
+        thumbnailUrl: "https://core.trackmania.nadeo.live/maps/84f939cb-d43e-47cf-b110-1b953ba3ba16/thumbnail.jpg",
+        author: "60a05b90-17d3-4d34-99d1-008874b82dd8",
+        submitter: "60a05b90-17d3-4d34-99d1-008874b82dd8",
+        authorScore: 56093,
+        goldScore: 60000,
+        silverScore: 68000,
+        bronzeScore: 85000,
+        collectionName: "Stadium",
+        mapStyle: "",
+        mapType: "TrackMania\\TM_Race",
+        isPlayable: true,
+        createdWithGamepadEditor: false,
+        createdWithSimpleEditor: false,
+        timestamp: "2024-10-06T14:57:31+00:00",
+        season: "Fall",
+        year: 2024,
+        mapnumber: [8],
+        alteration: "Cleaned",
+        type: null,
+        wrMs: 54321,
+        wrHolder: "Example Player",
+        tracked: true,
+        status: "active",
+      },
+      wrHistory: [
+        {
+          eventId: 101,
+          mapUid: "ixgRz0phSb2_luKbkuFu7PK0Iea",
+          mapName: "Fall 2024 - 08 Cleaned",
+          accountId: "aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee",
+          holder: "Example Player",
+          wrMs: 54321,
+          recordedAt: "2026-03-10T18:30:00.000Z",
+          receivedAt: "2026-03-10T18:30:05.000Z",
+        },
+      ],
+      links: {
+        self: "/api/v1/public/maps/ixgRz0phSb2_luKbkuFu7PK0Iea",
+        legacy: "/api/v1/maps/info/ixgRz0phSb2_luKbkuFu7PK0Iea",
+        docs: "/api/endpoints/public-map-detail",
+      },
+    }),
+    mapNotFoundResponse(),
+  ],
+  "legacy-map-info": () => [
+    createJsonResponse(200, "Map info", {
+      alteration: "Cleaned",
+      author: "60a05b90-17d3-4d34-99d1-008874b82dd8",
+      authorScore: 56093,
+      bronzeScore: 85000,
+      collectionName: "Stadium",
+      createdWithGamepadEditor: false,
+      createdWithSimpleEditor: false,
+      fileUrl: "https://core.trackmania.nadeo.live/maps/84f939cb-d43e-47cf-b110-1b953ba3ba16/file",
+      filename: "Fall 2024 - 08 Cleaned.Map.Gbx",
+      goldScore: 60000,
+      isPlayable: true,
+      mapId: "84f939cb-d43e-47cf-b110-1b953ba3ba16",
+      mapStyle: "",
+      mapType: "TrackMania\\TM_Race",
+      mapUid: "ixgRz0phSb2_luKbkuFu7PK0Iea",
+      mapnumber: [8],
+      name: "Fall 2024 - 08 Cleaned",
+      season: "Fall",
+      silverScore: 68000,
+      submitter: "60a05b90-17d3-4d34-99d1-008874b82dd8",
+      thumbnailUrl: "https://core.trackmania.nadeo.live/maps/84f939cb-d43e-47cf-b110-1b953ba3ba16/thumbnail.jpg",
+      timestamp: "2024-10-06T14:57:31+00:00",
+      type: null,
+      year: 2024,
+    }),
+    mapNotFoundResponse(),
+  ],
+};
+
+export { mapResponseFactories };
